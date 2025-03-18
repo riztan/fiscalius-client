@@ -1,0 +1,21 @@
+/** clientes.xbs equivalente al script de adaptapro acá en tpuy.
+ */
+
+#include "tpy_xbs.ch"
+
+procedure clientes( oForm, ... )
+
+   local oRCursor := ::oGEmpresa:Clientes("")
+
+   DEFINE MODEL  ::oModProveedor ;
+          STRUCT oRCursor:Struct ;
+          DATA   oRCursor:Data()
+
+   DEFINE LISTBOX ::oLBProveedor MODEL ::oModProveedor ;
+          SIZE 400,300
+
+   ::oLBProveedor:Active()  
+
+return
+
+//eof

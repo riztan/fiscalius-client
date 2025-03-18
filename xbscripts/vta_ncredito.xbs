@@ -1,0 +1,177 @@
+/* vta_factura.xbs:w
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure vta_ncredito( oFormParent )
+
+   local oForm, cEntCli
+
+   SET PUBLIC oForm
+
+   ::rVentas := oFormParent:oGEmpresa:SetModulo("Ventas")
+   ::rFacturas := ::rVentas:Facturas()
+
+   if hb_isNIL( ::rFacturas )
+      MsgStop( "no se puede obtener información de facturas" )
+      Return 
+   endif
+
+   SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"vta_ncredito.ui"
+
+   DEFINE WINDOW ::oFacWnd ;
+          TITLE "Fiscalius. Nota de Crédito" ;
+          SIZE 750,500 ;
+          ID "window1" RESOURCE ::oRes
+
+
+   DEFINE IMAGE ::oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png" ;
+          ID "image1" RESOURCE ::oRes
+          ::oImgBanner:Adjust(900)
+
+   DEFINE IMAGE ::oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE ::oRes
+          ::oImgLogo:Adjust(60)
+
+   DEFINE BOX ::oBoxData ID "boxdata" RESOURCE ::oRes
+
+   DEFINE BOX ::oBoxFactura ID "vbox_factura" RESOURCE ::oRes
+          ::oBoxFactura:Hide()
+
+   //-------------------------
+   DEFINE LABEL ::oLabNumero ID "lab_numero" RESOURCE ::oRes
+
+   cEntCli := ""
+   DEFINE ENTRY ::oEntCli VAR cEntCli ;
+          ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oFacWnd, ::oEntCli) ;
+          ID "ent_clientes" RESOURCE ::oRes
+
+   ::dFecha := DATE()
+   DEFINE ENTRY TYPE DATE ::oEntFecha VAR ::dFecha CALENDAR ;
+          ID "ent_fecha" RESOURCE ::oRes
+
+   ::dVcmto := DATE()
+   DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::dVcmto CALENDAR ;
+          ID "ent_vcmto" RESOURCE ::oRes
+
+   DEFINE BOX ::oBoxCondicion ID "box_condicion" RESOURCE ::oRes
+
+   ::aCondiciones := {"Contado", "Crédito"}
+   ::cCondicion := ""
+   DEFINE COMBOBOX ::oComboCondicion ;
+          VAR ::cCondicion ITEMS ::aCondiciones ;
+          ON CHANGE MsgInfo("condicion") ;
+          OF ::oBoxCondicion
+
+   DEFINE BOX ::oBoxEstado ID "box_estado" RESOURCE ::oRes
+
+   ::aComboEstado := {"Borrador","Anulada","Cerrada"}
+   ::cCombo := ""
+   DEFINE COMBOBOX ::oComboEstado ;
+          VAR ::cComboEstado ITEMS ::aComboEstado ;
+          ON CHANGE MsgInfo("estado") ;
+          OF ::oBoxEstado
+          
+   // -- Caja de Montos
+   DEFINE BOX ::oBoxMontos ID "box_montos" RESOURCE ::oRes
+
+   DEFINE BOX ::oBoxMonBase HOMO OF ::oBoxMontos
+
+   //DEFINE LABEL ::oLabMonBase TEXT "Monto Base:" OF ::oBoxMonBase
+   ::nMontoBase := 0
+   DEFINE MONEY ENTRY ::oEntMonBase VAR ::nMontoBase ID "ent_monbase" RESOURCE ::oRes //OF ::oBoxMonBase
+   ::oEntMonBase:Justify( GTK_JUSTIFY_RIGHT )
+
+   //DEFINE BOX ::oBoxIvaR HOMO OF ::oBoxMontos
+   ::nMontoIvaR := 0
+   //DEFINE LABEL ::oLabIvaR TEXT "Iva Reducido:" OF ::oBoxIvaR
+   DEFINE MONEY ENTRY ::oEntIvaR VAR ::nMontoIvaR ID "ent_ivared" RESOURCE ::oRes //OF ::oBoxIvaR
+   ::oEntIvaR:Justify( GTK_JUSTIFY_RIGHT )
+
+   //DEFINE BOX ::oBoxIvaG HOMO OF ::oBoxMontos
+   ::nMontoIvaG := 0
+   //DEFINE LABEL ::oLabIvaG TEXT "Iva General:" OF ::oBoxIvaG
+   DEFINE MONEY ENTRY ::oEntIvaG VAR ::nMontoIvaG ID "ent_ivagen" RESOURCE ::oRes //OF ::oBoxIvaG
+   ::oEntIvaG:Justify( GTK_JUSTIFY_RIGHT )
+
+   //DEFINE BOX ::oBoxTotal HOMO OF ::oBoxMontos
+   ::nMontoTotal := 0
+   //DEFINE LABEL ::oLabTotal TEXT "Total:" OF ::oBoxTotal
+   DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ID "ent_montotal" RESOURCE ::oRes //OF ::oBoxTotal
+   ::oEntTotal:Justify( GTK_JUSTIFY_RIGHT )
+
+
+   // -- Caja de Retenciones
+   DEFINE BOX ::oBoxRet ID "box_retiva" RESOURCE ::oRes
+
+   ::cRetIva := "202503100123"
+   DEFINE DOCUMENT ENTRY ::oEntRetIva VAR ::cRetIva ID "ent_retivanum" RESOURCE ::oRes
+   ::oRetIvaFecha := DATE()
+   DEFINE DATE ENTRY ::oEntRetIvaF VAR ::dRetIvaFecha ID "ent_retivaf" RESOURCE ::oRes
+
+   /*
+   DEFINE BOX ::oBoxRetIva0 HOMO OF ::oBoxRet
+   DEFINE LABEL ::oLabRetIva TEXT "Retención de Iva Nro: " OF ::oBoxRetIva0
+   ::cRetIva := "202503100234"
+   DEFINE DOCUMENT ENTRY ::oEntRetIva VAR ::cRetIva OF ::oBoxRetIva0
+
+   DEFINE BOX ::oBoxRetIva1 HOMO OF ::oBoxRet
+   DEFINE LABEL ::oLabRetIvaF TEXT "Fecha: " OF ::oBoxRetIva1
+   ::dRetIvaFecha := DATE()
+   DEFINE DATE ENTRY ::oEntRetIvaF VAR ::dRetIvaFecha OF ::oBoxRetIva1
+   */
+
+
+   //-------------------------
+
+   DEFINE MODEL  ::oModFacturas ;
+          STRUCT ::rFacturas:Struct() ;
+          DATA   ::rFacturas:GetData()
+   
+   DEFINE LISTBOX ::oLBoxFacs ;
+          MODEL   ::oModFacturas ;
+          OF      ::oBoxData
+
+   ::oLBoxFacs:lBar  := .f.
+   ::oLBoxFacs:bEdit := {|oModel| __vtaFactura( oForm, oFormParent, ::oBoxFactura, oModel ) }
+
+   ::oLBoxFacs:Active() 
+
+   //View( oLBoxFacs:GetCol(1):ClassName() )
+   ::oLBoxFacs:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
+
+   ::oLBoxFacs:SetColTitle( 3, "Cliente" )          //- Cambiamos el titulo 
+
+   ::oLBoxFacs:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 6, "monto base" )       //- Cambiamos el titulo 
+
+   //::oLBoxFacs:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
+
+   ACTIVATE WINDOW ::oFacWnd MODAL
+
+return
+
+
+
+
+procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel )
+
+   //View( oModel:GetCol("numero") )
+
+   ::oLabNumero:SetValue( oModel:GetCol("numero") )
+   ::oEntCli:SetValue( oModel:GetCol("Cliente") )
+   ::oEntFecha:SetValue( oModel:GetCol("fecha") )
+   ::oEntVcmto:SetValue(  oModel:GetCol(5) )
+   ::oEntMonBase:SetValue(  oModel:GetCol("monto base") )
+   
+   ::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
+
+   oBoxFactura:Show()
+
+return
+
+
+//eof

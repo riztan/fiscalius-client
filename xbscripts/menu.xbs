@@ -1,0 +1,161 @@
+/** menu.xbs   Construye el menu correspondiente al modulo actual
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure menu( oForm )
+
+   local oMenu, cValue := "", cTitulo := ""
+   local hMenu := hb_Hash(), cMenu, aImage, cImage, cAction
+   local oMenuItem, aMenu := {}
+
+return
+   oTPuy:oTmp := oForm
+
+   // -- Menu Ficheros
+   DEFINE IMAGE ::oImgF FILE oTPuy:cImages+"archive_64.png" 
+   MENUITEM IMAGE ::oMnuFiles TITLE "" IMAGE ::oImgF OF ::oMenu
+            DEFINE TOOLTIP ;
+                   WIDGET ::oMnuFiles TEXT "Ficheros maestros del módulo" 
+
+   DEFINE IMAGE ::oImgT FILE oTPuy:cImages+"edit_64.png" //"form_32.png"
+   MENUITEM IMAGE ::oMnuTran  TITLE "" IMAGE ::oImgT OF ::oMenu
+            DEFINE TOOLTIP ;
+                  WIDGET ::oMnuTran ;
+                  TEXT "Opciones para los registros de transacciones." 
+
+
+
+
+   // -- Menu Ficheros
+   SUBMENU ::oSMFiles OF ::oMnuFiles
+
+/*
+   DEFINE IMAGE ::oImgX FILE oTPuy:cImages+"gear_32.png"
+   MENUITEM IMAGE ::oX TITLE "pepe" ;
+            IMAGE ::oImgX ACTION View( "Hola pasado" ) OF ::oSMFiles
+*/
+
+   oMenu := ::oGEmpresa:setModulo("VENTAS"):Menu("F")
+
+   Do While !oMenu:eof()
+      cTitulo := oMenu:mnu_titulo
+
+      if ("oDp:" $ oMenu:mnu_titulo )
+         cTitulo := STRTRAN( oMenu:mnu_titulo, "oDp:", "" )
+         cTitulo := STRTRAN( cTitulo, "{", "" )
+         cTitulo := STRTRAN( cTitulo, "}", "" )
+
+         cValue := UTF_8(::rSession:TableDescri( cTitulo ))
+         if Empty(cValue)
+            cTitulo := UTF_8( ::oGEmpresa:GetDocDescri( cTitulo ) )
+         else
+            cTitulo := cValue
+         endif
+
+      endif
+
+      aImage := hb_aTokens( oMenu:mnu_bmp, "/" )
+      cImage := aImage[ len(aImage) ]
+
+      if UPPER(left(oMenu:mnu_accion,8))="EJECUTAR"
+         //cAction := lower(STRTRAN(UPPER(oMenu:mnu_accion),"EJECUTAR","oTPuy:RunXBS"))
+         cAction := lower(STRTRAN(UPPER(oMenu:mnu_accion),"EJECUTAR(","EJECUTAR(oTPuy:oTmp,"))
+         // -- es un lío poder pasar la variable oForm, 
+         // -- tuve que incluirla en oTPuy (cosa que no me convence) RIGC Mayo,20,2022
+      elseif UPPER(left(oMenu:mnu_accion,5))="DPLBX"
+         cAction := lower(STRTRAN(UPPER(oMenu:mnu_accion),"DPLBX","View"))
+      else
+         cAction := oMenu:mnu_accion
+      endif
+
+
+      cMenu := oMenu:mnu_codigo
+/*
+      aImage := hb_aTokens( oMenu:mnu_bmp, "/" )
+      cImage := aImage[ len(aImage) ]
+*/
+      hMenu[ oMenu:mnu_codigo ] := {oMenu:mnu_accion, cImage}
+
+      MENUITEM TITLE cTitulo ;
+               ACTION &cAction  OF ::oSMFiles
+
+      if oMenu:mnu_tipo=4
+         MENU SEPARATOR OF ::oSMFiles
+      endif
+  
+      oMenu:Skip()
+
+/*
+      MENUITEM TITLE ALLTRIM(oMenu:mnu_titulo) ;
+               ACTION MsgInfo( oMenu:mnu_accion )  OF ::oSMFiles
+
+      if oMenu:mnu_tipo=4
+         MENU SEPARATOR OF ::oSMFiles
+      endif
+  
+      oMenu:Skip()
+*/
+   EndDo
+
+
+
+   // -- Menu Transacciones
+   SUBMENU ::oSMTransac OF ::oMnuTran
+
+/*
+   DEFINE IMAGE ::oImgX FILE oTPuy:cImages+"pencil_32.png"
+   MENUITEM IMAGE ::oX TITLE "pepe" ;
+            IMAGE ::oImgX ACTION View( "Hola pasado" ) OF ::oSMTransac
+*/
+   oMenu := ::oGEmpresa:setModulo("VENTAS"):Menu("T")
+
+   Do While !oMenu:eof()
+
+      cTitulo := UTF_8(oMenu:mnu_titulo)
+
+      if ("oDp:" $ oMenu:mnu_titulo )
+         cTitulo := STRTRAN( oMenu:mnu_titulo, "oDp:", "" )
+         cTitulo := STRTRAN( cTitulo, "{", "" )
+         cTitulo := STRTRAN( cTitulo, "}", "" )
+
+         cValue := ::rSession:TableDescri( cTitulo )
+         if Empty(cValue)
+            cTitulo := UTF_8( ::oGEmpresa:GetDocDescri( cTitulo ) )
+         else
+            cTitulo := cValue
+         endif
+
+      endif
+
+      aImage := hb_aTokens( oMenu:mnu_bmp, "/" )
+      cImage := aImage[ len(aImage) ]
+      if UPPER(left(oMenu:mnu_accion,8))="EJECUTAR"
+         //cAction := lower(STRTRAN(UPPER(oMenu:mnu_accion),"EJECUTAR","oTPuy:RunXBS"))
+         cAction := lower(STRTRAN(UPPER(oMenu:mnu_accion),"EJECUTAR(","EJECUTAR(oTPuy:oTmp,"))
+      elseif UPPER(left(oMenu:mnu_accion,5))="DPLBX"
+         cAction := lower(STRTRAN(UPPER(oMenu:mnu_accion),"DPLBX","View"))
+      else
+         cAction := oMenu:mnu_accion
+      endif
+
+      cMenu := oMenu:mnu_codigo
+
+      MENUITEM oMenuItem TITLE cTitulo ;
+               ACTION &cAction OF ::oSMTransac
+
+      hMenu[ oMenu:mnu_codigo ] := {oMenuItem, cAction, cImage}
+
+      if oMenu:mnu_tipo = 4
+         MENU SEPARATOR OF ::oSMTransac
+      endif
+  
+      oMenu:Skip()
+   EndDo
+
+//View( hMenu )
+
+return
+
+//eof

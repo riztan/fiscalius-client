@@ -1,0 +1,146 @@
+/*
+ * Proyecto Tpuy
+ *
+ * netio_check: Verifica conexion al servidor de NetIO
+ */
+
+#include "tpy_xbs.ch"
+
+FUNCTION netio_check()
+
+  local lConnect := .f.
+  local oMsgRun, oErr
+
+  if FILE( "connect.ch" )
+     #include "connect.ch"
+  endif
+
+  //-- Revisamos estatus de banderin de salida. Esto para evitar
+  //   intentar conectar cuando se ha invocado la salida del sistema.
+  if oTPuy:lExit
+     return .f.
+  endif
+
+  if !oTPuy:lNetIO .and. !oTPuy:lExit
+
+     try
+        oMsgRun := MsgRunStart("Conectando al Servidor...")
+        lConnect := netio_connect( NETSERVER, NETPORT,, NETPASSWD )
+     catch oErr
+        MsgStop( "No se puede conectar con "+NETSERVER+CRLF+;
+                 oErr:Description )
+        
+        oMsgRun:End()
+        Return .F.
+     end
+
+     oMsgRun:End()
+     if lConnect
+        if !oTPuy:Isdef( "oUser" )
+           __Login() //oTPuy:RunXBS("netio_login",.f.)
+        endif
+     endif
+
+     If !lConnect
+        MsgAlert("No logro conectar con "+NETSERVER)
+        Return lConnect
+     EndIf
+
+     oTPuy:lNetIO := .t.
+
+     //Check_Version() // Verifica la versión el binario (Cliente) de TPuy
+     //-- Esto se debe activar luego para iniciar un proceso de auto-actualización.
+
+     oTPuy:tLastNetIO := hb_DateTime()
+
+  endif
+
+  if (hb_DateTime() - oTPuy:tLastNetIO) >= 0.001000 
+     if netio_GetConnection( NETSERVER, NETPORT,, NETPASSWD ) = NIL
+        oTPuy:lNetIO := .f.
+     else
+        if !oTPuy:IsDef("oUser")
+           __Login() 
+        endif
+     endif
+  endif
+
+RETURN .T.
+
+
+
+Procedure __Login()
+
+   local cScriptName := "netio_login", cScriptFile
+   local aScripts, aScript, cMD5, cSource, oErr
+
+   __FilesCheck("INC")
+   __FilesCheck("RES")
+   __FilesCheck("IMG")
+   __FilesCheck("XBS")
+
+/*
+   aScripts := ~GetScripts()
+
+   FOR EACH aScript IN aScripts
+      cScriptFile := oTPuy:cXBScripts+aScript[1]+".xbs"
+      cMD5 := hb_MD5File( cScriptFile )
+      if !File( cScriptFile ) .or. !(aScript[2] == cMD5)
+         cSource := ~GetScripts( aScript[1] )
+         hb_MemoWrit( cScriptFile, cSource )
+      endif
+   NEXT
+*/
+   cScriptFile := oTPuy:cXBScripts+cScriptName+".xbs" 
+
+   If File(cScriptFile)
+      try
+         oTPuy:RunXBS(cScriptName, .F. )
+      catch oErr
+         MsgStop( oErr:description )
+      end
+   Else
+      MsgStop("No se puede ejecutar script de login.")
+   EndIf
+
+return
+
+
+
+/* Realiza verificación de ficheros base */
+Procedure __FilesCheck(cType)
+   local aRFiles, aLFiles, cDir
+   local aFile, cLFile_MD5
+
+   if cType = "XBS"
+      aRFiles := ~ScriptList()
+      cDir := oTPuy:cXbScript
+      bGet := {|| ~ScriptGet(aFile[1]) }
+   elseif cType = "INC"
+      aRFiles := ~IncList()
+      cDir := oTPuy:cIncludes
+      bGet := {|| ~IncGet(aFile[1]) }
+   elseif cType = "RES"
+      aRFiles := ~ResourceList()
+      cDir := oTPuy:cResources
+      bGet := {|| ~ResourceGet(aFile[1]) }
+   elseif cType = "IMG"
+      aRFiles := ~ImageList()
+      cDir := oTPuy:cImages
+      bGet := {|| ~ImageGet(aFile[1]) }
+   else
+      return nil
+   endif
+
+   if Empty( aRFiles ) ; return ; endif
+
+   FOR EACH aFile IN aRFiles
+      cLFile_MD5 := hb_MD5File( cDir+aFile[1] )
+      if cLFile_MD5 != aFile[2]
+         //MsgInfo( cDir+aFile[1] )
+         hb_MemoWrit( cDir+aFile[1], Eval(bGet) )
+      endif
+   NEXT
+return
+
+//eof

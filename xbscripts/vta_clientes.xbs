@@ -1,0 +1,83 @@
+/* vta_clientes.xbs
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure vta_clientes( oForm, oWndParent, oEntParent )
+
+   local oCliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Clientes"
+   local rVentas, rClientes, oModClientes, oLBoxCli
+
+   rVentas := ::oGEmpresa:SetModulo("Ventas")
+   rClientes := rVentas:Clientes()
+
+   if hb_isNIL(rClientes)
+      MsgStop("???")
+      return
+   endif
+
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+
+   DEFINE WINDOW oCliWnd ;
+          TITLE "Fiscalius. Factura" ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+
+   DEFINE MODEL oModClientes ;
+          STRUCT rClientes:Struct() ;
+          DATA   rClientes:GetData()
+   
+   DEFINE LISTBOX oLBoxCli ;
+          MODEL oModClientes ;
+          OF oBoxData
+
+   oLBoxCli:lBar  := .f.
+
+
+   oLBoxCli:bEdit := {|oModel| ( iif( !hb_isObject(oWndParent), ;
+                                      .t., ;
+                                      oEntParent:setText( oModel:GetCol(3) )), ;
+                                      oCliWnd:End() ) }
+
+//   oLBoxCli:Active() 
+
+   //View( oLBoxCli:GetCol(1):ClassName() )
+/*
+   oLBoxCli:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
+
+   oLBoxCli:SetColTitle( 3, "Cliente" )          //- Cambiamos el titulo 
+
+   oLBoxCli:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 6, "monto base" )       //- Cambiamos el titulo 
+
+   //oLBoxCli:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
+*/
+
+   ACTIVATE WINDOW oCliWnd MODAL //OF oWndParent
+
+
+return
+
+
+
+//eof

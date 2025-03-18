@@ -1,0 +1,123 @@
+/** tpy_combobox.xbs   Una mejora de la clase gcombobox de t-gtk. 
+ *                     Se implementa la gestion de comboboxes espejos (mirror) 
+ *                     e hijos (child)
+ */
+
+#include "tpy_class.ch"
+
+
+// Combobox
+#xcommand DEFINE TPY_COMBOBOX [ <oCombo> ]  ;
+                 [ VAR <uVar> ];
+                 [ ITEMS <aItems> ];
+                 [ ON CHANGE <bChange> ];
+                 [ MODEL <oModel> ];
+                 [ FONT <oFont> ];
+                 [ <lExpand: EXPAND> ] ;
+                 [ <lFill: FILL> ] ;
+                 [ PADDING <nPadding> ];
+                 [ <lContainer: CONTAINER> ] ;
+                 [ OF <oParent> ] ;
+                 [ ID <cId> ;
+                 [ RESOURCE <uGlade> ] ];
+                 [ POS <x>,<y>  ];
+                 [ LABELNOTEBOOK <uLabelBook> ];
+                 [ SIZE <nWidth>, <nHeight> ] ;
+                 [ <lEnd: INSERT_END> ] ;
+                 [ <lSecond: SECOND_PANED > ] ;
+                 [ <lResize: RESIZE > ] ;
+                 [ <lShrink: SHRINK > ] ;
+                 [ TABLEATTACH <left_ta>,<right_ta>,<top_ta>,<bottom_ta>[,<xOptions_ta>, <yOptions_ta> ] ] ;
+          => ;
+ [ <oCombo> := ] tpy_Combobox():New( bSetGet( <uVar> ), <aItems>, [ \{|o| <bChange> \} ],<oModel>,;
+              <oFont>, <oParent>, <.lExpand.>, <.lFill.>, <nPadding>,<.lContainer.>,;
+              <x>,<y>, <cId>, <uGlade>, <uLabelBook>, <nWidth>, <nHeight>, <.lEnd.>,;
+              <.lSecond.>, <.lResize.>, <.lShrink.>, <left_ta>,<right_ta>,<top_ta>,<bottom_ta>,;
+              <xOptions_ta>, <yOptions_ta>)
+
+
+CLASS TPY_COMBOBOX FROM GCOMBOBOX
+
+   DATA bRefresh  INIT {||.t.}
+   DATA aActions  INIT {}
+   DATA aChilds   INIT {}
+   DATA lRoot     INIT .f.
+   DATA oComboParent
+
+   METHOD SetRoot()
+   METHOD SetMirror( oComboMirror )
+   METHOD SetChild( oComboChild )
+   METHOD AddAction( bAction )   INLINE  AADD( ::aActions, bAction )
+
+   METHOD Rebuild( aItems, cItem )
+
+ENDCLASS
+
+
+
+METHOD SetRoot()  CLASS TPY_COMBOBOX
+   if ::lRoot ; return .t. ; endif
+   if !hb_isBlock(::bChange) .or. empty( ::bChange )
+      ::bChange := {||.t.}
+   endif
+   AADD( ::aActions, ::bChange )
+   ::bChange := { || AEVAL( ::aActions, { | bBlock | EVAL( bBlock) } ) }
+   ::lRoot := .t.
+RETURN .t.
+
+
+
+METHOD SetChild( oComboChild )  CLASS TPY_COMBOBOX
+   if !hb_isObject( oComboChild ) .or. !oComboChild:IsDerivedFrom( "GCOMBOBOX" )
+      MsgAlert( "Debe indicar un elemento tipo 'Combobox'", "Atención")
+      return .f.
+   endif
+   if !::lRoot ; ::SetRoot() ; endif
+   ::AddAction( {|| EVAL( oComboChild:bRefresh, oComboChild, ::aItems, ::GetText() ) } )
+RETURN .t.
+
+
+
+METHOD SetMirror( oComboMirror )  CLASS TPY_COMBOBOX
+   if !hb_isObject( oComboMirror ) .or. !oComboMirror:IsDerivedFrom( "GCOMBOBOX" )
+      MsgAlert( "Debe indicar un elemento tipo 'Combobox'", "Atención")
+      return .f.
+   endif
+   oComboMirror:Disconnect( "changed" )
+   if !Empty( oComboMirror:aItems ) 
+      oComboMirror:RemoveAll()
+   endif
+   oComboMirror:SetRoot()
+   oComboMirror:oComboParent := self
+   oComboMirror:SetItems( ::aItems )
+
+   AADD( oComboMirror:aActions, { || oComboMirror:oComboParent:SetValue( oComboMirror:GetValue() )  }  )
+
+   ::AddAction( {|| oComboMirror:SetValue( oComboMirror:oComboParent:GetValue() )  } )
+   oComboMirror:Connect( "changed" )
+RETURN .t.
+
+
+
+METHOD Rebuild( aItems, cItem ) CLASS TPY_COMBOBOX
+
+   if !hb_isArray( aItems ) ; return .f. ; endif
+
+   ::Disconnect( "changed" )
+
+   if !Empty( ::aItems ) ; ::RemoveAll() ; endif
+
+   ::SetItems( aItems )
+   if !Empty( cItem )
+      if ( cItem $ aItems )
+         ::setValue( cItem )
+      endif
+   endif
+
+   ::Connect( "changed" )
+   EVAL( ::bChange, self )
+
+RETURN .t.
+
+
+//eof

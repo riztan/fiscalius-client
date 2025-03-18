@@ -1,0 +1,236 @@
+/*
+ *  Proyecto Tpuy.
+ *
+ *  Programa Inicial.   
+ */
+
+
+#include "tpy_xbs.ch"
+
+//#define __TPY_ICON__  oTPuy:cImages + "tpuy-icon-32.png"
+
+/** Intento de hacer compatible la funcion EJECUTAR de Adaptapro con
+ *  la funcion oTPuy:RunXBS() de TPuy
+ */
+function EJECUTAR( oForm, program, ... )
+return oTPuy:RunXBS( program, oForm, ... )
+
+
+Procedure begin()
+
+   LOCAL tTime := hb_DateTime()
+   LOCAL oForm, cIconFile := oTPuy:cImages+"logo.ico"
+
+   SET PUBLIC oForm
+
+   oTPuy:lExit       := .f.      // Banderin para indicar que se ha invocado salida del sistema y
+                                 // evitar que procesos en timer sigan ejecutando.
+   oTpuy:lNetIO      := .f. 
+   oTpuy:tLastNetIO  := tTime    // Ultima conexion a servidor NetIO
+   oTpuy:lNetIOXBSUp := .f.      // Control de Actualización de Scripts
+   oTpuy:tNetIOXBSUp := tTime    // Control de Actualización de Scripts
+   oTpuy:nIntervalUp := 0.005000 // Intervalo de tiempo para Verificar y Actualizar Scripts
+
+   oTPuy:cSystem_Name := "FISCALIUS"
+
+   if FILE( cIconFile )
+      oTPuy:cIconMain := "logo.ico"
+   endif
+
+
+   //-- Buscamos y seleccionamos el tema predeterminado.
+   oTPuy:cTheme := tpy_GetThemeDefault()
+   if oTPuy:cTheme=NIL .or. Empty(oTPuy:cTheme)
+      oTPuy:cTheme       := "Default"
+   endif
+
+   if oTPuy:cOS="WIN"
+      tpy_ChangeTheme()
+   //else
+   //   gtk_rc_parse( "./themes/DarkArte/gtk-2.0/gtkrc" )
+   endif
+
+   oTPuy:oWnd := NIL
+
+   oTPuy:tLastNetCheck  := 0
+
+   oTPuy:oTimer:End() // Desactivamos el timer incluido en el binario de TPuy
+
+   __NetIOUpdate( oForm )
+
+   oTPuy:RunXBS("netio_check")
+
+RETURN
+
+
+
+
+
+/** __NetIOUpdate()
+ *  Evalua si ya a transcurrido el tiempo necesario para
+ *  ejecutar el script de actualizacion automatica de scripts.
+ */
+FUNCTION __NETIOUPDATE( oForm )
+
+   //local nInterval := 0.005000
+   local cScript := "xbs_update"
+   local tTime := hb_DateTime() //SECONDS()
+   local uReturn
+
+   if oTPuy:lExit 
+      oTPuy:oNetIOUpdate:End()
+      return .t.
+   endif
+
+   oTPuy:cTime := LEFT(TIME(),8)
+   if hb_IsObject( oTPuy:oWnd ) 
+//hb_IsObject( oTPuy:oStatusBar )
+      if oTPuy:IsDef("OSTBAR") //.and. hb_IsObject( oTPuy:oStBar ) //.and. oTPuy:oStBar:IsDerivedFrom("TSTATUSBAR")
+         oTPuy:oStBar:Refresh()
+//oTPuy:oWnd:SetTitle( oTPuy:cTime )
+      endif
+      //oTPuy:oStatusBar:SetText( oTPuy:cSystem_Name + " | Hora: "+oTPuy:cTime )
+   endif
+
+
+   if !oTpuy:IsDef("lNetInit") ; oTpuy:lNetInit := .f. ; endif
+
+   if oTpuy:lNetInit
+      If !( ( tTime - oTpuy:tNetIOXBSUp ) > oTpuy:nIntervalUp )
+         return .t.
+      EndIf
+   endif
+
+   // Si no existe el timer, lo creamos.
+   If !oTpuy:IsDef( "oNetIOUpdate" )
+
+      DEFINE TIMER oTpuy:oNetIOUpdate;
+             INTERVAL 1000;
+             ACTION lValor := __NetIOUpdate( oForm );
+
+      ACTIVATE TIMER oTpuy:oNetIOUpdate
+
+   EndIf
+
+   if !hb_IsObject( oTPuy:oWnd ) ; return nil ; endif
+
+   if !File( oTpuy:cXBScript+"netio_check.xbs" ) ; return .f. ; endif 
+
+   //-- Verificamos chequeo de NetIO cada 30 segs
+
+   if oTPuy:tLastNetCheck = 0 .or. ( hb_DateTime() - oTPuy:tLastNetCheck ) >= 30000
+
+      uReturn := oTpuy:RunXBS("netio_check")
+
+      if ValType(uReturn)="L" .and. !uReturn ; return .f. ; endif
+   endif
+
+   /* Actualizamos los Script */
+   //#TODO: Pendiente por retomar la actualización de los scripts desde el timer.
+/*
+   if (hb_DateTime() - oTPuy:tNetIOXBSUp) >= 5000
+View( hb_DateTime()-oTPuy:tNetIOXBSUp )
+      if FILE( oTpuy:cXBScripts+cScript+".xbs" )
+         oTpuy:RunXBS( cScript )
+      else
+         ~~RunXBS( cScript )
+      endif
+
+      oTpuy:tNetIOXBSUp := hb_DateTime() //nSeconds
+
+   endif
+*/
+
+RETURN .T.
+
+
+
+/** Intenta confirmar si el mensaje recibido corresponde a un hash del servidor tpuy
+ */
+function tps_isMessage( uMsg )
+   if hb_IsHash( uMsg ) .and. hb_hHasKey( uMsg, "ok" ) .and. ;
+      hb_hHasKey( uMsg, "content" )
+      return .t.
+   endif
+return .f.
+
+
+
+/** Cambiar el tema
+ */
+Procedure tpy_ChangeTheme( cValue )
+   local setting
+   default cValue := oTPuy:cTheme
+
+   if oTPuy:cOS = "WIN"
+      gtk_rc_parse_string( 'gtk-theme-name = "'+oTPuy:cTheme+'"' )
+   else
+      MsgAlert("Utilidad aún no disponible para este sistema operativo.","Atención.")
+      //#TODO: Revisar como cambiar el tema en GNU/Linux
+      //gtk_rc_parse( '/usr/share/themes/'+cValue+'/gtk-2.0/gtkrc' )
+      //View( FILE( '/usr/share/themes/'+cValue+'/gtk-2.0/gtkrc' ))
+      return
+   endif
+   setting := gtk_settings_get_default()
+   gtk_rc_reset_styles( setting )
+return
+
+
+
+/** Crea Array con lista de temas disponibles.
+ */
+Function tpy_ThemeItems()
+   local aDir, aItem, cDir, aResult := {}, cPrefix
+
+   //View( hb_DirBase() )
+   //View( hb_ProgName() )
+   if oTPuy:cOS = "WIN"
+      cDir := STRTRAN( hb_DirBase(),"\bin\", "" )+"\share\themes\"
+      aDir := Directory( cDir+"*", "D" )
+      cPrefix := "\gtk-2.0\gtkrc"
+   else
+      //cDir := oTPuy:cHomePath + "/.themes/"
+      cDir := "/usr/share/themes/"
+      aDir := Directory( cDir, "D" )
+      cPrefix := "/gtk-2.0/gtkrc"
+   endif
+//View( LEN(aDir) )
+//   if LEN(aDir)<=3
+      AADD( aResult, "Default" )
+//   endif
+   FOR EACH aItem IN aDir
+      if !(aItem[1] == "." .or. aItem[1] == "..")
+         if FILE( cDir+aItem[1]+cPrefix )
+            AADD( aResult, aItem[1] )
+         endif
+      endif
+   NEXT
+
+return aResult 
+
+
+
+/** Busca y retorna el tema definido por defecto en la carpeta "etc" en gtk
+ */ 
+function tpy_GetThemeDefault()
+   local cTheme, cDirBase, cFile, cContent
+
+   if oTPuy:cOS="WIN"
+      cDirBase     := STRTRAN( hb_DirBase(), "\bin\", "")
+      cFile := cDirBase+"\etc\gtk-2.0\gtkrc" 
+      if FILE( cFile )
+         cContent := hb_MemoRead( cFile ) 
+         cTheme := hb_aTokens( cContent, CRLF )[1]
+         cTheme := ALLTRIM( hb_aTokens( cTheme, "=" )[2] )
+         cTheme := STRTRAN( cTheme, '"', "" )
+      endif
+   else
+      //#TODO: Pendiente averiguar como obtener el tema en uso en GNU/Linux
+      cDirBase     := STRTRAN( hb_DirBase(), "/bin/", "")
+      cTheme := "Default" 
+   endif 
+
+return cTheme
+
+//eof
+

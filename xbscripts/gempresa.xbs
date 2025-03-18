@@ -1,0 +1,465 @@
+/** GEmpresa.xbs   Clase para el control de gestión local de la empresa.
+ *                 Esta clase es una forma cómoda local de interactuar con 
+ *                 el objeto remoto de la empresa.
+ */
+
+#include "tpy_class.ch"
+
+#xcommand DEFINE EMPRESA [<oEmpresa>] ;
+          RSESSION <rSession> ;
+          REMPRESA <rEmpresa> => ;
+          [ <oEmpresa> := ] GEmpresa():New( <rSession>, <rEmpresa> )
+
+
+#xcommand DEFINE COMBOBOX_EMPRESA [ <oComboBox> ]  ;
+                 EMPRESA <oEmpresa>                   ;
+                 [ CHILD OF <oComboBoxParent> ] ;
+                 [ ON CHANGE <bChange> ]        ;
+                 OF <oBox>   =>                 ;
+          [ <oComboBox> := ] <oEmpresa>:ComboboxEmpresa( <oBox>, [ \{|o| <bChange> \} ], [<oComboBoxParent>] )
+
+
+CLASS GEMPRESA
+
+   DATA cFile_gEmpresa  
+   DATA cFolder
+
+   DATA rSession        // Session remota
+   DATA rEmpresa        // Empresa en remoto
+   DATA hEmpresa        INIT hb_Hash()
+   DATA oEmpresas       // RQuery (query remoto) de empresas
+   DATA aEmpresas       // Arreglo con nombre de empresas disponibles. Especial para crear un combobox
+   DATA nEmpresas       // Nro de empresas disponibles
+   DATA cEmpresaName    // Nombre de la empresa en uso actual
+   DATA nEmpresaId      // Id de la empresa
+   DATA nChangeEmpresa  INIT 0 // Indica si la empresa se puede cambiar (estado)
+   DATA cURL         // Url de la empresa 
+   DATA cLogoFile    INIT "logo.png"
+
+
+   DATA dLastRemote INIT hb_DateTime()  // Ultimo acceso remoto
+   DATA nInterval   INIT 0.0003   //  Tiempo para actualizar datos remotos
+
+   DATA lInit
+
+   DATA oComboboxEmpresa
+   DATA aActions    INIT {}
+
+   DATA oModelEmpresa
+   DATA oListboxEmpresa
+
+   METHOD New( rSession, rEmpresa ) 
+
+/*
+   METHOD Zone()                     INLINE ::rEmpresa:Zone()
+   METHOD Zones()                    INLINE ::rEmpresa:Zones()
+   METHOD Country()                  INLINE ::rEmpresa:Country()
+   METHOD Countries(cZoneId)         INLINE ::rEmpresa:Countries( cZoneId ) 
+   METHOD States( cCountryId )       INLINE ::rEmpresa:States( cCountryId )
+
+   /* Clientes */
+   METHOD IsCustomer( uCustomerId )  INLINE ::rEmpresa:IsCustomer( uCustomerId )
+   METHOD Customers()                INLINE ::rEmpresa:Customers()
+   METHOD Customer( uCustomerId )    INLINE ::rEmpresa:Customer( uCustomerId )
+*/
+
+   METHOD Help()                     INLINE ::rEmpresa:Help()
+   METHOD Methods()                  INLINE ::rEmpresa:Methods()
+
+   METHOD Clientes( cFiltro )        INLINE ::rEmpresa:Clientes( {"filtro"=>cFiltro} )
+//   METHOD Proveedores()              INLINE ::rEmpresa:Proveedores()
+
+   METHOD Time()   INLINE  hb_DateTime() - ::dLastRemote
+//   METHOD LastProductUpdate()      INLINE ::rEmpresa:LastProductUpdate()
+
+   METHOD Refresh()
+
+   METHOD SetEmpresa( nId, lCombobox )
+
+   METHOD Modulos()                  INLINE ::rEmpresa:Modulos()
+   METHOD SetModulo(cModulo)         INLINE ::rEmpresa:Modulo( cModulo )
+
+   METHOD GetDocDescri( cCadena )    INLINE ::rEmpresa:GetDocDescri( cCadena )
+
+   METHOD LogoFile()                 INLINE ::cLogoFile
+   METHOD LogoUrl()                  INLINE ::cURL+"/img/"+::LogoFile()
+   METHOD GetLogo()
+
+
+   METHOD ModelEmpresa()  
+
+   METHOD SetComboboxEmpresa( oCombobox )  
+
+   METHOD ChangeCombobox( cCombo, lValue )
+   METHOD ChangeEmpresa( lChange )      INLINE ::ChangeCombobox( "empresa",    lChange )
+
+   METHOD LoadFile()
+   METHOD SaveFile()
+
+   METHOD CheckTempDir()
+ENDCLASS
+
+
+
+/** Obtiene el archivo correspondiente al logo de la empresa. Descarga si es necesario.
+*/
+METHOD GetLogo( lForce ) CLASS GEMPRESA
+   local cFile := ::cFolder+::LogoFile()
+   local cError := "", nError 
+
+   default lForce := .f.
+
+//   View( cFile )
+   if !File( cFile ) .or. lForce
+      nError := tpy_download( ::LogoUrl(), cFile, @cError )
+/*      
+      View( cFile )
+      View( nError )
+
+      if nError != 0
+         MsgAlert( "No se logró obtener la imagen (logo) de la empresa, quizás no hay conexión a internet."+CRLF+;
+                   "Sin embargo, puede continuar sin problema.",;
+                   "Información" )
+      endif
+*/
+   endif
+RETURN .t. 
+
+
+
+METHOD ChangeCombobox( cCombo, lValue )  CLASS GEMPRESA
+  if VALTYPE(lValue) != "L"; Return ; endif
+  Do Case
+     Case cCombo="empresa"
+        if lValue 
+           ::nChangeEmpresa--
+        else
+           ::nChangeEmpresa++
+        endif
+        if hb_isObject( ::oComboboxEmpresa )
+           if ::nChangeEmpresa > 0
+              ::oComboboxEmpresa:Disable()
+           else
+              ::oComboboxEmpresa:Enable()
+           endif
+        endif
+     Case cCombo="lang"
+        if lValue 
+           ::nChangeLang--
+        else
+           ::nChangeLang++
+        endif
+        if hb_isObject( ::oComboboxLang )
+           if ::nChangeLang > 0
+              ::oComboboxLang:Disable()
+           else
+              ::oComboboxLang:Enable()
+           endif
+        endif
+  EndCase
+RETURN
+
+
+
+/** Asigna el combobox como el correspondiente a la empresa.
+ */
+METHOD SetComboboxEmpresa( oCombobox )  CLASS GEMPRESA
+   if !hb_IsObject( oCombobox )
+      MsgStop("El valor dado no es un objeto.","Problemas")
+      RETURN .F.
+   endif
+   if !oCombobox:IsDerivedFrom("GCOMBOBOX") 
+      MsgStop("El objeto no corresponde a un combobox","Problemas")
+      RETURN .F.
+   endif
+   ::oComboboxEmpresa := oCombobox
+   ::cEmpresaName := ALLTRIM(::oComboboxEmpresa:GetValue())
+
+RETURN .T.
+
+
+
+/** Crea la instancia del objeto. 
+ */
+METHOD New( rSession, rEmpresa )  CLASS GEMPRESA
+
+   if hb_isNIL( rSession ) .or. Empty( rSession )
+      MsgStop( "Debe indicar la sesión", "No puede continuar" )
+      return NIL
+   endif
+
+   ::rSession := rSession
+
+   if hb_isNIL( rEmpresa ) .or. Empty( rEmpresa )
+      MsgAlert( "Debe indicar la tienda", "Atención" )
+
+      if !oTPuy:IsDef("rEmpresa")
+//         oForm:cEmpresaDefault := oForm:rSession:Configuration()["PS_EMPRESA_DEFAULT"]
+//         oForm:rEmpresa := ::rSession:SetEmpresa(oForm:cEmpresaDefault)
+//         oTPuy:Add("rEmpresa", oForm:rEmpresa )
+//         MsgAlert( "Registrada la tienda predeterminada" )
+      endif
+      return NIL
+   endif
+
+   ::rEmpresa     := rEmpresa
+   ::oEmpresas    := ::rSession:Empresas()
+   ::nEmpresaId   := ::rEmpresa:Id()
+   ::cUrl         := "url" //ALLTRIM(::rEmpresa:URL())
+
+   //::cLogoFile := ::rEmpresa:LogoFile()
+
+   ::cFile_gEmpresa := oTPuy:cTempDir+"gempresa"+hb_MD5(oTPuy:cServer+::cUrl)+".conf"
+
+   ::lInit := .t.
+
+   //-- si hay un archivo con datos de configuraciones, se lee.
+   if FILE( ::cFile_gEmpresa )
+      ::LoadFile()
+//   else
+//      cFile_gEmpresa
+   endif
+
+   //::CheckTempDir()
+
+   ::Refresh()
+
+Return Self
+
+
+
+/** Lee archivo con datos de las empresas, para evitar consultas remotas innecesarias.
+ */
+METHOD LoadFile()  CLASS GEMPRESA
+   local hValues 
+   hValues := hb_Deserialize( hb_MemoRead( ::cFile_gEmpresa ) )
+
+   if hb_HHasKey( hValues, "datetime") ; ::dLastRemote := hValues["datetime"] ; endif
+   if hb_HHasKey( hValues, "hEmpresa"   ) ; ::hEmpresa := hValues["hEmpresa"] ; endif
+RETURN
+
+
+
+/** Guarda información en archivo con datos de empresas. Para uso como caché.
+*/
+METHOD SaveFile()  CLASS GEMPRESA
+   local hValues := hb_Hash()
+
+   hb_HSet( hValues, "datetime", ::dLastRemote )
+   hb_HSet( hValues, "hEmpresa",    ::hEmpresa       )
+RETURN hb_MemoWrit( ::cFile_gEmpresa, hb_Serialize( hValues) )
+
+
+
+METHOD Refresh()  CLASS GEMPRESA
+
+   local aEmpresas := {}, aEmpresa, aIter := ARRAY(4)
+   local cLangNamen
+
+   if (::Time() < ::nInterval) .and. !::lInit 
+      // Todavía no actualiza valores.
+      View("Aun no actualiza")
+      return .f.
+   endif
+
+   ::lInit := .f.
+
+   ::oEmpresas := ::rSession:Empresas()
+   ::nEmpresas := ::oEmpresas:RecCount()
+
+   if ::nEmpresas > 1
+      //AADD( aEmpresas, "Todas" )
+      if hb_isObject( ::oComboboxEmpresa )
+         ::oComboboxEmpresa:Enable()
+      endif
+   elseif ::nEmpresas = 1
+      ::rEmpresa := ::rSession:setEmpresa( ::oEmpresas:Data()[1,1] )
+      ::nEmpresaId := ::rEmpresa:Id()
+      oTPuy:rEmpresa := ::rEmpresa
+      ::cEmpresaName := ::oEmpresas:nombre 
+      if hb_isObject( ::oComboboxEmpresa )
+         ::oComboboxEmpresa:Disable()
+      endif
+   endif 
+
+   FOR EACH aEmpresa IN ::oEmpresas:getData()
+      AADD( aEmpresas, UTF_8(ALLTRIM( aEmpresa[3] )) )
+   NEXT
+
+   ::aEmpresas := aEmpresas
+
+//-- Actualización de valores derivados
+
+   //-- Valores de Idioma.
+   //::LangUpdate()
+
+   //-- Valores de Caja.
+
+//-- Actualización del modelo de datos
+/*   
+   if hb_IsObject( ::oModelEmpresa ) .and. hb_IsObject( ::oListboxEmpresa )
+
+      ::oModelEmpresa:oTreeView:ClearModel(.t.)
+
+      While !::oEmpresas:Eof()
+
+         APPEND LIST_STORE ::oModelEmpresa:oLbx ITER aIter        ;
+                VALUES ALLTRIM(STR( ::oEmpresas:id_empresa )),       ;
+                       ALLTRIM(STR( ::oEmpresas:id_empresa_group )), ;
+                       ALLTRIM(UTF_8( ::oEmpresas:name )),        ;
+                       ALLTRIM(STR( ::oEmpresas:id_category )),   ;
+                       ::oEmpresas:active,                        ;
+                       ::oEmpresas:delete
+
+         ::oEmpresas:Skip()
+      EndDo
+
+   endif
+*/
+   ::dLastRemote := hb_DateTime()
+
+   ::SaveFile()
+
+RETURN .t.
+
+
+
+/** Asigna la empresa a utilizar.
+ */
+METHOD SetEmpresa( uId, lCombobox, oMsgWidget )  CLASS GEMPRESA
+
+   local cEmpresaName, nPos, nId
+
+   default lCombobox := .f.
+
+   if ::nChangeEmpresa>0 .and. ::cEmpresaName != uId
+      MsgAlert("No se puede cambiar la empresa.", "Atención")
+      //-- Restauramos el valor anterior del combobox.
+      if hb_isObject(::oComboboxEmpresa)
+         ::oComboboxEmpresa:SetValue( ::cEmpresaName )
+         //::oComboboxEmpresa:Disable()
+      endif
+      return .f.
+   endif 
+   if ::nChangeEmpresa<=0 .and. hb_isObject(::oComboboxEmpresa)
+      ::oComboboxEmpresa:Enable()
+   endif
+
+   if hb_isObject( oMsgWidget ) 
+      oMsgWidget:SetText("Actualizando información de la empresa...")
+      SysRefresh(.t.)
+   endif
+
+   if lCombobox
+      nPos := ASCAN( ::oEmpresas:Data(), {|a,x| a[6] = uId  } ) 
+   else
+      nPos := ASCAN( ::oEmpresas:Data(), {|a,x| a[1] = uId  } ) 
+   endif
+
+   if nPos = 0
+      MsgStop( "La empresa indicada no existe." )
+      return .f.
+   endif
+
+   nId := ::oEmpresas:Data()[nPos,1]
+   cEmpresaName := ALLTRIM(::oEmpresas:Data()[nPos,6])
+
+   if hb_isNIL( ::oComboboxEmpresa ) //.or. !lCombobox 
+      ::rEmpresa     := ::rSession:setEmpresa( nId )
+      ::nEmpresaId   := ::rEmpresa:Id()
+      ::cEmpresaName := cEmpresaName
+      ::lInit     := .t. // -- forzamos la revisión de todo.
+      ::cURL      := ALLTRIM(::rEmpresa:URL())
+      ::cLogoFile := ::rEmpresa:LogoFile()
+      ::CheckTempDir()
+      ::Refresh()
+      return .t.
+   endif
+
+   if lCombobox
+      ::rEmpresa   := ::rSession:setEmpresa( nId )
+      ::nEmpresaId := ::rEmpresa:Id()
+      ::cURL       := cEmpresaName    // ALLTRIM(::rEmpresa:URL())  // TODO: Crear campo URL en empresas
+      ::cLogoFile  := "logo.png"  // ::rEmpresa:LogoFile() // TODO: Crear metodo para obtener el logo de la empresa
+   else
+      ::oComboboxEmpresa:SetValue( cEmpresaName ) 
+   endif
+   ::cEmpresaName := cEmpresaName
+
+   ::CheckTempDir()
+
+   if hb_isObject( oMsgWidget ) 
+      oMsgWidget:SetText("")
+   endif
+
+RETURN .T.
+
+
+
+/** Retorna los objetos Modelo y Listbox correspondientes a 
+ *  la lista de empresas disponibles 
+ */
+METHOD ModelEmpresa( oWidgetParent )  CLASS GEMPRESA
+
+   ::Refresh()
+
+   if hb_isNIL( ::oModelEmpresa )
+
+      DEFINE MODEL ::oModelEmpresa ;
+             STRUCT ::oEmpresas:Struct() ;
+             DATA   ::oEmpresas:Data()
+
+      DEFINE LISTBOX ::oListboxEmpresa ;
+             MODEL ::oModelEmpresa ;
+             OF oWidgetParent
+
+      ::oListboxEmpresa:Active()
+
+      ::oListboxEmpresa:SetColTitle( 1, "Empresa" )     //id_empresa
+      ::oListboxEmpresa:SetColTitle( 2, "Grupo" )      //id_empresa_group
+      ::oListboxEmpresa:SetColTitle( 3, "Nombre" )     //name
+      ::oListboxEmpresa:SetColTitle( 4, "Categoria" )  //id_category
+      ::oListboxEmpresa:SetColTitle( 5, "Activa" )     //active
+      ::oListboxEmpresa:SetColTitle( 6, "Eliminada" )  //delete
+
+   endif
+
+   oModel := ::oModelEmpresa
+   oLBox  := ::oListboxEmpresa
+
+RETURN { ::oModelEmpresa, ::oListboxEmpresa }
+
+
+
+
+/** Verifica la existencia de la carpeta de archivos temporales de la empresa.
+*/
+METHOD CheckTempDir()  CLASS GEMPRESA
+
+   local cEmpresaPath   := oTPuy:cTempDir+"empresas/"
+   local cFolder     := STRTRAN( oTPuy:cServer,".","")
+   local cEmpresaFolder 
+   
+//   cEmpresaFolder := cFolder+"/"+;
+//                  IIF( VALTYPE(::nEmpresaId)="C",ALLTRIM(::nEmpresaId),ALLTRIM(STR(::nEmpresaId)))
+
+   cEmpresaFolder := cFolder+"/"+::cURL
+
+                  
+   if !hb_DirExists( cEmpresaPath )
+      hb_DirCreate( cEmpresaPath )
+   endif
+
+   if !hb_DirExists( cEmpresaPath+cFolder )
+      hb_DirCreate( cEmpresaPath+cFolder )
+   endif
+
+   if !hb_DirExists( cEmpresaPath+cEmpresaFolder )
+      hb_DirCreate( cEmpresaPath+cEmpresaFolder )
+   endif
+
+   ::cFolder := cEmpresaPath+cEmpresaFolder + "/"
+
+RETURN
+
+//eof

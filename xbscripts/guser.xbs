@@ -1,0 +1,34 @@
+/**
+ *
+ *
+ */
+
+#include "tpy_class.ch"
+
+CLASS GUSER FROM TPUBLIC
+
+//   DATA rHandle   //Enlace al Usuario en remoto
+//   DATA cLogin
+//   DATA cNombre
+//   DATA cCargo
+
+   METHOD New( cHandle, cLogin, cNombre, cCargo )
+
+   METHOD Finalize()  INLINE ~ServerLogout( ::cHandle )
+   
+ENDCLASS
+
+
+
+METHOD New( cHandle, cLogin, cNombre, cCargo ) CLASS GUSER
+
+   ::Super:New()
+
+   ::cHandle := cHandle
+   ::cLogin  := cLogin
+   ::cNombre := cNombre
+   ::cCargo  := cCargo
+
+RETURN Self
+
+//eof

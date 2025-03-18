@@ -1,0 +1,85 @@
+/*
+ *
+ */
+
+#include "xbscripts/guser.xbs"
+
+#include "tpy_xbs.ch"
+#include "connect.ch" // Conexión de fiscalius
+
+procedure test_fiscalius()
+
+   local oForm
+
+   SET PUBLIC oForm
+/*
+   IF !hb_IsArray(oTpuy:aConnection) .OR. Empty(oTpuy:aConnection)
+      oTpuy:RunXBS('initialize','CONNECT')
+   ENDIF
+
+   oServer := oTpuy:aConnection[1]
+
+   View( "Conectado a base de datos de adaptapro!" )
+*/
+oTPuy:lExit := .f.
+oTPuy:RunXBS("netio_check")
+return
+   //-- conectamos con nuestro servidor de fiscalius
+
+   ::lConnect := netio_connect( NETSERVER, NETPORT,, NETPASSWD ) 
+
+   View( ::lconnect )
+
+//   __Login() 
+
+
+//   oServer:End()
+   View( netio_disconnect() )
+   
+
+return
+
+function tps_ismessage()
+return .t.
+
+function _9_Login( oForm )
+   local lRes := .f.
+   local cUsuario := "riztan"
+   local cPass := hb_crypt( "12345", "Sarisariñama")
+   local hResp
+   local cEmpresaId := "001"
+
+   hResp := ~ServerLogin( cUsuario, cPass,"127.0.0.1", "default" )
+   
+   if !hb_isHash( hResp ) .and. hResp["ok"]
+      MsgStop( "hay problemas para obtener los datos desde el servidor." )
+      RETURN lRes
+   endif
+
+//   View( hb_valtoexp( hResp ) )
+
+   oTpuy:oUsuario := gUser():New( hResp["content"]["session_id"],;
+                                  cUsuario, ;
+                                  hResp["content"]["user_data"]["nombre"],;
+                                  hResp["content"]["user_data"]["nombre_corto"] )
+
+   oTPuy:rSession := RSession():New( oTPuy:oUsuario )
+
+View( "cHandle" )
+   View( oTPuy:rSession:cHandle )
+   View( oTPuy:oUsuario:cHandle )
+   View( oTPuy:rSession:Help() )
+return .f.
+   MsgInfo( "Id de Sesion: "+hb_eol()+;
+         oTPuy:rSession:cHandle )  // Id de la sesion en fiscalius_srv.
+
+   // Ahora, vamos a seleccionar la empresa.
+   ::rEmpresa := oTPuy:rSession:SetEmpresa( cEmpresaId ) 
+View( ::rEmpresa:ClassName() )
+   
+   // Veamos si todo va bien.
+   MsgInfo( "Id de la empresa: " + hb_eol() + ::rEmpresa:Help() )
+
+return lRes
+
+//eof
