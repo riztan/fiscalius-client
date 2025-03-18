@@ -4,9 +4,8 @@ Este repositorio contiene el código fuente del cliente de "Fiscalius", un siste
 
 ## Instalación
 1. Descarga el repositorio.
-2. Asegúrate de tener Harbour y T-GTK instalados.
-3. Compila el cliente con: `hbmk2 fiscalius_client.hbp`.
-4. Configura la URL del servidor: `https://api.fiscalius.com/v1/`.
+2. Asegúrate de tener TPuy instalado.
+3. Ejecuta el cliente con: `tpuy`.
 
 ## API
 Consulta la documentación de la API en `docs/api.md`.
