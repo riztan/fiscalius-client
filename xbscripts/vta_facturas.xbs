@@ -22,7 +22,7 @@ procedure vta_facturas( oFormParent )
 
    DEFINE WINDOW ::oFacWnd ;
           TITLE "Fiscalius. Factura" ;
-          SIZE 750,500 ;
+          SIZE 800,550 ;
           ID "window1" RESOURCE ::oRes
 
 
@@ -40,6 +40,11 @@ procedure vta_facturas( oFormParent )
 
    DEFINE BOX ::oBoxFactura ID "vbox_factura" RESOURCE ::oRes
           ::oBoxFactura:Hide()
+
+   DEFINE BUTTON ::oBtn ACTION __vtaFactura( oForm, oFormParent, ::oBoxFactura, ::oModFacturas, .T.  ) ;
+          ID "btn_add" RESOURCE ::oRes
+   //::oLBoxFacs:bEdit := {|oModel| __vtaFactura( oForm, oFormParent, ::oBoxFactura, oModel, .F. ) }
+ 
 
    //-------------------------
    DEFINE LABEL ::oLabNumero ID "lab_numero" RESOURCE ::oRes
@@ -136,7 +141,7 @@ procedure vta_facturas( oFormParent )
           OF      ::oBoxData
 
    ::oLBoxFacs:lBar  := .f.
-   ::oLBoxFacs:bEdit := {|oModel| __vtaFactura( oForm, oFormParent, ::oBoxFactura, oModel ) }
+   ::oLBoxFacs:bEdit := {|oModel| __vtaFactura( oForm, oFormParent, ::oBoxFactura, oModel, .F. ) }
 
    ::oLBoxFacs:Active() 
 
@@ -157,17 +162,30 @@ return
 
 
 
-procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel )
+procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
+
+   default lNew := .T.
 
    //View( oModel:GetCol("numero") )
 
-   ::oLabNumero:SetValue( oModel:GetCol("numero") )
-   ::oEntCli:SetValue( oModel:GetCol("Cliente") )
-   ::oEntFecha:SetValue( oModel:GetCol("fecha") )
-   ::oEntVcmto:SetValue(  oModel:GetCol(5) )
-   ::oEntMonBase:SetValue(  oModel:GetCol("monto base") )
+   if lNew 
+      ::oLabNumero:SetValue( "" )
+      ::oEntCli:SetValue( "" )
+      ::oEntFecha:SetValue( DTOC(DATE()) )
+      ::oEntVcmto:SetValue(  DTOC(DATE()) )
+      ::oEntMonBase:SetValue( "0" )
    
-   ::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
+      ::oEntTotal:SetValue( "0" )
+      ::oEntRetIva:SetValue( "" )
+   else
+      ::oLabNumero:SetValue( oModel:GetCol("numero") )
+      ::oEntCli:SetValue( oModel:GetCol("Cliente") )
+      ::oEntFecha:SetValue( oModel:GetCol("fecha") )
+      ::oEntVcmto:SetValue(  oModel:GetCol(5) )
+      ::oEntMonBase:SetValue(  oModel:GetCol("monto base") )
+   
+      ::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
+   endif
 
    oBoxFactura:Show()
 
