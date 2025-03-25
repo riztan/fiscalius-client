@@ -6,9 +6,11 @@
 
 procedure vta_facturas( oFormParent )
 
-   local oForm, cEntCli
+   local oForm, cEntCli //, lConfirm := .T.
 
    SET PUBLIC oForm
+
+   ::lConfirm := .T.
 
    ::rVentas := oFormParent:oGEmpresa:SetModulo("Ventas")
    ::rFacturas := ::rVentas:Facturas()
@@ -74,10 +76,11 @@ procedure vta_facturas( oFormParent )
    DEFINE BOX ::oBoxEstado ID "box_estado" RESOURCE ::oRes
 
    ::aComboEstado := {"Borrador","Anulada","Cerrada"}
-   ::cCombo := ""
+   ::cComboEstado := ""
    DEFINE COMBOBOX ::oComboEstado ;
           VAR ::cComboEstado ITEMS ::aComboEstado ;
-          ON CHANGE MsgInfo("estado") ;
+          ON CHANGE ( ; //::cComboEstado := LEFT(::oComboEstado:GetValue(),1), ;
+                      __ChangeEstado( oForm, ::lConfirm ) ) ;
           OF ::oBoxEstado
           
    // -- Caja de Montos
@@ -161,33 +164,117 @@ return
 
 
 
+procedure __ChangeEstado( oForm, lConfirm )
+   //MsgInfo( ::cComboEstado )
+   if ::cComboEstado = "Anulada" .or. ;
+      ::cComboEstado = "Cerrada"
+      __FactRefresh( oForm, lConfirm )
+   else
+      __FactRefresh( oForm, !lConfirm )
+   endif
+return
+
+
+
 
 procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
+
+   local lPreConfirm := ::lConfirm
 
    default lNew := .T.
 
    //View( oModel:GetCol("numero") )
 
+
    if lNew 
+      ::lLoad := .F.
+      ::lSave := .F.
+      ::rFactura := ::rVentas:Factura('')
+      ::hFactura := ::rFactura:Data()
+
       ::oLabNumero:SetValue( "" )
       ::oEntCli:SetValue( "" )
       ::oEntFecha:SetValue( DTOC(DATE()) )
       ::oEntVcmto:SetValue(  DTOC(DATE()) )
       ::oEntMonBase:SetValue( "0" )
+
+      ::oComboEstado:SetValue("Borrador", .F. ) 
+      ::cComboEstado := "B"
    
       ::oEntTotal:SetValue( "0" )
       ::oEntRetIva:SetValue( "" )
+
    else
+      ::lLoad := .T. // Consultando el documento.
+      ::lSave := .F.
+      ::rFactura := ::rVentas:Factura( oModel:GetCol("numero") )
+      ::hFactura := ::rFactura:Data()
+
       ::oLabNumero:SetValue( oModel:GetCol("numero") )
       ::oEntCli:SetValue( oModel:GetCol("Cliente") )
       ::oEntFecha:SetValue( oModel:GetCol("fecha") )
       ::oEntVcmto:SetValue(  oModel:GetCol(5) )
       ::oEntMonBase:SetValue(  oModel:GetCol("monto base") )
-   
+
+      ::lConfirm := .F.
+      do case
+      case ::hFactura["estado"] = "B"
+         ::oComboEstado:SetValue( "Borrador" )
+      case ::hFactura["estado"] = "A"
+         ::oComboEstado:SetValue( "Anulada"  )
+      case ::hFactura["estado"] = "C"
+         ::oComboEstado:SetValue( "Cerrada"  )
+      endcase
+      ::lConfirm := lPreconfirm
+
       ::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
+
    endif
 
+   __FactRefresh( oForm, .F. )
+
+//View( ::hFactura )
+
+
    oBoxFactura:Show()
+
+return
+
+
+
+procedure __FactRefresh( oForm, lConfirm )
+
+   default lConfirm := .F.
+
+   if lConfirm
+      if !MsgNoYes( "¿Confirma el cambio de estado de la factura?" )
+         ::oComboEstado:setValue("Borrador")
+      endif
+   endif
+
+
+   if (::hFactura["estado"] = "A" .or. ::hFactura["estado"] = "C") .or. ;
+      ( ::cComboEstado = "A" .or. ::cComboEstado = "C" )
+      ::oEntCli:Disable()
+      ::oEntFecha:Disable()
+      ::oEntVcmto:Disable()
+      ::oEntMonBase:Disable()
+      if ::lSave .or. ::lLoad
+         ::oComboEstado:Disable()
+      //else
+      //   ::oComboEstado:Disable()
+      endif
+   else
+      ::oEntCli:Enable()
+      ::oEntFecha:Enable()
+      ::oEntVcmto:Enable()
+      ::oEntMonBase:Enable()
+      if !::lSave
+         ::oComboEstado:Enable()
+      //else
+      //   ::oComboEstado:Enable()
+      endif
+   endif
 
 return
 
