@@ -21,7 +21,8 @@ FUNCTION netio_check()
      return .f.
   endif
 
-  if !oTPuy:lNetIO .and. !oTPuy:lExit
+  if (!oTPuy:lNetIO .and. !oTPuy:lExit ) .or. ;
+     netio_GetConnection( NETSERVER, NETPORT,, NETPASSWD ) = NIL
 
      try
         oMsgRun := MsgRunStart("Conectando al Servidor...")
