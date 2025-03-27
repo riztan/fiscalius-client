@@ -6,9 +6,13 @@
 
 procedure vta_facturas( oFormParent )
 
-   local oForm, cEntCli //, lConfirm := .T.
+   local oForm, cEntCli 
 
    SET PUBLIC oForm
+
+   if !oTpuy:RunXBS("netio_check")
+      MsgStop("Problemas para continuar...")
+   endif
 
    ::lConfirm := .T.
 
@@ -82,6 +86,10 @@ procedure vta_facturas( oFormParent )
           ON CHANGE ( ; //::cComboEstado := LEFT(::oComboEstado:GetValue(),1), ;
                       __ChangeEstado( oForm, ::lConfirm ) ) ;
           OF ::oBoxEstado
+
+   //-- Detalles de la factura
+   DEFINE BOX ::oBoxDetalles ID "box_detalles" RESOURCE ::oRes
+
           
    // -- Caja de Montos
    DEFINE BOX ::oBoxMontos ID "box_montos" RESOURCE ::oRes
@@ -134,7 +142,6 @@ procedure vta_facturas( oFormParent )
 
 
    //-------------------------
-
    DEFINE MODEL  ::oModFacturas ;
           STRUCT ::rFacturas:Struct() ;
           DATA   ::rFacturas:GetData()
@@ -191,6 +198,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::lSave := .F.
       ::rFactura := ::rVentas:Factura('')
       ::hFactura := ::rFactura:Data()
+      ::rFactDetal := ::rFactura:Detal()
 
       ::oLabNumero:SetValue( "" )
       ::oEntCli:SetValue( "" )
@@ -204,11 +212,13 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntTotal:SetValue( "0" )
       ::oEntRetIva:SetValue( "" )
 
+
    else
       ::lLoad := .T. // Consultando el documento.
       ::lSave := .F.
       ::rFactura := ::rVentas:Factura( oModel:GetCol("numero") )
       ::hFactura := ::rFactura:Data()
+      ::rFactDetal := ::rFactura:Detal()
 
       ::oLabNumero:SetValue( oModel:GetCol("numero") )
       ::oEntCli:SetValue( oModel:GetCol("Cliente") )
@@ -231,10 +241,23 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    endif
 
+   if !hb_isObject( ::oModDetal )
+      DEFINE MODEL   ::oModDetal           ;
+             STRUCT  ::rFactDetal:Struct() ;
+             DATA    ::rFactDetal:GetData()
+   
+      DEFINE LISTBOX ::oLBoxDetal ;
+             MODEL   ::oModDetal  ;
+             OF      ::oBoxDetalles
+
+      ::oLBoxDetal:lBar  := .f.
+      ::oLBoxDetal:Active()
+
+   endif
+
    __FactRefresh( oForm, .F. )
 
 //View( ::hFactura )
-
 
    oBoxFactura:Show()
 

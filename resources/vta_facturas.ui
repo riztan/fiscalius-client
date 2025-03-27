@@ -80,95 +80,94 @@
           </packing>
         </child>
         <child>
-          <object class="GtkHBox" id="hbox3">
+          <object class="GtkHPaned" id="hpaned1">
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
+            <property name="can_focus">True</property>
             <child>
-              <object class="GtkVBox" id="vbox2">
+              <object class="GtkExpander" id="expander1">
                 <property name="visible">True</property>
-                <property name="can_focus">False</property>
+                <property name="can_focus">True</property>
+                <property name="expanded">True</property>
                 <child>
-                  <object class="GtkExpander" id="expander1">
+                  <object class="GtkFrame" id="frame5">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="expanded">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label_xalign">0</property>
+                    <property name="shadow_type">none</property>
                     <child>
-                      <object class="GtkFrame" id="frame5">
+                      <object class="GtkAlignment" id="alignment5">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label_xalign">0</property>
-                        <property name="shadow_type">none</property>
+                        <property name="left_padding">12</property>
                         <child>
-                          <object class="GtkAlignment" id="alignment5">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="left_padding">12</property>
-                            <child>
-                              <object class="GtkVBox" id="boxdata">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                              </object>
-                            </child>
-                          </object>
-                        </child>
-                        <child type="label">
-                          <object class="GtkHBox" id="hbox25">
+                          <object class="GtkVBox" id="boxdata">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
-                              <object class="GtkLabel" id="label25">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">&lt;i&gt;Documentos &lt;/i&gt;</property>
-                                <property name="use_markup">True</property>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkButton" id="btn_add">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="receives_default">True</property>
-                                <child>
-                                  <object class="GtkImage" id="image3">
-                                    <property name="visible">True</property>
-                                    <property name="sensitive">False</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="stock">gtk-add</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">1</property>
-                              </packing>
+                              <placeholder/>
                             </child>
                           </object>
                         </child>
                       </object>
                     </child>
                     <child type="label">
-                      <object class="GtkLabel" id="label2">
+                      <object class="GtkHBox" id="hbox25">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">expander</property>
+                        <child>
+                          <object class="GtkLabel" id="label25">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">&lt;i&gt;Documentos &lt;/i&gt;</property>
+                            <property name="use_markup">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btn_add">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="receives_default">True</property>
+                            <child>
+                              <object class="GtkImage" id="image3">
+                                <property name="visible">True</property>
+                                <property name="sensitive">False</property>
+                                <property name="can_focus">False</property>
+                                <property name="stock">gtk-add</property>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
                       </object>
                     </child>
                   </object>
-                  <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
-                  </packing>
                 </child>
+                <child type="label">
+                  <object class="GtkLabel" id="label2">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">expander</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="resize">True</property>
+                <property name="shrink">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkVBox" id="vbox2">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
                 <child>
                   <object class="GtkVBox" id="vbox_factura">
                     <property name="visible">True</property>
@@ -217,6 +216,7 @@
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="invisible_char">●</property>
+                                            <property name="invisible_char_set">True</property>
                                             <property name="secondary_icon_stock">gtk-find</property>
                                             <property name="primary_icon_activatable">False</property>
                                             <property name="secondary_icon_activatable">True</property>
@@ -310,7 +310,7 @@
                                         </child>
                                       </object>
                                       <packing>
-                                        <property name="expand">True</property>
+                                        <property name="expand">False</property>
                                         <property name="fill">True</property>
                                         <property name="position">0</property>
                                       </packing>
@@ -358,6 +358,7 @@
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="invisible_char">●</property>
+                                                <property name="invisible_char_set">True</property>
                                                 <property name="secondary_icon_name">images/calendar_green_16.png</property>
                                                 <property name="primary_icon_activatable">False</property>
                                                 <property name="secondary_icon_activatable">True</property>
@@ -399,6 +400,7 @@
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="invisible_char">●</property>
+                                                <property name="invisible_char_set">True</property>
                                                 <property name="secondary_icon_name">images/calendar_red_16.png</property>
                                                 <property name="primary_icon_activatable">False</property>
                                                 <property name="secondary_icon_activatable">True</property>
@@ -458,21 +460,27 @@
                                         </child>
                                       </object>
                                       <packing>
-                                        <property name="expand">True</property>
+                                        <property name="expand">False</property>
                                         <property name="fill">True</property>
                                         <property name="position">1</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkHSeparator" id="hseparator1">
+                                      <object class="GtkVBox" id="box_detalles">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <child>
+                                          <placeholder/>
+                                        </child>
                                       </object>
                                       <packing>
-                                        <property name="expand">False</property>
+                                        <property name="expand">True</property>
                                         <property name="fill">True</property>
                                         <property name="position">2</property>
                                       </packing>
+                                    </child>
+                                    <child>
+                                      <placeholder/>
                                     </child>
                                     <child>
                                       <object class="GtkHBox" id="hbox11">
@@ -516,6 +524,7 @@
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
@@ -556,6 +565,7 @@
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
@@ -596,6 +606,7 @@
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
@@ -636,6 +647,7 @@
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
@@ -677,6 +689,7 @@
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
@@ -755,6 +768,7 @@
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
@@ -795,6 +809,7 @@
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
@@ -841,6 +856,7 @@
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
@@ -881,6 +897,7 @@
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
@@ -980,6 +997,7 @@
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
@@ -1020,6 +1038,7 @@
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
                                                             <property name="primary_icon_sensitive">True</property>
@@ -1063,78 +1082,65 @@
                                         </child>
                                       </object>
                                       <packing>
-                                        <property name="expand">True</property>
+                                        <property name="expand">False</property>
                                         <property name="fill">True</property>
                                         <property name="padding">3</property>
-                                        <property name="position">3</property>
+                                        <property name="position">4</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkHBox" id="hbox10">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">False</property>
-                                        <property name="border_width">4</property>
-                                        <child>
-                                          <placeholder/>
-                                        </child>
-                                        <child>
-                                          <object class="GtkHButtonBox" id="hbuttonbox1">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="spacing">5</property>
-                                            <property name="layout_style">end</property>
-                                            <child>
-                                              <object class="GtkButton" id="btn_guardar">
-                                                <property name="label" translatable="yes">_Guardar</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="receives_default">True</property>
-                                                <property name="use_underline">True</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkButton" id="btn_cancelar">
-                                                <property name="label" translatable="yes">_Cancelar</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="receives_default">True</property>
-                                                <property name="use_underline">True</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                          </object>
-                                          <packing>
-                                            <property name="expand">True</property>
-                                            <property name="fill">True</property>
-                                            <property name="position">1</property>
-                                          </packing>
-                                        </child>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">True</property>
-                                        <property name="fill">True</property>
-                                        <property name="position">4</property>
-                                      </packing>
+                                      <placeholder/>
                                     </child>
                                   </object>
                                 </child>
                               </object>
                             </child>
                             <child type="label">
-                              <object class="GtkLabel" id="label3">
+                              <object class="GtkHBox" id="hbox26">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">&lt;i&gt;Datos de la Factura &lt;/i&gt;</property>
-                                <property name="use_markup">True</property>
+                                <property name="spacing">3</property>
+                                <child>
+                                  <object class="GtkLabel" id="label3">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="label" translatable="yes">&lt;i&gt;Datos de la Factura &lt;/i&gt;</property>
+                                    <property name="use_markup">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="btn_guardar">
+                                    <property name="label" translatable="yes">_Guardar</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                    <property name="use_underline">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">False</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="btn_cancelar">
+                                    <property name="label" translatable="yes">_Cancelar</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                    <property name="use_underline">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">False</property>
+                                    <property name="position">2</property>
+                                  </packing>
+                                </child>
                               </object>
                             </child>
                           </object>
@@ -1156,18 +1162,17 @@
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
-                    <property name="position">1</property>
+                    <property name="position">0</property>
                   </packing>
+                </child>
+                <child>
+                  <placeholder/>
                 </child>
               </object>
               <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
+                <property name="resize">True</property>
+                <property name="shrink">True</property>
               </packing>
-            </child>
-            <child>
-              <placeholder/>
             </child>
           </object>
           <packing>
