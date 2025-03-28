@@ -60,10 +60,12 @@ procedure vta_facturas( oFormParent )
 
    ::dFecha := DATE()
    DEFINE ENTRY TYPE DATE ::oEntFecha VAR ::dFecha CALENDAR ;
+          VALID __FactValFecha( oForm ) ;
           ID "ent_fecha" RESOURCE ::oRes
 
    ::dVcmto := DATE()
    DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::dVcmto CALENDAR ;
+          VALID __FactValFecha( oForm ) ;
           ID "ent_vcmto" RESOURCE ::oRes
 
    DEFINE BOX ::oBoxCondicion ID "box_condicion" RESOURCE ::oRes
@@ -110,6 +112,11 @@ procedure vta_facturas( oFormParent )
           ID "ent_monbase" RESOURCE ::oRes 
    ::oEntMonBase:Justify( GTK_JUSTIFY_RIGHT )
 
+   ::nMontoIvaE := 0
+   DEFINE MONEY ENTRY ::oEntIvaE VAR ::nMontoIvaE ;
+          ID "ent_exento" RESOURCE ::oRes 
+   ::oEntIvaE:Justify( GTK_JUSTIFY_RIGHT )
+
    ::nMontoIvaR := 0
    DEFINE MONEY ENTRY ::oEntIvaR VAR ::nMontoIvaR ;
           ID "ent_ivared" RESOURCE ::oRes 
@@ -124,6 +131,7 @@ procedure vta_facturas( oFormParent )
    DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ;
           ID "ent_montotal" RESOURCE ::oRes 
    ::oEntTotal:Justify( GTK_JUSTIFY_RIGHT )
+   ::oEntTotal:SetEditable( .F. )
 
 
    // -- Caja de Retenciones
@@ -177,6 +185,17 @@ function __FactExit(oForm)
 return .F.
 
 
+function __FactValFecha( oForm )
+   local lRes := .t.
+
+   if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
+      MsgAlert( "La fecha indicada es incorrecta. Por favor revise." )
+      lRes := .F.
+   endif
+   //DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::dVcmto CALENDAR ;
+
+return lRes
+
 
 procedure __ChangeEstado( oForm, lConfirm )
    if ::cComboEstado = "Anulada" .or. ;
@@ -189,15 +208,15 @@ return
 
 
 
-
+//-- Este procedimiento se ejecuta al solicitar una factura nueva o seleccionar 
+//   una factura para consultar y/o editar.
 procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    local lPreConfirm := ::lConfirm
-   local aData, aLine, aIter := ARRAY(4)
+   local aData, aLine, bCode
+   local hMontos := hb_hash()
 
    default lNew := .T.
-
-   //View( oModel:GetCol("numero") )
 
    if lNew 
       ::lLoad      := .F.
@@ -210,6 +229,10 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntCli:SetValue( "" )
       ::oEntFecha:SetValue( DTOC(DATE()) )
       ::oEntVcmto:SetValue( DTOC(DATE()) )
+
+      ::oEntIvaE:SetValue( "0" )
+      ::oEntIvaR:SetValue( "0" )
+      ::oEntIvaG:SetValue( "0" )
       ::oEntMonBase:SetValue( "0" )
 
       ::oComboEstado:SetValue("Borrador", .F. ) 
@@ -342,11 +365,43 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    endif
 
+
+   ::oEntMonBase:SetValue("0")
+   bCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm ) }
+   ::oLBoxDetal:ForEach( bCode )
+
+      //::oEntMonBase:SetValue( "0" )
    __FactRefresh( oForm, .F. )
 
 //View( ::hFactura )
 
    oBoxFactura:Show()
+
+return
+
+
+
+procedure __CalMontos( oTView, pModel, aIter, oForm )
+   local nBase, nMonto, nTotal
+
+   nMonto := ToNum( oTView:GetAutoValue( 8, aIter ) )
+   nBase  := ToNum( ::oEntMonBase:GetValue() )
+   nTotal := ROUND( nBase+nMonto, 2 )
+   ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
+
+   if ToNum( oTView:GetAutoValue( 9, aIter )) = 16  // <-- ToDo: Usar Datos de IVA
+      nMonto := ToNum( oTView:GetAutoValue( 10, aIter ) )
+      nBase  := ToNum( ::oEntIvaG:GetValue() )
+      nTotal := ROUND( nBase+nMonto, 2 )
+      ::oEntIvaG:SetValue( TRANSFORM( nTotal, P_92 ) )
+   endif
+
+   nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
+             ToNum( ::oEntIvaE:GetValue() ) +;
+             ToNum( ::oEntIvaR:GetValue() ) +;
+             ToNum( ::oEntIvaG:GetValue() ), 2 ) 
+            
+   ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
 
 return
 
@@ -362,13 +417,16 @@ procedure __FactRefresh( oForm, lConfirm )
       endif
    endif
 
+   ::oEntIvaE:SetEditable( .F. )
+   ::oEntIvaR:SetEditable( .F. )
+   ::oEntIvaG:SetEditable( .F. )
+   ::oEntMonBase:SetEditable( .F. )
 
    if (::hFactura["estado"] = "A" .or. ::hFactura["estado"] = "C") .or. ;
       ( ::cComboEstado = "A" .or. ::cComboEstado = "C" )
       ::oEntCli:Disable()
       ::oEntFecha:Disable()
       ::oEntVcmto:Disable()
-      ::oEntMonBase:Disable()
       if ::lSave .or. ::lLoad
          ::oComboEstado:Disable()
       //else
@@ -378,7 +436,6 @@ procedure __FactRefresh( oForm, lConfirm )
       ::oEntCli:Enable()
       ::oEntFecha:Enable()
       ::oEntVcmto:Enable()
-      ::oEntMonBase:Enable()
       if !::lSave
          ::oComboEstado:Enable()
       //else
