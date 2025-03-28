@@ -82,8 +82,7 @@ procedure vta_facturas( oFormParent )
    ::cComboEstado := ""
    DEFINE COMBOBOX ::oComboEstado ;
           VAR ::cComboEstado ITEMS ::aComboEstado ;
-          ON CHANGE ( ; //::cComboEstado := LEFT(::oComboEstado:GetValue(),1), ;
-                      __ChangeEstado( oForm, ::lConfirm ) ) ;
+          ON CHANGE ( __ChangeEstado( oForm, ::lConfirm ) ) ;
           OF ::oBoxEstado
 
    //-- Detalles de la factura
@@ -107,27 +106,24 @@ procedure vta_facturas( oFormParent )
 
    DEFINE BOX ::oBoxMonBase HOMO OF ::oBoxMontos
 
-   //DEFINE LABEL ::oLabMonBase TEXT "Monto Base:" OF ::oBoxMonBase
    ::nMontoBase := 0
-   DEFINE MONEY ENTRY ::oEntMonBase VAR ::nMontoBase ID "ent_monbase" RESOURCE ::oRes //OF ::oBoxMonBase
+   DEFINE MONEY ENTRY ::oEntMonBase VAR ::nMontoBase ;
+          ID "ent_monbase" RESOURCE ::oRes 
    ::oEntMonBase:Justify( GTK_JUSTIFY_RIGHT )
 
-   //DEFINE BOX ::oBoxIvaR HOMO OF ::oBoxMontos
    ::nMontoIvaR := 0
-   //DEFINE LABEL ::oLabIvaR TEXT "Iva Reducido:" OF ::oBoxIvaR
-   DEFINE MONEY ENTRY ::oEntIvaR VAR ::nMontoIvaR ID "ent_ivared" RESOURCE ::oRes //OF ::oBoxIvaR
+   DEFINE MONEY ENTRY ::oEntIvaR VAR ::nMontoIvaR ;
+          ID "ent_ivared" RESOURCE ::oRes 
    ::oEntIvaR:Justify( GTK_JUSTIFY_RIGHT )
 
-   //DEFINE BOX ::oBoxIvaG HOMO OF ::oBoxMontos
    ::nMontoIvaG := 0
-   //DEFINE LABEL ::oLabIvaG TEXT "Iva General:" OF ::oBoxIvaG
-   DEFINE MONEY ENTRY ::oEntIvaG VAR ::nMontoIvaG ID "ent_ivagen" RESOURCE ::oRes //OF ::oBoxIvaG
+   DEFINE MONEY ENTRY ::oEntIvaG VAR ::nMontoIvaG ;
+          ID "ent_ivagen" RESOURCE ::oRes 
    ::oEntIvaG:Justify( GTK_JUSTIFY_RIGHT )
 
-   //DEFINE BOX ::oBoxTotal HOMO OF ::oBoxMontos
    ::nMontoTotal := 0
-   //DEFINE LABEL ::oLabTotal TEXT "Total:" OF ::oBoxTotal
-   DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ID "ent_montotal" RESOURCE ::oRes //OF ::oBoxTotal
+   DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ;
+          ID "ent_montotal" RESOURCE ::oRes 
    ::oEntTotal:Justify( GTK_JUSTIFY_RIGHT )
 
 
@@ -135,22 +131,11 @@ procedure vta_facturas( oFormParent )
    DEFINE BOX ::oBoxRet ID "box_retiva" RESOURCE ::oRes
 
    ::cRetIva := "202503100123"
-   DEFINE DOCUMENT ENTRY ::oEntRetIva VAR ::cRetIva ID "ent_retivanum" RESOURCE ::oRes
+   DEFINE DOCUMENT ENTRY ::oEntRetIva VAR ::cRetIva ;
+          ID "ent_retivanum" RESOURCE ::oRes
    ::oRetIvaFecha := DATE()
-   DEFINE DATE ENTRY ::oEntRetIvaF VAR ::dRetIvaFecha ID "ent_retivaf" RESOURCE ::oRes
-
-   /*
-   DEFINE BOX ::oBoxRetIva0 HOMO OF ::oBoxRet
-   DEFINE LABEL ::oLabRetIva TEXT "Retención de Iva Nro: " OF ::oBoxRetIva0
-   ::cRetIva := "202503100234"
-   DEFINE DOCUMENT ENTRY ::oEntRetIva VAR ::cRetIva OF ::oBoxRetIva0
-
-   DEFINE BOX ::oBoxRetIva1 HOMO OF ::oBoxRet
-   DEFINE LABEL ::oLabRetIvaF TEXT "Fecha: " OF ::oBoxRetIva1
-   ::dRetIvaFecha := DATE()
-   DEFINE DATE ENTRY ::oEntRetIvaF VAR ::dRetIvaFecha OF ::oBoxRetIva1
-   */
-
+   DEFINE DATE ENTRY ::oEntRetIvaF VAR ::dRetIvaFecha ;
+          ID "ent_retivaf" RESOURCE ::oRes
 
    //-------------------------
    DEFINE MODEL  ::oModFacturas ;
@@ -183,7 +168,6 @@ return
 
 
 procedure __ChangeEstado( oForm, lConfirm )
-   //MsgInfo( ::cComboEstado )
    if ::cComboEstado = "Anulada" .or. ;
       ::cComboEstado = "Cerrada"
       __FactRefresh( oForm, lConfirm )
@@ -202,7 +186,6 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    default lNew := .T.
 
    //View( oModel:GetCol("numero") )
-
 
    if lNew 
       ::lLoad := .F.
