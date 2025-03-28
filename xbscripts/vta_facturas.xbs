@@ -28,9 +28,8 @@ procedure vta_facturas( oFormParent )
 
    DEFINE WINDOW ::oFacWnd ;
           TITLE "Fiscalius. Factura" ;
-          SIZE 950,600 ;
+          SIZE 1000,600 ;
           ID "window1" RESOURCE ::oRes
-
 
    DEFINE IMAGE ::oImgBanner ;
           FILE oTPuy:cImages+"banner_02.png" ;
@@ -161,9 +160,21 @@ procedure vta_facturas( oFormParent )
 
    //::oLBoxFacs:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 
-   ACTIVATE WINDOW ::oFacWnd MODAL
+   //-- Botones varios.
+   DEFINE BUTTON ::oBtnSalir ACTION ::oFacWnd:End();
+          ID "btn_salir" RESOURCE ::oRes
+
+   ACTIVATE WINDOW ::oFacWnd MODAL VALID __FactExit(oForm)
 
 return
+
+
+function __FactExit(oForm)
+   if MsgNoYes("¿Realmente desea salir?")
+      oForm:Release()
+      return .T.
+   endif
+return .F.
 
 
 
@@ -182,16 +193,17 @@ return
 procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    local lPreConfirm := ::lConfirm
+   local aData, aLine, aIter := ARRAY(4)
 
    default lNew := .T.
 
    //View( oModel:GetCol("numero") )
 
    if lNew 
-      ::lLoad := .F.
-      ::lSave := .F.
-      ::rFactura := ::rVentas:Factura('')
-      ::hFactura := ::rFactura:Data()
+      ::lLoad      := .F.
+      ::lSave      := .F.
+      ::rFactura   := ::rVentas:Factura('')
+      ::hFactura   := ::rFactura:Data()
       ::rFactDetal := ::rFactura:Detal()
 
       ::oLabNumero:SetValue( "" )
@@ -211,10 +223,10 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       endif
 
    else
-      ::lLoad := .T. // Consultando el documento.
-      ::lSave := .F.
-      ::rFactura := ::rVentas:Factura( oModel:GetCol("numero") )
-      ::hFactura := ::rFactura:Data()
+      ::lLoad      := .T. // Consultando el documento.
+      ::lSave      := .F.
+      ::rFactura   := ::rVentas:Factura( oModel:GetCol("numero") )
+      ::hFactura   := ::rFactura:Data()
       ::rFactDetal := ::rFactura:Detal()
 
       ::oLabNumero:SetValue( oModel:GetCol("numero") )
@@ -239,10 +251,39 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    endif
 
    if !hb_isObject( ::oModDetal )
-      DEFINE MODEL   ::oModDetal           ;
-             STRUCT  ::rFactDetal:Struct() ;
-             DATA    ::rFactDetal:GetData()
-   
+
+      if !hb_isNIL( ::rFactDetal )
+
+         DEFINE MODEL   ::oModDetal           ;
+                STRUCT  ::rFactDetal:Struct() ;
+                DATA    ::rFactDetal:GetData()
+      else
+
+         DEFINE MODEL   ::oModDetal           ;
+                STRUCT  {{"detalle_id",     "N",10, 0},;
+                         {"documento" ,     "N",10, 0},;
+                         {"codigo_local",   "C",10, 0},;
+                         {"descripcion",    "C",100,0},;
+                         {"cantidad",       "N",10, 0},;
+                         {"precio_unitario","N",10, 2},;
+                         {"descuento",      "N",10, 2},;
+                         {"subtotal",       "N",10, 2},;
+                         {"iva_porcentaje", "N",04, 2},;
+                         {"iva_monto",      "N",04, 2},;
+                         {"total",          "N",10, 2},;
+                         {"nombre_global",  "C",100,0},;
+                         {"tipo_inventario","C",01, 0},;
+                         {"lote",           "C",10, 0},;
+                         {"fecha_vcmto",    "D",10, 0},;
+                         {"id_ubicacion",   "N",10, 0},;
+                         {"almacen_id",     "N",10, 0},;
+                         {"nombre_almacen", "C",20, 0},;
+                         {"detalles_json",  "C",100, 0} ;
+                        } ;
+                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'',''}}
+
+      endif
+
       DEFINE LISTBOX ::oLBoxDetal ;
              MODEL   ::oModDetal  ;
              OF      ::oBoxDetalles
@@ -271,9 +312,33 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColTitle( 09, "IVA (%)" )       //-- Columna IVA Porcentaje
       ::oLBoxDetal:SetColTitle( 10, "IVA (Monto)" )   //-- Columna IVA Monto
       ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
-      
 
       ::oLBoxDetal:Active()
+
+      if hb_isNIL( ::rFactDetal )
+         ::oModDetal:oTreeView:ClearModel(.t.)
+      endif
+   else
+ 
+      aData := ::rFactDetal:GetData()
+
+      if !Empty( aData )
+
+         FOR EACH aLine IN aData
+   
+            APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
+                   VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
+                          aLine[4], hb_ntos(aLine[5]),;
+                          hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
+                          hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
+                          hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
+                          hb_ntos(aLine[12]), aLine[13], ;
+                          aLine[14], aLine[15], ;
+                          aLine[16], hb_ntos(aLine[17]), aLine[18], aLine[19]
+
+         NEXT
+
+      endif
 
    endif
 
