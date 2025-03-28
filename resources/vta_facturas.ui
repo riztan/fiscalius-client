@@ -132,12 +132,14 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="receives_default">True</property>
+                            <property name="tooltip_text" translatable="yes">Crea un documento nuevo.</property>
+                            <property name="relief">none</property>
                             <child>
                               <object class="GtkImage" id="image3">
                                 <property name="visible">True</property>
                                 <property name="sensitive">False</property>
                                 <property name="can_focus">False</property>
-                                <property name="stock">gtk-add</property>
+                                <property name="pixbuf">../images/new_16.png</property>
                               </object>
                             </child>
                           </object>
@@ -161,7 +163,7 @@
               </object>
               <packing>
                 <property name="resize">True</property>
-                <property name="shrink">True</property>
+                <property name="shrink">False</property>
               </packing>
             </child>
             <child>
@@ -466,11 +468,97 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkVBox" id="box_detalles">
+                                      <object class="GtkFrame" id="frame6">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="label_xalign">0</property>
                                         <child>
-                                          <placeholder/>
+                                          <object class="GtkAlignment" id="alignment6">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="left_padding">12</property>
+                                            <child>
+                                              <object class="GtkVBox" id="box_detalles">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <child>
+                                                  <placeholder/>
+                                                </child>
+                                              </object>
+                                            </child>
+                                          </object>
+                                        </child>
+                                        <child type="label">
+                                          <object class="GtkHBox" id="hbox3">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <child>
+                                              <object class="GtkButton" id="btn_detal_add">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="receives_default">True</property>
+                                                <property name="tooltip_text" translatable="yes">Crea un documento nuevo.</property>
+                                                <property name="relief">none</property>
+                                                <child>
+                                                  <object class="GtkImage" id="image7">
+                                                    <property name="visible">True</property>
+                                                    <property name="sensitive">False</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="pixbuf">../images/new_16.png</property>
+                                                  </object>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">True</property>
+                                                <property name="fill">True</property>
+                                                <property name="position">0</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkButton" id="btn_detal_edit">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="receives_default">True</property>
+                                                <property name="tooltip_text" translatable="yes">Guarda los datos</property>
+                                                <property name="relief">none</property>
+                                                <property name="use_underline">True</property>
+                                                <child>
+                                                  <object class="GtkImage" id="image8">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="pixbuf">../images/edit_16.png</property>
+                                                  </object>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">False</property>
+                                                <property name="position">1</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkButton" id="btn_detal_cancelar">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="receives_default">True</property>
+                                                <property name="tooltip_text" translatable="yes">Cancela la edición.</property>
+                                                <property name="relief">none</property>
+                                                <property name="use_underline">True</property>
+                                                <child>
+                                                  <object class="GtkImage" id="image9">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="pixbuf">../images/cancelar_16.png</property>
+                                                  </object>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">False</property>
+                                                <property name="position">2</property>
+                                              </packing>
+                                            </child>
+                                          </object>
                                         </child>
                                       </object>
                                       <packing>
@@ -1115,11 +1203,19 @@
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="btn_guardar">
-                                    <property name="label" translatable="yes">_Guardar</property>
                                     <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
+                                    <property name="can_focus">False</property>
                                     <property name="receives_default">True</property>
+                                    <property name="tooltip_text" translatable="yes">Guarda los datos</property>
+                                    <property name="relief">none</property>
                                     <property name="use_underline">True</property>
+                                    <child>
+                                      <object class="GtkImage" id="image4">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="pixbuf">../images/guardar_16.png</property>
+                                      </object>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -1129,16 +1225,56 @@
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="btn_cancelar">
-                                    <property name="label" translatable="yes">_Cancelar</property>
                                     <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
+                                    <property name="can_focus">False</property>
                                     <property name="receives_default">True</property>
+                                    <property name="tooltip_text" translatable="yes">Cancela la edición.</property>
+                                    <property name="relief">none</property>
                                     <property name="use_underline">True</property>
+                                    <child>
+                                      <object class="GtkImage" id="image5">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="pixbuf">../images/cancelar_16.png</property>
+                                      </object>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
                                     <property name="fill">False</property>
                                     <property name="position">2</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkVSeparator" id="vseparator2">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">3</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="button1">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="receives_default">True</property>
+                                    <property name="tooltip_text" translatable="yes">Salir sin guardar</property>
+                                    <property name="relief">none</property>
+                                    <child>
+                                      <object class="GtkImage" id="image6">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="pixbuf">../images/exit_16.png</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">4</property>
                                   </packing>
                                 </child>
                               </object>

@@ -28,7 +28,7 @@ procedure vta_facturas( oFormParent )
 
    DEFINE WINDOW ::oFacWnd ;
           TITLE "Fiscalius. Factura" ;
-          SIZE 800,550 ;
+          SIZE 950,600 ;
           ID "window1" RESOURCE ::oRes
 
 
@@ -50,7 +50,6 @@ procedure vta_facturas( oFormParent )
    DEFINE BUTTON ::oBtn ACTION __vtaFactura( oForm, oFormParent, ::oBoxFactura, ::oModFacturas, .T.  ) ;
           ID "btn_add" RESOURCE ::oRes
    //::oLBoxFacs:bEdit := {|oModel| __vtaFactura( oForm, oFormParent, ::oBoxFactura, oModel, .F. ) }
- 
 
    //-------------------------
    DEFINE LABEL ::oLabNumero ID "lab_numero" RESOURCE ::oRes
@@ -89,6 +88,18 @@ procedure vta_facturas( oFormParent )
 
    //-- Detalles de la factura
    DEFINE BOX ::oBoxDetalles ID "box_detalles" RESOURCE ::oRes
+
+   DEFINE BUTTON ::oBtnDetalAdd ;
+          ACTION EVAL( ::oLBoxDetal:bNew ) ;
+          ID "btn_detal_add" RESOURCE ::oRes
+
+   DEFINE BUTTON ::oBtnDetalEdit ;
+          ACTION EVAL( ::oLBoxDetal:bEdit ) ;
+          ID "btn_detal_edit" RESOURCE ::oRes
+
+   DEFINE BUTTON ::oBtnDetalDel ;
+          ACTION EVAL( ::oLBoxDetal:bDel ) ;
+          ID "btn_detal_cancelar" RESOURCE ::oRes
 
           
    // -- Caja de Montos
@@ -203,7 +214,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLabNumero:SetValue( "" )
       ::oEntCli:SetValue( "" )
       ::oEntFecha:SetValue( DTOC(DATE()) )
-      ::oEntVcmto:SetValue(  DTOC(DATE()) )
+      ::oEntVcmto:SetValue( DTOC(DATE()) )
       ::oEntMonBase:SetValue( "0" )
 
       ::oComboEstado:SetValue("Borrador", .F. ) 
@@ -212,6 +223,9 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntTotal:SetValue( "0" )
       ::oEntRetIva:SetValue( "" )
 
+      if hb_isObject( ::oModDetal ) 
+         ::oModDetal:oTreeView:ClearModel(.t.)
+      endif
 
    else
       ::lLoad := .T. // Consultando el documento.
@@ -223,8 +237,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLabNumero:SetValue( oModel:GetCol("numero") )
       ::oEntCli:SetValue( oModel:GetCol("Cliente") )
       ::oEntFecha:SetValue( oModel:GetCol("fecha") )
-      ::oEntVcmto:SetValue(  oModel:GetCol(5) )
-      ::oEntMonBase:SetValue(  oModel:GetCol("monto base") )
+      ::oEntVcmto:SetValue( oModel:GetCol(5) )
+      ::oEntMonBase:SetValue( oModel:GetCol("monto base") )
 
       ::lConfirm := .F.
       do case
@@ -251,6 +265,31 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
              OF      ::oBoxDetalles
 
       ::oLBoxDetal:lBar  := .f.
+      ::oLBoxDetal:bEdit := {|| View("por aqui vamos...") }
+
+      ::oLBoxDetal:SetColVisible( 01, .f. )     //- Ocultamos el id del detalle.
+      ::oLBoxDetal:SetColVisible( 02, .f. )     //- Ocultamos el id del documento.
+
+      ::oLBoxDetal:SetColVisible( 12, .f. )     //- Nombre Globak
+      ::oLBoxDetal:SetColVisible( 13, .f. )     //- Tipo de Inventario
+      ::oLBoxDetal:SetColVisible( 14, .f. )     //- Lote
+      ::oLBoxDetal:SetColVisible( 15, .f. )     //- Vencimiento
+      ::oLBoxDetal:SetColVisible( 16, .f. )     //- Ubicación
+      ::oLBoxDetal:SetColVisible( 17, .f. )     //- Almacen Id
+      ::oLBoxDetal:SetColVisible( 18, .f. )     //- Almacen Nombre
+      ::oLBoxDetal:SetColVisible( 19, .f. )     //- Detalles (JSON)
+
+      ::oLBoxDetal:SetColTitle( 03, "Código" )        //-- Columna Código
+      ::oLBoxDetal:SetColTitle( 04, "Descripción" )   //-- Columna Descripción
+      ::oLBoxDetal:SetColTitle( 05, "Cantidad" )      //-- Columna Cantidad
+      ::oLBoxDetal:SetColTitle( 06, "Precio" )        //-- Columna Precio Unitario
+      ::oLBoxDetal:SetColTitle( 07, "Descuento" )     //-- Columna Descuento
+      ::oLBoxDetal:SetColTitle( 08, "SubTotal" )      //-- Columna SubTotal
+      ::oLBoxDetal:SetColTitle( 09, "IVA (%)" )       //-- Columna IVA Porcentaje
+      ::oLBoxDetal:SetColTitle( 10, "IVA (Monto)" )   //-- Columna IVA Monto
+      ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
+      
+
       ::oLBoxDetal:Active()
 
    endif
