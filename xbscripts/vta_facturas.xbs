@@ -6,7 +6,7 @@
 
 procedure vta_facturas( oFormParent )
 
-   local oForm, cEntCli 
+   local oForm, cEntCli
 
    SET PUBLIC oForm
 
@@ -41,6 +41,11 @@ procedure vta_facturas( oFormParent )
           ID "image2" RESOURCE ::oRes
           ::oImgLogo:Adjust(60)
 
+   DEFINE BUTTON ::oBtnGuardar ;
+          ACTION oTPuy:RunXBS("mae_inventario", oFormParent, ::oFacWnd, ::oEntCli, @::cCodCli) ;
+          ID "btn_guardar" RESOURCE ::oRes
+
+
    DEFINE BOX ::oBoxData ID "boxdata" RESOURCE ::oRes
 
    DEFINE BOX ::oBoxFactura ID "vbox_factura" RESOURCE ::oRes
@@ -53,9 +58,11 @@ procedure vta_facturas( oFormParent )
    //-------------------------
    DEFINE LABEL ::oLabNumero ID "lab_numero" RESOURCE ::oRes
 
-   cEntCli := ""
-   DEFINE ENTRY ::oEntCli VAR cEntCli ;
-          ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oFacWnd, ::oEntCli) ;
+   ::cEntCli := ""
+   ::cCodCli := ""
+   DEFINE ENTRY  ::oEntCli VAR ::cEntCli ;
+          ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oFacWnd, ::oEntCli, @::cCodCli) ;
+          VALID  .T. ;
           ID "ent_clientes" RESOURCE ::oRes
 
    ::dFecha := DATE()
@@ -343,6 +350,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       endif
    else
  
+      ::oModDetal:oTreeView:ClearModel(.t.)
       aData := ::rFactDetal:GetData()
 
       if !Empty( aData )

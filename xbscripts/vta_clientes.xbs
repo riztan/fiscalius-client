@@ -4,11 +4,13 @@
 
 #include "tpy_xbs.ch"
 
-procedure vta_clientes( oForm, oWndParent, oEntParent )
+procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente )
 
    local oCliWnd, oRes, oImgBanner, oImageLogo, oBoxData
    local oLabTitulo, cLabTitulo := "Clientes"
    local rVentas, rClientes, oModClientes, oLBoxCli
+
+   default cCodCliente to ""
 
    rVentas := ::oGEmpresa:SetModulo("Ventas")
    rClientes := rVentas:Clientes()
@@ -54,10 +56,14 @@ procedure vta_clientes( oForm, oWndParent, oEntParent )
    oLBoxCli:lBar  := .f.
 
 
-   oLBoxCli:bEdit := {|oModel| ( iif( !hb_isObject(oWndParent), ;
-                                      .t., ;
-                                      oEntParent:setText( oModel:GetCol(3) )), ;
-                                      oCliWnd:End() ) }
+   if hb_isObject( oEntParent )
+      oLBoxCli:bEdit := {|oModel| (cCodCliente := oModel:GetCol(1),; 
+                                   iif( !hb_isObject(oWndParent),                ;
+                                         .t.,                                     ;
+                                         oEntParent:setText( ALLTRIM(cCodCliente)+" - "+;
+                                                             oModel:GetCol(3) )), ;
+                                   oCliWnd:End() ) }
+   endif
 
 //   oLBoxCli:Active() 
 

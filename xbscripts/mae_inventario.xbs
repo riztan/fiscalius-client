@@ -1,0 +1,96 @@
+/* mae_inventario.xbs
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
+
+   local oInvWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Inventario"
+   local rVentas, rInventario, oModinventario, oLBoxInv
+
+   rVentas := ::oGEmpresa:SetModulo("Ventas")
+   rInventario := rVentas:Productos()
+
+   if hb_isNIL(rInventario)
+      MsgStop("???")
+      return
+   endif
+
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+
+   DEFINE WINDOW oInvWnd ;
+          TITLE "Fiscalius. Inventario " ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+
+   DEFINE MODEL oModProductos ;
+          STRUCT rInventario:Struct() ;
+          DATA   rInventario:GetData()
+   
+   DEFINE LISTBOX oLBoxInv ;
+          MODEL oModProductos ;
+          OF oBoxData
+
+   oLBoxInv:lBar  := .f.
+
+
+   if hb_isObject( oEntParent )
+      oLBoxInv:bEdit := {|oModel| (cCodProducto := oModel:GetCol(1),; 
+                                   iif( !hb_isObject(oWndParent),                ;
+                                         .t.,                                     ;
+                                         oEntParent:setText( ALLTRIM(cCodProducto)+" - "+;
+                                                             oModel:GetCol(3) )), ;
+                                   oInvWnd:End() ) }
+   endif
+
+   oLBoxInv:Active() 
+
+   //View( oLBoxInv:GetCol(1):ClassName() )
+
+   oLBoxInv:SetColVisible(  1, .F. )    //- Ocultamos el id del producto.
+   oLBoxInv:SetColVisible(  2, .F. )    //- Ocultamos el id de empresa.
+   oLBoxInv:SetColVisible(  3, .F. )    //- Ocultamos el id global del producto
+   oLBoxInv:SetColVisible(  6, .F. )    //- Ocultamos descripcion global del producto
+   oLBoxInv:SetColVisible(  7, .F. )    //- Ocultamos tipo de inventario
+   oLBoxInv:SetColVisible( 10, .F. )    //- Ocultamos Stock Minimo
+   oLBoxInv:SetColVisible( 11, .F. )    //- Ocultamos Costo
+   oLBoxInv:SetColVisible( 12, .F. )    //- Ocultamos Id de Impuesto
+   oLBoxInv:SetColVisible( 14, .F. )    //- Ocultamos Fecha Creacion
+
+
+   oLBoxInv:SetColTitle( 4, "Código" )          //- Cambiamos el titulo 
+/*
+   oLBoxInv:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo 
+   oLBoxInv:SetColTitle( 6, "monto base" )       //- Cambiamos el titulo 
+
+   //oLBoxInv:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
+*/
+
+   ACTIVATE WINDOW oInvWnd MODAL //OF oWndParent
+
+
+return
+
+
+
+//eof
