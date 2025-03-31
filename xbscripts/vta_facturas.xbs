@@ -220,8 +220,9 @@ return
 procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    local lPreConfirm := ::lConfirm
-   local aData, aLine, bCode
+   local aData, aLine
    local hMontos := hb_hash()
+   local oCol
 
    default lNew := .T.
 
@@ -324,7 +325,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColVisible( 01, .f. )     //- Ocultamos el id del detalle.
       ::oLBoxDetal:SetColVisible( 02, .f. )     //- Ocultamos el id del documento.
 
-      ::oLBoxDetal:SetColVisible( 12, .f. )     //- Nombre Globak
+      ::oLBoxDetal:SetColVisible( 12, .f. )     //- Nombre Global
       ::oLBoxDetal:SetColVisible( 13, .f. )     //- Tipo de Inventario
       ::oLBoxDetal:SetColVisible( 14, .f. )     //- Lote
       ::oLBoxDetal:SetColVisible( 15, .f. )     //- Vencimiento
@@ -373,10 +374,60 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    endif
 
+   /* Desactivamos seleccion de linea */
+   ::oModDetal:oTreeView:bRow_Activated := nil
 
+   /* Columna Código */
+   #define __CODIGO   3
+   oCol := ::oModDetal:aCol[__CODIGO] // Codigo
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                                          ::oModDetal:oLbx, ::oModDetal:oTreeView, __CODIGO )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   /* Columna Cantidad */
+   #define __CANTIDAD   5
+   oCol := ::oModDetal:aCol[__CANTIDAD] // Cantidad
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                                          ::oModDetal:oLbx, ::oModDetal:oTreeView, __CANTIDAD )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+
+   /* Columna Cantidad */
+   #define __PRECIO   6
+   oCol := ::oModDetal:aCol[__PRECIO] // Cantidad
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                                          ::oModDetal:oLbx, ::oModDetal:oTreeView, __PRECIO )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+
+   /* Columna Cantidad */
+   #define __DESCUENTO   7
+   oCol := ::oModDetal:aCol[__DESCUENTO] // Cantidad
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                                          ::oModDetal:oLbx, ::oModDetal:oTreeView, __DESCUENTO )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   /* Columna Cantidad */
+   #define __SUBTOTAL   8
+   #define __IVAPORCEN  9
+   #define __IVAMONTO   10
+   #define __TOTAL      11
+
+
+
+   //-- Continuamos, calcular valores.
    ::oEntMonBase:SetValue("0")
-   bCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm ) }
-   ::oLBoxDetal:ForEach( bCode )
+   ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm ) }
+   ::oLBoxDetal:ForEach( ::bDetalCode )
+
 
       //::oEntMonBase:SetValue( "0" )
    __FactRefresh( oForm, .F. )
@@ -388,17 +439,111 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 return
 
 
+procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
+   local pNextCol, pPath, uPrevio
+
+   if empty( uVal ) ; return ; endif
+
+   uPrevio := oTreeView:GetAutoValue( nCol )
+
+   if nCol=__CODIGO
+      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
+      oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
+      return
+   endif
+
+   if nCol=__CANTIDAD
+      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __Calcula( oForm )
+      oTreeView:SetPosCol( aIter, __PRECIO, .f. )
+      //oTreeView:GoNext()
+      return
+   endif
+
+   if nCol=__PRECIO
+      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __Calcula( oForm )
+      oTreeView:SetPosCol( aIter, __DESCUENTO, .f. )
+      return
+   endif
+
+   if nCol=__DESCUENTO
+      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __Calcula( oForm )
+      oTreeView:SetPosCol( aIter, __TOTAL, .f. )
+      return
+   endif
+return
+
+
+
+PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue  )
+   local nMonto, nDescuento, nIvaPorcen, nIvaMonto:= 0
+
+   if oTreeView:IsGetSelected( aIter )
+      if nCol=__CANTIDAD .or. nCol= __PRECIO .or. nCol=__DESCUENTO
+
+         uValue := TRANSFORM( VAL(uValue), P_92 )
+
+         if nCol = __DESCUENTO
+            nDescuento := VAL(uValue)
+            nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
+                      ToNum( oTreeView:GetAutoValue(__PRECIO,   aIter))) - nDescuento
+         else
+            nDescuento := VAL( oTreeView:GetAutoValue(__DESCUENTO, aIter) )
+         endif
+
+         if nCol = __CANTIDAD 
+            nMonto := (VAL(uValue) * ;
+                      ToNum( oTreeView:GetAutoValue(__PRECIO,   aIter))) - nDescuento
+         elseif nCol = __PRECIO
+            nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
+                      VAL(uValue)) - nDescuento
+         endif
+         nMonto := ROUND( nMonto, 2 )
+         oModel:Set( aIter, __SUBTOTAL, TRANSFORM( nMonto, P_92 ) )
+
+         nIvaPorcen := ToNum( oTreeView:GetAutoValue(__IVAPORCEN, aIter) )
+         if nIvaPorcen > 0
+            nIvaMonto := ROUND( nMonto * (nIvaPorcen / 100), 2 )
+            oModel:Set( aIter, __IVAMONTO, TRANSFORM(nIvaMonto, P_92) )
+         endif
+         oModel:Set( aIter, __TOTAL, TRANSFORM( ROUND( nMonto + nIvaMonto ,2 ), P_92 ) )
+
+      endif
+      oModel:Set( aIter, nCol, uValue )
+      //if nCol = __CODIGO 
+      //   oModel:Set( aIter, __ESTIMADO, "" )
+      //   oModel:Set( aIter, __PRODUCIDO, "" )
+      //endif
+   endif
+RETURN
+
+
+procedure __Calcula( oForm )
+   //-- Continuamos, calcular valores.
+   ::oEntMonBase:SetValue("0")
+   ::oEntIvaE:SetValue("0")
+   ::oEntIvaR:SetValue("0")
+   ::oEntIvaG:SetValue("0")
+   ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm ) }
+   ::oLBoxDetal:ForEach( ::bDetalCode )
+return
+
 
 procedure __CalMontos( oTView, pModel, aIter, oForm )
    local nBase, nMonto, nTotal
 
-   nMonto := ToNum( oTView:GetAutoValue( 8, aIter ) )
+//   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
+//                    ToNum( oTView:GetAutoValue(__PRECIO,   aIter)), 2 )
+
+   nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
    nBase  := ToNum( ::oEntMonBase:GetValue() )
    nTotal := ROUND( nBase+nMonto, 2 )
    ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
 
-   if ToNum( oTView:GetAutoValue( 9, aIter )) = 16  // <-- ToDo: Usar Datos de IVA
-      nMonto := ToNum( oTView:GetAutoValue( 10, aIter ) )
+   if ToNum( oTView:GetAutoValue( __IVAPORCEN, aIter )) = 16  // <-- ToDo: Usar Datos de IVA
+      nMonto := ToNum( oTView:GetAutoValue( __IVAMONTO, aIter ) )
       nBase  := ToNum( ::oEntIvaG:GetValue() )
       nTotal := ROUND( nBase+nMonto, 2 )
       ::oEntIvaG:SetValue( TRANSFORM( nTotal, P_92 ) )
