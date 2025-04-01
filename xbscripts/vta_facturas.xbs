@@ -42,7 +42,7 @@ procedure vta_facturas( oFormParent )
           ::oImgLogo:Adjust(60)
 
    DEFINE BUTTON ::oBtnGuardar ;
-          ACTION oTPuy:RunXBS("mae_inventario", oFormParent, ::oFacWnd, ::oEntCli, @::cCodCli) ;
+          ACTION __Save( oForm ) ;
           ID "btn_guardar" RESOURCE ::oRes
 
 
@@ -64,6 +64,11 @@ procedure vta_facturas( oFormParent )
           ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oFacWnd, ::oEntCli, @::cCodCli) ;
           VALID  .T. ;
           ID "ent_clientes" RESOURCE ::oRes
+
+   ::cOrdenCompra := ""
+   DEFINE ENTRY ::oEntOrdCompra VAR ::cOrdenCompra ;
+          VALID .T. ; 
+          ID "ent_orden_compra" RESOURCE ::oRes
 
    ::dFecha := DATE()
    ::dPFecha := ::dFecha
@@ -146,7 +151,7 @@ procedure vta_facturas( oFormParent )
    // -- Caja de Retenciones
    DEFINE BOX ::oBoxRet ID "box_retiva" RESOURCE ::oRes
 
-   ::cRetIva := "202503100123"
+   ::cRetIva := ""
    DEFINE DOCUMENT ENTRY ::oEntRetIva VAR ::cRetIva ;
           ID "ent_retivanum" RESOURCE ::oRes
    ::oRetIvaFecha := DATE()
@@ -590,6 +595,11 @@ procedure __AddDetal( oForm )
    local aIter := ARRAY(4)
    local aLine := {'','','','','','','','','','','','','','','','','','',''}
 
+   //-  ignoramos si el documento esta anulado o cerrado.
+   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
+      return 
+   endif
+
    APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
           VALUES aLine[ 1], aLine[ 2], aLine[ 3],;
                  aLine[ 4], aLine[ 5], ;
@@ -601,6 +611,7 @@ procedure __AddDetal( oForm )
                  aLine[16], aLine[17], aLine[18], aLine[19]
 
    ::oModDetal:oTreeView:SetFocus()
+   ::oModDetal:GoBottom()
    ::oModDetal:oTreeView:SetPosCol( aIter, __CODIGO, .T. )
 return
 
@@ -650,6 +661,11 @@ Procedure __DelDetal( oForm )
    local aIter := ARRAY(4)
    local pPath
  
+   //-  ignoramos si el documento esta anulado o cerrado.
+   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
+      return 
+   endif
+
    if ::oModDetal:oTreeView:IsGetSelected( aIter ) 
 
       pPath := ::oModDetal:oTreeView:GetPath( aIter )
@@ -662,9 +678,28 @@ return
 
 
 
+Procedure __Save( oForm )
+
+   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
+      MsgAlert( "Este documento no es objeto para ser alterado y luego almacenar.", "Atención" )
+      //return 
+   endif
+
+   ::hFactura["cliente_id"  ] := ::cCodCli                //Cliente
+   ::hFactura["orden_compra"] := ::cOrdenCompra           // Orden de Compra
+   ::hFactura["condicion_id"] := '1'                      // Condicion (de momento no importa  )
+   ::hFactura["monto_base"  ] := ::oEntMonBase:GetValue() // Monto Base o SubTotal
+   ::hFactura["estado"      ] := LEFT( ::cComboEstado, 1 )
+
+   View( ::hFactura ) 
+   
+return
+
+
+
 PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
-   local cSelect, aData, aStruct:={}
-   local oWnd, oBox, oRes, oTpyModel, oListBox, oImg
+   local oRes, oImgBanner, oImgLogo
+   local oBoxData, oModProductos, oLBoxInv
    local uValue, cLabTitulo := "Productos o Conceptos"
    local rProductos
 
@@ -689,30 +724,18 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
  	          ::oModDetal:oLbx, ;
 	          ::oModDetal:aIter, __PRECIO, ;
 	          TRANSFORM( rProductos:precio_unitario, P_92 ))
-/*
-                         __SetValue( ::oModDetal:oTreeView,      ;
-				     ::oModDetal:oLbx,           ;
-				     ::oModDetal:aIter, __CODIGO,;
-				     oModProductos:oTreeView:GetAutoValue( 4 ) ),;
-                         __SetValue( ::oModDetal:oTreeView, ;
-				     ::oModDetal:oLbx,      ;
-				     ::oModDetal:aIter, __DESCRIPCION,  ;
-				     oModProductos:oTreeView:GetAutoValue( 5 ) ),;
-                         __SetValue( ::oModDetal:oTreeView, ;
-				     ::oModDetal:oLbx,      ;
-				     ::oModDetal:aIter, __PRECIO ,  ;
-				     oModProductos:oTreeView:GetAutoValue( 8 ) ),;
-*/
+
+      __SetValue( ::oModDetal:oTreeView, ;
+ 	          ::oModDetal:oLbx, ;
+	          ::oModDetal:aIter, __IVAPORCEN, ;
+	          TRANSFORM( rProductos:iva_porcentaje, P_60 ))
+
       oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
       return
    else
-//MsgInfo("El producto tiene varias unidades de medida")
       rProductos := ::rVentas:Productos()
    endif 
    
-//   AEVAL( oQry:aStructure, ;
-//         {|a| AADD( aStruct, { a[1], a[9], a[5], 0 } ) } )
-
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
 
    DEFINE WINDOW ::oInvWnd ;
@@ -735,7 +758,6 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
           oImgLogo:Adjust(60)
 
    DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
-
 
    DEFINE MODEL oModProductos ;
           STRUCT rProductos:Struct() ;

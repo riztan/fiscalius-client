@@ -104,6 +104,9 @@ procedure poslogin( oParent )
 
 //      DEFINE MENUITEM ACTION View( ::oGEmpresa:setModulo("VENTAS"):Titulo()) ;
 //      DEFINE MENUITEM ACTION Prueba( oForm, ::oGEmpresa:setModulo("VENTAS"):Clientes()) ;
+      DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_inventario", oForm, oTPuy:oWnd ) ;
+             ID "item_productos" RESOURCE ::oRes
+
       DEFINE MENUITEM ACTION oTPuy:RunXBS( "vta_clientes", oForm, oTPuy:oWnd ) ;
              ID "itm_clientes" RESOURCE ::oRes
 
