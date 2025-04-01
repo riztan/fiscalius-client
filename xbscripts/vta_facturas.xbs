@@ -66,13 +66,15 @@ procedure vta_facturas( oFormParent )
           ID "ent_clientes" RESOURCE ::oRes
 
    ::dFecha := DATE()
+   ::dPFecha := ::dFecha
    DEFINE ENTRY TYPE DATE ::oEntFecha VAR ::dFecha CALENDAR ;
-          VALID __FactValFecha( oForm ) ;
+          VALID __FactValFecha( oForm, ::oEntFecha, @::dPFecha ) ;
           ID "ent_fecha" RESOURCE ::oRes
 
    ::dVcmto := DATE()
+   ::dPVcmto := ::dVcmto
    DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::dVcmto CALENDAR ;
-          VALID __FactValFecha( oForm ) ;
+          VALID __FactValFecha( oForm, ::oEntVcmto, @::dPVcmto ) ;
           ID "ent_vcmto" RESOURCE ::oRes
 
    DEFINE BOX ::oBoxCondicion ID "box_condicion" RESOURCE ::oRes
@@ -184,6 +186,7 @@ procedure vta_facturas( oFormParent )
 return
 
 
+
 function __FactExit(oForm)
    if MsgNoYes("¿Realmente desea salir?")
       oForm:Release()
@@ -192,16 +195,20 @@ function __FactExit(oForm)
 return .F.
 
 
-function __FactValFecha( oForm )
+
+function __FactValFecha( oForm, oEnt, dValPrevio )
    local lRes := .t.
 
    if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
       MsgAlert( "La fecha indicada es incorrecta. Por favor revise." )
       lRes := .F.
+      
+      oEnt:setValue( DTOC(dValPrevio) )
    endif
-   //DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::dVcmto CALENDAR ;
-
+   
+   dValPrevio := CTOD( oEnt:getValue() )
 return lRes
+
 
 
 procedure __ChangeEstado( oForm, lConfirm )
@@ -377,6 +384,9 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    /* Desactivamos seleccion de linea */
    ::oModDetal:oTreeView:bRow_Activated := nil
 
+   /* Hacemos editables algunas columnas */
+   // Columna:bEdited es un bloque de código que se ejecutará luego de editar la columna.
+
    /* Columna Código */
    #define __CODIGO   3
    oCol := ::oModDetal:aCol[__CODIGO] // Codigo
@@ -441,6 +451,11 @@ return
 
 procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
    local pNextCol, pPath, uPrevio
+
+   //-  ignoramos la edición si el documento esta anulado o cerrado.
+   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
+      return 
+   endif
 
    if empty( uVal ) ; return ; endif
 
@@ -511,11 +526,9 @@ PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue  )
          oModel:Set( aIter, __TOTAL, TRANSFORM( ROUND( nMonto + nIvaMonto ,2 ), P_92 ) )
 
       endif
+
       oModel:Set( aIter, nCol, uValue )
-      //if nCol = __CODIGO 
-      //   oModel:Set( aIter, __ESTIMADO, "" )
-      //   oModel:Set( aIter, __PRODUCIDO, "" )
-      //endif
+
    endif
 RETURN
 
