@@ -327,6 +327,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
              OF      ::oBoxDetalles
 
       ::oLBoxDetal:lBar  := .f.
+      ::oLBoxDetal:bNew  := {|| __AddDetal( oForm ) }
       ::oLBoxDetal:bEdit := {|| View("por aqui vamos...") }
 
       ::oLBoxDetal:SetColVisible( 01, .f. )     //- Ocultamos el id del detalle.
@@ -569,6 +570,26 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
             
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
 
+return
+
+
+
+procedure __AddDetal( oForm )
+   local aIter := ARRAY(4)
+   local aLine := {0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'',''}
+
+   APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
+          VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
+                 aLine[4], hb_ntos(aLine[5]),;
+                 hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
+                 hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
+                 hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
+                 hb_ntos(aLine[12]), aLine[13], ;
+                 aLine[14], aLine[15], ;
+                 aLine[16], hb_ntos(aLine[17]), aLine[18], aLine[19]
+
+   //::oLBoxDetal:oTreeView:SetFocus()
+   ::oModDetal:oTreeView:SetFocus()
 return
 
 
