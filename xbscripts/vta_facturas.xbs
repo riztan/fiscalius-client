@@ -240,7 +240,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::hFactura   := ::rFactura:Data()
       ::rFactDetal := ::rFactura:Detal()
 
-      ::oLabNumero:SetValue( "" )
+      ::oLabNumero:SetValue( "00000000" )
       ::oEntCli:SetValue( "" )
       ::oEntFecha:SetValue( DTOC(DATE()) )
       ::oEntVcmto:SetValue( DTOC(DATE()) )
@@ -267,7 +267,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::hFactura   := ::rFactura:Data()
       ::rFactDetal := ::rFactura:Detal()
 
-      ::oLabNumero:SetValue( oModel:GetCol("numero") )
+      ::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol("numero")), 8) )
       ::oEntCli:SetValue( oModel:GetCol("Cliente") )
       ::oEntFecha:SetValue( oModel:GetCol("fecha") )
       ::oEntVcmto:SetValue( oModel:GetCol(5) )
@@ -328,7 +328,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
       ::oLBoxDetal:lBar  := .f.
       ::oLBoxDetal:bNew  := {|| __AddDetal( oForm ) }
-      ::oLBoxDetal:bEdit := {|| View("por aqui vamos...") }
+      ::oLBoxDetal:bEdit := {|| .T. }
+      ::oLBoxDetal:bDel  := {|| __DelDetal( oForm ) }
 
       ::oLBoxDetal:SetColVisible( 01, .f. )     //- Ocultamos el id del detalle.
       ::oLBoxDetal:SetColVisible( 02, .f. )     //- Ocultamos el id del documento.
@@ -427,10 +428,11 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    oCol:oRenderer:SetColumn( oCol )
 
    /* Columna Cantidad */
-   #define __SUBTOTAL   8
-   #define __IVAPORCEN  9
-   #define __IVAMONTO   10
-   #define __TOTAL      11
+   #define __DESCRIPCION   4
+   #define __SUBTOTAL      8
+   #define __IVAPORCEN     9
+   #define __IVAMONTO     10
+   #define __TOTAL        11
 
 
 
@@ -450,6 +452,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 return
 
 
+
 procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
    local pNextCol, pPath, uPrevio
 
@@ -463,8 +466,15 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
    uPrevio := oTreeView:GetAutoValue( nCol )
 
    if nCol=__CODIGO
-      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
+      //__SetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __Productos( oForm, uVal, oModel, nCol, oTreeView, aIter )
       oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
+      return
+   endif
+
+   if Empty( oTreeView:GetAutoValue( __CODIGO ) )
+      //View("No deberia poder editar sin concepto definido")
+      oTreeView:SetPosCol( aIter, __CODIGO, .f. )
       return
    endif
 
@@ -499,8 +509,6 @@ PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue  )
    if oTreeView:IsGetSelected( aIter )
       if nCol=__CANTIDAD .or. nCol= __PRECIO .or. nCol=__DESCUENTO
 
-         uValue := TRANSFORM( VAL(uValue), P_92 )
-
          if nCol = __DESCUENTO
             nDescuento := VAL(uValue)
             nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
@@ -526,6 +534,7 @@ PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue  )
          endif
          oModel:Set( aIter, __TOTAL, TRANSFORM( ROUND( nMonto + nIvaMonto ,2 ), P_92 ) )
 
+         uValue := TRANSFORM( VAL(uValue), P_92 )
       endif
 
       oModel:Set( aIter, nCol, uValue )
@@ -534,8 +543,10 @@ PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue  )
 RETURN
 
 
+
 procedure __Calcula( oForm )
    //-- Continuamos, calcular valores.
+   ::oEntTotal:SetValue("0")
    ::oEntMonBase:SetValue("0")
    ::oEntIvaE:SetValue("0")
    ::oEntIvaR:SetValue("0")
@@ -543,6 +554,7 @@ procedure __Calcula( oForm )
    ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm ) }
    ::oLBoxDetal:ForEach( ::bDetalCode )
 return
+
 
 
 procedure __CalMontos( oTView, pModel, aIter, oForm )
@@ -576,20 +588,20 @@ return
 
 procedure __AddDetal( oForm )
    local aIter := ARRAY(4)
-   local aLine := {0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'',''}
+   local aLine := {'','','','','','','','','','','','','','','','','','',''}
 
    APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
-          VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
-                 aLine[4], hb_ntos(aLine[5]),;
-                 hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
-                 hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
-                 hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
-                 hb_ntos(aLine[12]), aLine[13], ;
+          VALUES aLine[ 1], aLine[ 2], aLine[ 3],;
+                 aLine[ 4], aLine[ 5], ;
+                 aLine[ 6], aLine[ 7], ;
+                 aLine[ 8], aLine[ 9], ; 
+                 aLine[10], aLine[11], ; 
+                 aLine[12], aLine[13], ;
                  aLine[14], aLine[15], ;
-                 aLine[16], hb_ntos(aLine[17]), aLine[18], aLine[19]
+                 aLine[16], aLine[17], aLine[18], aLine[19]
 
-   //::oLBoxDetal:oTreeView:SetFocus()
    ::oModDetal:oTreeView:SetFocus()
+   ::oModDetal:oTreeView:SetPosCol( aIter, __CODIGO, .T. )
 return
 
 
@@ -632,5 +644,149 @@ procedure __FactRefresh( oForm, lConfirm )
 
 return
 
+
+
+Procedure __DelDetal( oForm )
+   local aIter := ARRAY(4)
+   local pPath
+ 
+   if ::oModDetal:oTreeView:IsGetSelected( aIter ) 
+
+      pPath := ::oModDetal:oTreeView:GetPath( aIter )
+      ::oModDetal:oLbx:Remove( aIter )
+      gtk_tree_view_set_cursor( ::oModDetal:oTreeView:pWidget, pPath )
+
+   endif
+   __Calcula( oForm )
+return
+
+
+
+PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
+   local cSelect, aData, aStruct:={}
+   local oWnd, oBox, oRes, oTpyModel, oListBox, oImg
+   local uValue, cLabTitulo := "Productos o Conceptos"
+   local rProductos
+
+   default cStr := ""
+
+   //if empty(cStr) ; return ; endif
+
+   rProductos := ::rVentas:Productos( cStr )
+
+   if rProductos:RecCount() = 1
+      __SetValue( ::oModDetal:oTreeView, ;
+ 	          ::oModDetal:oLbx, ;
+	          ::oModDetal:aIter, __CODIGO, ;
+	          rProductos:codigo_local )
+
+      __SetValue( ::oModDetal:oTreeView, ;
+ 	          ::oModDetal:oLbx, ;
+	          ::oModDetal:aIter, __DESCRIPCION, ;
+	          rProductos:descripcion ) 
+
+      __SetValue( ::oModDetal:oTreeView, ;
+ 	          ::oModDetal:oLbx, ;
+	          ::oModDetal:aIter, __PRECIO, ;
+	          TRANSFORM( rProductos:precio_unitario, P_92 ))
+/*
+                         __SetValue( ::oModDetal:oTreeView,      ;
+				     ::oModDetal:oLbx,           ;
+				     ::oModDetal:aIter, __CODIGO,;
+				     oModProductos:oTreeView:GetAutoValue( 4 ) ),;
+                         __SetValue( ::oModDetal:oTreeView, ;
+				     ::oModDetal:oLbx,      ;
+				     ::oModDetal:aIter, __DESCRIPCION,  ;
+				     oModProductos:oTreeView:GetAutoValue( 5 ) ),;
+                         __SetValue( ::oModDetal:oTreeView, ;
+				     ::oModDetal:oLbx,      ;
+				     ::oModDetal:aIter, __PRECIO ,  ;
+				     oModProductos:oTreeView:GetAutoValue( 8 ) ),;
+*/
+      oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
+      return
+   else
+//MsgInfo("El producto tiene varias unidades de medida")
+      rProductos := ::rVentas:Productos()
+   endif 
+   
+//   AEVAL( oQry:aStructure, ;
+//         {|a| AADD( aStruct, { a[1], a[9], a[5], 0 } ) } )
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+   DEFINE WINDOW ::oInvWnd ;
+          TITLE "Fiscalius. Inventario " ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes ;
+          OF ::oFacWnd
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+
+   DEFINE MODEL oModProductos ;
+          STRUCT rProductos:Struct() ;
+          DATA   rProductos:GetData()
+   
+   DEFINE LISTBOX oLBoxInv ;
+          MODEL oModProductos ;
+          OF oBoxData
+
+   oLBoxInv:lBar  := .f.   
+
+//   oModProductos:SetColTitle("inv_codigo","Código")
+//   oModProductos:SetColTitle("inv_descri","Descripción")
+
+   oLBoxInv:lBar  := .f.
+   oLBoxInv:bEdit := {|oModProductos|;
+                         __SetValue( ::oModDetal:oTreeView,      ;
+				     ::oModDetal:oLbx,           ;
+				     ::oModDetal:aIter, __CODIGO,;
+				     oModProductos:oTreeView:GetAutoValue( 4 ) ),;
+                         __SetValue( ::oModDetal:oTreeView, ;
+				     ::oModDetal:oLbx,      ;
+				     ::oModDetal:aIter, __DESCRIPCION,  ;
+				     oModProductos:oTreeView:GetAutoValue( 5 ) ),;
+                         __SetValue( ::oModDetal:oTreeView, ;
+				     ::oModDetal:oLbx,      ;
+				     ::oModDetal:aIter, __PRECIO ,  ;
+				     oModProductos:oTreeView:GetAutoValue( 8 ) ),;
+                         oTreeView:SetPosCol( aIter, __CANTIDAD, .f. ), ;
+			 ::oInvWnd:End() }
+
+   oLBoxInv:Active()
+   oModProductos:oTreeView:SetRules( .t. )
+   oModProductos:oTreeView:SetGridLines( GTK_TREE_VIEW_GRID_LINES_BOTH )
+
+   oLBoxInv:SetColVisible(  1, .F. )    //- Ocultamos el id del producto.
+   oLBoxInv:SetColVisible(  2, .F. )    //- Ocultamos el id de empresa.
+   oLBoxInv:SetColVisible(  3, .F. )    //- Ocultamos el id global del producto
+   oLBoxInv:SetColVisible(  6, .F. )    //- Ocultamos descripcion global del producto
+   oLBoxInv:SetColVisible(  7, .F. )    //- Ocultamos tipo de inventario
+   oLBoxInv:SetColVisible( 10, .F. )    //- Ocultamos Stock Minimo
+   oLBoxInv:SetColVisible( 11, .F. )    //- Ocultamos Costo
+   oLBoxInv:SetColVisible( 12, .F. )    //- Ocultamos Id de Impuesto
+   oLBoxInv:SetColVisible( 14, .F. )    //- Ocultamos Fecha Creacion
+
+
+   oLBoxInv:SetColTitle( 4, "Código" )          //- Cambiamos el titulo 
+
+
+   ACTIVATE WINDOW ::oInvWnd MODAL
+
+RETURN 
 
 //eof

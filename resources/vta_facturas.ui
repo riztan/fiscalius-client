@@ -261,6 +261,7 @@
                                           <object class="GtkHBox" id="hbox8">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
+                                            <property name="spacing">4</property>
                                             <child>
                                               <object class="GtkVSeparator" id="vseparator1">
                                                 <property name="visible">True</property>
@@ -281,8 +282,8 @@
                                                 <property name="use_markup">True</property>
                                               </object>
                                               <packing>
-                                                <property name="expand">True</property>
-                                                <property name="fill">True</property>
+                                                <property name="expand">False</property>
+                                                <property name="fill">False</property>
                                                 <property name="position">1</property>
                                               </packing>
                                             </child>
@@ -290,7 +291,7 @@
                                               <object class="GtkLabel" id="lab_numero">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">0000000000</property>
+                                                <property name="label" translatable="yes">0000001</property>
                                                 <attributes>
                                                   <attribute name="weight" value="heavy"/>
                                                   <attribute name="stretch" value="expanded"/>
@@ -303,10 +304,51 @@
                                                 <property name="position">2</property>
                                               </packing>
                                             </child>
+                                            <child>
+                                              <object class="GtkVSeparator" id="vseparator4">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">True</property>
+                                                <property name="position">3</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkLabel" id="label26">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="label" translatable="yes">&lt;b&gt;Control:&lt;/b&gt;</property>
+                                                <property name="use_markup">True</property>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">True</property>
+                                                <property name="position">4</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkEntry" id="ent_nro_control">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">True</property>
+                                                <property name="invisible_char">●</property>
+                                                <property name="primary_icon_activatable">False</property>
+                                                <property name="secondary_icon_activatable">False</property>
+                                                <property name="primary_icon_sensitive">True</property>
+                                                <property name="secondary_icon_sensitive">True</property>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">True</property>
+                                                <property name="fill">True</property>
+                                                <property name="position">5</property>
+                                              </packing>
+                                            </child>
                                           </object>
                                           <packing>
-                                            <property name="expand">True</property>
+                                            <property name="expand">False</property>
                                             <property name="fill">True</property>
+                                            <property name="padding">7</property>
                                             <property name="position">4</property>
                                           </packing>
                                         </child>
@@ -599,7 +641,7 @@
                                                           <object class="GtkLabel" id="label18">
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">False</property>
-                                                            <property name="label" translatable="yes">Monto Base:</property>
+                                                            <property name="label" translatable="yes">Sub Total:</property>
                                                           </object>
                                                           <packing>
                                                             <property name="expand">True</property>
@@ -640,7 +682,7 @@
                                                           <object class="GtkLabel" id="label19">
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">False</property>
-                                                            <property name="label" translatable="yes">Exento:</property>
+                                                            <property name="label" translatable="yes">Monto Exento:</property>
                                                           </object>
                                                           <packing>
                                                             <property name="expand">True</property>
