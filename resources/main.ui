@@ -433,6 +433,36 @@
     <property name="can_focus">False</property>
     <property name="stock">gtk-justify-right</property>
   </object>
+  <object class="GtkImage" id="image54">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/payment_32.png</property>
+  </object>
+  <object class="GtkImage" id="image55">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/dollar_32.png</property>
+  </object>
+  <object class="GtkImage" id="image56">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/money_32.png</property>
+  </object>
+  <object class="GtkImage" id="image57">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/tax_32.png</property>
+  </object>
+  <object class="GtkImage" id="image58">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/porcen_32.png</property>
+  </object>
+  <object class="GtkImage" id="image59">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/products_32.png</property>
+  </object>
   <object class="GtkImage" id="image6">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -665,12 +695,63 @@
                               </object>
                             </child>
                             <child>
+                              <object class="GtkImageMenuItem" id="item_mediospag">
+                                <property name="label" translatable="yes">Medios de Pago</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image54</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_monedas">
+                                <property name="label" translatable="yes">Monedas</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image56</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_monedastra">
+                                <property name="label" translatable="yes">Tasas de Cambio</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image55</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_alicuotas">
+                                <property name="label" translatable="yes">Alicuotas de IVA</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image57</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_ITF">
+                                <property name="label" translatable="yes">IGTF</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image58</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
                               <object class="GtkImageMenuItem" id="itm_theme">
                                 <property name="label" translatable="yes">_Temas</property>
                                 <property name="can_focus">False</property>
                                 <property name="use_underline">True</property>
                                 <property name="image">image34</property>
                                 <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkSeparatorMenuItem" id="separatormenuitem2">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
                               </object>
                             </child>
                             <child>
@@ -683,6 +764,15 @@
                               </object>
                             </child>
                             <child>
+                              <object class="GtkImageMenuItem" id="item_productos">
+                                <property name="label" translatable="yes">Productos</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image59</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
                               <object class="GtkSeparatorMenuItem" id="menuitem3">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
@@ -690,7 +780,7 @@
                             </child>
                             <child>
                               <object class="GtkImageMenuItem" id="itm_transacciones">
-                                <property name="label" translatable="yes">_Transacciones</property>
+                                <property name="label" translatable="yes">_Factura</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="tooltip_text" translatable="yes">Facturas, Notas de Entrega, Pedidos</property>
