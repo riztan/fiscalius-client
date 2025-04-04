@@ -252,8 +252,8 @@
                                             </child>
                                           </object>
                                           <packing>
-                                            <property name="expand">True</property>
-                                            <property name="fill">True</property>
+                                            <property name="expand">False</property>
+                                            <property name="fill">False</property>
                                             <property name="position">3</property>
                                           </packing>
                                         </child>
@@ -299,8 +299,8 @@
                                                 </attributes>
                                               </object>
                                               <packing>
-                                                <property name="expand">True</property>
-                                                <property name="fill">True</property>
+                                                <property name="expand">False</property>
+                                                <property name="fill">False</property>
                                                 <property name="position">2</property>
                                               </packing>
                                             </child>
@@ -330,6 +330,7 @@
                                             </child>
                                             <child>
                                               <object class="GtkEntry" id="ent_nro_control">
+                                                <property name="width_request">120</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
                                                 <property name="invisible_char">●</property>
@@ -339,8 +340,8 @@
                                                 <property name="secondary_icon_sensitive">True</property>
                                               </object>
                                               <packing>
-                                                <property name="expand">True</property>
-                                                <property name="fill">True</property>
+                                                <property name="expand">False</property>
+                                                <property name="fill">False</property>
                                                 <property name="position">5</property>
                                               </packing>
                                             </child>

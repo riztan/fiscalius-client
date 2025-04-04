@@ -685,13 +685,15 @@ Procedure __Save( oForm )
       //return 
    endif
 
-   ::hFactura["cliente_id"  ] := ::cCodCli                //Cliente
-   ::hFactura["orden_compra"] := ::cOrdenCompra           // Orden de Compra
-   ::hFactura["condicion_id"] := '1'                      // Condicion (de momento no importa  )
-   ::hFactura["monto_base"  ] := ::oEntMonBase:GetValue() // Monto Base o SubTotal
+   ::hFactura["cliente_id"  ] := ::cCodCli                 //Cliente
+   ::hFactura["orden_compra"] := ::cOrdenCompra            // Orden de Compra
+   ::hFactura["condicion_id"] := '1'                       // Condicion (de momento no importa  )
+   ::hFactura["monto_base"  ] := ::oEntMonBase:GetValue()  // Monto Base o SubTotal
    ::hFactura["estado"      ] := LEFT( ::cComboEstado, 1 )
 
    View( ::hFactura ) 
+
+   ::rFactura:SetData( ::hFactura )
    
 return
 
