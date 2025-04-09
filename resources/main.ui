@@ -685,7 +685,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
-                              <object class="GtkImageMenuItem" id="itm_user">
+                              <object class="GtkImageMenuItem" id="item_usuarios">
                                 <property name="label" translatable="yes">_Usuario</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
@@ -713,7 +713,7 @@
                               </object>
                             </child>
                             <child>
-                              <object class="GtkImageMenuItem" id="item_monedastra">
+                              <object class="GtkImageMenuItem" id="item_tasas_cambio">
                                 <property name="label" translatable="yes">Tasas de Cambio</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
