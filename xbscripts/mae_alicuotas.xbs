@@ -1,0 +1,72 @@
+/* mae_alicuotas.xbs
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure mae_alicuotas( oForm, oWndParent, oEntParent )
+
+   local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Alicuotas de IVA"
+   local cTipo,dFecha,nPorcentaje:=0
+   local rVentas, rAlicuotasIVA, oModAlicuotasIVA, oLBoxCli
+
+   rVentas := ::oGEmpresa:SetModulo("Ventas")
+   rAlicuotasIVA := rVentas:AlicuotasIva()
+
+   if hb_isNIL(rAlicuotasIVA)
+      MsgStop("No Hay alicuotas de IVA registradas")
+      return
+   endif
+
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+   
+   DEFINE WINDOW oAliWnd ;
+          TITLE "Fiscalius. Alicuotas de IVA" ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+
+   //DEFINE BUTTON ::oBtn ACTION __vtaAlicuotaIVA( oForm, oFormParent, ::oBoxData, ::oModAlicuotasIVA, .T.  ) ;
+   //       ID "btn_add" RESOURCE ::oRes
+
+   DEFINE MODEL oModAlicuotasIVA ;
+          STRUCT rAlicuotasIva:Struct() ;
+          DATA   rAlicuotasIva:GetData()
+   
+   DEFINE LISTBOX oLBoxCli ;
+          MODEL oModAlicuotasIVA ;
+          OF oBoxData
+
+   oLBoxCli:lBar  := .f.
+
+
+ 
+ 
+   oLBoxCli:Active() 
+   
+   
+   ACTIVATE WINDOW oAliWnd MODAL
+
+return
+
+
+
+//eof

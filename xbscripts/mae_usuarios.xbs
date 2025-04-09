@@ -1,0 +1,68 @@
+/* mae_usuarios.xbs
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure mae_usuarios( oForm, oWndParent, oEntParent )
+
+   local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Usuarios"
+   local cTipo,dFecha,nPorcentaje:=0
+   local rVentas, rUsuarios, oModUsuarios, oLBoxCli
+
+   rVentas := ::oGEmpresa:SetModulo("Ventas")
+   rUsuarios := rVentas:Usuarios()
+
+   if hb_isNIL(rUsuarios)
+      MsgStop("No Hay Usuarios registrados")
+      return
+   endif
+
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+   
+   DEFINE WINDOW oAliWnd ;
+          TITLE "Fiscalius. Usuarios" ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+
+
+   DEFINE MODEL oModUsuarios ;
+          STRUCT rUsuarios:Struct() ;
+          DATA   rUsuarios:GetData()
+   
+   DEFINE LISTBOX oLBoxCli ;
+          MODEL oModUsuarios ;
+          OF oBoxData
+
+   oLBoxCli:lBar  := .f.
+
+
+   oLBoxCli:Active() 
+   
+   
+   ACTIVATE WINDOW oAliWnd MODAL
+
+return
+
+
+
+//eof

@@ -1,0 +1,72 @@
+/* mae_monedas.xbs
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure mae_monedas( oForm, oWndParent, oEntParent )
+
+   local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Monedas"
+   local cTipo,dFecha,nPorcentaje:=0
+   local rVentas, rMonedas, oModMonedas, oLBoxCli
+
+   rVentas := ::oGEmpresa:SetModulo("Ventas")
+   rMonedas := rVentas:Monedas()
+
+   if hb_isNIL(rMonedas)
+      MsgStop("No Hay Monedas registradas")
+      return
+   endif
+
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+   
+   DEFINE WINDOW oAliWnd ;
+          TITLE "Fiscalius. Monedas" ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+
+   //DEFINE BUTTON ::oBtn ACTION __vtaAlicuotaIVA( oForm, oFormParent, ::oBoxData, ::oModMonedas, .T.  ) ;
+   //       ID "btn_add" RESOURCE ::oRes
+
+   DEFINE MODEL oModMonedas ;
+          STRUCT rMonedas:Struct() ;
+          DATA   rMonedas:GetData()
+   
+   DEFINE LISTBOX oLBoxCli ;
+          MODEL oModMonedas ;
+          OF oBoxData
+
+   oLBoxCli:lBar  := .f.
+
+
+ 
+ 
+   oLBoxCli:Active() 
+   
+   
+   ACTIVATE WINDOW oAliWnd MODAL
+
+return
+
+
+
+//eof
