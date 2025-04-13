@@ -73,16 +73,16 @@ procedure vta_facturas( oFormParent )
           VALID .T. ; 
           ID "ent_orden_compra" RESOURCE ::oRes
 
-   ::dFecha := DATE()
-   ::dPFecha := ::dFecha
-   DEFINE ENTRY TYPE DATE ::oEntFecha VAR ::dFecha CALENDAR ;
-          VALID __FactValFecha( oForm, ::oEntFecha, @::dPFecha ) ;
+   ::cFecha := DTOC( DATE() )
+   ::cPFecha := ::cFecha
+   DEFINE ENTRY TYPE DATE ::oEntFecha VAR ::cFecha CALENDAR ;
+          VALID __FactValFecha( oForm, ::oEntFecha, @::cPFecha ) ;
           ID "ent_fecha" RESOURCE ::oRes
 
-   ::dVcmto := DATE()
-   ::dPVcmto := ::dVcmto
-   DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::dVcmto CALENDAR ;
-          VALID __FactValFecha( oForm, ::oEntVcmto, @::dPVcmto ) ;
+   ::cVcmto := DTOC( DATE() )
+   ::cPVcmto := ::cVcmto
+   DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::cVcmto CALENDAR ;
+          VALID __FactValFecha( oForm, ::oEntVcmto, @::cPVcmto ) ;
           ID "ent_vcmto" RESOURCE ::oRes
 
    DEFINE BOX ::oBoxCondicion ID "box_condicion" RESOURCE ::oRes
@@ -701,11 +701,13 @@ Procedure __Save( oForm )
       //return 
    endif
 
-   ::hFactura["cliente_id"  ] := ::cCodCli                 //Cliente
-   ::hFactura["orden_compra"] := ::cOrdenCompra            // Orden de Compra
-   ::hFactura["condicion_id"] := '1'                       // Condicion (de momento no importa  )
-   ::hFactura["monto_base"  ] := ::oEntMonBase:GetValue()  // Monto Base o SubTotal
-   ::hFactura["estado"      ] := LEFT( ::oComboEstado:GetValue(), 1 )
+   ::hFactura["cliente_id"       ] := ::cCodCli                    //Cliente
+   ::hFactura["orden_compra"     ] := ::cOrdenCompra               // Orden de Compra
+   ::hFactura["fecha"            ] := CTOD(::oEntFecha:GetValue()) // Fecha
+   ::hFactura["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue()) // Vencimiento
+   ::hFactura["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
+   ::hFactura["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
+   ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
 
    View( ::hFactura ) 
 
