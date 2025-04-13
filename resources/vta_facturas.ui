@@ -329,15 +329,15 @@
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkEntry" id="ent_nro_control">
-                                                <property name="width_request">120</property>
+                                              <object class="GtkLabel" id="lab_nro_control">
                                                 <property name="visible">True</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="invisible_char">●</property>
-                                                <property name="primary_icon_activatable">False</property>
-                                                <property name="secondary_icon_activatable">False</property>
-                                                <property name="primary_icon_sensitive">True</property>
-                                                <property name="secondary_icon_sensitive">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="label" translatable="yes">0000001</property>
+                                                <attributes>
+                                                  <attribute name="weight" value="heavy"/>
+                                                  <attribute name="stretch" value="expanded"/>
+                                                  <attribute name="size" value="150"/>
+                                                </attributes>
                                               </object>
                                               <packing>
                                                 <property name="expand">False</property>
