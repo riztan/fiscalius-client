@@ -6,10 +6,11 @@
 
 procedure mae_usuarios( oForm, oWndParent, oEntParent )
 
-   local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData,oBoxCampos
    local oLabTitulo, cLabTitulo := "Usuarios"
    local cTipo,dFecha,nPorcentaje:=0
    local rVentas, rUsuarios, oModUsuarios, oLBoxCli
+   local oMaeNombre,cNombre:=""
 
    rVentas := ::oGEmpresa:SetModulo("Ventas")
    rUsuarios := rVentas:Usuarios()
@@ -20,7 +21,7 @@ procedure mae_usuarios( oForm, oWndParent, oEntParent )
    endif
 
 
-   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_usuarios.ui"
 
    
    DEFINE WINDOW oAliWnd ;
@@ -42,6 +43,19 @@ procedure mae_usuarios( oForm, oWndParent, oEntParent )
           oImgLogo:Adjust(60)
 
    DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+   
+
+   DEFINE BOX oBoxCampos ID "boxcampos" RESOURCE oRes
+          oBoxCampos:Hide()
+		  
+	DEFINE BUTTON oBtn ACTION __MaeUsuarios( oBoxCampos, oModUsuarios, .T.  ) ;
+          ID "btn_add" RESOURCE oRes
+		  
+   cNombre := ""
+   DEFINE ENTRY oMaeNombre VAR cNombre ;
+          VALID .T. ; 
+          ID "ent_nombre" RESOURCE oRes
+
 
 
 
@@ -57,11 +71,49 @@ procedure mae_usuarios( oForm, oWndParent, oEntParent )
 
 
    oLBoxCli:Active() 
-   
+   oLBoxCli:SetColVisible( 2, .F. )    //- Ocultamos Nombre largo
+   oLBoxCli:SetColVisible( 6, .F. )    //- Ocultamos Clave de acceso
+   oLBoxCli:SetColTitle( 3, "Nombre corto" )  //- Cambiamos el titulo 
    
    ACTIVATE WINDOW oAliWnd MODAL
 
 return
+
+
+
+//-- Este procedimiento se ejecuta al Agregar o Modificar
+procedure __MaeUsuarios(oBoxCampos, oModel, lNew )
+
+    local aData, aLine
+   local oCol
+
+   default lNew := .T.
+
+/*
+   ::lNew := lNew
+
+   if ::lNew 
+      ::lLoad      := .F.
+      ::lSave      := .F.
+      ::rFactura   := ::rVentas:Factura('')
+      ::hFactura   := ::rFactura:Data()
+      ::rFactDetal := ::rFactura:Detal()
+
+      ::oLabNumero:SetValue( "00000000" )
+      ::oLabNroControl:SetValue( "00000000" )
+      ::oEntCli:SetValue( "" )
+      ::oEntFecha:SetValue( DTOC(DATE()) )
+
+
+   endif
+   */
+
+   
+   oBoxCampos:Show()
+
+return
+
+
 
 
 
