@@ -61,6 +61,8 @@ procedure vta_facturas( oFormParent )
    //-------------------------
    DEFINE LABEL ::oLabNumero ID "lab_numero" RESOURCE ::oRes
 
+   ::cCodVendedor := "1" // Valor preeterminado (por ahora y para siempre) RIGC
+
    ::cEntCli := ""
    ::cCodCli := ""
    DEFINE ENTRY  ::oEntCli VAR ::cEntCli ;
@@ -241,7 +243,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    local lPreConfirm := ::lConfirm
    local aData, aLine
    local hMontos := hb_hash()
-   local oCol
+   local oCol, hIva
 
    default lNew := .T.
 
@@ -287,10 +289,29 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol("numero")), 8) )
       ::oLabNroControl:SetValue( STRZERO( ::hFactura["numero_control"], 8) )
       ::oEntCli:SetValue( oModel:GetCol("Cliente") )
+      ::cCodCli := oModel:GetCol("cliente_id")
+      ::cCodVendedor := oModel:GetCol("vendedor_id")
       ::oEntFecha:SetValue( oModel:GetCol("fecha") )
       ::oEntVcmto:SetValue( oModel:GetCol(5) )
       ::oEntOrdCompra:SetValue( ::hFactura["orden_compra"] ) 
-      ::oEntMonBase:SetValue( oModel:GetCol("monto base") )
+
+      ::oEntIvaE:SetValue( "0" )
+      ::oEntIvaR:SetValue( "0" )
+      ::oEntIvaG:SetValue( "0" )
+      FOR EACH hIva IN ::hFactura["iva"]
+         if hIva["porcentaje"] = 0
+            ::oEntIvaE:SetValue( TRANSFORM(hIva["monto"],P_92) )
+         endif
+         if hIva["porcentaje"] = 8 //-- Parche, se debe manejar el tipo de tasa en la tabla de transacciones (RIGC)
+            ::oEntIvaR:SetValue( TRANSFORM(hIva["monto"],P_92) )
+         endif
+         if hIva["porcentaje"] = 16
+            ::oEntIvaG:SetValue( TRANSFORM(hIva["monto"],P_92) )
+         endif
+      NEXT
+
+      ::oEntMonBase:SetValue( TRANSFORM(::hFactura["monto_base"],P_92) ) //oModel:GetCol("monto base") )
+      ::oEntTotal:SetValue( TRANSFORM(::hFactura["monto_total"],P_92) )  
 
       ::lConfirm := .F.
       do case
@@ -303,7 +324,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       endcase
       ::lConfirm := lPreconfirm
 
-      ::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
+      //::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
 
    endif
 
@@ -570,6 +591,7 @@ procedure __Calcula( oForm )
    ::oEntIvaE:SetValue("0")
    ::oEntIvaR:SetValue("0")
    ::oEntIvaG:SetValue("0")
+   ::hFactura["iva"] := {=>}
    ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm ) }
    ::oLBoxDetal:ForEach( ::bDetalCode )
 return
@@ -577,7 +599,7 @@ return
 
 
 procedure __CalMontos( oTView, pModel, aIter, oForm )
-   local nBase, nMonto, nTotal
+   local nBase, nMonto, nTotal, cIva
 
 //   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
 //                    ToNum( oTView:GetAutoValue(__PRECIO,   aIter)), 2 )
@@ -587,11 +609,27 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    nTotal := ROUND( nBase+nMonto, 2 )
    ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
 
-   if ToNum( oTView:GetAutoValue( __IVAPORCEN, aIter )) = 16  // <-- ToDo: Usar Datos de IVA
+   if ToNum( oTView:GetAutoValue( __IVAPORCEN, aIter )) > 0  // <-- ToDo: Usar Datos de IVA
+View("calculando IVA")
       nMonto := ToNum( oTView:GetAutoValue( __IVAMONTO, aIter ) )
       nBase  := ToNum( ::oEntIvaG:GetValue() )
       nTotal := ROUND( nBase+nMonto, 2 )
       ::oEntIvaG:SetValue( TRANSFORM( nTotal, P_92 ) )
+      if !hb_hHasKey( ::hFactura, "iva" )
+         ::hFactura["iva"] := hb_hash()
+      endif
+      cIva := ALLTRIM( oTView:GetAutoValue(__IVAPORCEN, aIter) )
+      if hb_hHasKey( ::hFactura["iva"], cIva )
+         nMonto += ::hFactura["iva"][cIva]["monto"]
+      endif
+      hb_hSet( ::hFactura["iva"], ALLTRIM(oTView:GetAutoValue(__IVAPORCEN, aIter)),;
+               { "porcentaje" => ToNum(oTView:GetAutoValue(__IVAPORCEN, aIter)), ;
+                 "monto"      => nMonto,;
+                 "porcentaje_retencion" => 0,; // <-- ToDo riztan
+                 "monto_retencion"      => 0,;
+                 "comprobante_retencion"=> ::cRetIva ;
+               } )
+View( ::hFactura )
    endif
 
    nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
@@ -701,12 +739,15 @@ Procedure __Save( oForm )
       //return 
    endif
 
-   ::hFactura["cliente_id"       ] := ::cCodCli                    //Cliente
+//riztan
+   ::hFactura["cliente_id"       ] := ::cCodCli                    // Cliente
+   ::hFactura["vendedor_id"      ] := ::cCodVendedor               // Vendedor
    ::hFactura["orden_compra"     ] := ::cOrdenCompra               // Orden de Compra
    ::hFactura["fecha"            ] := CTOD(::oEntFecha:GetValue()) // Fecha
    ::hFactura["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue()) // Vencimiento
    ::hFactura["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
    ::hFactura["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
+   ::hFactura["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Base o SubTotal
    ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
 
    View( ::hFactura ) 
@@ -724,6 +765,10 @@ Procedure __Save( oForm )
 */
    uResp := ::rFactura:Save()
    if hb_isLogical( uResp ) .and. uResp
+View("atualizamos hFactura ")
+      ::hFactura   := ::rFactura:Data()
+View( ::hFactura )
+      ::oLabNumero:SetValue( STRZERO( VAL(::hFactura["numero"]), 8) )
       if ::lNew
          ::lNew := .F.
          //-- Debemos mostrar los valores de numero asignados.
