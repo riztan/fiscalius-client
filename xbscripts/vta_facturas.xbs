@@ -244,6 +244,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    local aData, aLine
    local hMontos := hb_hash()
    local oCol, hIva
+   local oErr
 
    default lNew := .T.
 
@@ -356,9 +357,10 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                          {"id_ubicacion",   "N",10, 0},;
                          {"almacen_id",     "N",10, 0},;
                          {"nombre_almacen", "C",20, 0},;
-                         {"detalles_json",  "C",100, 0} ;
+                         {"detalles_json",  "C",100,0},;
+                         {"item",           "N",10, 0} ;
                         } ;
-                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'',''}}
+                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0}}
 
       endif
 
@@ -382,6 +384,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColVisible( 17, .f. )     //- Almacen Id
       ::oLBoxDetal:SetColVisible( 18, .f. )     //- Almacen Nombre
       ::oLBoxDetal:SetColVisible( 19, .f. )     //- Detalles (JSON)
+      ::oLBoxDetal:SetColVisible( 20, .f. )     //- Item
 
       ::oLBoxDetal:SetColTitle( 03, "Código" )        //-- Columna Código
       ::oLBoxDetal:SetColTitle( 04, "Descripción" )   //-- Columna Descripción
@@ -403,10 +406,16 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oModDetal:oTreeView:ClearModel(.t.)
       aData := ::rFactDetal:GetData()
 
+//View( hb_valtoexp( aData ) )
+//if LEN(aData)>=1
+//View( LEN( aData[1] ) )
+//endif
       if !Empty( aData )
 
          FOR EACH aLine IN aData
    
+//View( hb_valtoexp(aLine) )
+TRY
             APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
                    VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
                           aLine[4], hb_ntos(aLine[5]),;
@@ -415,7 +424,14 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                           hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
                           hb_ntos(aLine[12]), aLine[13], ;
                           aLine[14], aLine[15], ;
-                          aLine[16], hb_ntos(aLine[17]), aLine[18], aLine[19]
+                          aLine[16], ;
+                          hb_ntos(aLine[17]), ;
+                          aLine[18], ;
+                          aLine[19], ;
+                          hb_ntos(aLine[20])
+CATCH oErr
+   View( oErr:Description )
+END
 
          NEXT
 
@@ -475,7 +491,6 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    #define __TOTAL        11
 
 
-
    //-- Continuamos, calcular valores.
    ::oEntMonBase:SetValue("0")
    ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm ) }
@@ -484,6 +499,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
       //::oEntMonBase:SetValue( "0" )
    __FactRefresh( oForm, .F. )
+   __Calcula(oForm)
 
 //View( ::hFactura )
 
@@ -547,7 +563,7 @@ PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue  )
    local nMonto, nDescuento, nIvaPorcen, nIvaMonto:= 0
 
    if oTreeView:IsGetSelected( aIter )
-      if nCol=__CANTIDAD .or. nCol= __PRECIO .or. nCol=__DESCUENTO
+      if nCol= __CANTIDAD .or. nCol= __PRECIO .or. nCol= __DESCUENTO
 
          if nCol = __DESCUENTO
             nDescuento := VAL(uValue)
@@ -649,7 +665,7 @@ return
 
 procedure __AddDetal( oForm )
    local aIter := ARRAY(4)
-   local aLine := {'','','','','','','','','','','','','','','','','','',''}
+   local aLine := {'','','','','','','','','','','','','','','','','','','',''}
 
    //-  ignoramos si el documento esta anulado o cerrado.
    if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
@@ -665,7 +681,7 @@ procedure __AddDetal( oForm )
                  aLine[12], aLine[13], ;
                  aLine[14], aLine[15], ;
                  aLine[16], aLine[17], ;
-                 aLine[18], aLine[19]
+                 aLine[18], aLine[19], aLine[20]
 
    ::oModDetal:oTreeView:SetFocus()
    ::oModDetal:GoBottom()
@@ -719,13 +735,20 @@ Procedure __DelDetal( oForm )
    local pPath
  
    //-  ignoramos si el documento esta anulado o cerrado.
-   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
+   if ::cComboEstado = "A" .or. ::cComboEstado = "C" 
       return 
    endif
 
    if ::oModDetal:oTreeView:IsGetSelected( aIter ) 
 
       pPath := ::oModDetal:oTreeView:GetPath( aIter )
+      if !Empty( ::oModDetal:oTreeView:GetAutoValue( 20 ) )
+         if MsgNoYes( "¿Realmente desea eliminar este item?" )
+            if !::rFactura:DelItem( ALLTRIM( ::oModDetal:oTreeView:GetAutoValue( 20 ) ) ) //20-> ITEM
+               return 
+            endif
+         endif
+      endif
       ::oModDetal:oLbx:Remove( aIter )
       gtk_tree_view_set_cursor( ::oModDetal:oTreeView:pWidget, pPath )
 
@@ -743,7 +766,6 @@ Procedure __Save( oForm )
       //return 
    endif
 
-//riztan
    ::hFactura["cliente_id"       ] := ::cCodCli                    // Cliente
    ::hFactura["vendedor_id"      ] := ::cCodVendedor               // Vendedor
    ::hFactura["orden_compra"     ] := ::cOrdenCompra               // Orden de Compra
@@ -757,20 +779,21 @@ Procedure __Save( oForm )
    //View( ::hFactura ) 
 
    ::rFactura:SetData( ::hFactura )
-//   ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm ) }
-//   ::oLBoxDetal:ForEach( ::bDetalCode )
-/*
+
    //-- Actualizar detalles de la factura.
    bSaveDetal := {|oTView, pModel, aIter| __SaveDetal( oTView, pModel, aIter, oForm )  }
-   ::aDetal := {}
-   ::oLBoxDetal:ForEach( bSaveDetal )
-//View( ::aDetal )
-   ::rFactura:SetDetal( ::aDetal )
-*/
+
    uResp := ::rFactura:Save()
    if hb_isLogical( uResp ) .and. uResp
 //View("atualizamos hFactura ")
       ::hFactura   := ::rFactura:Data()
+//View( ::hFactura )
+      //-- Importante invocar SetDetal después de rFactura:Save() 
+      //   para obtener primero el nro del documento
+      ::aDetal := {}
+      ::oLBoxDetal:ForEach( bSaveDetal )
+//View( ::aDetal )
+      ::rFactura:SetDetal( ::aDetal )
 //View( ::hFactura )
       ::oLabNumero:SetValue( STRZERO( VAL(::hFactura["numero"]), 8) )
       if ::lNew
@@ -791,25 +814,27 @@ procedure __SaveDetal(oTView, pModel, aIter, oForm)
 //   View( oTView:GetAutoValue( 1 ) )
 //   View( oTView:GetAutoValue( 3 ) )
 
-   hDetal["id"               ] := oTView:GetAutoValue( 01 )
-   hDetal["numero"           ] := oTView:GetAutoValue( 02 )
-   hDetal["codigo_local"     ] := oTView:GetAutoValue( 03 )
-   hDetal["descripcion"      ] := oTView:GetAutoValue( 04 )
-   hDetal["cantidad"         ] := VAL(oTView:GetAutoValue( 05 ))
-   hDetal["precio_unitario"  ] := VAL(oTView:GetAutoValue( 06 ))
-   hDetal["descuento"        ] := VAL(oTView:GetAutoValue( 07 ))
-   hDetal["subtotal"         ] := VAL(oTView:GetAutoValue( 08 ))
-   hDetal["iva_porcentaje"   ] := VAL(oTView:GetAutoValue( 09 ))
-   hDetal["iva_monto"        ] := VAL(oTView:GetAutoValue( 10 ))
-   hDetal["total"            ] := VAL(oTView:GetAutoValue( 11 ))
-   hDetal["nombre_global"    ] := oTView:GetAutoValue( 12 )
-   hDetal["tipo_inventario"  ] := oTView:GetAutoValue( 13 )
-   hDetal["lote"             ] := oTView:GetAutoValue( 14 )
-   hDetal["fecha_vencimiento"] := oTView:GetAutoValue( 15 )
-   hDetal["ubicacion"        ] := oTView:GetAutoValue( 16 )
-   hDetal["almacen_id"       ] := oTView:GetAutoValue( 17 )
-   hDetal["nombre_almacen"   ] := oTView:GetAutoValue( 18 )
-   hDetal["detalles_json"    ] := oTView:GetAutoValue( 19 )
+   //hDetal["id"               ] := ALLTRIM(oTView:GetAutoValue( 01 ))
+   hDetal["numero"           ] := ::hFactura[ "numero" ]
+   hDetal["codigo_local"     ] := ALLTRIM(oTView:GetAutoValue( 03, aIter ))
+   hDetal["descripcion"      ] := oTView:GetAutoValue( 04, aIter )
+   hDetal["cantidad"         ] := VAL( oTView:GetAutoValue( 05, aIter ) )
+   hDetal["precio_unitario"  ] := VAL( oTView:GetAutoValue( 06, aIter ) )
+   hDetal["descuento"        ] := VAL( oTView:GetAutoValue( 07, aIter ) )
+   hDetal["subtotal"         ] := VAL( oTView:GetAutoValue( 08, aIter ) )
+   hDetal["iva_porcentaje"   ] := VAL( oTView:GetAutoValue( 09, aIter ) )
+   hDetal["iva_monto"        ] := VAL( oTView:GetAutoValue( 10, aIter ) )
+   hDetal["total"            ] := VAL( oTView:GetAutoValue( 11, aIter ) )
+   hDetal["nombre_global"    ] := oTView:GetAutoValue( 12, aIter )
+   hDetal["tipo_inventario"  ] := oTView:GetAutoValue( 13, aIter )
+   hDetal["lote"             ] := ALLTRIM(oTView:GetAutoValue( 14, aIter ))
+   hDetal["fecha_vencimiento"] := oTView:GetAutoValue( 15, aIter )
+   hDetal["ubicacion"        ] := ALLTRIM(oTView:GetAutoValue( 16, aIter ))
+   hDetal["almacen_id"       ] := ALLTRIM(oTView:GetAutoValue( 17, aIter ))
+   hDetal["nombre_almacen"   ] := oTView:GetAutoValue( 18, aIter )
+   hDetal["detalles_json"    ] := oTView:GetAutoValue( 19, aIter )
+   hDetal["item"             ] := oTView:GetAutoValue( 20, aIter )
+//View( oTView:GetAutoValue(20, aIter) )
    
    AADD( ::aDetal, hDetal )
 
