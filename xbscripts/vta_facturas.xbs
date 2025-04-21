@@ -3,6 +3,7 @@
  */
 
 #include "tpy_xbs.ch"
+#define SEPARATOR  " "+CHR(199)+CHR(129)+" "
 
 procedure vta_facturas( oFormParent )
 
@@ -19,6 +20,7 @@ procedure vta_facturas( oFormParent )
 
    ::aDetal := {}
 
+   ::cEmpresa := oFormParent:cCBEmpresa
    ::rVentas := oFormParent:oGEmpresa:SetModulo("Ventas")
    ::rFacturas := ::rVentas:Facturas()
 
@@ -31,7 +33,7 @@ procedure vta_facturas( oFormParent )
 
    DEFINE WINDOW ::oFacWnd ;
           TITLE "Fiscalius. Factura" ;
-          SIZE 1000,600 ;
+          SIZE 800,600 ;
           ID "window1" RESOURCE ::oRes
 
    DEFINE IMAGE ::oImgBanner ;
@@ -43,6 +45,10 @@ procedure vta_facturas( oFormParent )
           FILE oTPuy:cImages+"fiscalius_logo_02.png";
           ID "image2" RESOURCE ::oRes
           ::oImgLogo:Adjust(60)
+
+   DEFINE LABEL ::oLabInfo    TEXT "" MARKUP ID "lab_info"    RESOURCE ::oRes
+   DEFINE LABEL ::oLabUsuario TEXT "" MARKUP ID "lab_usuario" RESOURCE ::oRes
+   DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnGuardar ;
           ACTION __Save( oForm ) ;
@@ -100,6 +106,14 @@ procedure vta_facturas( oFormParent )
           ON CHANGE MsgInfo("condicion") ;
           OF ::oBoxCondicion
 
+   DEFINE BOX ::oBoxDivisa ID "box_divisa" RESOURCE ::oRes
+   ::aDivisas := {"USD 723,1123", "EU 811,9908"}
+   ::cDivisa := ""
+   DEFINE COMBOBOX ::oComboDivisa ;
+          VAR ::cDivisa ITEMS ::aDivisas ;
+          ON CHANGE MsgInfo("divisa!") ;
+          OF ::oBoxDivisa
+
    DEFINE BOX ::oBoxEstado ID "box_estado" RESOURCE ::oRes
 
    ::aComboEstado := {"Borrador","Anulada","Cerrada"}
@@ -108,6 +122,24 @@ procedure vta_facturas( oFormParent )
           VAR ::cComboEstado ITEMS ::aComboEstado ;
           ON CHANGE ( __ChangeEstado( oForm, ::lConfirm ) ) ;
           OF ::oBoxEstado
+
+
+   DEFINE STATUSBAR ::oStatusBar ;
+          TEXT "" ;  //oTPuy:cSystem_Name + " | Hora: "+oTPuy:cTime ;
+          ID "statusbar" RESOURCE ::oRes
+
+   ::oStBar := TStatusBar():New( ::oStatusBar )
+   ::oStBar:Add( "empresa",{|| ::cEmpresa + SEPARATOR }  )
+   ::oStBar:Add( "username",{|| "Usuario: "+oTPuy:oUser:cNombre + " " }  )
+   ::oStBar:Refresh()
+
+   ::bTimer := {|| ::oStBar:Refresh(), ::oLabInfo:SetText("") }
+
+   DEFINE TIMER ::oTimer ;
+          INTERVAL 10000 ;
+          ACTION EVAL( ::bTimer )
+
+   ACTIVATE TIMER ::oTimer
 
    //-- Detalles de la factura
    DEFINE BOX ::oBoxDetalles ID "box_detalles" RESOURCE ::oRes
@@ -201,8 +233,29 @@ return
 
 
 
+procedure __ModFactsRefresh(oForm)
+   local aLine, aIter := ARRAY(4)
+
+   ::rFacturas := ::rVentas:Facturas()
+   if ::isDef("oModFacturas")
+      ::oModFacturas:oTreeView:ClearModel(.t.)
+      FOR EACH aLine IN ::rFacturas:GetData()
+         APPEND LIST_STORE ::oModFacturas:oLbx ITER aIter ;
+                VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
+                       ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
+                       DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
+                       aLine[ 7], hb_ntos(aLine[ 8])
+
+      NEXT
+      //::oModFacturas:oTreeView:SetFocus()
+   endif
+return 
+
+
+
 function __FactExit(oForm)
    if MsgNoYes("¿Realmente desea salir?")
+      ::oTimer:End()
       oForm:Release()
       return .T.
    endif
@@ -247,6 +300,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    local oErr
 
    default lNew := .T.
+
+   ::oFacWnd:Maximize()
 
    ::lNew := lNew
 
@@ -773,7 +828,7 @@ Procedure __Save( oForm )
    ::hFactura["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue()) // Vencimiento
    ::hFactura["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
    ::hFactura["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
-   ::hFactura["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Base o SubTotal
+   ::hFactura["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
 
    //View( ::hFactura ) 
@@ -784,6 +839,7 @@ Procedure __Save( oForm )
    bSaveDetal := {|oTView, pModel, aIter| __SaveDetal( oTView, pModel, aIter, oForm )  }
 
    uResp := ::rFactura:Save()
+//View( uResp )
    if hb_isLogical( uResp ) .and. uResp
 //View("atualizamos hFactura ")
       ::hFactura   := ::rFactura:Data()
@@ -801,6 +857,11 @@ Procedure __Save( oForm )
          //-- Debemos mostrar los valores de numero asignados.
          //-- Igual debemos atualizar valor de numero asignado si hubo cambio de estado a "Cerrado"
       endif
+   endif
+
+   if uResp
+      __ModFactsRefresh( oForm )
+      ::oLabInfo:SetText( "Actualizado." )
    endif
    
 return

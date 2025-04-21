@@ -18,6 +18,27 @@ procedure poslogin( oParent )
 
    oTPuy:cServer   := NETSERVER
 
+   //--- Temas y personalizaciones.
+   if oTpuy:cOS="WIN"
+      ::cFont    := "Tahoma" //"Bradley Hand ITC"//"Chiller"//"Tahoma"
+      ::lWin     := .T.
+   else
+      ::cFont    := "Arial Narrow"//"Liberation Sans Narrow"
+      //::cFont    := "URW Chancery L"//"Liberation Sans Narrow"
+      ::lWin     := .F.
+   endif
+   ::cFontName:= ::cFont + " " + ALLTRIM(STR( 11 ))
+
+   //::SetTheme("Flattastic") 
+   ::cStyle := 'style "user-font" {'+CRLF
+   ::cStyle += 'font_name = "'+::cFontName+'" '+CRLF
+   ::cStyle += '}'+CRLF+CRLF
+   ::cStyle += 'class "*" style "user-font"'+CRLF
+   ::cStyle += 'gtk-font-name="'+::cFontName+'"'+CRLF+CRLF
+
+   gtk_rc_parse_string( ::cStyle )
+   //--- Fin de temas y personalizaciones.
+
    ::aMsgs := {}
 
    oParent:oWnd:End()
