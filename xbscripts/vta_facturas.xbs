@@ -17,6 +17,7 @@ procedure vta_facturas( oFormParent )
 
    ::lConfirm := .T.
    ::lNew     := .T.
+   ::lSilence := .F.
 
    ::aDetal := {}
 
@@ -279,9 +280,15 @@ return lRes
 
 
 procedure __ChangeEstado( oForm, lConfirm )
+//View( ::cPreEstado + " --> " + ::cComboEstado )
+   if ::lSilence ; return ; endif
+
    if ::cComboEstado = "Anulada" .or. ;
       ::cComboEstado = "Cerrada"
       __FactRefresh( oForm, lConfirm )
+      if ::cPreEstado == "B" 
+         __Save( oForm )
+      endif
    else
       __FactRefresh( oForm, !lConfirm )
    endif
@@ -300,6 +307,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    local oErr
 
    default lNew := .T.
+   ::lSilence := .t.
 
    ::oFacWnd:Maximize()
 
@@ -327,6 +335,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
       ::oComboEstado:SetValue("Borrador", .F. ) 
       ::cComboEstado := "B"
+      ::cPreEstado   := ::cComboEstado
    
       ::oEntTotal:SetValue( "0" )
       ::oEntRetIva:SetValue( "" )
@@ -342,7 +351,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::hFactura   := ::rFactura:Data()
       ::rFactDetal := ::rFactura:Detal()
 
-      ::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol("numero")), 8) )
+      //::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol("numero")), 8) )
+      ::oLabNumero:SetValue( oModel:GetCol("numero") )
       ::oLabNroControl:SetValue( STRZERO( ::hFactura["numero_control"], 8) )
       ::oEntCli:SetValue( oModel:GetCol("Cliente") )
       ::cCodCli := oModel:GetCol("cliente_id")
@@ -378,6 +388,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       case ::hFactura["estado"] = "C"
          ::oComboEstado:SetValue( "Cerrada"  )
       endcase
+      ::cPreEstado := ::hFactura["estado"] //::cComboEstado
       ::lConfirm := lPreconfirm
 
       //::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
@@ -559,6 +570,8 @@ END
 //View( ::hFactura )
 
    oBoxFactura:Show()
+
+   ::lSilence := .f.
 
 return
 
@@ -816,7 +829,8 @@ return
 Procedure __Save( oForm )
    local bSaveDetal, uResp
 
-   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
+   if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
+      !( ::cPreEstado = "B" )
       MsgAlert( "Este documento no es objeto para ser alterado y luego almacenar.", "Atención" )
       //return 
    endif
@@ -833,13 +847,16 @@ Procedure __Save( oForm )
 
    //View( ::hFactura ) 
 
-   ::rFactura:SetData( ::hFactura )
+   uResp := ::rFactura:SetData( ::hFactura )
+   if !uResp
+      ::oLabInfo:SetText("No ha sido posible actualizar los datos.")
+      return
+   endif
 
    //-- Actualizar detalles de la factura.
    bSaveDetal := {|oTView, pModel, aIter| __SaveDetal( oTView, pModel, aIter, oForm )  }
 
    uResp := ::rFactura:Save()
-//View( uResp )
    if hb_isLogical( uResp ) .and. uResp
 //View("atualizamos hFactura ")
       ::hFactura   := ::rFactura:Data()
@@ -849,7 +866,10 @@ Procedure __Save( oForm )
       ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
 //View( ::aDetal )
-      ::rFactura:SetDetal( ::aDetal )
+      if !::rFactura:SetDetal( ::aDetal )
+         ::oLabInfo:SetText("No se actualizaron los detalles" )
+         uResp := .F.
+      endif
 //View( ::hFactura )
       ::oLabNumero:SetValue( STRZERO( VAL(::hFactura["numero"]), 8) )
       if ::lNew
@@ -859,8 +879,9 @@ Procedure __Save( oForm )
       endif
    endif
 
+   __ModFactsRefresh( oForm )
    if uResp
-      __ModFactsRefresh( oForm )
+      ::cPreEstado := LEFT( ::oComboEstado:GetValue(), 1 )
       ::oLabInfo:SetText( "Actualizado." )
    endif
    
