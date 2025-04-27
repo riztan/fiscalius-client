@@ -22,6 +22,7 @@ procedure vta_facturas( oFormParent )
    ::aDetal := {}
 
    ::cEmpresa := oFormParent:cCBEmpresa
+   ::rEmpresa := oFormParent:oGEmpresa
    ::rVentas := oFormParent:oGEmpresa:SetModulo("Ventas")
    ::rFacturas := ::rVentas:Facturas()
 
@@ -108,11 +109,13 @@ procedure vta_facturas( oFormParent )
           OF ::oBoxCondicion
 
    DEFINE BOX ::oBoxDivisa ID "box_divisa" RESOURCE ::oRes
-   ::aDivisas := {"USD 723,1123", "EU 811,9908"}
+   ::aMonedas := {}
+   ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
+   __FactValFecha( oForm, ::oEntFecha, @::cPFecha )
    ::cDivisa := ""
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
-          ON CHANGE MsgInfo("divisa!") ;
+          ON CHANGE .t.; //MsgInfo("divisa!") ;
           OF ::oBoxDivisa
 
    DEFINE BOX ::oBoxEstado ID "box_estado" RESOURCE ::oRes
@@ -266,6 +269,7 @@ return .F.
 
 function __FactValFecha( oForm, oEnt, dValPrevio )
    local lRes := .t.
+   local nValor, rQry
 
    if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
       MsgAlert( "La fecha indicada es incorrecta. Por favor revise." )
@@ -275,6 +279,27 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
    endif
    
    dValPrevio := CTOD( oEnt:getValue() )
+
+   // Obtener tasa de cambio correspondiente.
+   rQry := ::rEmpresa:GetTasa( dValPrevio ) 
+
+   ::aDivisas := {}
+   ::aMonedas := {}
+   While !rQry:Eof()
+      if rQry:codigo="USD" //-- de momento solo tomamos la tasa USD
+         AADD( ::aDivisas, ALLTRIM(rQry:codigo)+" "+;
+                           hb_ntos( rQry:valor ) )
+         AADD( ::aMonedas, rQry:moneda_id )
+      endif
+      rQry:Skip()
+   EndDo
+   if hb_isObject( ::oComboDivisa )
+      ::oComboDivisa:RemoveAll()
+      ::oComboDivisa:SetItems( ::aDivisas )
+   endif
+
+//View( hb_valtoexp( ::aMonedas ) )
+
 return lRes
 
 
