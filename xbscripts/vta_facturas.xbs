@@ -199,8 +199,8 @@ procedure vta_facturas( oFormParent )
    ::cRetIva := ""
    DEFINE DOCUMENT ENTRY ::oEntRetIva VAR ::cRetIva ;
           ID "ent_retivanum" RESOURCE ::oRes
-   ::oRetIvaFecha := DATE()
-   DEFINE DATE ENTRY ::oEntRetIvaF VAR ::dRetIvaFecha ;
+   ::dRetIvaFecha := '' //DATE()
+   DEFINE ENTRY TYPE DATE ::oEntRetIvaF VAR ::dRetIvaFecha CALENDAR;
           ID "ent_retivaf" RESOURCE ::oRes
 
    //-------------------------
@@ -272,10 +272,14 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
    local nValor, rQry
 
    if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
+      //llevamos fecha de vencimiento a la misma fecha del documento.
+      ::oEntVcmto:SetValue( ::oEntFecha:GetValue() )
+/*
       MsgAlert( "La fecha indicada es incorrecta. Por favor revise." )
       lRes := .F.
       
       oEnt:setValue( DTOC(dValPrevio) )
+*/
    endif
    
    dValPrevio := CTOD( oEnt:getValue() )
@@ -419,6 +423,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       //::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
 
    endif
+
+   __FactValFecha( oForm, ::oEntFecha, @::cPFecha )
 
    if !hb_isObject( ::oModDetal )
 
@@ -905,6 +911,7 @@ Procedure __Save( oForm )
    endif
 
    __ModFactsRefresh( oForm )
+//View( uResp )
    if uResp
       ::cPreEstado := LEFT( ::oComboEstado:GetValue(), 1 )
       ::oLabInfo:SetText( "Actualizado." )

@@ -1023,10 +1023,12 @@
                                                           <object class="GtkEntry" id="ent_retivaf">
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
+                                                            <property name="editable">False</property>
                                                             <property name="invisible_char">●</property>
                                                             <property name="invisible_char_set">True</property>
+                                                            <property name="secondary_icon_name">images/calendar_red_16.png</property>
                                                             <property name="primary_icon_activatable">False</property>
-                                                            <property name="secondary_icon_activatable">False</property>
+                                                            <property name="secondary_icon_activatable">True</property>
                                                             <property name="primary_icon_sensitive">True</property>
                                                             <property name="secondary_icon_sensitive">True</property>
                                                           </object>
