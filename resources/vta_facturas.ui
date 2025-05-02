@@ -1068,11 +1068,12 @@
                                                             </packing>
                                                             </child>
                                                             <child>
-                                                            <object class="GtkEntry" id="ent_porret">
+                                                            <object class="GtkEntry" id="ent_porretiva">
                                                             <property name="width_request">40</property>
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="xalign">0.94999998807907104</property>
                                                             <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
@@ -1109,11 +1110,12 @@
                                                             </packing>
                                                             </child>
                                                             <child>
-                                                            <object class="GtkEntry" id="ent_montoret">
+                                                            <object class="GtkEntry" id="ent_monretiva">
                                                             <property name="width_request">100</property>
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="xalign">0.94999998807907104</property>
                                                             <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>

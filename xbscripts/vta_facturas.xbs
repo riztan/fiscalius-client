@@ -199,9 +199,20 @@ procedure vta_facturas( oFormParent )
    ::cRetIva := ""
    DEFINE DOCUMENT ENTRY ::oEntRetIva VAR ::cRetIva ;
           ID "ent_retivanum" RESOURCE ::oRes
-   ::dRetIvaFecha := '' //DATE()
+
+   ::dRetIvaFecha := ''
    DEFINE ENTRY TYPE DATE ::oEntRetIvaF VAR ::dRetIvaFecha CALENDAR;
+          VALID __ValRetFecha(oForm); 
           ID "ent_retivaf" RESOURCE ::oRes
+
+   ::cPorRetIva := ''
+   DEFINE ENTRY TYPE PORCENT ::oEntPorRetIva VAR ::cPorRetIva ;
+          VALID __ValRetIvaPorcen( oForm ) ;
+          ID "ent_porretiva" RESOURCE ::oRes
+
+   ::cMonRetIva := ''
+   DEFINE ENTRY TYPE MONEY ::oEntMonRetIva VAR ::cMonRetIva ;
+          ID "ent_monretiva" RESOURCE ::oRes
 
    //-------------------------
    DEFINE MODEL  ::oModFacturas ;
@@ -234,6 +245,38 @@ procedure vta_facturas( oFormParent )
    ACTIVATE WINDOW ::oFacWnd MODAL VALID __FactExit(oForm)
 
 return
+
+
+
+function __ValRetIvaPorcen( oForm )
+   local nPorcen := ToNum(::cPorRetIva)
+   local nMonto 
+   if !( nPorcen >=1 .and. nPorcen <=100 )
+      MsgAlert( "Porcentaje inorrecto" )
+      RETURN .F.
+   endif
+   
+   nMonto := ToNum(::oEntIvaR:GetValue()) * (nPorcen/100) 
+   nMonto += ToNum(::oEntIvaG:GetValue()) * (nPorcen/100) 
+
+   ::oEntMonRetIva:SetValue( TRANSFORM( nMonto, P_92 ) )
+
+RETURN .T.
+
+
+
+function __ValRetFecha( oForm )
+   if ::rFactura:Estado()!="C"
+      MsgAlert( "El documento no está cerrado, no requiere información de retención", "Atención" )
+      ::oEntRetIvaF:SetValue( "" )
+      return .T. 
+   endif
+   if ( CTOD(::dRetIvaFecha) < CTOD(::cFecha) ) .AND. !Empty(::dRetIvaFecha)
+      MsgAlert( "La fecha de la retención no puede ser menor a la fecha del documento", "Atención" )
+      ::oEntRetIvaF:SetValue( ::cFecha )
+      return .f.
+   endif
+return .t.
 
 
 
@@ -512,23 +555,23 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
          FOR EACH aLine IN aData
    
 //View( hb_valtoexp(aLine) )
-TRY
-            APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
-                   VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
-                          aLine[4], hb_ntos(aLine[5]),;
-                          hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
-                          hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
-                          hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
-                          hb_ntos(aLine[12]), aLine[13], ;
-                          aLine[14], aLine[15], ;
-                          aLine[16], ;
-                          hb_ntos(aLine[17]), ;
-                          aLine[18], ;
-                          aLine[19], ;
-                          hb_ntos(aLine[20])
-CATCH oErr
-   View( oErr:Description )
-END
+            TRY
+               APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
+                      VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
+                             aLine[4], hb_ntos(aLine[5]),;
+                             hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
+                             hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
+                             hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
+                             hb_ntos(aLine[12]), aLine[13], ;
+                             aLine[14], aLine[15], ;
+                             aLine[16], ;
+                             hb_ntos(aLine[17]), ;
+                             aLine[18], ;
+                             aLine[19], ;
+                             hb_ntos(aLine[20])
+            CATCH oErr
+               View( oErr:Description )
+            END
 
          NEXT
 
@@ -809,6 +852,12 @@ procedure __FactRefresh( oForm, lConfirm )
       ::oEntCli:Disable()
       ::oEntFecha:Disable()
       ::oEntVcmto:Disable()
+      if ::hFactura["estado"]="C"
+         ::oEntRetIva:Enable()
+         ::oEntRetIvaF:Enable()
+         ::oEntPorRetIva:Enable()
+         ::oEntMonRetIva:Enable()
+      endif
       if ::lSave .or. ::lLoad
          ::oComboEstado:Disable()
       //else
@@ -818,6 +867,10 @@ procedure __FactRefresh( oForm, lConfirm )
       ::oEntCli:Enable()
       ::oEntFecha:Enable()
       ::oEntVcmto:Enable()
+      ::oEntRetIva:Disable()
+      ::oEntRetIvaF:Disable()
+      ::oEntPorRetIva:Disable()
+      ::oEntMonRetIva:Disable()
       if !::lSave
          ::oComboEstado:Enable()
       //else
