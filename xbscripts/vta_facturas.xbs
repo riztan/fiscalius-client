@@ -200,8 +200,8 @@ procedure vta_facturas( oFormParent )
    DEFINE DOCUMENT ENTRY ::oEntRetIva VAR ::cRetIva ;
           ID "ent_retivanum" RESOURCE ::oRes
 
-   ::dRetIvaFecha := ''
-   DEFINE ENTRY TYPE DATE ::oEntRetIvaF VAR ::dRetIvaFecha CALENDAR;
+   ::cRetIvaFecha := ''
+   DEFINE ENTRY TYPE DATE ::oEntRetIvaF VAR ::cRetIvaFecha CALENDAR;
           VALID __ValRetFecha(oForm); 
           ID "ent_retivaf" RESOURCE ::oRes
 
@@ -271,7 +271,7 @@ function __ValRetFecha( oForm )
       ::oEntRetIvaF:SetValue( "" )
       return .T. 
    endif
-   if ( CTOD(::dRetIvaFecha) < CTOD(::cFecha) ) .AND. !Empty(::dRetIvaFecha)
+   if ( CTOD(::cRetIvaFecha) < CTOD(::cFecha) ) .AND. !Empty(::cRetIvaFecha)
       MsgAlert( "La fecha de la retención no puede ser menor a la fecha del documento", "Atención" )
       ::oEntRetIvaF:SetValue( ::cFecha )
       return .f.
@@ -377,6 +377,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    local hMontos := hb_hash()
    local oCol, hIva
    local oErr
+   local nMonRetIVA := 0, nPorRetIVA := 0, nCompRetIVA := 0
 
    default lNew := .T.
    ::lSilence := .t.
@@ -411,6 +412,9 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    
       ::oEntTotal:SetValue( "0" )
       ::oEntRetIva:SetValue( "" )
+      ::oEntRetIvaF:SetValue( "" )
+      ::oEntMonRetIva:SetValue( "" )
+      ::oEntPorRetIva:SetValue( "" )
 
       if hb_isObject( ::oModDetal ) 
          ::oModDetal:oTreeView:ClearModel(.t.)
@@ -436,6 +440,12 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
+
+      ::oEntRetIva:SetValue( "" )
+      ::oEntRetIvaF:SetValue( "" )
+      ::oEntMonRetIva:SetValue( "" )
+      ::oEntPorRetIva:SetValue( "" )
+
       FOR EACH hIva IN ::hFactura["iva"]
          if hIva["porcentaje"] = 0
             ::oEntIvaE:SetValue( TRANSFORM(hIva["monto"],P_92) )
@@ -446,7 +456,20 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
          if hIva["porcentaje"] = 16
             ::oEntIvaG:SetValue( TRANSFORM(hIva["monto"],P_92) )
          endif
+
+         nMonRetIVA  += hIva["monto_retencion"]
+         nPorRetIVA  := hIva["porcentaje_retencion"]
+         nCompRetIVA := hIva["comprobante_retencion"]
+         cFechRetIVA := DTOC(hIva["fecha_retencion"])
+
       NEXT
+
+      if nMonRetIVA > 0
+         ::oEntRetIva:SetValue( hb_ntos(nCompRetIVA) )
+         ::oEntRetIvaF:SetValue( cFechRetIVA )
+         ::oEntMonRetIva:SetValue( TRANSFORM( nMonRetIVA, P_92 ) )
+         ::oEntPorRetIva:SetValue( TRANSFORM( nPorRetIVA, P_92 ) )
+      endif
 
       ::oEntMonBase:SetValue( TRANSFORM(::hFactura["monto_base"],P_92) ) //oModel:GetCol("monto base") )
       ::oEntTotal:SetValue( TRANSFORM(::hFactura["monto_total"],P_92) )  
@@ -787,8 +810,9 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
       hb_hSet( ::hFactura["iva"], ALLTRIM(oTView:GetAutoValue(__IVAPORCEN, aIter)),;
                { "porcentaje" => ToNum(oTView:GetAutoValue(__IVAPORCEN, aIter)), ;
                  "monto"      => nMonto,;
-                 "porcentaje_retencion" => 0,; // <-- ToDo riztan
-                 "monto_retencion"      => 0,;
+                 "fecha_retencion"      => ::cRetIvaFecha,;
+                 "porcentaje_retencion" => ToNum(::cPorRetIva),; 
+                 "monto_retencion"      => ToNum(::cMonRetIva),;
                  "comprobante_retencion"=> ::cRetIva ;
                } )
 //View( ::hFactura )
@@ -915,6 +939,9 @@ Procedure __Save( oForm )
 
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
+       __Calcula( oForm )
+::rFactura:SetRetIVA( ::hFactura["iva"] )
+//View( ::hFactura )
       MsgAlert( "Este documento no es objeto para ser alterado y luego almacenar.", "Atención" )
       //return 
    endif
