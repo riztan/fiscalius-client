@@ -282,9 +282,12 @@ return .t.
 
 procedure __ModFactsRefresh(oForm)
    local aLine, aIter := ARRAY(4)
+   local bDetalCode
+
 
    ::rFacturas := ::rVentas:Facturas()
    if ::isDef("oModFacturas")
+//View( ::oModFacturas:oTreeView:IsGetSelected( aIter ) )
       ::oModFacturas:oTreeView:ClearModel(.t.)
       FOR EACH aLine IN ::rFacturas:GetData()
          APPEND LIST_STORE ::oModFacturas:oLbx ITER aIter ;
@@ -294,7 +297,13 @@ procedure __ModFactsRefresh(oForm)
                        aLine[ 7], hb_ntos(aLine[ 8])
 
       NEXT
-      //::oModFacturas:oTreeView:SetFocus()
+
+      bDetalCode := {|oTView, pModel, aIter | ;
+                     iif( oTView:GetAutoValue(1, aIter)==::hFactura["numero"], ;
+                          gtk_tree_view_set_cursor( oTview:pWidget, oTView:getPath(aIter), NIL, .F.  ),;
+                          .t. ) }
+      ::oLBoxFacs:ForEach( bDetalCode )
+
    endif
 return 
 
@@ -943,7 +952,7 @@ Procedure __Save( oForm )
       ::rFactura:SetRetIVA( ::hFactura["iva"] )
 //View( ::hFactura )
       MsgAlert( "Este documento no es objeto para ser alterado y luego almacenar.", "Atención" )
-      //return 
+      return 
    endif
 
    ::hFactura["cliente_id"       ] := ::cCodCli                    // Cliente
@@ -984,7 +993,12 @@ Procedure __Save( oForm )
          uResp := .F.
       endif
 //View( ::hFactura )
-      ::oLabNumero:SetValue( STRZERO( VAL(::hFactura["numero"]), 8) )
+//View( ::hFactura["numero"] )
+      if VAL(::hFactura["numero"])>0
+         ::oLabNumero:SetValue( STRZERO( VAL(::hFactura["numero"]), 8) )
+      else
+         ::oLabNumero:SetValue( ALLTRIM(::hFactura["numero"]) )
+      endif
       if ::lNew
          ::lNew := .F.
          //-- Debemos mostrar los valores de numero asignados.
