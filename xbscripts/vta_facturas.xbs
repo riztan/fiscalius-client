@@ -940,7 +940,7 @@ Procedure __Save( oForm )
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
        __Calcula( oForm )
-::rFactura:SetRetIVA( ::hFactura["iva"] )
+      ::rFactura:SetRetIVA( ::hFactura["iva"] )
 //View( ::hFactura )
       MsgAlert( "Este documento no es objeto para ser alterado y luego almacenar.", "Atención" )
       //return 
@@ -959,8 +959,10 @@ Procedure __Save( oForm )
    //View( ::hFactura ) 
 
    uResp := ::rFactura:SetData( ::hFactura )
-   if !uResp
-      ::oLabInfo:SetText("No ha sido posible actualizar los datos.")
+//View( uResp )
+   if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
+      ::oLabInfo:SetText( uResp["message"] )
+      //::oLabInfo:SetText("No ha sido posible actualizar los datos.")
       return
    endif
 
