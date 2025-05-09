@@ -494,6 +494,11 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
          ::oEntPorRetIva:SetValue( TRANSFORM( nPorRetIVA, P_92 ) )
       endif
 
+      if !Empty( ::hFactura["islr"] )
+         ::oEntIslrNro:SetValue( hb_ntos(::hFactura["islr"]["comprobante"]) )
+         ::oEntIslrMonto:SetValue( TRANSFORM( ::hFactura["islr"]["monto"], P_92) )
+      endif
+
       ::oEntMonBase:SetValue( TRANSFORM(::hFactura["monto_base"],P_92) ) //oModel:GetCol("monto base") )
       ::oEntTotal:SetValue( TRANSFORM(::hFactura["monto_total"],P_92) )  
 
@@ -841,6 +846,12 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
 //View( ::hFactura )
    endif
 
+   if !empty( ::cIslrNro ) .and. !Empty( ::cIslrMonto ) 
+      ::hFactura[ "islr" ]["comprobante"] := ::cIslrNro
+      ::hFactura[ "islr" ]["monto"      ] := ToNum( ::cIslrMonto )
+      ::hFactura[ "islr" ]["fecha"      ] := DATE()   //Parche. Agregar control (RIGC)
+   endif
+
    nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
              ToNum( ::oEntIvaE:GetValue() ) +;
              ToNum( ::oEntIvaR:GetValue() ) +;
@@ -972,6 +983,7 @@ Procedure __Save( oForm )
        __Calcula( oForm )
       ::rFactura:SetRetIVA( ::hFactura["iva"] )
 //View( ::hFactura )
+      ::rFactura:SetRetISLR( ::hFactura["islr"] )
       MsgAlert( "Este documento no es objeto para ser alterado y luego almacenar.", "Atención" )
       return 
    endif
