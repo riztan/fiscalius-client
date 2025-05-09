@@ -56,10 +56,12 @@ FUNCTION netio_check()
 
   endif
 
-  if (hb_DateTime() - oTPuy:tLastNetIO) >= 0.001000 
+  if (hb_DateTime() - oTPuy:tLastNetIO) >= 0.000500 
      if netio_GetConnection( NETSERVER, NETPORT,, NETPASSWD ) = NIL
+View("oh oh")
         oTPuy:lNetIO := .f.
      else
+        oTPuy:tLastNetIO := hb_DateTime()
         if !oTPuy:IsDef("oUser")
            __Login() 
         endif
