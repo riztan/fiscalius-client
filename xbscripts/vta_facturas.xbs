@@ -214,6 +214,15 @@ procedure vta_facturas( oFormParent )
    DEFINE ENTRY TYPE MONEY ::oEntMonRetIva VAR ::cMonRetIva ;
           ID "ent_monretiva" RESOURCE ::oRes
 
+   // --- Retencion ISLR
+   ::cIslrNro := ""
+   DEFINE DOCUMENT ENTRY ::oEntIslrNro VAR ::cIslrNro ;
+          ID "ent_islr_nro" RESOURCE ::oRes
+
+   ::cIslrMonto := ""
+   DEFINE ENTRY TYPE MONEY ::oEntIslrMonto VAR ::cIslrMonto ;
+          ID "ent_islr_monto" RESOURCE ::oRes
+
    //-------------------------
    DEFINE MODEL  ::oModFacturas ;
           STRUCT ::rFacturas:Struct() ;
@@ -283,7 +292,6 @@ return .t.
 procedure __ModFactsRefresh(oForm)
    local aLine, aIter := ARRAY(4)
    local bDetalCode
-
 
    ::rFacturas := ::rVentas:Facturas()
    if ::isDef("oModFacturas")
@@ -425,6 +433,9 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntMonRetIva:SetValue( "" )
       ::oEntPorRetIva:SetValue( "" )
 
+      ::oEntIslrNro:SetValue( "" )
+      ::oEntIslrMonto:SetValue( "" )
+
       if hb_isObject( ::oModDetal ) 
          ::oModDetal:oTreeView:ClearModel(.t.)
       endif
@@ -454,6 +465,9 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntRetIvaF:SetValue( "" )
       ::oEntMonRetIva:SetValue( "" )
       ::oEntPorRetIva:SetValue( "" )
+
+      ::oEntIslrNro:SetValue( "" )
+      ::oEntIslrMonto:SetValue( "" )
 
       FOR EACH hIva IN ::hFactura["iva"]
          if hIva["porcentaje"] = 0
@@ -890,6 +904,9 @@ procedure __FactRefresh( oForm, lConfirm )
          ::oEntRetIvaF:Enable()
          ::oEntPorRetIva:Enable()
          ::oEntMonRetIva:Enable()
+
+         ::oEntIslrNro:Enable()
+         ::oEntIslrMonto:Enable()
       endif
       if ::lSave .or. ::lLoad
          ::oComboEstado:Disable()
@@ -904,6 +921,10 @@ procedure __FactRefresh( oForm, lConfirm )
       ::oEntRetIvaF:Disable()
       ::oEntPorRetIva:Disable()
       ::oEntMonRetIva:Disable()
+
+      ::oEntIslrNro:Disable()
+      ::oEntIslrMonto:Disable()
+
       if !::lSave
          ::oComboEstado:Enable()
       //else
@@ -979,6 +1000,7 @@ Procedure __Save( oForm )
    bSaveDetal := {|oTView, pModel, aIter| __SaveDetal( oTView, pModel, aIter, oForm )  }
 
    uResp := ::rFactura:Save()
+//View( uResp )
    if hb_isLogical( uResp ) .and. uResp
 //View("atualizamos hFactura ")
       ::hFactura   := ::rFactura:Data()
@@ -1004,9 +1026,11 @@ Procedure __Save( oForm )
          //-- Debemos mostrar los valores de numero asignados.
          //-- Igual debemos atualizar valor de numero asignado si hubo cambio de estado a "Cerrado"
       endif
+
+      __ModFactsRefresh( oForm )
+
    endif
 
-   __ModFactsRefresh( oForm )
 //View( uResp )
    if uResp
       ::cPreEstado := LEFT( ::oComboEstado:GetValue(), 1 )

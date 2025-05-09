@@ -1212,7 +1212,7 @@
                                                           </packing>
                                                         </child>
                                                         <child>
-                                                          <object class="GtkEntry" id="entry1">
+                                                          <object class="GtkEntry" id="ent_islr_nro">
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
@@ -1253,10 +1253,11 @@
                                                           </packing>
                                                         </child>
                                                         <child>
-                                                          <object class="GtkEntry" id="entry2">
+                                                          <object class="GtkEntry" id="ent_islr_monto">
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
+                                                            <property name="xalign">0.94999998807907104</property>
                                                             <property name="invisible_char_set">True</property>
                                                             <property name="primary_icon_activatable">False</property>
                                                             <property name="secondary_icon_activatable">False</property>
