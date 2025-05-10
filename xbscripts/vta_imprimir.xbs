@@ -40,6 +40,7 @@ procedure vta_imprimir( oForm, oQry )
 
    local i, nLin, nOpera:=1, cFileHeader, error, cFormula := "", cRange := ""
    local hTotal, dDesde := DATE() //::oCalDesde:GetDate()
+   local aData := ::rFactDetal:GetData(), aLine
 
    SET DECIMAL TO 2
 
@@ -71,7 +72,42 @@ procedure vta_imprimir( oForm, oQry )
                                                  ALLTRIM("direccion 2")+" "+;
                                                  ALLTRIM("direccion 3")  
 
-   View( ::hFactura ) 
+//   View( ::hFactura ) 
+/*
+                STRUCT  {{"detalle_id",     "N",10, 0},;
+                         {"documento" ,     "N",10, 0},;
+                         {"codigo_local",   "C",10, 0},;
+                         {"descripcion",    "C",100,0},;
+                         {"cantidad",       "N",10, 0},;
+                         {"precio_unitario","N",13, 2},;
+                         {"descuento",      "N",13, 2},;
+                         {"subtotal",       "N",13, 2},;
+                         {"iva_porcentaje", "N",04, 2},;
+                         {"iva_monto",      "N",04, 2},;
+                         {"total",          "N",13, 2},;
+                         {"nombre_global",  "C",100,0},;
+                         {"tipo_inventario","C",01, 0},;
+                         {"lote",           "C",10, 0},;
+                         {"fecha_vcmto",    "D",10, 0},;
+                         {"id_ubicacion",   "N",10, 0},;
+                         {"almacen_id",     "N",10, 0},;
+                         {"nombre_almacen", "C",20, 0},;
+                         {"detalles_json",  "C",100,0},;
+                         {"item",           "N",10, 0} ;
+*/
+   nLin := 7
+
+   xlsx_set_string ::worksheet cell: "B"+hb_ntos(nLin) value: "Descripción"
+   xlsx_set_string ::worksheet cell: "D"+hb_ntos(nLin) value: "Cantidad"
+   xlsx_set_string ::worksheet cell: "E"+hb_ntos(nLin) value: "Precio Unit."
+
+   FOR EACH aLine IN aData
+      
+      xlsx_set_string ::worksheet cell: "B"+hb_ntos(aLine:__EnumIndex()+nLin) value: ALLTRIM(aLine[4])
+      xlsx_set_string ::worksheet cell: "D"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[5])
+      xlsx_set_string ::worksheet cell: "E"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[6])
+
+   NEXT
 
 //--------------------------------
    /* finalizamos */
