@@ -919,6 +919,15 @@ procedure __FactRefresh( oForm, lConfirm )
          ::oEntIslrNro:Enable()
          ::oEntIslrMonto:Enable()
       endif
+      if ::hFactura["estado"]="A"
+         ::oEntRetIva:Disable()
+         ::oEntRetIvaF:Disable()
+         ::oEntPorRetIva:Disable()
+         ::oEntMonRetIva:Disable()
+
+         ::oEntIslrNro:Disable()
+         ::oEntIslrMonto:Disable()
+      endif
       if ::lSave .or. ::lLoad
          ::oComboEstado:Disable()
       //else
