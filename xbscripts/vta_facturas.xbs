@@ -1177,6 +1177,10 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 				     oModProductos:oTreeView:GetAutoValue( 5 ) ),;
                          __SetValue( ::oModDetal:oTreeView, ;
 				     ::oModDetal:oLbx,      ;
+				     ::oModDetal:aIter, __CANTIDAD ,  ;
+				     "1" ),;
+                         __SetValue( ::oModDetal:oTreeView, ;
+				     ::oModDetal:oLbx,      ;
 				     ::oModDetal:aIter, __PRECIO ,  ;
 				     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 10 ))) ),;
                          __SetValue( ::oModDetal:oTreeView, ;
