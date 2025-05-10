@@ -1,0 +1,90 @@
+/* 
+ * Proyecto TPuy
+ * dplibvta_xlsx: Genera archivo de excel a partir del modelo dado.
+ *
+ * Author: riztan at gmail dot com
+ */
+
+
+#include "tpy_xbs.ch"
+#include "hbxlsxwriter.ch"
+
+function Column( cCol )
+   hCol := { "A"=>0,  "B"=>1,  "C"=>2,  "D"=>3,  "E"=>4,  "F"=>5,  "G"=>6,  "H"=>7,  ;
+             "I"=>8,  "J"=>9,  "K"=>10, "L"=>11, "M"=>12, "N"=>13, "O"=>14, "P"=>15, ;
+             "Q"=>16, "R"=>17, "S"=>18, "T"=>19, "U"=>20, "V"=>21, "W"=>22, "X"=>23, ;
+             "Y"=>24, "Z"=>25 ;
+           }
+return hCol[cCol]
+
+#xcommand xlsx_set_string <worksheet> cell: <cell> value: <title> [format: <format>] ;
+      =>  worksheet_write_string( <worksheet>, CELL(<cell>), <title>[, <format>] )
+
+#xcommand xlsx_merge_range <worksheet> from: <cell_from> to: <cell_to> value: <title> [format: <format>] ;
+      =>  worksheet_merge_range( <worksheet>, CELL(<cell_from>), CELL(<cell_to>), <title>[, <format>] ) 
+
+
+#define P_92  "@E 999,999,999,999,999,999,999.99"
+
+
+function STRRANGE( cCol1, nLin1, cCol2, nLin2 )
+   local cRange := "{COL1}{LIN1}:{COL2}{LIN2}"
+   cRange := STRTRAN( cRange, "{COL1}", cCol1 )
+   cRange := STRTRAN( cRange, "{LIN1}", hb_ntos(nLin1) )
+   cRange := STRTRAN( cRange, "{COL2}", cCol2 )
+   cRange := STRTRAN( cRange, "{LIN2}", hb_ntos(nLin2) )
+return cRange
+
+
+procedure vta_imprimir( oForm, oQry )
+
+   local i, nLin, nOpera:=1, cFileHeader, error, cFormula := "", cRange := ""
+   local hTotal, dDesde := DATE() //::oCalDesde:GetDate()
+
+   SET DECIMAL TO 2
+
+   SET PUBLIC hTotal
+
+   ::workbook := workbook_new( "tmp/vta_documento.xlsx" )
+
+   ::worksheet := workbook_add_worksheet( ::workbook, "Datos" )
+   worksheet_gridlines( ::worksheet, 0 )
+//--------------------------------
+   ::format_title0 := workbook_add_format( ::workbook )
+   ::format_title1 := workbook_add_format( ::workbook )
+   ::format_title2 := workbook_add_format( ::workbook )
+
+   format_set_bold( ::format_title1)
+   format_set_bold( ::format_title2)
+
+
+   // Titulos Generales
+   xlsx_set_string ::worksheet cell: "A1" value: "Nombre de la Empresa"  format: ::format_title1
+   xlsx_set_string ::worksheet cell: "A2" value: "RIF:  J-123456789 " 
+   xlsx_set_string ::worksheet cell: "M2" value: "FACTURA:  " + STRZERO( VAL(::hFactura[ "numero" ]), 10 )
+   xlsx_set_string ::worksheet cell: "M3" value: "FECHA:  " + DTOC( ::hFactura[ "fecha" ] )
+   xlsx_set_string ::worksheet cell: "M4" value: "VENCIMIENTO:  " + DTOC( ::hFactura[ "fecha_vencimiento" ] )
+   xlsx_set_string ::worksheet cell: "B4" value: "RIF Y NOMBRE DEL CLIENTE "
+   
+   xlsx_set_string ::worksheet cell: "B5" value: "Dirección Fiscal: "+;
+                                                 ALLTRIM("direccion 1")+" "+;
+                                                 ALLTRIM("direccion 2")+" "+;
+                                                 ALLTRIM("direccion 3")  
+
+   View( ::hFactura ) 
+
+//--------------------------------
+   /* finalizamos */
+   error := workbook_close( ::workbook )
+
+   /* Check if there was any error creating the xlsx file. */
+   IF error > 0
+      Alert( "Error en workbook_close(). " + hb_eol() + ;
+         "Error " + AllTrim( Str( error ) ) + " = " + lxw_strerror( error ) )
+
+   ENDIF
+
+   View("Finalizado...")
+return
+
+//eof

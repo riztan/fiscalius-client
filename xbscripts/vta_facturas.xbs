@@ -1137,9 +1137,10 @@ return
 
 PROCEDURE __VtaImprime( oForm )
 
-   View("Vamos a Imprimir...")
-
+   oTPuy:RunXBS( "vta_imprimir", oForm )
+ 
 RETURN
+
 
 
 PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
