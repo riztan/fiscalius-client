@@ -56,6 +56,10 @@ procedure vta_facturas( oFormParent )
           ACTION __Save( oForm ) ;
           ID "btn_guardar" RESOURCE ::oRes
 
+   DEFINE BUTTON ::oBtnImprime ;
+          ACTION __VtaImprime( oForm ) ;
+          ID "btn_print" RESOURCE ::oRes
+
 
    DEFINE BOX ::oBoxData ID "boxdata" RESOURCE ::oRes
 
@@ -429,6 +433,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::rFactura   := ::rVentas:Factura('')
       ::hFactura   := ::rFactura:Data()
       ::rFactDetal := ::rFactura:Detal()
+      ::cFecha := DTOC( DATE() )
 
       ::oLabNumero:SetValue( "00000000" )
       ::oLabNroControl:SetValue( "00000000" )
@@ -468,6 +473,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::hFactura   := ::rFactura:Data()
       ::rFactDetal := ::rFactura:Detal()
 
+      ::cFecha := DTOC( ::hFactura["fecha"] )
       //::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol("numero")), 8) )
       ::oLabNumero:SetValue( oModel:GetCol("numero") )
       ::oLabNroControl:SetValue( STRZERO( ::hFactura["numero_control"], 8) )
@@ -942,6 +948,8 @@ procedure __FactRefresh( oForm, lConfirm )
          ::oEntIslrNro:Enable()
          ::oEntIslrMonto:Enable()
          ::oEntIslrFecha:Enable()
+
+         ::oBtnImprime:Enable() 
       endif
       if ::hFactura["estado"]="A"
          ::oEntRetIva:Disable()
@@ -952,6 +960,8 @@ procedure __FactRefresh( oForm, lConfirm )
          ::oEntIslrNro:Disable()
          ::oEntIslrMonto:Disable()
          ::oEntIslrFecha:Disable()
+
+         ::oBtnImprime:Disable() 
       endif
       if ::lSave .or. ::lLoad
          ::oComboEstado:Disable()
@@ -970,6 +980,8 @@ procedure __FactRefresh( oForm, lConfirm )
       ::oEntIslrNro:Disable()
       ::oEntIslrMonto:Disable()
       ::oEntIslrFecha:Disable()
+
+      ::oBtnImprime:Disable() 
 
       if !::lSave
          ::oComboEstado:Enable()
@@ -1123,6 +1135,13 @@ return
 
 
 
+PROCEDURE __VtaImprime( oForm )
+
+   View("Vamos a Imprimir...")
+
+RETURN
+
+
 PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
    local oRes, oImgBanner, oImgLogo
    local oBoxData, oModProductos, oLBoxInv
@@ -1249,9 +1268,7 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
    oLBoxInv:SetColVisible( 22, .F. )    
    oLBoxInv:SetColVisible( 23, .F. )    
 
-
    oLBoxInv:SetColTitle( 4, "Código" )          //- Cambiamos el titulo 
-
 
    ACTIVATE WINDOW ::oInvWnd MODAL
 
