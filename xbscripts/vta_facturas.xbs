@@ -219,6 +219,11 @@ procedure vta_facturas( oFormParent )
    DEFINE DOCUMENT ENTRY ::oEntIslrNro VAR ::cIslrNro ;
           ID "ent_islr_nro" RESOURCE ::oRes
 
+   ::cIslrFecha := ''
+   DEFINE ENTRY TYPE DATE ::oEntIslrFecha VAR ::cIslrFecha CALENDAR;
+          VALID __ValIslrFecha(oForm); 
+          ID "ent_islr_fecha" RESOURCE ::oRes
+
    ::cIslrMonto := ""
    DEFINE ENTRY TYPE MONEY ::oEntIslrMonto VAR ::cIslrMonto ;
           ID "ent_islr_monto" RESOURCE ::oRes
@@ -271,6 +276,21 @@ function __ValRetIvaPorcen( oForm )
    ::oEntMonRetIva:SetValue( TRANSFORM( nMonto, P_92 ) )
 
 RETURN .T.
+
+
+
+function __ValIslrFecha( oForm )
+   if ::rFactura:Estado()!="C"
+      MsgAlert( "El documento no está cerrado, no requiere información de retención", "Atención" )
+      ::oEntIslrFecha:SetValue( "" )
+      return .T. 
+   endif
+   if ( CTOD(::cIslrFecha) < CTOD(::cFecha) ) .AND. !Empty(::cIslrFecha)
+      MsgAlert( "La fecha de la retención no puede ser menor a la fecha del documento", "Atención" )
+      ::oEntIslrFecha:SetValue( ::cFecha )
+      return .f.
+   endif
+return .t.
 
 
 
@@ -435,6 +455,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
       ::oEntIslrNro:SetValue( "" )
       ::oEntIslrMonto:SetValue( "" )
+      ::oEntIslrFecha:SetValue( "" )
 
       if hb_isObject( ::oModDetal ) 
          ::oModDetal:oTreeView:ClearModel(.t.)
@@ -468,6 +489,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
       ::oEntIslrNro:SetValue( "" )
       ::oEntIslrMonto:SetValue( "" )
+      ::oEntIslrFecha:SetValue( "" )
 
       FOR EACH hIva IN ::hFactura["iva"]
          if hIva["porcentaje"] = 0
@@ -497,6 +519,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       if !Empty( ::hFactura["islr"] )
          ::oEntIslrNro:SetValue( hb_ntos(::hFactura["islr"]["comprobante"]) )
          ::oEntIslrMonto:SetValue( TRANSFORM( ::hFactura["islr"]["monto"], P_92) )
+         ::oEntIslrFecha:SetValue( DTOC(::hFactura["islr"]["fecha"]) )
       endif
 
       ::oEntMonBase:SetValue( TRANSFORM(::hFactura["monto_base"],P_92) ) //oModel:GetCol("monto base") )
@@ -849,7 +872,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    if !empty( ::cIslrNro ) .and. !Empty( ::cIslrMonto ) 
       ::hFactura[ "islr" ]["comprobante"] := ::cIslrNro
       ::hFactura[ "islr" ]["monto"      ] := ToNum( ::cIslrMonto )
-      ::hFactura[ "islr" ]["fecha"      ] := DATE()   //Parche. Agregar control (RIGC)
+      ::hFactura[ "islr" ]["fecha"      ] := CTOD( ::cIslrFecha )   
    endif
 
    nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
@@ -918,6 +941,7 @@ procedure __FactRefresh( oForm, lConfirm )
 
          ::oEntIslrNro:Enable()
          ::oEntIslrMonto:Enable()
+         ::oEntIslrFecha:Enable()
       endif
       if ::hFactura["estado"]="A"
          ::oEntRetIva:Disable()
@@ -927,6 +951,7 @@ procedure __FactRefresh( oForm, lConfirm )
 
          ::oEntIslrNro:Disable()
          ::oEntIslrMonto:Disable()
+         ::oEntIslrFecha:Disable()
       endif
       if ::lSave .or. ::lLoad
          ::oComboEstado:Disable()
@@ -944,6 +969,7 @@ procedure __FactRefresh( oForm, lConfirm )
 
       ::oEntIslrNro:Disable()
       ::oEntIslrMonto:Disable()
+      ::oEntIslrFecha:Disable()
 
       if !::lSave
          ::oComboEstado:Enable()
