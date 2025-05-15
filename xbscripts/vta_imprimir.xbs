@@ -41,6 +41,9 @@ procedure vta_imprimir( oForm, oQry )
    local i, nLin, nOpera:=1, cFileHeader, error, cFormula := "", cRange := ""
    local hTotal, dDesde := DATE() //::oCalDesde:GetDate()
    local aData := ::rFactDetal:GetData(), aLine
+   local rClientes:=::rVentas:Clientes("Draiver")
+   local aClientes:=rClientes:GetData("Draiver")
+   
 
    SET DECIMAL TO 2
 
@@ -60,19 +63,22 @@ procedure vta_imprimir( oForm, oQry )
 
 
    // Titulos Generales
-   xlsx_set_string ::worksheet cell: "A1" value: "Nombre de la Empresa"  format: ::format_title1
-   xlsx_set_string ::worksheet cell: "A2" value: "RIF:  J-123456789 " 
-   xlsx_set_string ::worksheet cell: "M2" value: "FACTURA:  " + STRZERO( VAL(::hFactura[ "numero" ]), 10 )
-   xlsx_set_string ::worksheet cell: "M3" value: "FECHA:  " + DTOC( ::hFactura[ "fecha" ] )
-   xlsx_set_string ::worksheet cell: "M4" value: "VENCIMIENTO:  " + DTOC( ::hFactura[ "fecha_vencimiento" ] )
-   xlsx_set_string ::worksheet cell: "B4" value: "RIF Y NOMBRE DEL CLIENTE "
+  // xlsx_set_string ::worksheet cell: "A1" value: "Nombre de la Empresa"  format: ::format_title1
+  // xlsx_set_string ::worksheet cell: "A2" value: "RIF:  J-123456789 " 
+   xlsx_set_string ::worksheet cell: "L2" value: "FACTURA:  " + STRZERO( VAL(::hFactura[ "numero" ]), 10 )
+   xlsx_set_string ::worksheet cell: "L3" value: "FECHA:  " + DTOC( ::hFactura[ "fecha" ] )
+   xlsx_set_string ::worksheet cell: "L4" value: "VENCIMIENTO:  " + DTOC( ::hFactura[ "fecha_vencimiento" ] )
+  // xlsx_set_string ::worksheet cell: "B4" value: "RIF "+aClientes[4]
+   xlsx_set_string ::worksheet cell: "B5" value: "Orden de Compra: " +::hFactura["orden_compra"]
    
-   xlsx_set_string ::worksheet cell: "B5" value: "Dirección Fiscal: "+;
+   xlsx_set_string ::worksheet cell: "B6" value: "Dirección Fiscal: "+;
                                                  ALLTRIM("direccion 1")+" "+;
                                                  ALLTRIM("direccion 2")+" "+;
                                                  ALLTRIM("direccion 3")  
 
-//   View( ::hFactura ) 
+  // View( ::hFactura ) 
+   View(aClientes ) 
+   //View(::rFactDetal:GetData()) 
 /*
                 STRUCT  {{"detalle_id",     "N",10, 0},;
                          {"documento" ,     "N",10, 0},;
@@ -95,20 +101,35 @@ procedure vta_imprimir( oForm, oQry )
                          {"detalles_json",  "C",100,0},;
                          {"item",           "N",10, 0} ;
 */
-   nLin := 7
+   nLin := 8
 
-   xlsx_set_string ::worksheet cell: "B"+hb_ntos(nLin) value: "Descripción"
-   xlsx_set_string ::worksheet cell: "D"+hb_ntos(nLin) value: "Cantidad"
-   xlsx_set_string ::worksheet cell: "E"+hb_ntos(nLin) value: "Precio Unit."
+   xlsx_set_string ::worksheet cell: "B"+hb_ntos(nLin) value: "Código"
+   xlsx_set_string ::worksheet cell: "D"+hb_ntos(nLin) value: "Descripción"
+   xlsx_set_string ::worksheet cell: "I"+hb_ntos(nLin) value: "Cantidad"
+   xlsx_set_string ::worksheet cell: "K"+hb_ntos(nLin) value: "Precio Unit."
+   xlsx_set_string ::worksheet cell: "M"+hb_ntos(nLin) value: "Precio Total."
+   
+   
+   
 
    FOR EACH aLine IN aData
-      
-      xlsx_set_string ::worksheet cell: "B"+hb_ntos(aLine:__EnumIndex()+nLin) value: ALLTRIM(aLine[4])
-      xlsx_set_string ::worksheet cell: "D"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[5])
-      xlsx_set_string ::worksheet cell: "E"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[6])
+      xlsx_set_string ::worksheet cell: "B"+hb_ntos(aLine:__EnumIndex()+nLin) value: ALLTRIM(aLine[3])
+      xlsx_set_string ::worksheet cell: "D"+hb_ntos(aLine:__EnumIndex()+nLin) value: ALLTRIM(aLine[4])
+      xlsx_set_string ::worksheet cell: "I"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[5])
+      xlsx_set_string ::worksheet cell: "K"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[6])
+	  xlsx_set_string ::worksheet cell: "M"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[8])
+	  
+	  
+	  
+	        
 
    NEXT
 
+   // xlsx_set_string ::worksheet cell: "M"+hb_ntos(nLin) value: TRANSFORM(::hFactura["monto_base"],P_92)
+   
+	xlsx_set_string ::worksheet cell: "L20" value: "Monto Base:  " + TRANSFORM(::hFactura["monto_base"],P_92)
+	//xlsx_set_string ::worksheet cell: "L21" value: "IVA:  " 
+	xlsx_set_string ::worksheet cell: "L22" value: "Monto Total:  " + TRANSFORM(::hFactura["monto_total"],P_92)
 //--------------------------------
    /* finalizamos */
    error := workbook_close( ::workbook )
@@ -120,6 +141,7 @@ procedure vta_imprimir( oForm, oQry )
 
    ENDIF
 
+  //workbook_open( "tmp/vta_documento.xlsx" )
    View("Finalizado...")
 return
 
