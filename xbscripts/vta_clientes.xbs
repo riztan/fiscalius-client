@@ -4,16 +4,29 @@
 
 #include "tpy_xbs.ch"
 
-procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente )
+procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente, cFiltro, cDocumento )
 
    local oCliWnd, oRes, oImgBanner, oImageLogo, oBoxData
    local oLabTitulo, cLabTitulo := "Clientes"
-   local rVentas, rClientes, oModClientes, oLBoxCli
+   local rVentas, rClientes, oModClientes, oLBoxCli, hParam
 
    default cCodCliente to ""
+   default cFiltro to ""
+   default cDocumento to ""
+
+   if !Empty(cDocumento) .or. !Empty(cFiltro)
+      hParam := hb_hash()
+   endif
+
+   if !Empty( cDocumento )
+      hParam["documento"] := cDocumento
+   endif
+   if !Empty( cFiltro )
+      hParam[ "filtro" ] := cFiltro
+   endif
 
    rVentas := ::oGEmpresa:SetModulo("Ventas")
-   rClientes := rVentas:Clientes()
+   rClientes := rVentas:Clientes( hParam )
 
    if hb_isNIL(rClientes)
       MsgStop("???")

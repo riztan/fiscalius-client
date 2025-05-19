@@ -147,7 +147,7 @@ procedure poslogin( oParent )
       DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_facturas", oForm );  
              ID "itm_transacciones" RESOURCE ::oRes
 
-      DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_ncredito", oForm );  
+      DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_notas_cd", oForm, "C" );  
              ID "itm_notacredito" RESOURCE ::oRes
 
 
