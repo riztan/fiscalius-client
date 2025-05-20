@@ -38,7 +38,7 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
 
    SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"vta_facturas.ui"
 
-   DEFINE WINDOW ::oFacWnd ;
+   DEFINE WINDOW ::oNotaWnd ;
           TITLE "Fiscalius. "+::cFormTitle ;
           SIZE 800,600 ;
           ID "window1" RESOURCE ::oRes
@@ -85,7 +85,8 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    ::cEntCli := ""
    ::cCodCli := ""
    DEFINE ENTRY  ::oEntCli VAR ::cEntCli ;
-          ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oFacWnd, ::oEntCli, @::cCodCli,,'4') ;
+          ACTION (oTPuy:RunXBS("vta_clientes", oFormParent, ::oNotaWnd, ::oEntCli, @::cCodCli,,'4'), ;
+                 ::oEntFacturaNro:SetText('')) ;
           VALID  .T. ;
           ID "ent_clientes" RESOURCE ::oRes
 
@@ -95,11 +96,11 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    DEFINE IMAGE ::oImgDocIcon FILE oTPuy:cImages+"financial_document_16.png"
    ::cFacturaNro := ""
    DEFINE ENTRY ::oEntFacturaNro VAR ::cFacturaNro ;
-          ACTION View("hola") ;
+          ACTION __NC_Facturas( oForm ) ; //::rDocumento:Facturas(::cCodCli):Data() ) ;
           RIGHT BUTTON ::oImgDocIcon ;
           ID "ent_orden_compra" RESOURCE ::oRes
    ::oEntFacturaNro:SetEditable( .F. )
-   ::oEntFacturaNro:SecundaryIconActivatable( .T. )
+   ::oEntFacturaNro:SecondaryIconActivatable( .T. )
 
    ::cFecha := DTOC( DATE() )
    ::cPFecha := ::cFecha
@@ -271,12 +272,106 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    //::oLBoxFacs:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 
    //-- Botones varios.
-   DEFINE BUTTON ::oBtnSalir ACTION ::oFacWnd:End();
+   DEFINE BUTTON ::oBtnSalir ACTION ::oNotaWnd:End();
           ID "btn_salir" RESOURCE ::oRes
 
-   ACTIVATE WINDOW ::oFacWnd MODAL VALID __FactExit(oForm)
+   ACTIVATE WINDOW ::oNotaWnd MODAL VALID __FactExit(oForm)
 
 return
+
+
+
+procedure __NC_Facturas( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() ) 
+
+   rFacturas := ::rDocumento:Facturas( ::cCodCli )
+
+   if rFacturas:RecCount() = 1
+      ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:numero) )
+      return
+   endif 
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+   DEFINE WINDOW ::oFactsRelWnd ;
+          TITLE "Fiscalius. Facturas Relacionadas " ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes ;
+          OF ::oNotaWnd
+
+   DEFINE LABEL oLabTitulo TEXT "Facturas" ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+   DEFINE MODEL oModFactsRel ;
+          STRUCT rFacturas:Struct() ;
+          DATA   rFacturas:GetData()
+   
+   DEFINE LISTBOX oLBoxFactsRel ;
+          MODEL oModFactsRel ;
+          OF oBoxData
+
+   oLBoxFactsRel:lBar  := .f.   
+
+//   oModProductos:SetColTitle("inv_codigo","Código")
+//   oModProductos:SetColTitle("inv_descri","Descripción")
+
+   oLBoxFactsRel:lBar  := .f.
+   oLBoxFactsRel:bEdit := {|oModFactsRel|;
+                           ::oEntFacturaNro:SetText( oModfactsRel:otreeView:GetAutoValue( 19 ) ), ;
+			 ::oFactsRelWnd:End() }
+
+   oLBoxFactsRel:Active()
+   oModFactsRel:oTreeView:SetRules( .t. )
+   oModFactsRel:oTreeView:SetGridLines( GTK_TREE_VIEW_GRID_LINES_BOTH )
+
+   oLBoxFactsRel:SetColVisible(  1, .F. )    //- Ocultamos el id del producto.
+   oLBoxFactsRel:SetColVisible(  2, .F. )    //- Ocultamos el id de empresa.
+   oLBoxFactsRel:SetColVisible(  3, .F. )    //- Ocultamos el id global del producto
+   oLBoxFactsRel:SetColVisible(  4, .F. )    //- Ocultamos el id global del producto
+   oLBoxFactsRel:SetColVisible(  6, .F. )    //- Ocultamos descripcion global del producto
+   oLBoxFactsRel:SetColVisible(  7, .F. )    //- Ocultamos tipo de inventario
+//   oLBoxFactsRel:SetColVisible(  8, .F. )    //- Ocultamos tipo de tasa iva
+   oLBoxFactsRel:SetColVisible(  9, .F. )    //- Ocultamos porcentaje iva
+   oLBoxFactsRel:SetColVisible( 10, .F. )    //- Ocultamos porcentaje iva
+   oLBoxFactsRel:SetColVisible( 11, .F. )    //- Ocultamos porcentaje iva
+//   oLBoxFactsRel:SetColVisible( 12, .F. )    //- Ocultamos Stock Minimo
+   oLBoxFactsRel:SetColVisible( 13, .F. )    //- Ocultamos Costo
+   oLBoxFactsRel:SetColVisible( 14, .F. )    //- Ocultamos Activo
+   oLBoxFactsRel:SetColVisible( 15, .F. )    //- Ocultamos Fecha Creacion
+   oLBoxFactsRel:SetColVisible( 16, .F. )    
+   oLBoxFactsRel:SetColVisible( 17, .F. )    
+   oLBoxFactsRel:SetColVisible( 18, .F. )    
+
+//   oLBoxFactsRel:SetColVisible( 19, .F. )    
+//   oLBoxFactsRel:SetColVisible( 20, .F. )    
+   oLBoxFactsRel:SetColVisible( 21, .F. )    
+   oLBoxFactsRel:SetColVisible( 22, .F. )    
+   oLBoxFactsRel:SetColVisible( 23, .F. )    
+   oLBoxFactsRel:SetColVisible( 24, .F. )    
+*/
+//   oLBoxFactsRel:SetColTitle( 4, "Código" )          //- Cambiamos el titulo 
+
+   ACTIVATE WINDOW ::oFactsRelWnd MODAL
+/*
+  if !hb_isObject( ::oModFactsRel )
+
+     DEFINE 
+
+  else
+  endif 
+*/
+RETURN
 
 
 
@@ -298,7 +393,7 @@ RETURN .T.
 
 
 function __ValIslrFecha( oForm )
-   if ::rFactura:Estado()!="C"
+   if ::rDocumento:Estado()!="C"
       MsgAlert( "El documento no está cerrado, no requiere información de retención", "Atención" )
       ::oEntIslrFecha:SetValue( "" )
       return .T. 
@@ -313,7 +408,7 @@ return .t.
 
 
 function __ValRetFecha( oForm )
-   if ::rFactura:Estado()!="C"
+   if ::rDocumento:Estado()!="C"
       MsgAlert( "El documento no está cerrado, no requiere información de retención", "Atención" )
       ::oEntRetIvaF:SetValue( "" )
       return .T. 
@@ -437,16 +532,16 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    default lNew := .T.
    ::lSilence := .t.
 
-   ::oFacWnd:Maximize()
+   ::oNotaWnd:Maximize()
 
    ::lNew := lNew
 
    if ::lNew 
       ::lLoad      := .F.
       ::lSave      := .F.
-      ::rFactura   := ::rVentas:Factura('')
-      ::hFactura   := ::rFactura:Data()
-      ::rFactDetal := ::rFactura:Detal()
+      ::rDocumento   := ::rVentas:Documento('C','')
+      ::hFactura   := ::rDocumento:Data()
+      ::rFactDetal := ::rDocumento:Detal()
       ::cFecha := DTOC( DATE() )
 
       ::oLabNumero:SetValue( "00000000" )
@@ -483,9 +578,9 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    else
       ::lLoad      := .T. // Consultando el documento.
       ::lSave      := .F.
-      ::rFactura   := ::rVentas:Factura( oModel:GetCol("numero") )
-      ::hFactura   := ::rFactura:Data()
-      ::rFactDetal := ::rFactura:Detal()
+      ::rDocumento   := ::rVentas:Documento( 'C', oModel:GetCol("numero") )
+      ::hFactura   := ::rDocumento:Data()
+      ::rFactDetal := ::rDocumento:Detal()
 
       ::cFecha := DTOC( ::hFactura["fecha"] )
       //::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol("numero")), 8) )
@@ -1022,7 +1117,7 @@ Procedure __DelDetal( oForm )
       pPath := ::oModDetal:oTreeView:GetPath( aIter )
       if !Empty( ::oModDetal:oTreeView:GetAutoValue( 20 ) )
          if MsgNoYes( "¿Realmente desea eliminar este item?" )
-            if !::rFactura:DelItem( ALLTRIM( ::oModDetal:oTreeView:GetAutoValue( 20 ) ) ) //20-> ITEM
+            if !::rDocumento:DelItem( ALLTRIM( ::oModDetal:oTreeView:GetAutoValue( 20 ) ) ) //20-> ITEM
                return 
             endif
          endif
@@ -1042,9 +1137,9 @@ Procedure __Save( oForm )
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
        __Calcula( oForm )
-      ::rFactura:SetRetIVA( ::hFactura["iva"] )
+      ::rDocumento:SetRetIVA( ::hFactura["iva"] )
 //View( ::hFactura )
-      ::rFactura:SetRetISLR( ::hFactura["islr"] )
+      ::rDocumento:SetRetISLR( ::hFactura["islr"] )
       MsgAlert( "Este documento no es objeto para ser alterado y luego almacenar.", "Atención" )
       return 
    endif
@@ -1061,7 +1156,7 @@ Procedure __Save( oForm )
 
    //View( ::hFactura ) 
 
-   uResp := ::rFactura:SetData( ::hFactura )
+   uResp := ::rDocumento:SetData( ::hFactura )
 //View( uResp )
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
       ::oLabInfo:SetText( uResp["message"] )
@@ -1072,18 +1167,18 @@ Procedure __Save( oForm )
    //-- Actualizar detalles de la factura.
    bSaveDetal := {|oTView, pModel, aIter| __SaveDetal( oTView, pModel, aIter, oForm )  }
 
-   uResp := ::rFactura:Save()
+   uResp := ::rDocumento:Save()
 //View( uResp )
    if hb_isLogical( uResp ) .and. uResp
 //View("atualizamos hFactura ")
-      ::hFactura   := ::rFactura:Data()
+      ::hFactura   := ::rDocumento:Data()
 //View( ::hFactura )
-      //-- Importante invocar SetDetal después de rFactura:Save() 
+      //-- Importante invocar SetDetal después de rDocumento:Save() 
       //   para obtener primero el nro del documento
       ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
 //View( ::aDetal )
-      if !::rFactura:SetDetal( ::aDetal )
+      if !::rDocumento:SetDetal( ::aDetal )
          ::oLabInfo:SetText("No se actualizaron los detalles" )
          uResp := .F.
       endif
@@ -1204,7 +1299,7 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
           TITLE "Fiscalius. Inventario " ;
           SIZE 700,400 ;
           ID "window1" RESOURCE oRes ;
-          OF ::oFacWnd
+          OF ::oNotaWnd
 
    DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
           ID "lab_title" RESOURCE oRes
@@ -1285,7 +1380,7 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 
    oLBoxInv:SetColTitle( 4, "Código" )          //- Cambiamos el titulo 
 
-   ACTIVATE WINDOW ::oInvWnd MODAL
+   ACTIVATE WINDOW ::oFactsRelWnd MODAL
 
 RETURN 
 
