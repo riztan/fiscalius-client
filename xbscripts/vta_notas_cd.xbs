@@ -293,8 +293,7 @@ procedure __NC_Facturas( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() )
    if rFacturas:RecCount() = 1
       ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:numero) )
       ::rFactDetal := ::rDocumento:Detal()
-View( ::rFactDetal:Data() )
-//riztan
+//View( ::rFactDetal:Data() )
       return
    endif 
 
@@ -336,8 +335,8 @@ View( ::rFactDetal:Data() )
 
    oLBoxFactsRel:lBar  := .f.
    oLBoxFactsRel:bEdit := {|oModFactsRel|;
-                           ::oEntFacturaNro:SetText( oModfactsRel:otreeView:GetAutoValue( 19 ) ), ;
-			 ::oFactsRelWnd:End() }
+                           ::oEntFacturaNro:SetText( oModfactsRel:oTreeView:GetAutoValue( 19 ) ), ;
+			   ::oFactsRelWnd:End() }
 
    oLBoxFactsRel:Active()
    oModFactsRel:oTreeView:SetRules( .t. )
@@ -706,6 +705,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::lSave      := .F.
       ::rDocumento := ::rVentas:Documento( 'C', oModel:GetCol("numero") )
       ::hDocumento := ::rDocumento:Data()
+//View( ::hDocumento )
       ::rFactDetal := ::rDocumento:Detal()
 
 //View( ::rFactDetal:Data() )
@@ -719,7 +719,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
       ::oEntFecha:SetValue( oModel:GetCol("fecha") )
       ::oEntVcmto:SetValue( oModel:GetCol(5) )
-      ::oEntFacturaNro:SetValue( hb_ntos(::hDocumento["doc_referencia_id"]) ) 
+      ::oEntFacturaNro:SetValue( ALLTRIM(::hDocumento["doc_referencia_id"]) ) 
 
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
