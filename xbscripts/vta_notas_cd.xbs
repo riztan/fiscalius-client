@@ -335,7 +335,7 @@ procedure __NC_Facturas( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() )
 
    oLBoxFactsRel:lBar  := .f.
    oLBoxFactsRel:bEdit := {|oModFactsRel|;
-                           ::oEntFacturaNro:SetText( oModfactsRel:oTreeView:GetAutoValue( 19 ) ), ;
+                           ::oEntFacturaNro:SetText( oModfactsRel:oTreeView:GetAutoValue( 2 ) ), ;
 			   ::oFactsRelWnd:End() }
 
    oLBoxFactsRel:Active()
@@ -343,29 +343,30 @@ procedure __NC_Facturas( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() )
    oModFactsRel:oTreeView:SetGridLines( GTK_TREE_VIEW_GRID_LINES_BOTH )
 
    oLBoxFactsRel:SetColVisible(  1, .F. )    //- Ocultamos el id del producto.
-   oLBoxFactsRel:SetColVisible(  2, .F. )    //- Ocultamos el id de empresa.
-   oLBoxFactsRel:SetColVisible(  3, .F. )    //- Ocultamos el id global del producto
+//   oLBoxFactsRel:SetColVisible(  2, .F. )    //- Ocultamos el id de empresa.
+//   oLBoxFactsRel:SetColVisible(  3, .F. )    //- Ocultamos el id global del producto
    oLBoxFactsRel:SetColVisible(  4, .F. )    //- Ocultamos el id global del producto
+   oLBoxFactsRel:SetColVisible(  5, .F. )    //- Ocultamos el id global del producto
    oLBoxFactsRel:SetColVisible(  6, .F. )    //- Ocultamos descripcion global del producto
-   oLBoxFactsRel:SetColVisible(  7, .F. )    //- Ocultamos tipo de inventario
-//   oLBoxFactsRel:SetColVisible(  8, .F. )    //- Ocultamos tipo de tasa iva
+//   oLBoxFactsRel:SetColVisible(  7, .F. )    //- Ocultamos tipo de inventario
+   oLBoxFactsRel:SetColVisible(  8, .F. )    //- Ocultamos tipo de tasa iva
    oLBoxFactsRel:SetColVisible(  9, .F. )    //- Ocultamos porcentaje iva
-   oLBoxFactsRel:SetColVisible( 10, .F. )    //- Ocultamos porcentaje iva
-   oLBoxFactsRel:SetColVisible( 11, .F. )    //- Ocultamos porcentaje iva
+//   oLBoxFactsRel:SetColVisible( 10, .F. )    //- Ocultamos porcentaje iva
+//   oLBoxFactsRel:SetColVisible( 11, .F. )    //- Ocultamos porcentaje iva
 //   oLBoxFactsRel:SetColVisible( 12, .F. )    //- Ocultamos Stock Minimo
-   oLBoxFactsRel:SetColVisible( 13, .F. )    //- Ocultamos Costo
-   oLBoxFactsRel:SetColVisible( 14, .F. )    //- Ocultamos Activo
-   oLBoxFactsRel:SetColVisible( 15, .F. )    //- Ocultamos Fecha Creacion
-   oLBoxFactsRel:SetColVisible( 16, .F. )    
-   oLBoxFactsRel:SetColVisible( 17, .F. )    
-   oLBoxFactsRel:SetColVisible( 18, .F. )    
+//   oLBoxFactsRel:SetColVisible( 13, .F. )    //- Ocultamos Costo
+//   oLBoxFactsRel:SetColVisible( 14, .F. )    //- Ocultamos Activo
+//   oLBoxFactsRel:SetColVisible( 15, .F. )    //- Ocultamos Fecha Creacion
+//   oLBoxFactsRel:SetColVisible( 16, .F. )    
+//   oLBoxFactsRel:SetColVisible( 17, .F. )    
+//   oLBoxFactsRel:SetColVisible( 18, .F. )    
 
 //   oLBoxFactsRel:SetColVisible( 19, .F. )    
 //   oLBoxFactsRel:SetColVisible( 20, .F. )    
-   oLBoxFactsRel:SetColVisible( 21, .F. )    
-   oLBoxFactsRel:SetColVisible( 22, .F. )    
-   oLBoxFactsRel:SetColVisible( 23, .F. )    
-   oLBoxFactsRel:SetColVisible( 24, .F. )    
+//   oLBoxFactsRel:SetColVisible( 21, .F. )    
+//   oLBoxFactsRel:SetColVisible( 22, .F. )    
+//   oLBoxFactsRel:SetColVisible( 23, .F. )    
+//   oLBoxFactsRel:SetColVisible( 24, .F. )    
 */
 //   oLBoxFactsRel:SetColTitle( 4, "Código" )          //- Cambiamos el titulo 
 
@@ -656,7 +657,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    default lNew := .T.
    ::lSilence := .t.
-
+//
    ::oNotaWnd:Maximize()
 
    ::lNew := lNew
@@ -667,6 +668,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::rDocumento := ::rVentas:Documento('C','')
       ::hDocumento := ::rDocumento:Data()
       ::rFactDetal := ::rDocumento:Detal()
+//View( ::rFactDetal:Data() )
       ::cFecha := DTOC( DATE() )
 
       ::oLabNumero:SetValue( "00000000" )
@@ -958,9 +960,9 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    __DocsRefresh( oForm, .F. )
    __NCCalcula(oForm)
 
-//View( ::hDocumento )
 
    oBoxFactura:Show()
+//View( ::hDocumento )
 
    ::lSilence := .f.
 
