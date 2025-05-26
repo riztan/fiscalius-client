@@ -421,17 +421,17 @@
   <object class="GtkImage" id="image51">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-justify-center</property>
+    <property name="pixbuf">../images/nota_credito_32.png</property>
   </object>
   <object class="GtkImage" id="image52">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-missing-image</property>
+    <property name="pixbuf">../images/nota_debito_32.png</property>
   </object>
   <object class="GtkImage" id="image53">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-justify-right</property>
+    <property name="pixbuf">../images/nota_entrega_32.png</property>
   </object>
   <object class="GtkImage" id="image54">
     <property name="visible">True</property>

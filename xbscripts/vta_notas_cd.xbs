@@ -351,24 +351,6 @@ procedure __NC_Facturas( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() )
 //   oLBoxFactsRel:SetColVisible(  7, .F. )    //- Ocultamos tipo de inventario
    oLBoxFactsRel:SetColVisible(  8, .F. )    //- Ocultamos tipo de tasa iva
    oLBoxFactsRel:SetColVisible(  9, .F. )    //- Ocultamos porcentaje iva
-//   oLBoxFactsRel:SetColVisible( 10, .F. )    //- Ocultamos porcentaje iva
-//   oLBoxFactsRel:SetColVisible( 11, .F. )    //- Ocultamos porcentaje iva
-//   oLBoxFactsRel:SetColVisible( 12, .F. )    //- Ocultamos Stock Minimo
-//   oLBoxFactsRel:SetColVisible( 13, .F. )    //- Ocultamos Costo
-//   oLBoxFactsRel:SetColVisible( 14, .F. )    //- Ocultamos Activo
-//   oLBoxFactsRel:SetColVisible( 15, .F. )    //- Ocultamos Fecha Creacion
-//   oLBoxFactsRel:SetColVisible( 16, .F. )    
-//   oLBoxFactsRel:SetColVisible( 17, .F. )    
-//   oLBoxFactsRel:SetColVisible( 18, .F. )    
-
-//   oLBoxFactsRel:SetColVisible( 19, .F. )    
-//   oLBoxFactsRel:SetColVisible( 20, .F. )    
-//   oLBoxFactsRel:SetColVisible( 21, .F. )    
-//   oLBoxFactsRel:SetColVisible( 22, .F. )    
-//   oLBoxFactsRel:SetColVisible( 23, .F. )    
-//   oLBoxFactsRel:SetColVisible( 24, .F. )    
-*/
-//   oLBoxFactsRel:SetColTitle( 4, "Código" )          //- Cambiamos el titulo 
 
    ACTIVATE WINDOW ::oFactsRelWnd MODAL
 /*
