@@ -64,7 +64,7 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
           ID "btn_guardar" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnImprime ;
-          ACTION __VtaImprime( oForm ) ;
+          ACTION __NCImprime( oForm ) ;
           ID "btn_print" RESOURCE ::oRes
 
 
@@ -1366,7 +1366,7 @@ return
 
 
 
-PROCEDURE __VtaImprime( oForm )
+PROCEDURE __NCImprime( oForm )
 
    oTPuy:RunXBS( "vta_imprimir", oForm )
  

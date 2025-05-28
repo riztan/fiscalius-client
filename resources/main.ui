@@ -122,6 +122,12 @@
     <property name="yalign">0.40000000596046448</property>
     <property name="pixbuf">../images/ventas_32.png</property>
   </object>
+  <object class="GtkImage" id="gtk-orientation7">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/ventas_32.png</property>
+  </object>
   <object class="GtkImage" id="gtk-page-setup">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -159,6 +165,12 @@
     <property name="icon-size">3</property>
   </object>
   <object class="GtkImage" id="gtk-page-setup6">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/transaction_32.png</property>
+    <property name="icon-size">3</property>
+  </object>
+  <object class="GtkImage" id="gtk-page-setup7">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="pixbuf">../images/report_32.png</property>
@@ -551,6 +563,31 @@
     <property name="can_focus">False</property>
     <property name="pixbuf">../images/nota_entrega_32.png</property>
   </object>
+  <object class="GtkImage" id="image71">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/factura_32.png</property>
+  </object>
+  <object class="GtkImage" id="image72">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_credito_32.png</property>
+  </object>
+  <object class="GtkImage" id="image73">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_entrega_32.png</property>
+  </object>
+  <object class="GtkImage" id="image74">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_debito_32.png</property>
+  </object>
+  <object class="GtkImage" id="image75">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_entrega_32.png</property>
+  </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -857,50 +894,6 @@
                               </object>
                             </child>
                             <child>
-                              <object class="GtkImageMenuItem" id="itm_transacciones">
-                                <property name="label" translatable="yes">_Factura</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Facturas, Notas de Entrega, Pedidos</property>
-                                <property name="use_underline">True</property>
-                                <property name="image">image50</property>
-                                <property name="use_stock">False</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkImageMenuItem" id="itm_notacredito">
-                                <property name="label" translatable="yes">Nota de _Crédito</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Crea o Edita una Nota de Crédito</property>
-                                <property name="use_underline">True</property>
-                                <property name="image">image51</property>
-                                <property name="use_stock">False</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkImageMenuItem" id="itm_notadebito">
-                                <property name="label" translatable="yes">Nota de _Débito</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Crea o Edita una Nota de Débito</property>
-                                <property name="use_underline">True</property>
-                                <property name="image">image52</property>
-                                <property name="use_stock">False</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkImageMenuItem" id="itm_notaentrega">
-                                <property name="label" translatable="yes">Nota de _Entrega</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Crea o edita una Nota de Entrega</property>
-                                <property name="use_underline">True</property>
-                                <property name="image">image53</property>
-                                <property name="use_stock">False</property>
-                              </object>
-                            </child>
-                            <child>
                               <object class="GtkSeparatorMenuItem" id="separatormenuitem1">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
@@ -947,10 +940,10 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="mnu_report">
+                      <object class="GtkImageMenuItem" id="mnu_ventas">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="tooltip_text" translatable="yes">Informes </property>
+                        <property name="tooltip_text" translatable="yes">Registro de ventas</property>
                         <property name="image">gtk-page-setup6</property>
                         <property name="use_stock">False</property>
                         <child type="submenu">
@@ -958,12 +951,46 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
-                              <object class="GtkImageMenuItem" id="item_librovta">
-                                <property name="label" translatable="yes">Libro de Venta</property>
+                              <object class="GtkImageMenuItem" id="itm_factura">
+                                <property name="label" translatable="yes">_Factura</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Emite Libro de Ventas</property>
-                                <property name="image">gtk-orientation6</property>
+                                <property name="tooltip_text" translatable="yes">Crea o Edita Facturas</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image71</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_notacredito">
+                                <property name="label" translatable="yes">Nota de _Crédito</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Crea o Edita una Nota de Crédito</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image72</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_notadebito">
+                                <property name="label" translatable="yes">Nota de _Débito</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Crea o Edita una Nota de Débito</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image74</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_notaentrega">
+                                <property name="label" translatable="yes">Nota de _Entrega</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Crea o edita una Nota de Entrega</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image75</property>
                                 <property name="use_stock">False</property>
                               </object>
                             </child>
@@ -976,6 +1003,43 @@
                     <property name="expand">True</property>
                     <property name="fill">False</property>
                     <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkMenuBar" id="menubar3">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="mnu_report">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip_text" translatable="yes">Informes </property>
+                        <property name="image">gtk-page-setup7</property>
+                        <property name="use_stock">False</property>
+                        <child type="submenu">
+                          <object class="GtkMenu" id="menu3">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_vta_libro">
+                                <property name="label" translatable="yes">Libro de Ventas</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Emite Libro de Ventas</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">gtk-orientation7</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">False</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
               </object>
