@@ -1,0 +1,318 @@
+/* 
+ * Proyecto TPuy
+ * dplibvta_xlsx: Genera archivo de excel a partir del modelo dado.
+ *
+ * Author: riztan at gmail dot com
+ */
+
+
+#include "tpy_xbs.ch"
+#include "hbxlsxwriter.ch"
+
+function Column( cCol )
+   hCol := { "A"=>0,  "B"=>1,  "C"=>2,  "D"=>3,  "E"=>4,  "F"=>5,  "G"=>6,  "H"=>7,  ;
+             "I"=>8,  "J"=>9,  "K"=>10, "L"=>11, "M"=>12, "N"=>13, "O"=>14, "P"=>15, ;
+             "Q"=>16, "R"=>17, "S"=>18, "T"=>19, "U"=>20, "V"=>21, "W"=>22, "X"=>23, ;
+             "Y"=>24, "Z"=>25 ;
+           }
+return hCol[cCol]
+
+#xcommand xlsx_set_string <worksheet> cell: <cell> value: <title> [format: <format>] ;
+      =>  worksheet_write_string( <worksheet>, CELL(<cell>), <title>[, <format>] )
+
+#xcommand xlsx_merge_range <worksheet> from: <cell_from> to: <cell_to> value: <title> [format: <format>] ;
+      =>  worksheet_merge_range( <worksheet>, CELL(<cell_from>), CELL(<cell_to>), <title>[, <format>] ) 
+
+
+#define P_92  "@E 999,999,999,999,999,999,999.99"
+
+
+function STRRANGE( cCol1, nLin1, cCol2, nLin2 )
+   local cRange := "{COL1}{LIN1}:{COL2}{LIN2}"
+   cRange := STRTRAN( cRange, "{COL1}", cCol1 )
+   cRange := STRTRAN( cRange, "{LIN1}", hb_ntos(nLin1) )
+   cRange := STRTRAN( cRange, "{COL2}", cCol2 )
+   cRange := STRTRAN( cRange, "{LIN2}", hb_ntos(nLin2) )
+return cRange
+
+
+procedure vta_libro_xlsx( oForm, rQry )
+
+   local i, nLin, nOpera:=1, cFileHeader, error, cFormula := "", cRange := ""
+   local hTotal, dDesde := ::oCalDesde:GetDate()
+
+   SET DECIMAL TO 2
+
+   SET PUBLIC hTotal
+
+   ::workbook := workbook_new( "tmp/vta_libro.xlsx" )
+
+   ::worksheet := workbook_add_worksheet( ::workbook, "Datos" )
+   worksheet_gridlines( ::worksheet, 0 )
+
+   ::format_report := workbook_add_format( ::workbook )
+   ::format_title0 := workbook_add_format( ::workbook )
+   ::format_title1 := workbook_add_format( ::workbook )
+   ::format_title2 := workbook_add_format( ::workbook )
+   ::format_numero := workbook_add_format( ::workbook )
+   ::format_numlin := workbook_add_format( ::workbook )
+   ::frmt_resumen  := workbook_add_format( ::workbook )
+   
+   /* aplicando ajustes a los formatos */
+   format_set_num_format( ::format_numero, "_ * #,##0.00;_ * -#,##0.00")
+   format_set_num_format( ::format_numlin, "_ * #,##0.00;_ * -#,##0.00")
+   //format_set_num_format( ::format_numero, "_ * #.##0,00_ ;_ * -#.##0,00_ ;_ * "-"??_ ;_ @_" )
+
+   format_set_bold( ::format_title0 )
+//   format_set_align( ::format_title0, LXW_ALIGN_DISTRIBUTED )
+   format_set_align( ::format_title0, LXW_ALIGN_CENTER )
+   format_set_align( ::format_title0, LXW_ALIGN_VERTICAL_CENTER )
+   format_set_border(::format_title0, LXW_BORDER_THIN)
+   format_set_font_size(::format_title0, 9 )
+   format_set_text_wrap( ::format_title0 )
+
+   format_set_bold(      ::format_report)
+   format_set_font_size( ::format_report, 12 )
+   format_set_align(     ::format_report, LXW_ALIGN_CENTER )
+
+   format_set_bold( ::format_title1)
+   format_set_bold( ::format_title2)
+   
+   format_set_align( ::format_numero, LXW_ALIGN_RIGHT )
+   format_set_align( ::format_numlin, LXW_ALIGN_RIGHT )
+
+
+   // Titulos Generales
+   xlsx_set_string ::worksheet cell: "A1" value: oTPuy:cEmpresa  format: ::format_title1
+   xlsx_set_string ::worksheet cell: "A2" value: "RIF:  "+"J1123456"//oTPuy:cRif  
+   xlsx_set_string ::worksheet cell: "A3" value: "Dirección Fiscal: "+"Dirección del cliente. " //;
+                                                 //ALLTRIM(oTPuy:cDir1)+" "+;
+                                                 //ALLTRIM(oTPuy:cDir2)+" "+;
+                                                 //ALLTRIM(oTPuy:cDir3)  
+
+   worksheet_merge_range( ::worksheet, CELL("I5"),CELL("L5"), "LIBRO DE VENTAS", ::format_report )
+   xlsx_set_string ::worksheet cell: "A6" value: "Desde: "+DTOC( ::oCalDesde:GetDate() )+" "+;
+                                                 "Hasta: "+DTOC( ::oCalHasta:GetDate() ) ;
+                                                 format: ::format_title1
+   
+   /* Anchura de columnas */
+   worksheet_set_column( ::worksheet, Column("A"), Column("A"), 07 )
+   worksheet_set_column( ::worksheet, Column("B"), Column("C"), 14 )
+   worksheet_set_column( ::worksheet, Column("D"), Column("D"), 50 )
+   worksheet_set_column( ::worksheet, Column("E"), Column("V"), 14 )
+   worksheet_set_column( ::worksheet, Column("P"), Column("R"), 16 )
+   worksheet_set_column( ::worksheet, Column("S"), Column("S"), 07 )
+
+   /* Creamos los titulos de columna y unimos las columnas donde se requiere */
+   worksheet_merge_range( ::worksheet, CELL("A8"),CELL("A10"), "Oper.", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("B8"),CELL("B10"), "Fecha del"+hb_eol()+" Documento", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("C8"),CELL("C10"), "R.I.F.", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("D8"),CELL("D10"), "Nombre o Razón Social", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("E8"),CELL("E10"), "Nro Comprobante de Retención", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("F8"),CELL("F10"), "Fecha de Emisión del Comprobante", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("G8"),CELL("G10"), ;
+                          "Nro Planilla de Exportación [Forma D]", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("H8"),CELL("H10"), "Nro de Factura", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("I8"),CELL("I10"), "Nro de Control", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("J8"),CELL("J10"), "Nro de N.Débito", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("K8"),CELL("K10"), "Nro de N.Crédito", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("L8"),CELL("L10"), "Tipo de Transacción", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("M8"),CELL("M10"), "Nro de Factura Afectada", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("N8"),CELL("N10"), "Total Ventas Incluyendo IVA", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("O8"),CELL("O10"), "Ventas Internas No Gravadas", ::format_title0 )
+ 
+   worksheet_merge_range( ::worksheet, CELL("P6"),CELL("T7"), "Ventas Internas o "+;
+                                                              "Importaciones Gravadas", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("P8"),CELL("R9"), "Base Imponible", ::format_title0 )
+
+   xlsx_set_string ::worksheet cell: "P10" value: "Exportaciones"     format: ::format_title0  
+   xlsx_set_string ::worksheet cell: "Q10" value: "Contribuyentes"    format: ::format_title0  
+   xlsx_set_string ::worksheet cell: "R10" value: "No Contribuyentes" format: ::format_title0  
+
+   worksheet_merge_range( ::worksheet, CELL("S8"),CELL("S10"), "% Alicuota", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("T8"),CELL("T10"), "Impuesto (IVA)", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("U8"),CELL("U10"), "IVA Retenido por el Comprador ", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("V8"),CELL("V10"), "IVA Percibido", ::format_title0 )
+   
+   /* Variables de Totales */
+   hTotal:nVtasNoGravadas := {"base"  => rQry:iva_monto_0, ;
+                              "debito"=> 0 }
+
+   hTotal:nVtasExportacion:= {"base"  => 0,;  
+                              "debito"=> 0 }  //por ahora no contemplado
+
+   hTotal:nVtasAliGN      := {"base"  => 0, ;  //rQry:DOC_BASNET ,;
+                              "debito"=> 0 }   //rQry:DOC_MTOIVA }
+
+   hTotal:nVtasAliGNAdi   := {"base"  => 0 ,; 
+                              "debito"=> 0 }  //por ahora no contemplado
+
+   hTotal:nVtasAliGNRed   := {"base"  => 0 ,; 
+                              "debito"=> 0 }  //por ahora no contemplado
+
+   hTotal:nIVARet := {"nVtasGen"    => 0, ; //rQry:RTI_MONTO ,;
+                      "nVtasGenPer" => 0 }  //rQry:DOC_MTOIVA-rQry:RTI_MONTO }
+
+   /* Incluimos los datos de la consulta en la hoja de calculo */
+   rQry:GoTop()
+   i=11
+   nLin := i
+   worksheet_freeze_panes( ::worksheet, i-1,0 )
+
+
+   While !rQry:Eof()
+
+      cIndex := rQry:rif+rQry:tipo_documento+rQry:numero
+
+      xlsx_set_string ::worksheet cell: "A"+hb_ntos(i) value: STRZERO( nOpera++,3) //operacion
+      if !Empty( rQry:fecha )
+         xlsx_set_string ::worksheet cell: "B"+hb_ntos(i) value: DTOC(rQry:fecha) //fecha
+      endif
+//View( rQry:CLI_RIF )
+      xlsx_set_string ::worksheet cell: "C"+hb_ntos(i) value: rQry:rif         //RIF
+      xlsx_set_string ::worksheet cell: "D"+hb_ntos(i) value: UTF_8(rQry:cliente_nombre)  //NOMBRE
+      xlsx_set_string ::worksheet cell: "E"+hb_ntos(i) value: rQry:comprobante_retencion      //COMPROBANTE RETENCION
+      if !Empty( rQry:fecha_retencion )
+         xlsx_set_string ::worksheet cell: "F"+hb_ntos(i) value: DTOC(rQry:fecha_retencion)//Fecha Comprobante Ret
+      endif
+      //xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: rQry:DOC_FACTURA     //Nro de Factura
+      xlsx_set_string ::worksheet cell: "I"+hb_ntos(i) value: rQry:numero_control      //Nro de Control Factura
+//      xlsx_set_string ::worksheet cell: "J"+hb_ntos(i) value: rQry:DOC_DEBITO      //Nota de Débito
+//      xlsx_set_string ::worksheet cell: "K"+hb_ntos(i) value: rQry:DOC_CREDITO     //Nota de Crédito
+
+      if rQry:monto_retencion<>0 .AND. rQry:fecha < dDesde 
+        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: '02-COM'        //Tipo de Transaccion
+      else
+        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: "tipo transa" //rQry:TC_LIBTRA       //Tipo de Transaccion
+      endif
+
+      if rQry:monto_retencion<>0 .AND. rQry:fecha < dDesde 
+         xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: rQry:numero     //Nro de Factura
+      else 
+         xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: rQry:numero     //Nro de Factura (es FACTURA AFECTADA)
+         xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: rQry:factura_asociada      //Factura Afectada
+      endif
+      worksheet_write_number( ::worksheet, i-1, Column("N"), rQry:total, ::format_numlin )       //Total Venta Incluye IVA
+
+/*
+      if LEFT(rQry:DOC_TIPDOC),2)="CR" .OR.  LEFT(rQry:DOC_TIPDOC),2)="DE"
+         if rQry:DOC_CXC=-1
+            
+         endif
+      endif
+*/
+
+      xlsx_set_string ::worksheet cell: "W"+hb_ntos(i) value: rQry:tipo_documento     //Tipo de Documento
+
+      /* este segundo bucle es para el caso de tener varias alicuotas, de momento no es usado */ 
+      while cIndex =  rQry:rif+rQry:tipo_documento+rQry:numero .AND. !rQry:Eof()
+
+         cIndex := rQry:rif+rQry:tipo_documento+rQry:numero
+
+         worksheet_write_number( ::worksheet, i-1, Column("O"), rQry:iva_monto_0, ::format_numlin )     //Venta No Gravada
+//         worksheet_write_number( ::worksheet, i-1, Column("Q"), rQry:DOC_BASNET, ::format_numlin )     //Venta a Contribuyentes
+         //-- ver que hacer con los no contribuyentes.
+//         worksheet_write_number( ::worksheet, i-1, Column("S"), rQry:ALICUOTA )       //Alicuota
+//         worksheet_write_number( ::worksheet, i-1, Column("T"), rQry:DOC_MTOIVA, ::format_numlin )     //Monto IVA
+         worksheet_write_number( ::worksheet, i-1, Column("U"), rQry:monto_retencion,  ::format_numlin )      //Monto Retenido
+//         worksheet_write_number( ::worksheet, i-1, Column("V"), ;
+//                                 iif(rQry:DOC_MTOIVA>0, rQry:DOC_MTOIVA-rQry:RTI_MONTO, 0 ), ::format_numlin ) //IVA Percibido
+ 
+         i++
+
+      /*HAY QUE PROBAR CON DATOS QUE INCLUYAN VARIAS ALICUOTAS (RIGC ABR-2024)*/
+      /* Cuenta de acumuladores (totales) */
+      hTotal:nVtasNoGravadas["base"] += rQry:iva_monto_0
+//      hTotal:nVtasAliGN["base"]      += rQry:DOC_BASNET
+//      hTotal:nVtasAliGN["debito"]    += rQry:DOC_MTOIVA
+
+      hTotal:nIVARet["nVtasGen"]     += rQry:monto_retencion
+//      hTotal:nIVARet["nVtasGenPer"]  += rQry:DOC_MTOIVA-rQry:RTI_MONTO
+
+         rQry:Skip()
+      EndDo
+   EndDo
+
+   /* totales posterior a los datos */
+   xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: "Totales" format: ::frmt_resumen
+   cFormula := "=SUM(N{nLin}:N{i})"
+   worksheet_write_formula( ::worksheet, CELL("N"+hb_ntos(i)), "=SUM("+StrRange("N",nLin,"N",i-1)+")", ::format_numero ) 
+   worksheet_write_formula( ::worksheet, CELL("O"+hb_ntos(i)), "=SUM("+StrRange("O",nLin,"O",i-1)+")", ::format_numero ) 
+   worksheet_write_formula( ::worksheet, CELL("P"+hb_ntos(i)), "=SUM("+StrRange("P",nLin,"P",i-1)+")", ::format_numero ) 
+   worksheet_write_formula( ::worksheet, CELL("Q"+hb_ntos(i)), "=SUM("+StrRange("Q",nLin,"Q",i-1)+")", ::format_numero ) 
+   worksheet_write_formula( ::worksheet, CELL("R"+hb_ntos(i)), "=SUM("+StrRange("R",nLin,"R",i-1)+")", ::format_numero ) 
+   worksheet_write_formula( ::worksheet, CELL("T"+hb_ntos(i)), "=SUM("+StrRange("T",nLin,"T",i-1)+")", ::format_numero ) 
+   worksheet_write_formula( ::worksheet, CELL("U"+hb_ntos(i)), "=SUM("+StrRange("U",nLin,"U",i-1)+")", ::format_numero ) 
+   worksheet_write_formula( ::worksheet, CELL("V"+hb_ntos(i)), "=SUM("+StrRange("V",nLin,"V",i-1)+")", ::format_numero ) 
+   
+   i := i+3
+
+   xlsx_set_string ::worksheet cell: "N"+hb_ntos(i) value: "Base Imponible" format: ::format_title0
+   xlsx_set_string ::worksheet cell: "O"+hb_ntos(i) value: "Débito Fiscal" format: ::format_title0
+
+   worksheet_merge_range( ::worksheet, CELL("R"+hb_ntos(i-1)),CELL("R"+hb_ntos(i)), ;
+                          "IVA Retenido por el comprador", ::format_title0 )
+
+   worksheet_merge_range( ::worksheet, CELL("T"+hb_ntos(i-1)),CELL("T"+hb_ntos(i)), ;
+                          "IVA de Ventas Percibido", ::format_title0 )
+   i++
+
+   //format_set_align( ::format_title0, LXW_ALIGN_JUSTIFY )
+   format_set_border(::format_numero, LXW_BORDER_THIN)
+
+   /* formato para los titulos del resumen */
+   format_set_bold( ::frmt_resumen )
+   format_set_align( ::frmt_resumen, LXW_ALIGN_JUSTIFY )
+   format_set_align( ::frmt_resumen, LXW_ALIGN_VERTICAL_CENTER )
+   format_set_border(::frmt_resumen, LXW_BORDER_THIN)
+   format_set_font_size(::frmt_resumen, 9 )
+
+
+   /* Registrar Titulos de Resumen y totales */
+   worksheet_merge_range( ::worksheet, CELL("J"+hb_ntos(i)),CELL("M"+hb_ntos(i)), ;
+                          "Total Ventas Internas No Gravadas", ::frmt_resumen )
+   worksheet_write_number( ::worksheet, i-1, Column("N"), hTotal:nVtasNoGravadas["base"  ], ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("O"), hTotal:nVtasNoGravadas["debito"], ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("R"), 0, ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("T"), 0, ::format_numero ) 
+   i++
+   
+   worksheet_merge_range( ::worksheet, CELL("J"+hb_ntos(i)),CELL("M"+hb_ntos(i)), ;
+                          "Suma de las Ventas Internas Solo Alícuota General", ::frmt_resumen )
+   worksheet_write_number( ::worksheet, i-1, Column("N"), hTotal:nVtasAliGN["base"  ], ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("O"), hTotal:nVtasAliGN["debito"], ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("R"), hTotal:nIVARet["nVtasGen"], ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("T"), hTotal:nIVARet["nVtasGenPer"], ::format_numero ) 
+   i++
+
+   worksheet_merge_range( ::worksheet, CELL("J"+hb_ntos(i)),CELL("M"+hb_ntos(i)), ;
+                          "Suma de las Ventas Internas Solo Alícuota General + Adicional", ::frmt_resumen )
+   worksheet_write_number( ::worksheet, i-1, Column("N"), hTotal:nVtasAliGNAdi["base"  ], ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("O"), hTotal:nVtasAliGNAdi["debito"], ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("R"), 0, ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("T"), 0, ::format_numero ) 
+   i++
+
+   worksheet_merge_range( ::worksheet, CELL("J"+hb_ntos(i)),CELL("M"+hb_ntos(i)), ;
+                          "Suma de las Ventas Internas Solo Alícuota Reducida", ::frmt_resumen )
+   worksheet_write_number( ::worksheet, i-1, Column("N"), hTotal:nVtasAliGNRed["base"  ], ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("O"), hTotal:nVtasAliGNRed["debito"], ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("R"), 0, ::format_numero ) 
+   worksheet_write_number( ::worksheet, i-1, Column("T"), 0, ::format_numero ) 
+   
+
+   /* finalizamos */
+   error := workbook_close( ::workbook )
+
+   /* Check if there was any error creating the xlsx file. */
+   IF error > 0
+      Alert( "Error in workbook_close(). " + hb_eol() + ;
+         "Error " + AllTrim( Str( error ) ) + " = " + lxw_strerror( error ) )
+
+   ENDIF
+
+//   View("Generado fichero tipo excel con la información del mayor analítico.")
+return
+
+//eof
+

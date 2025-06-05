@@ -1,0 +1,141 @@
+﻿/* 
+ * Proyecto TPuy
+ * vta_libro: Elabora libro de venta en formato .xlsx
+ *
+ */
+
+
+#include "tpy_xbs.ch"
+
+#DEFINE DOMINGO    1
+#DEFINE LUNES      2
+#DEFINE MARTES     3
+#DEFINE MIERCOLES  4
+#DEFINE JUEVES     5
+#DEFINE VIERNES    6
+#DEFINE SABADO     7
+
+proc vta_libro( oFormParent )
+   local oForm
+
+   SET PUBLIC oForm
+
+   ::aSucursales := {"unica"} //Sucursales( oForm )
+
+   SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"vta_libro.ui"
+
+   DEFINE WINDOW ::oWnd TITLE "Libro de Ventas" ;
+                        SIZE 550,450 ;
+                        ID "window1" RESOURCE ::oRes
+
+      ::oWnd:SetResizable(.F.)
+
+
+      DEFINE IMAGE ::oImgLogo ID "img_logo" RESOURCE ::oRes
+             ::oImgLogo:Adjust(80)
+
+      DEFINE IMAGE ::oImgOrseit ID "img_orseit" RESOURCE ::oRes
+             ::oImgOrseit:Adjust(40)
+
+      DEFINE BOX ::oBox_sucursal ID "box_combo_sucursal" RESOURCE ::oRes
+      ::cSucursal := oTpuy:cSucursal //'000001'
+      DEFINE COMBOBOX ::oCmbSucursal VAR ::cSucursal ;
+             ITEMS ::aSucursales ;
+             OF ::oBox_sucursal
+
+      //-- Calendarios
+      DEFINE CALENDAR ::oCalDesde ;
+             DATE GetDiaSem( LUNES, DATE() ) ;
+             ID "cal_desde" RESOURCE ::oRes
+
+      DEFINE CALENDAR ::oCalHasta DATE ;
+             GetDiaSem( SABADO, DATE() ) ;
+             ID "cal_hasta" RESOURCE ::oRes
+
+
+      DEFINE BUTTON ::oBtnContinue ;
+             ACTION GetData( oForm, oFormParent ) ;
+             ID "btn_ok" RESOURCE ::oRes
+
+      DEFINE BUTTON ::oBtnCancel ;
+             ACTION ::oWnd:End() ;
+             ID "btn_cancel" RESOURCE ::oRes
+
+   ACTIVATE WINDOW ::oWnd
+
+return
+
+
+
+function GetData( oForm, oFormParent )
+   local aTipDoc:={}
+   local dDesde, dHasta, oErr, rQry
+   
+   ::cEmpresa  := oFormParent:cCBEmpresa
+   ::rEmpresa  := oFormParent:oGEmpresa
+   ::rVentas   := oFormParent:oGEmpresa:SetModulo("Ventas")
+
+//View( ::oCalDesde:GetDate() )
+   dDesde := ::oCalDesde:GetDate()
+   dHasta := ::oCalHasta:GetDate()
+
+   rQry := ::rVentas:Libro( {"sucursal"=>"1", "desde"=>dDesde, "hasta"=>dHasta} )
+
+MsgRun( "Generando fichero tipo excel", {||oTPuy:RunXBS("vta_libro_xlsx", oForm, rQry )})
+View( "aqui vamos" )
+   return .t.
+
+//api_shellexecute( nil, "open", "crystal\dplibvta.xlsx", "Libro", ".\") 
+WAPI_ShellExecute(nil,"open","excel","crystal/dplibvta.xlsx") 
+//WAPI_ShellExecute(nil,"open","C:\Program Files\LibreOffice\program\scalc.exe","crystal/dplibvta.xlsx") 
+return
+
+
+
+Function GetDiaSem( nDia, dHoy )
+   LOCAL nDiaSemHoy
+
+   DEFAULT dHoy := DATE()
+   DEFAULT nDia := LUNES
+
+   nDiaSemHoy := DOW( dHoy )
+
+   Do Case
+   Case nDiaSemHoy > nDia
+//    ?? "El Lunes es: ", DTOC( dHoy - (nDiaSemHoy - nDia))
+      return ( dHoy - (nDiaSemHoy - nDia))
+   Case nDiaSemHoy < nDia
+//     ?? "El lunes es: ", DTOC( dHoy + (nDia - nDiaSemHoy))
+      return ( dHoy + (nDia - nDiaSemHoy))
+   Case nDiaSemHoy = nDia
+//    ?? "es hoy!"
+      return (dHoy) //nDiaSemHoy
+   EndCase
+RETURN nil
+
+
+
+Function DiaSemana( dFecha )
+Return hb_StrToUtf8(CDOW( dFecha ))
+
+
+
+Function DiaIniMes( dFecha )
+Return CTOD( "1/"+hb_ntos(MONTH(date()))+"/"+hb_ntos(year(DATE())) ) 
+
+
+
+Function DiaFinMes( dFecha )
+   local nMonth := MONTH( dFecha ) 
+   local nYear := YEAR( dFecha )
+
+   if MONTH(dFecha)+1 > 12
+      nMonth := 1
+      nYear++  
+   else
+      nMonth++
+   endif
+return  CTOD( "1/"+hb_ntos(nMonth)+"/"+hb_ntos(nYear) )-1
+
+
+//eof

@@ -21,9 +21,9 @@ procedure vta_facturas( oFormParent )
 
    ::aDetal := {}
 
-   ::cEmpresa := oFormParent:cCBEmpresa
-   ::rEmpresa := oFormParent:oGEmpresa
-   ::rVentas := oFormParent:oGEmpresa:SetModulo("Ventas")
+   ::cEmpresa  := oFormParent:cCBEmpresa
+   ::rEmpresa  := oFormParent:oGEmpresa
+   ::rVentas   := oFormParent:oGEmpresa:SetModulo("Ventas")
    ::rFacturas := ::rVentas:Facturas()
 
    if hb_isNIL( ::rFacturas )
