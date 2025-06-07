@@ -83,8 +83,8 @@ procedure vta_libro_xlsx( oForm, rQry )
 
 
    // Titulos Generales
-   xlsx_set_string ::worksheet cell: "A1" value: oTPuy:cEmpresa  format: ::format_title1
-   xlsx_set_string ::worksheet cell: "A2" value: "RIF:  "+"J1123456"//oTPuy:cRif  
+   xlsx_set_string ::worksheet cell: "A1" value: ::cEmpresa  format: ::format_title1
+   xlsx_set_string ::worksheet cell: "A2" value: "RIF:  "+::rEmpresa:GetData()["rif"]  
    xlsx_set_string ::worksheet cell: "A3" value: "Dirección Fiscal: "+"Dirección del cliente. " //;
                                                  //ALLTRIM(oTPuy:cDir1)+" "+;
                                                  //ALLTRIM(oTPuy:cDir2)+" "+;
@@ -122,7 +122,7 @@ procedure vta_libro_xlsx( oForm, rQry )
    worksheet_merge_range( ::worksheet, CELL("O8"),CELL("O10"), "Ventas Internas No Gravadas", ::format_title0 )
  
    worksheet_merge_range( ::worksheet, CELL("P6"),CELL("T7"), "Ventas Internas o "+;
-                                                              "Importaciones Gravadas", ::format_title0 )
+                                                              "Exportaciones Gravadas", ::format_title0 )
    worksheet_merge_range( ::worksheet, CELL("P8"),CELL("R9"), "Base Imponible", ::format_title0 )
 
    xlsx_set_string ::worksheet cell: "P10" value: "Exportaciones"     format: ::format_title0  
@@ -135,13 +135,12 @@ procedure vta_libro_xlsx( oForm, rQry )
    worksheet_merge_range( ::worksheet, CELL("V8"),CELL("V10"), "IVA Percibido", ::format_title0 )
    
    /* Variables de Totales */
-   hTotal:nVtasNoGravadas := {"base"  => rQry:iva_monto_0, ;
+   hTotal:nVtasNoGravadas := {"base"  => 0, ;
                               "debito"=> 0 }
-
    hTotal:nVtasExportacion:= {"base"  => 0,;  
                               "debito"=> 0 }  //por ahora no contemplado
 
-   hTotal:nVtasAliGN      := {"base"  => 0, ;  //rQry:DOC_BASNET ,;
+   hTotal:nVtasAliGN      := {"base"  => 0, ;  
                               "debito"=> 0 }   //rQry:DOC_MTOIVA }
 
    hTotal:nVtasAliGNAdi   := {"base"  => 0 ,; 
@@ -171,28 +170,38 @@ procedure vta_libro_xlsx( oForm, rQry )
 //View( rQry:CLI_RIF )
       xlsx_set_string ::worksheet cell: "C"+hb_ntos(i) value: rQry:rif         //RIF
       xlsx_set_string ::worksheet cell: "D"+hb_ntos(i) value: UTF_8(rQry:cliente_nombre)  //NOMBRE
-      xlsx_set_string ::worksheet cell: "E"+hb_ntos(i) value: rQry:comprobante_retencion      //COMPROBANTE RETENCION
+      xlsx_set_string ::worksheet cell: "E"+hb_ntos(i) value: hb_ntos(rQry:comprobante_retencion) //COMPROBANTE RETENCION
       if !Empty( rQry:fecha_retencion )
          xlsx_set_string ::worksheet cell: "F"+hb_ntos(i) value: DTOC(rQry:fecha_retencion)//Fecha Comprobante Ret
       endif
-      //xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: rQry:DOC_FACTURA     //Nro de Factura
+      if lower(rQry:tipo_documento) = "factura"
+         xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: rQry:numero     //Nro de Factura
+      endif
       xlsx_set_string ::worksheet cell: "I"+hb_ntos(i) value: rQry:numero_control      //Nro de Control Factura
-//      xlsx_set_string ::worksheet cell: "J"+hb_ntos(i) value: rQry:DOC_DEBITO      //Nota de Débito
-//      xlsx_set_string ::worksheet cell: "K"+hb_ntos(i) value: rQry:DOC_CREDITO     //Nota de Crédito
+      if lower(rQry:tipo_documento) = "nota de débito"
+         xlsx_set_string ::worksheet cell: "J"+hb_ntos(i) value: rQry:numero      //Nota de Débito
+      endif
+      if lower(rQry:tipo_documento) = "nota de crédito"
+         xlsx_set_string ::worksheet cell: "K"+hb_ntos(i) value: rQry:numero     //Nota de Crédito
+      endif
 
       if rQry:monto_retencion<>0 .AND. rQry:fecha < dDesde 
         xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: '02-COM'        //Tipo de Transaccion
       else
-        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: "tipo transa" //rQry:TC_LIBTRA       //Tipo de Transaccion
+        // 01-registro 02-complemento 03-anulacion 04-ajuste
+        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: "01-REG" //rQry:TC_LIBTRA       //Tipo de Transaccion
+      endif
+      if rQry:estado="A"
+        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: "03-ANU"      //Tipo de Transaccion
       endif
 
       if rQry:monto_retencion<>0 .AND. rQry:fecha < dDesde 
          xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: rQry:numero     //Nro de Factura
       else 
-         xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: rQry:numero     //Nro de Factura (es FACTURA AFECTADA)
+         //xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: rQry:numero     //Nro de Factura (es FACTURA AFECTADA)
          xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: rQry:factura_asociada      //Factura Afectada
       endif
-      worksheet_write_number( ::worksheet, i-1, Column("N"), rQry:total, ::format_numlin )       //Total Venta Incluye IVA
+      worksheet_write_number( ::worksheet, i-1, Column("N"), rQry:monto_total, ::format_numlin )       //Total Venta Incluye IVA
 
 /*
       if LEFT(rQry:DOC_TIPDOC),2)="CR" .OR.  LEFT(rQry:DOC_TIPDOC),2)="DE"
@@ -209,25 +218,35 @@ procedure vta_libro_xlsx( oForm, rQry )
 
          cIndex := rQry:rif+rQry:tipo_documento+rQry:numero
 
-         worksheet_write_number( ::worksheet, i-1, Column("O"), rQry:iva_monto_0, ::format_numlin )     //Venta No Gravada
-//         worksheet_write_number( ::worksheet, i-1, Column("Q"), rQry:DOC_BASNET, ::format_numlin )     //Venta a Contribuyentes
+         if rQry:tipo_tasa="EXE"
+            worksheet_write_number( ::worksheet, i-1, Column("O"), rQry:total, ::format_numlin )     //Venta No Gravada
+         endif
+         worksheet_write_number( ::worksheet, i-1, Column("Q"), rQry:total, ::format_numlin )     //Venta a Contribuyentes
          //-- ver que hacer con los no contribuyentes.
-//         worksheet_write_number( ::worksheet, i-1, Column("S"), rQry:ALICUOTA )       //Alicuota
-//         worksheet_write_number( ::worksheet, i-1, Column("T"), rQry:DOC_MTOIVA, ::format_numlin )     //Monto IVA
+         worksheet_write_number( ::worksheet, i-1, Column("S"), rQry:iva_porcentaje )       //Alicuota
+         worksheet_write_number( ::worksheet, i-1, Column("T"), rQry:iva_monto, ::format_numlin )     //Monto IVA
          worksheet_write_number( ::worksheet, i-1, Column("U"), rQry:monto_retencion,  ::format_numlin )      //Monto Retenido
-//         worksheet_write_number( ::worksheet, i-1, Column("V"), ;
-//                                 iif(rQry:DOC_MTOIVA>0, rQry:DOC_MTOIVA-rQry:RTI_MONTO, 0 ), ::format_numlin ) //IVA Percibido
+         worksheet_write_number( ::worksheet, i-1, Column("V"), ;
+                                 iif(rQry:iva_monto>0, rQry:iva_monto-rQry:monto_retencion, 0 ), ::format_numlin ) //IVA Percibido
  
          i++
 
-      /*HAY QUE PROBAR CON DATOS QUE INCLUYAN VARIAS ALICUOTAS (RIGC ABR-2024)*/
-      /* Cuenta de acumuladores (totales) */
-      hTotal:nVtasNoGravadas["base"] += rQry:iva_monto_0
-//      hTotal:nVtasAliGN["base"]      += rQry:DOC_BASNET
-//      hTotal:nVtasAliGN["debito"]    += rQry:DOC_MTOIVA
+         /*HAY QUE PROBAR CON DATOS QUE INCLUYAN VARIAS ALICUOTAS (RIGC ABR-2024)*/
+         /* Cuenta de acumuladores (totales) */
+         if rQry:tipo_tasa="EXE"
+            hTotal:nVtasNoGravadas["base"] += rQry:total
+         endif
+         if rQry:tipo_tasa="GEN"
+            hTotal:nVtasAliGN["base"]      += rQry:total-rQry:iva_monto
+            hTotal:nVtasAliGN["debito"]    += rQry:iva_monto
 
-      hTotal:nIVARet["nVtasGen"]     += rQry:monto_retencion
-//      hTotal:nIVARet["nVtasGenPer"]  += rQry:DOC_MTOIVA-rQry:RTI_MONTO
+            hTotal:nIVARet["nVtasGen"]     += rQry:monto_retencion
+            hTotal:nIVARet["nVtasGenPer"]  += rQry:iva_monto-rQry:monto_retencion
+         endif
+         if rQry:tipo_tasa="RED"
+            hTotal:nVtasAliGNRe["base"]      += rQry:total-rQry:iva_monto
+            hTotal:nVtasAliGNRe["debito"]    += rQry:iva_monto
+         endif
 
          rQry:Skip()
       EndDo

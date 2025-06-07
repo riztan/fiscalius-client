@@ -79,6 +79,11 @@ function GetData( oForm, oFormParent )
    dDesde := ::oCalDesde:GetDate()
    dHasta := ::oCalHasta:GetDate()
 
+   if dHasta < dDesde 
+      MsgStop("Fechas incorrectas ")
+      RETURN .F.
+   endif
+
    rQry := ::rVentas:Libro( {"sucursal"=>"1", "desde"=>dDesde, "hasta"=>dHasta} )
 
 MsgRun( "Generando fichero tipo excel", {||oTPuy:RunXBS("vta_libro_xlsx", oForm, rQry )})
@@ -88,7 +93,7 @@ View( "aqui vamos" )
 //api_shellexecute( nil, "open", "crystal\dplibvta.xlsx", "Libro", ".\") 
 WAPI_ShellExecute(nil,"open","excel","crystal/dplibvta.xlsx") 
 //WAPI_ShellExecute(nil,"open","C:\Program Files\LibreOffice\program\scalc.exe","crystal/dplibvta.xlsx") 
-return
+return .T.
 
 
 
