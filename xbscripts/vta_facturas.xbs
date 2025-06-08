@@ -53,7 +53,7 @@ procedure vta_facturas( oFormParent )
    DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnGuardar ;
-          ACTION __Save( oForm ) ;
+          ACTION __VtaSave( oForm ) ;
           ID "btn_guardar" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnImprime ;
@@ -128,7 +128,7 @@ procedure vta_facturas( oFormParent )
    ::cComboEstado := ""
    DEFINE COMBOBOX ::oComboEstado ;
           VAR ::cComboEstado ITEMS ::aComboEstado ;
-          ON CHANGE ( __ChangeEstado( oForm, ::lConfirm ) ) ;
+          ON CHANGE ( __VtaChangeEstado( oForm, ::lConfirm ) ) ;
           OF ::oBoxEstado
 
 
@@ -392,7 +392,7 @@ return lRes
 
 
 
-procedure __ChangeEstado( oForm, lConfirm )
+procedure __VtaChangeEstado( oForm, lConfirm )
 //View( ::cPreEstado + " --> " + ::cComboEstado )
    if ::lSilence ; return ; endif
 
@@ -400,7 +400,7 @@ procedure __ChangeEstado( oForm, lConfirm )
       ::cComboEstado = "Cerrada"
       __FactRefresh( oForm, lConfirm )
       if ::cPreEstado == "B" 
-         __Save( oForm )
+         __VtaSave( oForm )
       endif
    else
       __FactRefresh( oForm, !lConfirm )
@@ -1022,8 +1022,8 @@ return
 
 
 
-Procedure __Save( oForm )
-   local bSaveDetal, uResp
+Procedure __VtaSave( oForm )
+   local bSaveDetal, uResp, dUltimaFecha
 
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
@@ -1033,6 +1033,22 @@ Procedure __Save( oForm )
       ::rFactura:SetRetISLR( ::hFactura["islr"] )
       MsgAlert( "Este documento no es objeto para ser alterado y luego almacenar.", "Atención" )
       return 
+   endif
+
+   //-- Se verifica la fecha de la factura. No puede ser menor a la ultima registrada
+   dUltimaFecha := ::rFactura:Ultima()["fecha"]
+   if dUltimaFecha > CTOD(::oEntFecha:GetValue())
+      ::oEntFecha:SetValue( DTOC( dUltimaFecha ) )
+      if dUltimaFecha > CTOD(::oEntVcmto:GetValue())
+         ::oEntVcmto:SetValue( DTOC( dUltimaFecha ) )
+      endif
+      ::oLabInfo:SetText( "Ajustado valor de fecha." )
+   endif
+
+   if ::cComboEstado = "Cerrada" .and. ::cPreEstado = "B"
+
+      View("Actualizando estado a cerrado..  hay que verificar fechas de factura.")
+//return
    endif
 
    ::hFactura["cliente_id"       ] := ::cCodCli                    // Cliente
@@ -1046,6 +1062,7 @@ Procedure __Save( oForm )
    ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
 
    //View( ::hFactura ) 
+   View( ::rFactura:Ultima()["fecha"] )
 
    uResp := ::rFactura:SetData( ::hFactura )
 //View( uResp )
@@ -1056,7 +1073,7 @@ Procedure __Save( oForm )
    endif
 
    //-- Actualizar detalles de la factura.
-   bSaveDetal := {|oTView, pModel, aIter| __SaveDetal( oTView, pModel, aIter, oForm )  }
+   bSaveDetal := {|oTView, pModel, aIter| __VtaSaveDetal( oTView, pModel, aIter, oForm )  }
 
    uResp := ::rFactura:Save()
 //View( uResp )
@@ -1100,7 +1117,7 @@ return
 
 
 
-procedure __SaveDetal(oTView, pModel, aIter, oForm)
+procedure __VtaSaveDetal(oTView, pModel, aIter, oForm)
    local hDetal := hb_hash()
 //   nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
 //   View( oTView:GetAutoValue( __CODIGO ) )
