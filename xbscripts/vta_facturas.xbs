@@ -53,7 +53,7 @@ procedure vta_facturas( oFormParent )
    DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnGuardar ;
-          ACTION __VtaSave( oForm ) ;
+          ACTION __VtaSave( oForm, oFormParent ) ;
           ID "btn_guardar" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnImprime ;
@@ -358,6 +358,7 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
    if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
       //llevamos fecha de vencimiento a la misma fecha del documento.
       ::oEntVcmto:SetValue( ::oEntFecha:GetValue() )
+      ::oLabInfo:SetText( "Ajustado valor fecha de vencimiento." )
 /*
       MsgAlert( "La fecha indicada es incorrecta. Por favor revise." )
       lRes := .F.
@@ -1022,8 +1023,8 @@ return
 
 
 
-Procedure __VtaSave( oForm )
-   local bSaveDetal, uResp, dUltimaFecha
+Procedure __VtaSave( oForm, oFormParent )
+   local bSaveDetal, uResp, dUltimaFecha, aIter := ARRAY(4)
 
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
@@ -1045,12 +1046,6 @@ Procedure __VtaSave( oForm )
       ::oLabInfo:SetText( "Ajustado valor de fecha." )
    endif
 
-   if ::cComboEstado = "Cerrada" .and. ::cPreEstado = "B"
-
-      View("Actualizando estado a cerrado..  hay que verificar fechas de factura.")
-//return
-   endif
-
    ::hFactura["cliente_id"       ] := ::cCodCli                    // Cliente
    ::hFactura["vendedor_id"      ] := ::cCodVendedor               // Vendedor
    ::hFactura["orden_compra"     ] := ::cOrdenCompra               // Orden de Compra
@@ -1062,9 +1057,10 @@ Procedure __VtaSave( oForm )
    ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
 
    //View( ::hFactura ) 
-   View( ::rFactura:Ultima()["fecha"] )
 
    uResp := ::rFactura:SetData( ::hFactura )
+      ::hFactura   := ::rFactura:Data()
+//View( ::hFactura )
 //View( uResp )
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
       ::oLabInfo:SetText( uResp["message"] )
@@ -1085,11 +1081,11 @@ Procedure __VtaSave( oForm )
       //   para obtener primero el nro del documento
       ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
-//View( ::aDetal )
       if !::rFactura:SetDetal( ::aDetal )
          ::oLabInfo:SetText("No se actualizaron los detalles" )
          uResp := .F.
       endif
+
 //View( ::hFactura )
 //View( ::hFactura["numero"] )
       if VAL(::hFactura["numero"])>0
@@ -1104,7 +1100,15 @@ Procedure __VtaSave( oForm )
       endif
 
       __ModFactsRefresh( oForm )
-
+      //-- Este paso es importante para que se actualicen los nros de item en la app cliente.
+      //   Y asi evitar que vuelva a insertar datos. (RIGC-JUN2025)
+      //::oModFacturas:oTreeView:ClearModel(.t.)
+      if !hb_isNIL( oFormParent )
+         //View( ::oModFacturas:oTreeView:GetAutoValue( 1 ))
+         if ::oModFacturas:oTreeView:IsGetSelected( aIter )
+            __vtaFactura( oForm, oFormParent, ::oBoxFactura, ::oModFacturas, .F. )
+         endif
+      endif
    endif
 
 //View( uResp )
