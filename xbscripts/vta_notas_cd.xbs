@@ -60,7 +60,7 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnGuardar ;
-          ACTION __NCSave( oForm ) ;
+          ACTION __NCSave( oForm, oFormParent ) ;
           ID "btn_guardar" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnImprime ;
@@ -98,7 +98,7 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    DEFINE IMAGE ::oImgDocIcon FILE oTPuy:cImages+"financial_document_16.png"
    ::cFacturaNro := ""
    DEFINE ENTRY ::oEntFacturaNro VAR ::cFacturaNro ;
-          ACTION ( __NC_Facturas( oForm ), ::oEntFacturaNro:SetFocus() ) ; 
+          ACTION ( __NC_Docs( oForm ), ::oEntFacturaNro:SetFocus() ) ; 
           VALID  ( iif( !empty(::cFacturaNro), ::rDocumento:SetRefNumero(::cFacturaNro), NIL), ;
                    __DelDetal( oForm, .T. ), ;
                    ::rFactDetal := ::rDocumento:DetalFrom(), __DetalRefresh(oForm), .T. );
@@ -148,7 +148,7 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    ::cComboEstado := ""
    DEFINE COMBOBOX ::oComboEstado ;
           VAR ::cComboEstado ITEMS ::aComboEstado ;
-          ON CHANGE ( __ChangeEstado( oForm, ::lConfirm ) ) ;
+          ON CHANGE ( __NCChangeEstado( oForm, ::lConfirm ) ) ;
           OF ::oBoxEstado
 
 
@@ -280,13 +280,13 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    DEFINE BUTTON ::oBtnSalir ACTION ::oNotaWnd:End();
           ID "btn_salir" RESOURCE ::oRes
 
-   ACTIVATE WINDOW ::oNotaWnd MODAL VALID __FactExit(oForm)
+   ACTIVATE WINDOW ::oNotaWnd MODAL VALID __DocExit(oForm)
 
 return
 
 
 
-procedure __NC_Facturas( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() ) 
+procedure __NC_Docs( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() ) 
 
    rFacturas := ::rDocumento:Facturas( ::cCodCli )
 
@@ -412,7 +412,7 @@ return .t.
 
 
 
-procedure __ModFactsRefresh(oForm)
+procedure __ModDocsRefresh(oForm)
    local aLine, aIter := ARRAY(4)
    local bDetalCode, aData
 
@@ -443,7 +443,7 @@ return
 
 
 
-function __FactExit(oForm)
+function __DocExit(oForm)
    if MsgNoYes("¿Realmente desea salir?")
       ::oTimer:End()
       oForm:Release()
@@ -494,7 +494,7 @@ return lRes
 
 
 
-procedure __ChangeEstado( oForm, lConfirm )
+procedure __NCChangeEstado( oForm, lConfirm )
 //View( ::cPreEstado + " --> " + ::cComboEstado )
    if ::lSilence ; return ; endif
 
@@ -619,6 +619,8 @@ procedure __DetalRefresh( oForm )
             END
 
          NEXT
+
+         __NCCalcula(oForm)
 
       endif
 
@@ -1253,8 +1255,8 @@ return
 
 
 
-Procedure __NCSave( oForm )
-   local bSaveDetal, uResp
+Procedure __NCSave( oForm, oFormParent )
+   local bSaveDetal, uResp, aIter := ARRAY( 4 )
 
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
@@ -1286,7 +1288,7 @@ Procedure __NCSave( oForm )
       return
    endif
 
-   //-- Actualizar detalles de la factura.
+   //-- Actualizar detalles de la nota.
    bSaveDetal := {|oTView, pModel, aIter| __NCSaveDetal( oTView, pModel, aIter, oForm )  }
 
    uResp := ::rDocumento:Save()
@@ -1317,7 +1319,16 @@ Procedure __NCSave( oForm )
          //-- Igual debemos atualizar valor de numero asignado si hubo cambio de estado a "Cerrado"
       endif
 
-      __ModFactsRefresh( oForm )
+      __ModDocsRefresh( oForm )
+      //-- Este paso es importante para que se actualicen los nros de item en la app cliente.
+      //   Y asi evitar que vuelva a insertar datos. (RIGC-JUN2025)
+      //::oModFacturas:oTreeView:ClearModel(.t.)
+      if !hb_isNIL( oFormParent )
+         //View( ::oModFacturas:oTreeView:GetAutoValue( 1 ))
+         if ::oModFacturas:oTreeView:IsGetSelected( aIter )
+            __vtaNotaCD( oForm, oFormParent, ::oBoxFactura, ::oModFacturas, .F. )
+         endif
+      endif
 
    endif
 
