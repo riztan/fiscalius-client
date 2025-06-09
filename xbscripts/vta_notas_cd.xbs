@@ -110,13 +110,13 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    ::cFecha := DTOC( DATE() )
    ::cPFecha := ::cFecha
    DEFINE ENTRY TYPE DATE ::oEntFecha VAR ::cFecha CALENDAR ;
-          VALID __FactValFecha( oForm, ::oEntFecha, @::cPFecha ) ;
+          VALID __DocValFecha( oForm, ::oEntFecha, @::cPFecha ) ;
           ID "ent_fecha" RESOURCE ::oRes
 
    ::cVcmto := DTOC( DATE() )
    ::cPVcmto := ::cVcmto
    DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::cVcmto CALENDAR ;
-          VALID __FactValFecha( oForm, ::oEntVcmto, @::cPVcmto ) ;
+          VALID __DocValFecha( oForm, ::oEntVcmto, @::cPVcmto ) ;
           ID "ent_vcmto" RESOURCE ::oRes
 
    DEFINE BOX ::oBoxCondicion ID "box_condicion" RESOURCE ::oRes
@@ -135,7 +135,7 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    DEFINE BOX ::oBoxDivisa ID "box_divisa" RESOURCE ::oRes
    ::aMonedas := {}
    ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
-   __FactValFecha( oForm, ::oEntFecha, @::cPFecha )
+   __DocValFecha( oForm, ::oEntFecha, @::cPFecha )
    ::cDivisa := ""
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
@@ -457,9 +457,19 @@ return .F.
 
 
 
-function __FactValFecha( oForm, oEnt, dValPrevio )
+function __DocValFecha( oForm, oEnt, dValPrevio )
    local lRes := .t.
-   local nValor, rQry
+   local nValor, rQry, dFchFactura, cFactura
+
+   cFactura := ::oEntFacturaNro:GetValue()
+
+   if !hb_isNIL( cFactura ) .and. !Empty(cFactura)
+      dFchFactura := ::rVentas:Transacciones('F', cFactura ):fecha
+      if CTOD(cFactura) > dFchFactura
+         ::oEntFecha:SetValue( DTOC(dFchFactura) )
+         ::oLabInfo:SetText( "Ajustada la fecha el documento." )
+      endif
+   endif
 
    if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
       //llevamos fecha de vencimiento a la misma fecha del documento.
@@ -517,10 +527,21 @@ return
 
 procedure __DetalRefresh( oForm )
    local aLine, aData, oErr
+   local cFactura, dFchFactura
 
    if ::hDocumento["estado"] = "C"
       RETURN
    endif
+
+   cFactura := ::oEntFacturaNro:GetValue()
+   if !hb_isNIL( cFactura ) .and. !Empty(cFactura)
+      dFchFactura := ::rVentas:Transacciones('F', cFactura ):fecha
+      if CTOD(cFactura) > dFchFactura
+         ::oEntFecha:SetValue( DTOC(dFchFactura) )
+         ::oLabInfo:SetText( "Ajustada la fecha el documento." )
+      endif
+   endif
+
 
    if !hb_isObject( ::oModDetal )
 
@@ -778,7 +799,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    endif
 
-   __FactValFecha( oForm, ::oEntFecha, @::cPFecha )
+   __DocValFecha( oForm, ::oEntFecha, @::cPFecha )
 
    if !hb_isObject( ::oModDetal )
 
