@@ -290,6 +290,10 @@ procedure __NC_Docs( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() )
 
    rFacturas := ::rDocumento:Facturas( ::cCodCli )
 
+   if ::hDocumento["estado"] = "C"
+      RETURN
+   endif
+
    if rFacturas:RecCount() = 1
       ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:numero) )
       ::rFactDetal := ::rDocumento:Detal()
@@ -513,6 +517,10 @@ return
 
 procedure __DetalRefresh( oForm )
    local aLine, aData, oErr
+
+   if ::hDocumento["estado"] = "C"
+      RETURN
+   endif
 
    if !hb_isObject( ::oModDetal )
 
@@ -1222,6 +1230,10 @@ Procedure __DelDetal( oForm, lAll )
    local pPath
 
    default lAll := .F.
+
+   if ::hDocumento["estado"] = "C"
+      RETURN
+   endif
  
    //-  ignoramos si el documento esta anulado o cerrado.
    if ::cComboEstado = "A" .or. ::cComboEstado = "C" 
