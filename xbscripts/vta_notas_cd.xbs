@@ -11,6 +11,8 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
 
    default cTipoDocumento := "C"
 
+View( cTipoDocumento )
+
    SET PUBLIC oForm
 
    if !oTpuy:RunXBS("netio_check")
@@ -678,7 +680,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    if ::lNew 
       ::lLoad      := .F.
       ::lSave      := .F.
-      ::rDocumento := ::rVentas:Documento('C','')
+      ::rDocumento := ::rVentas:Documento( ::cTipoDocumento ,'')
       ::hDocumento := ::rDocumento:Data()
       ::rFactDetal := ::rDocumento:Detal()
 //View( ::rFactDetal:Data() )
@@ -718,7 +720,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    else
       ::lLoad      := .T. // Consultando el documento.
       ::lSave      := .F.
-      ::rDocumento := ::rVentas:Documento( 'C', oModel:GetCol("numero") )
+      ::rDocumento := ::rVentas:Documento( ::cTipoDocumento, oModel:GetCol("numero") )
       ::hDocumento := ::rDocumento:Data()
 //View( ::hDocumento )
       ::rFactDetal := ::rDocumento:Detal()
