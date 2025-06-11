@@ -27,6 +27,7 @@ return hCol[cCol]
 #define P_92  "@E 999,999,999,999,999,999,999.99"
 
 
+
 function STRRANGE( cCol1, nLin1, cCol2, nLin2 )
    local cRange := "{COL1}{LIN1}:{COL2}{LIN2}"
    cRange := STRTRAN( cRange, "{COL1}", cCol1 )
@@ -34,6 +35,7 @@ function STRRANGE( cCol1, nLin1, cCol2, nLin2 )
    cRange := STRTRAN( cRange, "{COL2}", cCol2 )
    cRange := STRTRAN( cRange, "{LIN2}", hb_ntos(nLin2) )
 return cRange
+
 
 
 procedure vta_libro_xlsx( oForm, rQry )
@@ -130,7 +132,7 @@ procedure vta_libro_xlsx( oForm, rQry )
    xlsx_set_string ::worksheet cell: "R10" value: "No Contribuyentes" format: ::format_title0  
 
    worksheet_merge_range( ::worksheet, CELL("S8"),CELL("S10"), "% Alicuota", ::format_title0 )
-   worksheet_merge_range( ::worksheet, CELL("T8"),CELL("T10"), "Impuesto (IVA)", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("T8"),CELL("T10"), "Monto Impuesto (IVA)", ::format_title0 )
    worksheet_merge_range( ::worksheet, CELL("U8"),CELL("U10"), "IVA Retenido por el Comprador ", ::format_title0 )
    worksheet_merge_range( ::worksheet, CELL("V8"),CELL("V10"), "IVA Percibido", ::format_title0 )
    
@@ -170,38 +172,40 @@ procedure vta_libro_xlsx( oForm, rQry )
 //View( rQry:CLI_RIF )
       xlsx_set_string ::worksheet cell: "C"+hb_ntos(i) value: rQry:rif         //RIF
       xlsx_set_string ::worksheet cell: "D"+hb_ntos(i) value: UTF_8(rQry:cliente_nombre)  //NOMBRE
-      xlsx_set_string ::worksheet cell: "E"+hb_ntos(i) value: hb_ntos(rQry:comprobante_retencion) //COMPROBANTE RETENCION
+      if rQry:comprobante_retencion>0
+         xlsx_set_string ::worksheet cell: "E"+hb_ntos(i) value: hb_ntos(rQry:comprobante_retencion) //COMPROBANTE RETENCION
+      endif
       if !Empty( rQry:fecha_retencion )
          xlsx_set_string ::worksheet cell: "F"+hb_ntos(i) value: DTOC(rQry:fecha_retencion)//Fecha Comprobante Ret
       endif
       if lower(rQry:tipo_documento) = "factura"
-         xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: rQry:numero     //Nro de Factura
+         xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: rQry:numero       //Nro de Factura
       endif
-      xlsx_set_string ::worksheet cell: "I"+hb_ntos(i) value: rQry:numero_control      //Nro de Control Factura
+      xlsx_set_string ::worksheet cell: "I"+hb_ntos(i) value: rQry:numero_control  //Nro de Control Factura
       if lower(rQry:tipo_documento) = "nota de débito"
-         xlsx_set_string ::worksheet cell: "J"+hb_ntos(i) value: rQry:numero      //Nota de Débito
+         xlsx_set_string ::worksheet cell: "J"+hb_ntos(i) value: rQry:numero       //Nota de Débito
       endif
       if lower(rQry:tipo_documento) = "nota de crédito"
-         xlsx_set_string ::worksheet cell: "K"+hb_ntos(i) value: rQry:numero     //Nota de Crédito
+         xlsx_set_string ::worksheet cell: "K"+hb_ntos(i) value: rQry:numero       //Nota de Crédito
       endif
 
       if rQry:monto_retencion<>0 .AND. rQry:fecha < dDesde 
-        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: '02-COM'        //Tipo de Transaccion
+        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: '02-COM'           //Tipo de Transaccion
       else
         // 01-registro 02-complemento 03-anulacion 04-ajuste
-        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: "01-REG" //rQry:TC_LIBTRA       //Tipo de Transaccion
+        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: "01-REG"           //Tipo de Transaccion
       endif
       if rQry:estado="A"
-        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: "03-ANU"      //Tipo de Transaccion
+        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: "03-ANU"           //Tipo de Transaccion
       endif
 
       if rQry:monto_retencion<>0 .AND. rQry:fecha < dDesde 
-         xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: rQry:numero     //Nro de Factura
+         xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: rQry:numero       //Nro de Factura
       else 
          //xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: rQry:numero     //Nro de Factura (es FACTURA AFECTADA)
          xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: rQry:factura_asociada      //Factura Afectada
       endif
-      worksheet_write_number( ::worksheet, i-1, Column("N"), rQry:monto_total, ::format_numlin )       //Total Venta Incluye IVA
+      worksheet_write_number( ::worksheet, i-1, Column("N"), rQry:total, ::format_numlin )       //Total Venta Incluye IVA
 
 /*
       if LEFT(rQry:DOC_TIPDOC),2)="CR" .OR.  LEFT(rQry:DOC_TIPDOC),2)="DE"
@@ -221,13 +225,17 @@ procedure vta_libro_xlsx( oForm, rQry )
          if rQry:tipo_tasa="EXE"
             worksheet_write_number( ::worksheet, i-1, Column("O"), rQry:total, ::format_numlin )     //Venta No Gravada
          endif
-         worksheet_write_number( ::worksheet, i-1, Column("Q"), rQry:total, ::format_numlin )     //Venta a Contribuyentes
+         worksheet_write_number( ::worksheet, i-1, Column("Q"), rQry:total-rQry:iva_monto, ::format_numlin )     //Venta a Contribuyentes
          //-- ver que hacer con los no contribuyentes.
          worksheet_write_number( ::worksheet, i-1, Column("S"), rQry:iva_porcentaje )       //Alicuota
          worksheet_write_number( ::worksheet, i-1, Column("T"), rQry:iva_monto, ::format_numlin )     //Monto IVA
-         worksheet_write_number( ::worksheet, i-1, Column("U"), rQry:monto_retencion,  ::format_numlin )      //Monto Retenido
+         worksheet_write_number( ::worksheet, i-1, Column("U"), rQry:monto_retencion*rQry:factor,  ::format_numlin )      //Monto Retenido
          worksheet_write_number( ::worksheet, i-1, Column("V"), ;
-                                 iif(rQry:iva_monto>0, rQry:iva_monto-rQry:monto_retencion, 0 ), ::format_numlin ) //IVA Percibido
+                                 iif(rQry:iva_monto<>0, rQry:iva_monto-rQry:monto_retencion, 0 ), ::format_numlin ) //IVA Percibido
+//if rQry:tipo_documento = "Nota de Crédito"
+//   View( rQry:iva_monto )
+//   View( rQry:monto_retencion )
+//endif
  
          i++
 
