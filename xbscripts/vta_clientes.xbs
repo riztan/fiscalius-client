@@ -11,8 +11,8 @@ procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente, cFiltro, cDo
    local rVentas, rClientes, oModClientes, oLBoxCli, hParam
 
    default cCodCliente to ""
-   default cFiltro to ""
-   default cDocumento to ""
+   default cFiltro     to ""
+   default cDocumento  to ""
 
    if !Empty(cDocumento) .or. !Empty(cFiltro)
       hParam := hb_hash()
@@ -72,10 +72,13 @@ procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente, cFiltro, cDo
    if hb_isObject( oEntParent )
       oLBoxCli:bEdit := {|oModel| (cCodCliente := oModel:GetCol(1),; 
                                    iif( !hb_isObject(oWndParent),                ;
-                                         .t.,                                     ;
+                                         .T.,                                     ;
                                          oEntParent:setText( ALLTRIM(cCodCliente)+" - "+;
                                                              oModel:GetCol(3) )), ;
                                    oCliWnd:End() ) }
+   else 
+      oLBoxCli:bNew  := {|oModel| vtc_edit( oForm, oCliWnd, oModClientes, .T. /*lNew*/ ) }
+      oLBoxCli:bEdit := {|oModClientes| vtc_edit( oForm, oCliWnd, oModClientes, .F. /*lNew*/ ) }
    endif
 
 //   oLBoxCli:Active() 
@@ -94,9 +97,92 @@ procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente, cFiltro, cDo
 
    ACTIVATE WINDOW oCliWnd MODAL //OF oWndParent
 
+return
+
+
+
+procedure vtc_edit( oForm, oCliWnd, oModel, lNew )
+   local oWnd, oRes, oImgBanner
+//   local oImgLogo, oEntCodigo, cCodigo, oEntNombre, cNombre
+//   local oEntRif, cRif, oEntMail, cMail, oEntTlf, cTlf
+//   local oVtDir, cDir, oBtnSave, oBtnCancel
+   local oCliForm
+
+   default lNew := .T.
+
+   SET PUBLIC oCliForm
+
+   oCliForm:oModel := oModel
+
+   if lNew
+      oCliForm:cCodigo := ""
+      oCliForm:cNombre := ""
+      oCliForm:cRif    := ""
+      oCliForm:cDir    := ""
+      oCliForm:cTlf    := ""
+      oCliForm:cMail   := ""
+   else
+      oCliForm:cCodigo := oModel:GetCol( 2 )
+      oCliForm:cNombre := oModel:GetCol( 3 )
+      oCliForm:cRif    := oModel:GetCol( 4 )
+      oCliForm:cDir    := oModel:GetCol( 5 )
+      oCliForm:cTlf    := oModel:GetCol( 6 )
+      oCliForm:cMail   := oModel:GetCol( 7 )
+   endif
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_clientes.ui"
+
+   DEFINE WINDOW oCliForm:oWnd TITLE "Pruebas" SIZE 650,250 ;
+          OF oCliWnd ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oCliForm:oImgBanner ID "img_banner" RESOURCE oRes
+      oCliForm:oImgBanner:Adjust(900)
+
+      DEFINE IMAGE oCliForm:oImgLogo   ID "img_logo"   RESOURCE oRes
+      oCliForm:oImgLogo:Adjust(60)
+
+      DEFINE ENTRY oCliForm:oEntCodigo VAR oCliForm:cCodigo ID "ent_codigo" RESOURCE oRes
+
+      DEFINE ENTRY oCliForm:oEntNombre VAR oCliForm:cNombre ID "ent_nombre" RESOURCE oRes
+
+      DEFINE ENTRY oCliForm:oEntRif    VAR oCliForm:cRif    ID "ent_rif"    RESOURCE oRes
+
+      DEFINE ENTRY oCliForm:oEntMail   VAR oCliForm:cMail   ID "ent_mail"   RESOURCE oRes
+
+      DEFINE ENTRY oCliForm:oEntTlf    VAR oCliForm:cTlf    ID "ent_tlf"    RESOURCE oRes
+
+      DEFINE TEXTVIEW oCliForm:oVTDir  VAR oCliForm:cDir    ID "tv_dir"     RESOURCE oRes
+
+      DEFINE BUTTON oCliForm:oBtnSave   ACTION __VtaCliSave( oCliForm ) ID "btn_save" RESOURCE oRes
+
+      DEFINE BUTTON oCliForm:oBtnCancel ACTION oCliForm:oWnd:End() ID "btn_cancel" RESOURCE oRes
+
+
+   ACTIVATE WINDOW oCliForm:oWnd MODAL VALID __VtaCliExit( oCliForm:oWnd )
 
 return
 
 
+
+Procedure __VtaCliSave( oForm )
+
+   if !::oModel:oTreeView:IsGetSelected( ::oModel:aIter )
+      return
+   endif
+
+//View( aIter )
+   ::oModel:SetValue( 3, "Pepe" )
+//View( ::oModel:GetCol( 3 ) )
+
+Return 
+
+
+
+Function __VtaCliExit( oWnd )
+  if MsgNoYes("¿Desea salir y descartar los cambios?", "Atención.")
+     return .t.
+  endif
+return .F.
 
 //eof
