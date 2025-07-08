@@ -68,7 +68,6 @@ procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente, cFiltro, cDo
 
    oLBoxCli:lBar  := .f.
 
-
    if hb_isObject( oEntParent )
       oLBoxCli:bEdit := {|oModel| (cCodCliente := oModel:GetCol(1),; 
                                    iif( !hb_isObject(oWndParent),                ;
@@ -77,23 +76,9 @@ procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente, cFiltro, cDo
                                                              oModel:GetCol(3) )), ;
                                    oCliWnd:End() ) }
    else 
-      oLBoxCli:bNew  := {|oModel| vtc_edit( oForm, oCliWnd, oModClientes, .T. /*lNew*/ ) }
-      oLBoxCli:bEdit := {|oModClientes| vtc_edit( oForm, oCliWnd, oModClientes, .F. /*lNew*/ ) }
+      oLBoxCli:bNew  := {|oModel| vtc_edit( oForm, oCliWnd, oModClientes, rVentas, .T. /*lNew*/ ) }
+      oLBoxCli:bEdit := {|oModClientes| vtc_edit( oForm, oCliWnd, oModClientes, rVentas, .F. /*lNew*/ ) }
    endif
-
-//   oLBoxCli:Active() 
-
-   //View( oLBoxCli:GetCol(1):ClassName() )
-/*
-   oLBoxCli:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
-
-   oLBoxCli:SetColTitle( 3, "Cliente" )          //- Cambiamos el titulo 
-
-   oLBoxCli:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo 
-   oLBoxCli:SetColTitle( 6, "monto base" )       //- Cambiamos el titulo 
-
-   //oLBoxCli:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
-*/
 
    ACTIVATE WINDOW oCliWnd MODAL //OF oWndParent
 
@@ -101,38 +86,48 @@ return
 
 
 
-procedure vtc_edit( oForm, oCliWnd, oModel, lNew )
+procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
    local oWnd, oRes, oImgBanner
 //   local oImgLogo, oEntCodigo, cCodigo, oEntNombre, cNombre
 //   local oEntRif, cRif, oEntMail, cMail, oEntTlf, cTlf
 //   local oVtDir, cDir, oBtnSave, oBtnCancel
-   local oCliForm
+   local oCliForm, rCliente, hData
 
    default lNew := .T.
 
    SET PUBLIC oCliForm
 
+   oCliForm:lForce := .F.
    oCliForm:oModel := oModel
 
    if lNew
-      oCliForm:cCodigo := ""
-      oCliForm:cNombre := ""
-      oCliForm:cRif    := ""
-      oCliForm:cDir    := ""
-      oCliForm:cTlf    := ""
-      oCliForm:cMail   := ""
+
+      oCliForm:cCodigo  := ""
+      oCliForm:cNombre  := ""
+      oCliForm:cRif     := ""
+      oCliForm:cDir     := ""
+      oCliForm:cTlf     := ""
+      oCliForm:cMail    := ""
+      oCliForm:cCedula  := ""
    else
-      oCliForm:cCodigo := oModel:GetCol( 2 )
-      oCliForm:cNombre := oModel:GetCol( 3 )
-      oCliForm:cRif    := oModel:GetCol( 4 )
-      oCliForm:cDir    := oModel:GetCol( 5 )
-      oCliForm:cTlf    := oModel:GetCol( 6 )
-      oCliForm:cMail   := oModel:GetCol( 7 )
+
+      oCliForm:cCodigo  := oModel:GetCol( 2 )
+      oCliForm:cNombre  := oModel:GetCol( 3 )
+      oCliForm:cRif     := oModel:GetCol( 4 )
+      oCliForm:cDir     := oModel:GetCol( 5 )
+      oCliForm:cTlf     := oModel:GetCol( 6 )
+      oCliForm:cMail    := oModel:GetCol( 7 )
    endif
+
+   oCliForm:rCliente := rVentas:Cliente( {"codigo"=> oCliForm:cCodigo} )
+
+   hData := oCliForm:rCliente:Data()
+   oCliForm:cNombreC  := hData["nombre_corto"]
+   oCliForm:cCedula   := hData["cedula"]
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_clientes.ui"
 
-   DEFINE WINDOW oCliForm:oWnd TITLE "Pruebas" SIZE 650,250 ;
+   DEFINE WINDOW oCliForm:oWnd TITLE "Pruebas" SIZE 650,350 ;
           OF oCliWnd ;
           ID "window1" RESOURCE oRes
 
@@ -146,6 +141,10 @@ procedure vtc_edit( oForm, oCliWnd, oModel, lNew )
 
       DEFINE ENTRY oCliForm:oEntNombre VAR oCliForm:cNombre ID "ent_nombre" RESOURCE oRes
 
+      DEFINE ENTRY oCliForm:oEntNombreC VAR oCliForm:cNombreC ID "ent_nombre_corto" RESOURCE oRes
+
+      DEFINE ENTRY oCliForm:oEntCedula VAR oCliForm:cCedula ID "ent_cedula" RESOURCE oRes
+
       DEFINE ENTRY oCliForm:oEntRif    VAR oCliForm:cRif    ID "ent_rif"    RESOURCE oRes
 
       DEFINE ENTRY oCliForm:oEntMail   VAR oCliForm:cMail   ID "ent_mail"   RESOURCE oRes
@@ -158,31 +157,93 @@ procedure vtc_edit( oForm, oCliWnd, oModel, lNew )
 
       DEFINE BUTTON oCliForm:oBtnCancel ACTION oCliForm:oWnd:End() ID "btn_cancel" RESOURCE oRes
 
-
-   ACTIVATE WINDOW oCliForm:oWnd MODAL VALID __VtaCliExit( oCliForm:oWnd )
+   ACTIVATE WINDOW oCliForm:oWnd MODAL VALID __VtaCliExit( oCliForm )
 
 return
 
 
 
 Procedure __VtaCliSave( oForm )
+   local hData, uWidget, uResp, aIter, lNew
 
-   if !::oModel:oTreeView:IsGetSelected( ::oModel:aIter )
+   lNew := ::rCliente:isNew()
+
+   // Guardar los datos del cliente
+   hData := ::rCliente:Data()
+   ::rCliente:SetData( { "codigo"       => ::cCodigo,  ;
+                         "nombre"       => ::cNombre,  ;
+                         "nombre_corto" => ::cNombreC, ;
+                         "rif"          => ::cRif,     ;
+                         "email"        => ::cMail,    ;
+                         "telefono"     => ::cTlf,     ;
+                         "direccion"    => ::cDir,     ;
+                         "cedula"       => ::cCedula   ;
+                       } )
+
+   uResp := ::rCliente:Save()
+
+   if !(ValType( uResp ) = "L" .and. uResp = .T.)
+      MsgAlert("No se pudo guardar el cliente.", "Error")
       return
    endif
 
-//View( aIter )
-   ::oModel:SetValue( 3, "Pepe" )
-//View( ::oModel:GetCol( 3 ) )
+   hData := ::rCliente:Data()
+//View( hb_valtoexp(hData) )
 
-Return 
+   // Verificar si es un cliente nuevo (no hay selección en el modelo)
+   if lNew 
+      // Cliente nuevo: añadir una nueva fila al modelo
+      aIter := ARRAY(4)
+      APPEND LIST_STORE ::oModel:oLbx ITER aIter ;
+             VALUES hData["id"], ;
+                    hData["codigo"], ;
+                    hData["nombre"], ;
+                    hData["rif"], ;
+                    hData["direccion"], ;
+                    hData["telefono"], ;
+                    hData["email"], ;
+                    hData["nombre_corto"], ;
+                    hData["cedula"]
+      // Establecer el cursor en la nueva fila
+      gtk_tree_view_set_cursor( ::oModel:oTreeView:pWidget, ::oModel:oTreeView:GetPath( aIter ), NIL, .F. )
+   else
+      // Cliente existente: actualizar la fila seleccionada
+      ::oModel:SetValue( 2, hData["codigo"] )
+      ::oModel:SetValue( 3, hData["nombre"] )
+      ::oModel:SetValue( 4, hData["rif"] )
+      ::oModel:SetValue( 5, hData["direccion"] )
+      ::oModel:SetValue( 6, hData["telefono"] )
+      ::oModel:SetValue( 7, hData["email"] )
+      ::oModel:SetValue( 8, hData["nombre_corto"] ) // Añadir nombre_corto
+      ::oModel:SetValue( 9, hData["cedula"] )       // Añadir cedula
+   endif
+
+   // Actualizar los campos del formulario
+/*
+   ::oEntCodigo:SetValue( hData["codigo"] )
+   ::oEntNombre:SetValue( hData["nombre"] )
+   ::oEntNombreC:SetValue( hData["nombre_corto"] )
+   ::oEntCedula:SetValue( hb_ntos(hData["cedula"]) )
+   ::oEntRif:SetValue( hData["rif"] )
+   ::oEntMail:SetValue( hData["email"] )
+   ::oEntTlf:SetValue( hData["telefono"] )
+   ::oVTDir:SetValue( hData["direccion"] )
+*/
+   ::lForce := .T.
+   ::oWnd:End()
+
+return
 
 
+Function __VtaCliExit( oForm )
 
-Function __VtaCliExit( oWnd )
+//View( ::lForce )
+  if ::lForce; return .T. ; endif
+
   if MsgNoYes("¿Desea salir y descartar los cambios?", "Atención.")
-     return .t.
+     return .T.
   endif
+
 return .F.
 
 //eof
