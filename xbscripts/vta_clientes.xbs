@@ -98,6 +98,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
    SET PUBLIC oCliForm
 
    oCliForm:lForce := .F.
+   oCliForm:lClose := .F.     //Bandera para indicar cierre
    oCliForm:oModel := oModel
 
    if lNew
@@ -143,19 +144,28 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
 
       DEFINE ENTRY oCliForm:oEntNombreC VAR oCliForm:cNombreC ID "ent_nombre_corto" RESOURCE oRes
 
-      DEFINE ENTRY oCliForm:oEntCedula VAR oCliForm:cCedula ID "ent_cedula" RESOURCE oRes
+      DEFINE ENTRY oCliForm:oEntCedula VAR oCliForm:cCedula ;
+             VALID iif( oCliForm:lClose, .T., __ValidaCedula( oCliForm:oEntCedula ) ) ;
+             ID "ent_cedula" RESOURCE oRes
 
-      DEFINE ENTRY oCliForm:oEntRif    VAR oCliForm:cRif    ID "ent_rif"    RESOURCE oRes
+      DEFINE ENTRY oCliForm:oEntRif    VAR oCliForm:cRif    ;
+             VALID iif( oCliForm:lClose, .T., __ValidaRIF(oCliForm:oEntRif) ) ;
+             ID "ent_rif"    RESOURCE oRes
 
-      DEFINE ENTRY oCliForm:oEntMail   VAR oCliForm:cMail   ID "ent_mail"   RESOURCE oRes
+      DEFINE ENTRY oCliForm:oEntMail   VAR oCliForm:cMail   ;
+             VALID iif( oCliForm:lClose, .T., __ValidaEmail( oCliForm:oEntMail ) ) ;
+             ID "ent_mail"   RESOURCE oRes
 
-      DEFINE ENTRY oCliForm:oEntTlf    VAR oCliForm:cTlf    ID "ent_tlf"    RESOURCE oRes
+      DEFINE ENTRY oCliForm:oEntTlf    VAR oCliForm:cTlf    ;
+             VALID iif( oCliForm:lClose, .T., __ValidaTlf( oCliForm:oEntTlf ) ) ;
+             ID "ent_tlf"    RESOURCE oRes
 
       DEFINE TEXTVIEW oCliForm:oVTDir  VAR oCliForm:cDir    ID "tv_dir"     RESOURCE oRes
 
       DEFINE BUTTON oCliForm:oBtnSave   ACTION __VtaCliSave( oCliForm ) ID "btn_save" RESOURCE oRes
 
-      DEFINE BUTTON oCliForm:oBtnCancel ACTION oCliForm:oWnd:End() ID "btn_cancel" RESOURCE oRes
+      DEFINE BUTTON oCliForm:oBtnCancel ACTION ( oCliForm:lClose := .T., oCliForm:oWnd:End() ) ;
+             ID "btn_cancel" RESOURCE oRes
 
    ACTIVATE WINDOW oCliForm:oWnd MODAL VALID __VtaCliExit( oCliForm )
 
@@ -165,6 +175,34 @@ return
 
 Procedure __VtaCliSave( oForm )
    local hData, uWidget, uResp, aIter, lNew
+
+   // Validar el RIF antes de guardar
+   if !__ValidaRIF( ::cRif )
+      MsgAlert("El RIF ingresado es inválido. Debe tener el formato X-12345678-D (ej. J-12345678-9).", "Error")
+      ::oEntRif:SetFocus()
+      return
+   endif
+
+   // Validar el email antes de guardar
+   if !Empty( ::cMail ) .and. !__ValidaEmail( ::cMail )
+      MsgAlert("El correo electrónico ingresado es inválido. Debe tener el formato usuario@dominio.com.", "Error")
+      ::oEntMail:SetFocus()
+      return
+   endif
+
+   // Validar el número de teléfono antes de guardar
+   if !Empty( ::cTlf ) .and. !__ValidaTlf( ::oEntTlf )
+      MsgAlert("El número de teléfono debe contener solo dígitos y tener entre 7 y 15 caracteres.", "Error")
+      ::oEntTlf:SetFocus()
+      return
+   endif
+
+   // Validar la cédula antes de guardar
+   if !Empty( ::cCedula ) .and. !__ValidaCedula( ::oEntCedula )
+      MsgAlert("La cédula debe contener solo dígitos y tener entre 7 y 8 caracteres.", "Error")
+      ::oEntCedula:SetFocus()
+      return
+   endif
 
    lNew := ::rCliente:isNew()
 
@@ -235,8 +273,228 @@ Procedure __VtaCliSave( oForm )
 return
 
 
+
+Function __ValidaRIF( oEntRif )
+   local cCleanRif, cTipo, cNumero, cCheckDigit
+   local cRif
+
+   cRif := oEntRif:GetValue()
+   // Normalizar: eliminar guiones y convertir a mayúsculas
+   cCleanRif := UPPER( STRTRAN( cRif, "-", "" ) )
+
+   // Verificar longitud (9 caracteres: 1 tipo + 8 dígitos)
+   if LEN( cCleanRif ) != 9
+      MsgAlert( "Longitud del rif es incorrecta" )
+      oEntRif:SetFocus()
+      return .F.
+   endif
+
+   // Verificar tipo de contribuyente (V, E, J, P, G)
+   cTipo := LEFT( cCleanRif, 1 )
+   if ! ( cTipo $ "VEJPG" )
+      MsgAlert( "Tipo de contribuyente es incorrecta" )
+      oEntRif:SetFocus()
+      return .F.
+   endif
+
+   // Verificar que los caracteres 2 al 8 sean dígitos
+   cNumero := SUBSTR( cCleanRif, 2, 7 )
+   if ! IsDigit( cNumero )
+      MsgAlert( "Los valores en el rif son incorrectos" )
+      oEntRif:SetFocus()
+      return .F.
+   endif
+
+   // Verificar que el dígito de chequeo sea un dígito
+   cCheckDigit := RIGHT( cCleanRif, 1 )
+   if ! IsDigit( cCheckDigit )
+      MsgAlert( "Digito verificador es incorrecto" )
+      oEntRif:SetFocus()
+      return .F.
+   endif
+
+   // Nota: No se implementa validación del dígito de chequeo por falta de algoritmo específico
+   // Si se proporciona el algoritmo (e.g., módulo 11), se puede añadir aquí
+
+   return .T.
+
+
+
+Function __ValidaEmail( oEntMail )
+   local cMailLower, nAtPos, nDotPos
+   local cValidChars := "abcdefghijklmnopqrstuvwxyz0123456789.-_@"
+   local i, cMail
+
+   cMail := oEntMail:GetValue()
+
+   // Permitir email vacío (opcional)
+   if Empty( cMail )
+      return .T.
+   endif
+
+   // Convertir a minúsculas para simplificar validación
+   cMailLower := LOWER( cMail )
+
+   // Verificar longitud (mínimo 5, máximo 100 caracteres)
+   if LEN( cMailLower ) < 5 .OR. LEN( cMailLower ) > 100
+      MsgAlert("El correo electrónico debe tener entre 5 y 100 caracteres.", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar presencia de exactamente un @
+   nAtPos := AT( "@", cMailLower )
+   if nAtPos == 0 .OR. AT( "@", SUBSTR( cMailLower, nAtPos + 1 ) ) > 0
+      MsgAlert("El correo electrónico debe contener exactamente un símbolo @.", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar presencia de al menos un punto después del @
+   nDotPos := AT( ".", SUBSTR( cMailLower, nAtPos + 1 ) )
+   if nDotPos == 0
+      MsgAlert("El correo electrónico debe contener un dominio con extensión (ej. .com).", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar que no haya puntos consecutivos ni al inicio/final de la parte local
+   if AT( "..", cMailLower ) > 0 .OR. LEFT( cMailLower, 1 ) == "." .OR. SUBSTR( cMailLower, nAtPos - 1, 1 ) == "."
+      MsgAlert("El correo electrónico no puede contener puntos consecutivos ni empezar/terminar con un punto antes del @.", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar caracteres básicos permitidos (letras, números, puntos, guiones, guiones bajos)
+   for i := 1 TO LEN( cMailLower )
+      if ! ( SUBSTR( cMailLower, i, 1 ) $ cValidChars )
+         MsgAlert("El correo electrónico contiene caracteres no permitidos.", "Error")
+         oEntMail:SetFocus()
+         return .F.
+      endif
+   next
+
+   return .T.
+
+
+
+Function __ValidateEmail( oEntMail )
+   local cMailLower, nAtPos, nDotPos
+   local cValidChars := "abcdefghijklmnopqrstuvwxyz0123456789.-_@"
+   local i, cMail
+
+   cMail := oEntMail:GetValue()
+
+   // Permitir email vacío (opcional)
+   if Empty( cMail )
+      return .T.
+   endif
+
+   // Convertir a minúsculas para simplificar validación
+   cMailLower := LOWER( cMail )
+
+   // Verificar longitud (mínimo 5, máximo 100 caracteres)
+   if LEN( cMailLower ) < 5 .OR. LEN( cMailLower ) > 100
+      MsgAlert("El correo electrónico debe tener entre 5 y 100 caracteres.", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar presencia de exactamente un @
+   nAtPos := AT( "@", cMailLower )
+   if nAtPos == 0 .OR. AT( "@", SUBSTR( cMailLower, nAtPos + 1 ) ) > 0
+      MsgAlert("El correo electrónico debe contener exactamente un símbolo @.", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar presencia de al menos un punto después del @
+   nDotPos := AT( ".", SUBSTR( cMailLower, nAtPos + 1 ) )
+   if nDotPos == 0
+      MsgAlert("El correo electrónico debe contener un dominio con extensión (ej. .com).", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar que no haya puntos consecutivos ni al inicio/final de la parte local
+   if AT( "..", cMailLower ) > 0 .OR. LEFT( cMailLower, 1 ) == "." .OR. SUBSTR( cMailLower, nAtPos - 1, 1 ) == "."
+      MsgAlert("El correo electrónico no puede contener puntos consecutivos ni empezar/terminar con un punto antes del @.", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar caracteres básicos permitidos (letras, números, puntos, guiones, guiones bajos)
+   for i := 1 TO LEN( cMailLower )
+      if ! ( SUBSTR( cMailLower, i, 1 ) $ cValidChars )
+         MsgAlert("El correo electrónico contiene caracteres no permitidos.", "Error")
+         oEntMail:SetFocus()
+         return .F.
+      endif
+   next
+
+   return .T.
+
+
+
+Function __ValidaTlf( oEntTlf )
+   local cPhone
+
+   cPhone := oEntTlf:GetValue()
+
+   // Permitir teléfono vacío (opcional)
+   if Empty( cPhone )
+      return .T.
+   endif
+
+   // Verificar que solo contenga dígitos
+   if ! IsDigit( cPhone )
+      MsgAlert("El número de teléfono debe contener solo dígitos.", "Error")
+      oEntTlf:SetFocus()
+      return .F.
+   endif
+
+   // Verificar longitud (7 a 15 dígitos)
+   if LEN( cPhone ) < 7 .OR. LEN( cPhone ) > 15
+      MsgAlert("El número de teléfono debe tener entre 7 y 15 dígitos.", "Error")
+      oEntTlf:SetFocus()
+      return .F.
+   endif
+
+   return .T.
+
+
+
+Function __ValidaCedula( oEntCedula )
+   local cCedula
+
+   cCedula := oEntCedula:GetValue()
+
+   // Permitir cédula vacía (opcional)
+   if Empty( cCedula )
+      return .T.
+   endif
+
+   // Verificar que solo contenga dígitos
+   if ! IsDigit( cCedula )
+      MsgAlert("La cédula debe contener solo dígitos.", "Error")
+      oEntCedula:SetFocus()
+      return .F.
+   endif
+
+   // Verificar longitud (7 a 8 dígitos)
+   if LEN( cCedula ) < 7 .OR. LEN( cCedula ) > 8
+      MsgAlert("La cédula debe tener entre 7 y 8 dígitos.", "Error")
+      oEntCedula:SetFocus()
+      return .F.
+   endif
+
+   return .T.
+
+
+
 Function __VtaCliExit( oForm )
 
+  ::lClose := .T. //Activar bandera de cierre antes de validar salida
 //View( ::lForce )
   if ::lForce; return .T. ; endif
 
