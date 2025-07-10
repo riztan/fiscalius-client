@@ -91,15 +91,18 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
 //   local oImgLogo, oEntCodigo, cCodigo, oEntNombre, cNombre
 //   local oEntRif, cRif, oEntMail, cMail, oEntTlf, cTlf
 //   local oVtDir, cDir, oBtnSave, oBtnCancel
-   local oCliForm, rCliente, hData
+   local oCliForm, hData
 
    default lNew := .T.
 
    SET PUBLIC oCliForm
 
-   oCliForm:lForce := .F.
-   oCliForm:lClose := .F.     //Bandera para indicar cierre
-   oCliForm:oModel := oModel
+   oCliForm:lForce   := .F.
+   oCliForm:lClose   := .F.     //Bandera para indicar cierre
+   oCliForm:oModel   := oModel
+   oCliForm:rSession := ::rSession
+   oCliForm:rVentas  := rVentas
+   oCliForm:lNew     := lNew
 
    if lNew
 
@@ -115,6 +118,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
       oCliForm:cCodigo  := oModel:GetCol( 2 )
       oCliForm:cNombre  := oModel:GetCol( 3 )
       oCliForm:cRif     := oModel:GetCol( 4 )
+      oCliForm:cPreRif  := oModel:GetCol( 4 )
       oCliForm:cDir     := oModel:GetCol( 5 )
       oCliForm:cTlf     := oModel:GetCol( 6 )
       oCliForm:cMail    := oModel:GetCol( 7 )
@@ -149,7 +153,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
              ID "ent_cedula" RESOURCE oRes
 
       DEFINE ENTRY oCliForm:oEntRif    VAR oCliForm:cRif    ;
-             VALID iif( oCliForm:lClose, .T., __ValidaRIF(oCliForm:oEntRif) ) ;
+             VALID iif( oCliForm:lClose, .T., __ValidaRIF(oCliForm:oEntRif, oCliForm) ) ;
              ID "ent_rif"    RESOURCE oRes
 
       DEFINE ENTRY oCliForm:oEntMail   VAR oCliForm:cMail   ;
@@ -177,7 +181,7 @@ Procedure __VtaCliSave( oForm )
    local hData, uWidget, uResp, aIter, lNew
 
    // Validar el RIF antes de guardar
-   if !__ValidaRIF( ::cRif )
+   if !__ValidaRIF( ::oEntRif )
       MsgAlert("El RIF ingresado es inválido. Debe tener el formato X-12345678-D (ej. J-12345678-9).", "Error")
       ::oEntRif:SetFocus()
       return
@@ -274,16 +278,16 @@ return
 
 
 
-Function __ValidaRIF( oEntRif )
+Function __ValidaRIF( oEntRif, oForm )
    local cCleanRif, cTipo, cNumero, cCheckDigit
-   local cRif
+   local cRif, rEntidad, rVentas
 
    cRif := oEntRif:GetValue()
    // Normalizar: eliminar guiones y convertir a mayúsculas
    cCleanRif := UPPER( STRTRAN( cRif, "-", "" ) )
 
    // Verificar longitud (9 caracteres: 1 tipo + 8 dígitos)
-   if LEN( cCleanRif ) != 9
+   if LEN( cCleanRif ) != 10
       MsgAlert( "Longitud del rif es incorrecta" )
       oEntRif:SetFocus()
       return .F.
@@ -315,6 +319,30 @@ Function __ValidaRIF( oEntRif )
 
    // Nota: No se implementa validación del dígito de chequeo por falta de algoritmo específico
    // Si se proporciona el algoritmo (e.g., módulo 11), se puede añadir aquí
+
+   rEntidad := ::rSession:Entidad( {"rif" => cCleanRif } )
+   rVentas := ::rVentas:Clientes( {"rif" => cCleanRif } )
+   if ::lNew()
+      // Hay que buscar si el cliente con este rif ya existe e informar y cancelar.
+      if rVentas:RecCount() = 1
+         MsgAlert( "Este cliente ya está registrado " )
+         RETURN .F.
+      endif
+      if rEntidad:RecCount = 1
+         ::oEntNombre:SetText( rEntidad:nombre )
+         ::oEntNombreC:SetText( rEntidad:nombre_corto )
+         ::oVTDir:setText( rEntidad:direccion ) 
+         ::oEntTlf:SetText( rEntidad:telefono )
+         ::oEntMail:SetText( rEntidad:email )
+         ::oEntCedula:SetText( rEntidad:cedula )
+      endif
+   else
+      if rEntidad:RecCount() = 1 .and. ::cPreRif != ::cRif
+         ::oEntRif:SetText( ::cPreRif )
+         MsgAlert( "Este cliente ya está registrado " )
+         RETURN .F.
+      endif
+   endif
 
    return .T.
 
