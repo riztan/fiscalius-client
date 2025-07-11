@@ -116,6 +116,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
    else
 
       oCliForm:cCodigo  := oModel:GetCol( 2 )
+      oCliForm:cPreCodigo  := oModel:GetCol( 2 )
       oCliForm:cNombre  := oModel:GetCol( 3 )
       oCliForm:cRif     := oModel:GetCol( 4 )
       oCliForm:cPreRif  := oModel:GetCol( 4 )
@@ -142,7 +143,9 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
       DEFINE IMAGE oCliForm:oImgLogo   ID "img_logo"   RESOURCE oRes
       oCliForm:oImgLogo:Adjust(60)
 
-      DEFINE ENTRY oCliForm:oEntCodigo VAR oCliForm:cCodigo ID "ent_codigo" RESOURCE oRes
+      DEFINE ENTRY oCliForm:oEntCodigo VAR oCliForm:cCodigo ;
+             VALID iif( oCliForm:lClose, .T., __ValidaCodigo( oCliForm:oEntCodigo, oCliForm ) ) ;
+             ID "ent_codigo" RESOURCE oRes
 
       DEFINE ENTRY oCliForm:oEntNombre VAR oCliForm:cNombre ID "ent_nombre" RESOURCE oRes
 
@@ -278,6 +281,36 @@ return
 
 
 
+Function __ValidaCodigo( oEntCodigo, oForm )
+   local cCodigo, rCliente
+
+   cCodigo := oEntCodigo:GetValue()
+
+   // No Permitir código vacío 
+   if Empty( cCodigo )
+      MsgAlert( "Debe indicar un código para este cliente.", "Atención" )
+      return .F.
+   endif
+
+   // Verificar longitud (3 a 15 dígitos)
+   if LEN( cCodigo ) < 3 .OR. LEN( cCodigo ) > 15
+      MsgAlert("El código debe tener entre 3 y 15 dígitos.", "Error")
+      oEntCodigo:SetFocus()
+      return .F.
+   endif
+
+   rCliente := ::rVentas:Clientes( {"codigo" => cCodigo } )
+
+   if rCliente:RecCount()>0 .and. ( ::lNew .or. cCodigo!=::cPreCodigo )
+      MsgAlert( "El código ingresado ya está registrado", "Atención" )
+      Return .F.
+   endif
+
+   return .T.
+
+
+
+
 Function __ValidaRIF( oEntRif, oForm )
    local cCleanRif, cTipo, cNumero, cCheckDigit
    local cRif, rEntidad, rVentas
@@ -322,7 +355,7 @@ Function __ValidaRIF( oEntRif, oForm )
 
    rEntidad := ::rSession:Entidad( {"rif" => cCleanRif } )
    rVentas := ::rVentas:Clientes( {"rif" => cCleanRif } )
-   if ::lNew()
+   if ::lNew
       // Hay que buscar si el cliente con este rif ya existe e informar y cancelar.
       if rVentas:RecCount() = 1
          MsgAlert( "Este cliente ya está registrado " )
