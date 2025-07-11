@@ -181,14 +181,14 @@ Procedure __VtaCliSave( oForm )
    local hData, uWidget, uResp, aIter, lNew
 
    // Validar el RIF antes de guardar
-   if !__ValidaRIF( ::oEntRif )
+   if !__ValidaRIF( ::oEntRif, oForm )
       MsgAlert("El RIF ingresado es inválido. Debe tener el formato X-12345678-D (ej. J-12345678-9).", "Error")
       ::oEntRif:SetFocus()
       return
    endif
 
    // Validar el email antes de guardar
-   if !Empty( ::cMail ) .and. !__ValidaEmail( ::cMail )
+   if !Empty( ::cMail ) .and. !__ValidaEmail( ::oEntMail )
       MsgAlert("El correo electrónico ingresado es inválido. Debe tener el formato usuario@dominio.com.", "Error")
       ::oEntMail:SetFocus()
       return
@@ -349,64 +349,6 @@ Function __ValidaRIF( oEntRif, oForm )
 
 
 Function __ValidaEmail( oEntMail )
-   local cMailLower, nAtPos, nDotPos
-   local cValidChars := "abcdefghijklmnopqrstuvwxyz0123456789.-_@"
-   local i, cMail
-
-   cMail := oEntMail:GetValue()
-
-   // Permitir email vacío (opcional)
-   if Empty( cMail )
-      return .T.
-   endif
-
-   // Convertir a minúsculas para simplificar validación
-   cMailLower := LOWER( cMail )
-
-   // Verificar longitud (mínimo 5, máximo 100 caracteres)
-   if LEN( cMailLower ) < 5 .OR. LEN( cMailLower ) > 100
-      MsgAlert("El correo electrónico debe tener entre 5 y 100 caracteres.", "Error")
-      oEntMail:SetFocus()
-      return .F.
-   endif
-
-   // Verificar presencia de exactamente un @
-   nAtPos := AT( "@", cMailLower )
-   if nAtPos == 0 .OR. AT( "@", SUBSTR( cMailLower, nAtPos + 1 ) ) > 0
-      MsgAlert("El correo electrónico debe contener exactamente un símbolo @.", "Error")
-      oEntMail:SetFocus()
-      return .F.
-   endif
-
-   // Verificar presencia de al menos un punto después del @
-   nDotPos := AT( ".", SUBSTR( cMailLower, nAtPos + 1 ) )
-   if nDotPos == 0
-      MsgAlert("El correo electrónico debe contener un dominio con extensión (ej. .com).", "Error")
-      oEntMail:SetFocus()
-      return .F.
-   endif
-
-   // Verificar que no haya puntos consecutivos ni al inicio/final de la parte local
-   if AT( "..", cMailLower ) > 0 .OR. LEFT( cMailLower, 1 ) == "." .OR. SUBSTR( cMailLower, nAtPos - 1, 1 ) == "."
-      MsgAlert("El correo electrónico no puede contener puntos consecutivos ni empezar/terminar con un punto antes del @.", "Error")
-      oEntMail:SetFocus()
-      return .F.
-   endif
-
-   // Verificar caracteres básicos permitidos (letras, números, puntos, guiones, guiones bajos)
-   for i := 1 TO LEN( cMailLower )
-      if ! ( SUBSTR( cMailLower, i, 1 ) $ cValidChars )
-         MsgAlert("El correo electrónico contiene caracteres no permitidos.", "Error")
-         oEntMail:SetFocus()
-         return .F.
-      endif
-   next
-
-   return .T.
-
-
-
-Function __ValidateEmail( oEntMail )
    local cMailLower, nAtPos, nDotPos
    local cValidChars := "abcdefghijklmnopqrstuvwxyz0123456789.-_@"
    local i, cMail
