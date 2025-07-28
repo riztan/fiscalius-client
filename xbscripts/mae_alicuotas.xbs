@@ -58,7 +58,12 @@ procedure mae_alicuotas( oForm, oWndParent, oEntParent )
    oLBoxCli:lBar  := .f.
 
 
- 
+   oLBoxCli:SetColVisible( 1, .F. )    //- Ocultamos ID
+
+   oLBoxCli:SetColTitle( 2, "Fecha" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 3, "Tipo de tasa" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 4, "Porcentaje" )          //- Cambiamos el titulo 
+
  
    oLBoxCli:Active() 
    
