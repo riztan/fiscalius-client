@@ -31,6 +31,7 @@ procedure vta_facturas( oFormParent )
       Return 
    endif
 
+
    SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"vta_facturas.ui"
 
    DEFINE WINDOW ::oFacWnd ;
@@ -370,7 +371,7 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
    dValPrevio := CTOD( oEnt:getValue() )
 
    // Obtener tasa de cambio correspondiente.
-   rQry := ::rEmpresa:GetTasa( dValPrevio ) 
+   rQry := ::rEmpresa:GetTasa( oEnt:getValue() ) //dValPrevio ) 
 
    ::aDivisas := {}
    ::aMonedas := {}
@@ -1086,7 +1087,7 @@ Procedure __VtaSave( oForm, oFormParent )
          uResp := .F.
       endif
 
-//View( ::hFactura )
+//View( hb_valtoexp(::hFactura) )
 //View( ::hFactura["numero"] )
       if VAL(::hFactura["numero"])>0
          ::oLabNumero:SetValue( STRZERO( VAL(::hFactura["numero"]), 8) )
