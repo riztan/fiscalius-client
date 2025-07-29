@@ -249,11 +249,15 @@ procedure vta_facturas( oFormParent )
 
    //View( oLBoxFacs:GetCol(1):ClassName() )
    ::oLBoxFacs:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
+   //::oLBoxFacs:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
 
-   ::oLBoxFacs:SetColTitle( 3, "Cliente" )          //- Cambiamos el titulo 
-
-   ::oLBoxFacs:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 6, "monto base" )       //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 4, "Fecha" )  //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 6, "Monto base" )       //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
 
    //::oLBoxFacs:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 

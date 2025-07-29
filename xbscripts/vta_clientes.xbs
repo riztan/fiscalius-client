@@ -79,6 +79,18 @@ procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente, cFiltro, cDo
       oLBoxCli:bNew  := {|oModel| vtc_edit( oForm, oCliWnd, oModClientes, rVentas, .T. /*lNew*/ ) }
       oLBoxCli:bEdit := {|oModClientes| vtc_edit( oForm, oCliWnd, oModClientes, rVentas, .F. /*lNew*/ ) }
    endif
+   
+   
+   
+   oLBoxCli:SetColVisible( 1, .F. )    //- Ocultamos ID
+
+   oLBoxCli:SetColTitle( 2, "Código" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 3, "Nombre" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 4, "Rif" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 5, "Direccion" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 6, "Telefono" )          //- Cambiamos el titulo|
+   oLBoxCli:SetColTitle( 7, "E-mail" )          //- Cambiamos el titulo
+
 
    ACTIVATE WINDOW oCliWnd MODAL //OF oWndParent
 
