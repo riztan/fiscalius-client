@@ -259,6 +259,16 @@ procedure vta_facturas( oFormParent )
    ::oLBoxFacs:SetColTitle( 6, "Monto base" )       //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
 
+   ::hCol := hb_hash()
+   ::hCol["numero"]      := 1
+   ::hCol["cliente_id"]  := 2
+   ::hCol["cliente"]     := 3
+   ::hCol["fecha"]       := 4
+   ::hCol["fecha_vcmto"] := 5
+   ::hCol["monto_base"]  := 6
+   ::hCol["estado"]      := 7
+   ::hCol["vendedor_id"] := 8
+
    //::oLBoxFacs:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 
    //-- Botones varios.
@@ -375,7 +385,7 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
    dValPrevio := CTOD( oEnt:getValue() )
 
    // Obtener tasa de cambio correspondiente.
-   rQry := ::rEmpresa:GetTasa( oEnt:getValue() ) //dValPrevio ) 
+   rQry := ::rEmpresa:GetTasa( CTOD(oEnt:getValue()) ) //dValPrevio ) 
 
    ::aDivisas := {}
    ::aMonedas := {}
@@ -475,19 +485,19 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    else
       ::lLoad      := .T. // Consultando el documento.
       ::lSave      := .F.
-      ::rFactura   := ::rVentas:Factura( oModel:GetCol("numero") )
+      ::rFactura   := ::rVentas:Factura( oModel:GetCol( ::hCol["numero"] ) )
       ::hFactura   := ::rFactura:Data()
       ::rFactDetal := ::rFactura:Detal()
 
       ::cFecha := DTOC( ::hFactura["fecha"] )
-      //::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol("numero")), 8) )
+      //::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol(::hCol["numero"])), 8) )
       ::oLabNumero:SetValue( oModel:GetCol("numero") )
       ::oLabNroControl:SetValue( STRZERO( ::hFactura["numero_control"], 8) )
-      ::oEntCli:SetValue( oModel:GetCol("Cliente") )
-      ::cCodCli := oModel:GetCol("cliente_id")
-      ::cCodVendedor := oModel:GetCol("vendedor_id")
-      ::oEntFecha:SetValue( oModel:GetCol("fecha") )
-      ::oEntVcmto:SetValue( oModel:GetCol(5) )
+      ::oEntCli:SetValue( oModel:GetCol(::hCol["cliente"]) )
+      ::cCodCli := oModel:GetCol(::hCol["cliente_id"])
+      ::cCodVendedor := oModel:GetCol(::hCol["vendedor_id"])
+      ::oEntFecha:SetValue( oModel:GetCol(::hCol["fecha"]) )
+      ::oEntVcmto:SetValue( oModel:GetCol(::hCol["fecha_vcmto"]) )
       ::oEntOrdCompra:SetValue( ::hFactura["orden_compra"] ) 
 
       ::oEntIvaE:SetValue( "0" )
