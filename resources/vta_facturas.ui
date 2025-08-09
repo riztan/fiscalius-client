@@ -887,11 +887,10 @@
                                                         <property name="can_focus">False</property>
                                                         <property name="homogeneous">True</property>
                                                         <child>
-                                                          <object class="GtkLabel" id="label22">
+                                                          <object class="GtkLabel" id="label">
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">False</property>
-                                                            <property name="label" translatable="yes">&lt;b&gt;TOTAL:&lt;/b&gt;</property>
-                                                            <property name="use_markup">True</property>
+                                                            <property name="label" translatable="yes">Otros Impuestos:</property>
                                                           </object>
                                                           <packing>
                                                             <property name="expand">True</property>
@@ -900,7 +899,7 @@
                                                           </packing>
                                                         </child>
                                                         <child>
-                                                          <object class="GtkEntry" id="ent_montotal">
+                                                          <object class="GtkEntry" id="ent_otrimp">
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">True</property>
                                                             <property name="invisible_char">●</property>
@@ -921,6 +920,47 @@
                                                         <property name="expand">True</property>
                                                         <property name="fill">True</property>
                                                         <property name="position">4</property>
+                                                      </packing>
+                                                    </child>
+                                                    <child>
+                                                      <object class="GtkHBox" id="hbox29">
+                                                        <property name="visible">True</property>
+                                                        <property name="can_focus">False</property>
+                                                        <property name="homogeneous">True</property>
+                                                        <child>
+                                                          <object class="GtkLabel" id="label22">
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">False</property>
+                                                            <property name="label" translatable="yes">&lt;b&gt;TOTAL:&lt;/b&gt;</property>
+                                                            <property name="use_markup">True</property>
+                                                          </object>
+                                                          <packing>
+                                                            <property name="expand">True</property>
+                                                            <property name="fill">True</property>
+                                                            <property name="position">0</property>
+                                                          </packing>
+                                                        </child>
+                                                        <child>
+                                                          <object class="GtkEntry" id="ent_montotal">
+                                                            <property name="visible">True</property>
+                                                            <property name="can_focus">True</property>
+                                                            <property name="invisible_char">●</property>
+                                                            <property name="primary_icon_activatable">False</property>
+                                                            <property name="secondary_icon_activatable">False</property>
+                                                            <property name="primary_icon_sensitive">True</property>
+                                                            <property name="secondary_icon_sensitive">True</property>
+                                                          </object>
+                                                          <packing>
+                                                            <property name="expand">True</property>
+                                                            <property name="fill">True</property>
+                                                            <property name="position">1</property>
+                                                          </packing>
+                                                        </child>
+                                                      </object>
+                                                      <packing>
+                                                        <property name="expand">True</property>
+                                                        <property name="fill">True</property>
+                                                        <property name="position">5</property>
                                                       </packing>
                                                     </child>
                                                   </object>

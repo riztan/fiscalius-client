@@ -13,6 +13,12 @@ procedure clientes( oForm, ... )
 
    DEFINE LISTBOX ::oLBProveedor MODEL ::oModProveedor ;
           SIZE 400,300
+  oLBoxCli:SetColVisible(  1, .F. )    //- Ocultamos el id del cliente.
+  oLBoxCli:SetColVisible(  8, .F. )    //- Ocultamos fecha de creacion
+  oLBoxCli:SetColVisible(  9, .F. )    //- Ocultamos entidad_id
+  oLBoxCli:SetColVisible(  11, .F. )    //- Ocultamos codigo equivalente
+  // oLBoxCli:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo 
+  // oLBoxCli:SetColTitle( 6, "monto base" )       //- Cambiamos el titulo 
 
    ::oLBProveedor:Active()  
 
