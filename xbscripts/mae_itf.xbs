@@ -1,0 +1,76 @@
+/* mae_alicuotas.xbs
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure mae_itf( oForm, oWndParent, oEntParent )
+
+   local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "IGTF"
+   local cTipo,dFecha,nPorcentaje:=0
+   local rVentas, rITF, oModITF, oLBoxCli
+
+   rVentas := ::oGEmpresa:SetModulo("Ventas")
+   rITF := rVentas:ITF()
+
+   if hb_isNIL(rITF)
+      MsgStop("No Hay ITF registrado")
+      return
+   endif
+
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+   
+   DEFINE WINDOW oAliWnd ;
+          TITLE "Fiscalius. Alicuotas de IVA" ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+
+   //DEFINE BUTTON ::oBtn ACTION __vtaAlicuotaIVA( oForm, oFormParent, ::oBoxData, ::oModITF, .T.  ) ;
+   //       ID "btn_add" RESOURCE ::oRes
+
+   DEFINE MODEL oModITF ;
+          STRUCT rITF:Struct() ;
+          DATA   rITF:GetData()
+   
+   DEFINE LISTBOX oLBoxCli ;
+          MODEL oModITF ;
+          OF oBoxData
+
+   oLBoxCli:lBar  := .f.
+
+
+   oLBoxCli:SetColVisible( 1, .F. )    //- Ocultamos ID
+
+   oLBoxCli:SetColTitle( 2, "Fecha" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 3, "Porcentaje" )          //- Cambiamos el titulo 
+
+ 
+   oLBoxCli:Active() 
+   
+   
+   ACTIVATE WINDOW oAliWnd MODAL
+
+return
+
+
+
+//eof
