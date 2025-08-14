@@ -191,6 +191,11 @@ procedure vta_facturas( oFormParent )
           ID "ent_ivagen" RESOURCE ::oRes 
    ::oEntIvaG:Justify( GTK_JUSTIFY_RIGHT )
 
+   ::nMontoOtrImp := 0
+   DEFINE MONEY ENTRY ::oEntOtrImp VAR ::nMontoOtrImp ;
+          ID "ent_otrimp" RESOURCE ::oRes 
+   ::oEntOtrImp:Justify( GTK_JUSTIFY_RIGHT )
+
    ::nMontoTotal := 0
    DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ;
           ID "ent_montotal" RESOURCE ::oRes 
@@ -462,6 +467,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
+      ::oEntOtrImp:SetValue( "0" )
       ::oEntMonBase:SetValue( "0" )
 
       ::oComboEstado:SetValue("Borrador", .F. ) 
@@ -503,6 +509,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
+      ::oEntOtrImp:SetValue( "0" )
 
       ::oEntRetIva:SetValue( "" )
       ::oEntRetIvaF:SetValue( "" )
@@ -573,7 +580,6 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                 STRUCT  ::rFactDetal:Struct() ;
                 DATA    ::rFactDetal:GetData()
       else
-
          DEFINE MODEL   ::oModDetal           ;
                 STRUCT  {{"detalle_id",     "N",10, 0},;
                          {"documento" ,     "N",10, 0},;
@@ -596,6 +602,46 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                          {"detalles_json",  "C",255,0},;
                          {"item",           "C",10, 0},;
                          {"imp_pvp",        "N",13, 2}}; // Add imp_pvp
+                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0}}
+
+      endif
+
+      DEFINE LISTBOX ::oLBoxDetal ;
+             MODEL   ::oModDetal  ;
+             OF      ::oBoxDetalles
+
+      ::oLBoxDetal:lBar  := .f.
+      ::oLBoxDetal:bNew  := {|| __AddDetal( oForm ) }
+      ::oLBoxDetal:bEdit := {|| .T. }
+      ::oLBoxDetal:bDel  := {|| __DelDetal( oForm ) }
+
+      ::oLBoxDetal:SetColVisible( 01, .f. )     //- Ocultamos el id del detalle.
+      ::oLBoxDetal:SetColVisible( 02, .f. )     //- Ocultamos el id del documento.
+
+      ::oLBoxDetal:SetColVisible( 12, .f. )     //- Nombre Global
+      ::oLBoxDetal:SetColVisible( 13, .f. )     //- Tipo de Inventario
+      ::oLBoxDetal:SetColVisible( 14, .f. )     //- Lote
+      ::oLBoxDetal:SetColVisible( 15, .f. )     //- Vencimiento
+      ::oLBoxDetal:SetColVisible( 16, .f. )     //- Ubicación
+      ::oLBoxDetal:SetColVisible( 17, .f. )     //- Almacen Id
+      ::oLBoxDetal:SetColVisible( 18, .f. )     //- Almacen Nombre
+      ::oLBoxDetal:SetColVisible( 19, .f. )     //- Detalles (JSON)
+      ::oLBoxDetal:SetColVisible( 20, .f. )     //- Item
+
+      ::oLBoxDetal:SetColTitle( 03, "Código" )        //-- Columna Código
+      ::oLBoxDetal:SetColTitle( 04, "Descripción" )   //-- Columna Descripción
+      ::oLBoxDetal:SetColTitle( 05, "Cantidad" )      //-- Columna Cantidad
+      ::oLBoxDetal:SetColTitle( 06, "Precio" )        //-- Columna Precio Unitario
+      ::oLBoxDetal:SetColTitle( 07, "Descuento" )     //-- Columna Descuento
+      ::oLBoxDetal:SetColTitle( 08, "SubTotal" )      //-- Columna SubTotal
+      ::oLBoxDetal:SetColTitle( 09, "IVA (%)" )       //-- Columna IVA Porcentaje
+      ::oLBoxDetal:SetColTitle( 10, "IVA (Monto)" )   //-- Columna IVA Monto
+      ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
+
+      ::oLBoxDetal:Active()
+
+      if hb_isNIL( ::rFactDetal )
+         ::oModDetal:oTreeView:ClearModel(.t.)
       endif
    else
  
@@ -814,17 +860,17 @@ procedure __Calcula( oForm )
    ::oEntIvaE:SetValue("0")
    ::oEntIvaR:SetValue("0")
    ::oEntIvaG:SetValue("0")
-   ::oEntOtrosImp:SetValue("0") // Initialize otros_imp
+   ::oEntOtrImp:SetValue("0") // Initialize otros_imp
    ::hFactura["iva"] := {=>}
    ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
    ::oLBoxDetal:ForEach( ::bDetalCode )
-   ::oEntOtrosImp:SetValue( TRANSFORM( nOtrosImp, P_92 ) ) // Set otros_imp
+   ::oEntOtrImp:SetValue( TRANSFORM( nOtrosImp, P_92 ) ) // Set otros_imp
 return
 
 
 
 procedure __CalMontos( oTView, pModel, aIter, oForm )
-   local nBase, nMonto, nTotal, cIva
+   local nBase, nMonto, nTotal, cIva, nImpPvp, nOtrImp := 0
 
 //   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
 //                    ToNum( oTView:GetAutoValue(__PRECIO,   aIter)), 2 )
@@ -836,8 +882,9 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
 
    // Calculate imp_pvp
    nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // inv_imppvp * cantidad
-   oTView:Set( aIter, 21, STR( nImpPvp ) )
-   nOtrosImp += nImpPvp
+//View( nImpPvp )
+//   oTView:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) )
+   nOtrImp += nImpPvp
 
    if ToNum( oTView:GetAutoValue( __IVAPORCEN, aIter )) > 0
       nMonto := ToNum( oTView:GetAutoValue( __IVAMONTO, aIter ) )
@@ -872,7 +919,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
                     ToNum( ::oEntIvaE:GetValue() ) +;
                     ToNum( ::oEntIvaR:GetValue() ) +;
                     ToNum( ::oEntIvaG:GetValue() ) +;
-                    nOtrosImp, 2 ) // Include otros_imp
+                    nOtrImp, 2 ) // Include otros_imp
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
 
 return
@@ -1058,7 +1105,7 @@ Procedure __VtaSave( oForm, oFormParent )
    bSaveDetal := {|oTView, pModel, aIter| __VtaSaveDetal( oTView, pModel, aIter, oForm )  }
 
    uResp := ::rFactura:Save()
-//View( uResp )
+
    if hb_isLogical( uResp ) .and. uResp
 //View("atualizamos hFactura ")
       ::hFactura   := ::rFactura:Data()
@@ -1067,6 +1114,7 @@ Procedure __VtaSave( oForm, oFormParent )
       //   para obtener primero el nro del documento
       ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
+//View( hb_valtoexp(::aDetal) )
       if !::rFactura:SetDetal( ::aDetal )
          ::oLabInfo:SetText("No se actualizaron los detalles" )
          uResp := .F.
@@ -1074,9 +1122,11 @@ Procedure __VtaSave( oForm, oFormParent )
 
 //View( hb_valtoexp(::hFactura) )
 //View( ::hFactura["numero"] )
-      if VAL(::hFactura["numero"])>0
+      if VALTYPE(::hFactura["numero"])="C" .AND. VAL(::hFactura["numero"])>0
          ::oLabNumero:SetValue( STRZERO( VAL(::hFactura["numero"]), 8) )
-      else
+      elseif VALTYPE(::hFactura)="N" 
+         ::oLabNumero:SetValue( ALLTRIM(STR(::hFactura["numero"])) )
+      elseif VALTYPE(::hFactura)="C"
          ::oLabNumero:SetValue( ALLTRIM(::hFactura["numero"]) )
       endif
       if ::lNew
