@@ -7,7 +7,7 @@
 procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
 
    local oInvWnd, oRes, oImgBanner, oImageLogo, oBoxData
-   local oLabTitulo, cLabTitulo := "Inventario"
+   local oLabTitulo, cLabTitulo := "Productos"
    local rVentas, rInventario, oModinventario, oLBoxInv
 
    rVentas := ::oGEmpresa:SetModulo("Ventas")
@@ -72,16 +72,33 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
    oLBoxInv:SetColVisible(  3, .F. )    //- Ocultamos el id global del producto
    oLBoxInv:SetColVisible(  6, .F. )    //- Ocultamos descripcion global del producto
    oLBoxInv:SetColVisible(  7, .F. )    //- Ocultamos tipo de inventario
-   oLBoxInv:SetColVisible( 10, .F. )    //- Ocultamos Stock Minimo
-   oLBoxInv:SetColVisible( 11, .F. )    //- Ocultamos Costo
+   //oLBoxInv:SetColVisible( 10, .F. )    //- Ocultamos Precio
+   oLBoxInv:SetColVisible( 11, .F. )    //- Ocultamos 
    oLBoxInv:SetColVisible( 12, .F. )    //- Ocultamos Id de Impuesto
-   oLBoxInv:SetColVisible( 14, .F. )    //- Ocultamos Fecha Creacion
-
+   oLBoxInv:SetColVisible( 13, .F. )    //- Ocultamo costo
+   //oLBoxInv:SetColVisible( 14, .F. )    //- Ocultamo Activo
+   //oLBoxInv:SetColVisible( 15, .F. )    //- Ocultamos Fecha Creacion
+   oLBoxInv:SetColVisible( 16, .F. )    //- Ocultamos id detalle
+   oLBoxInv:SetColVisible( 17, .F. )    //- Ocultamos id almacen
+   oLBoxInv:SetColVisible( 18, .F. )    //- 
+   oLBoxInv:SetColVisible( 19, .F. )    //- 
+   oLBoxInv:SetColVisible( 20, .F. )    //- 
+   oLBoxInv:SetColVisible( 21, .F. )    //- 
+   oLBoxInv:SetColVisible( 22, .F. )    //- 
+   oLBoxInv:SetColVisible( 23, .F. )    //- 
+   oLBoxInv:SetColVisible( 24, .F. )    //- 
+   oLBoxInv:SetColVisible( 25, .F. )    //- Ocultamos fecha creacion detalle
 
    oLBoxInv:SetColTitle( 4, "Código" )          //- Cambiamos el titulo 
+   oLBoxInv:SetColTitle( 8, "Tipo de IVA" )          //- Cambiamos el titulo
+   oLBoxInv:SetColTitle( 9, "% de IVA" )          //- Cambiamos el titulo
+   oLBoxInv:SetColTitle( 10, "Precio" )          //- Cambiamos el titulo
+   oLBoxInv:SetColTitle( 14, "Activo" )          //- Cambiamos el titulo
+   oLBoxInv:SetColTitle( 15, "Fecha de creación" )          //- Cambiamos el titulo
+   oLBoxInv:SetColTitle( 26, "Incluye IVA" )          //- Cambiamos el titulo
+
 /*
-   oLBoxInv:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo 
-   oLBoxInv:SetColTitle( 6, "monto base" )       //- Cambiamos el titulo 
+   oLBoxInv:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo  
 
    //oLBoxInv:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 */

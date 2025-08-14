@@ -134,12 +134,18 @@ procedure poslogin( oParent )
 			 
 	DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_monedas", oForm, oTPuy:oWnd ) ;
              ID "item_monedas" RESOURCE ::oRes
+			 
+	DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_tasascambio", oForm, oTPuy:oWnd ) ;
+             ID "item_tasas_cambio" RESOURCE ::oRes
 
     DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_alicuotas", oForm, oTPuy:oWnd ) ;
              ID "item_alicuotas" RESOURCE ::oRes
 			 
       DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_inventario", oForm, oTPuy:oWnd ) ;
              ID "item_productos" RESOURCE ::oRes
+			 
+	DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_itf", oForm, oTPuy:oWnd ) ;
+             ID "item_ITF" RESOURCE ::oRes
 
       DEFINE MENUITEM ACTION oTPuy:RunXBS( "vta_clientes", oForm, oTPuy:oWnd ) ;
              ID "itm_clientes" RESOURCE ::oRes
