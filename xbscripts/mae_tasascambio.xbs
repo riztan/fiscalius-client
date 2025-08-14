@@ -1,0 +1,78 @@
+/* mae_tasascambio.xbs
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure mae_tasascambio( oForm, oWndParent, oEntParent )
+
+   local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Tasas de cambio"
+   local cTipo,dFecha,nPorcentaje:=0
+   local rVentas, rTasascambio, oModTasascambio, oLBoxCli
+
+   rVentas := ::oGEmpresa:SetModulo("Ventas")
+   rTasascambio := rVentas:Tasascambio()
+
+   if hb_isNIL(rTasascambio)
+      MsgStop("No Hay Tasas de cambio registrados")
+      return
+   endif
+
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+   
+   DEFINE WINDOW oAliWnd ;
+          TITLE "Fiscalius. Tasascambio" ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+
+   //DEFINE BUTTON ::oBtn ACTION __vtaAlicuotaIVA( oForm, oFormParent, ::oBoxData, ::oModTasascambio, .T.  ) ;
+   //       ID "btn_add" RESOURCE ::oRes
+
+   DEFINE MODEL oModTasascambio ;
+          STRUCT rTasascambio:Struct() ;
+          DATA   rTasascambio:GetData()
+   
+   DEFINE LISTBOX oLBoxCli ;
+          MODEL oModTasascambio ;
+          OF oBoxData
+
+   oLBoxCli:lBar  := .f.
+
+
+   oLBoxCli:SetColVisible( 1, .F. )    //- Ocultamos ID
+    oLBoxCli:SetColVisible( 2, .F. )    //- Ocultamos nombre 
+	oLBoxCli:SetColVisible( 6, .F. )    //- Ocultamos password
+
+   oLBoxCli:SetColTitle( 3, "Nombre" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 4, "Activo" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 5, "Login" )          //- Cambiamos el titulo 
+ 
+   oLBoxCli:Active() 
+   
+   
+   ACTIVATE WINDOW oAliWnd MODAL
+
+return
+
+
+
+//eof
