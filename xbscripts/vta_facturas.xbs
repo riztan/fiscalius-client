@@ -879,7 +879,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
    nBase  := ToNum( ::oEntMonBase:GetValue() )
    nOtrImp:= ToNum( ::oEntOtrImp:GetValue() )
-   nTotal := ROUND( nBase+nMonto, 2 )
+   nTotal := ROUND( nBase+nMonto+nOtrImp, 2 )
    ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
 
    // Calculate imp_pvp
@@ -890,7 +890,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    if ToNum( oTView:GetAutoValue( __IVAPORCEN, aIter )) > 0
       nMonto := ToNum( oTView:GetAutoValue( __IVAMONTO, aIter ) )
       nBase  := ToNum( ::oEntIvaG:GetValue() )
-      nTotal := ROUND( nBase+nMonto, 2 )
+      nTotal := ROUND( nBase+nMonto+nOtrImp, 2 )
       ::oEntIvaG:SetValue( TRANSFORM( nTotal, P_92 ) )
       if !hb_hHasKey( ::hFactura, "iva" )
          ::hFactura["iva"] := hb_hash()
