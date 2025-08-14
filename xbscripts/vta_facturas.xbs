@@ -670,7 +670,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                              hb_ntos(aLine[17]), ;
                              aLine[18], ;
                              aLine[19], ;
-                             hb_ntos(aLine[20])
+                             hb_ntos(aLine[20]),;
+                             hb_ntos(aLine[21])
             CATCH oErr
                View( oErr:Description )
             END
@@ -864,25 +865,25 @@ procedure __Calcula( oForm )
    ::hFactura["iva"] := {=>}
    ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
    ::oLBoxDetal:ForEach( ::bDetalCode )
-   ::oEntOtrImp:SetValue( TRANSFORM( nOtrosImp, P_92 ) ) // Set otros_imp
+//   ::oEntOtrImp:SetValue( TRANSFORM( nOtrosImp, P_92 ) ) // Set otros_imp
 return
 
 
 
 procedure __CalMontos( oTView, pModel, aIter, oForm )
-   local nBase, nMonto, nTotal, cIva, nImpPvp, nOtrImp := 0
+   local nBase, nMonto, nTotal, cIva, nImpPvp, nOtrImp
 
 //   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
 //                    ToNum( oTView:GetAutoValue(__PRECIO,   aIter)), 2 )
 
    nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
    nBase  := ToNum( ::oEntMonBase:GetValue() )
+   nOtrImp:= ToNum( ::oEntOtrImp:GetValue() )
    nTotal := ROUND( nBase+nMonto, 2 )
    ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
 
    // Calculate imp_pvp
-   nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // inv_imppvp * cantidad
-//View( nImpPvp )
+   nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
 //   oTView:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) )
    nOtrImp += nImpPvp
 
@@ -921,6 +922,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
                     ToNum( ::oEntIvaG:GetValue() ) +;
                     nOtrImp, 2 ) // Include otros_imp
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
+   ::oEntOtrImp:SetValue( TRANSFORM( nOtrImp, P_92 ) ) // Set otros_imp
 
 return
 
@@ -928,7 +930,7 @@ return
 
 procedure __AddDetal( oForm )
    local aIter := ARRAY(4)
-   local aLine := {'','','','','','','','','','','','','','','','','','','',''}
+   local aLine := {'','','','','','','','','','','','','','','','','','','','',''}
 
    //-  ignoramos si el documento esta anulado o cerrado.
    if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
@@ -944,7 +946,8 @@ procedure __AddDetal( oForm )
                  aLine[12], aLine[13], ;
                  aLine[14], aLine[15], ;
                  aLine[16], aLine[17], ;
-                 aLine[18], aLine[19], aLine[20]
+                 aLine[18], aLine[19], ;
+                 aLine[20], aLine[21]
 
    ::oModDetal:oTreeView:SetFocus()
    ::oModDetal:GoBottom()
@@ -1104,13 +1107,13 @@ Procedure __VtaSave( oForm, oFormParent )
    //-- Actualizar detalles de la factura.
    bSaveDetal := {|oTView, pModel, aIter| __VtaSaveDetal( oTView, pModel, aIter, oForm )  }
 
-View( ::hFactura )
+//View( ::hFactura )
    uResp := ::rFactura:Save()
 
    if hb_isLogical( uResp ) .and. uResp
 //View("atualizamos hFactura ")
       ::hFactura   := ::rFactura:Data()
-View( ::hFactura )
+//View( ::hFactura )
 //View( ::hFactura )
       //-- Importante invocar SetDetal después de rFactura:Save() 
       //   para obtener primero el nro del documento
@@ -1240,7 +1243,8 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
       __SetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, 21, ; // imp_pvp
-                  STR( rProductos:inv_imppvp )) // Set inv_imppvp
+                  STR( rProductos:imp_pvp )) // Set imp_pvp
+//View( rProductos:imp_pvp )
 
       oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
       return
@@ -1306,6 +1310,10 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, __IVAPORCEN, ;
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),;
+                         __SetValue( ::oModDetal:oTreeView, ;
+ 	                             ::oModDetal:oLbx, ;
+	                             ::oModDetal:aIter, 21, ;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
                          oTreeView:SetPosCol( aIter, __CANTIDAD, .f. ), ;
 			 ::oInvWnd:End() }
 
