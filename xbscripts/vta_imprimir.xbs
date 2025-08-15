@@ -43,7 +43,7 @@ procedure vta_imprimir( oForm, oQry )
    local aData := ::rFactDetal:GetData(), aLine
    local hParam:=hb_hash()
    local rClientes:=::rVentas:Clientes({"filtro" => ::cEntCli})
-   local aClientes:=rClientes:Data()
+   local aClientes:=rClientes:Data(),nCaj:=0,nUni:=0,nTotUniLi:=0,nUniCaj:=0
   
 
    SET DECIMAL TO 2
@@ -107,9 +107,11 @@ procedure vta_imprimir( oForm, oQry )
 
    xlsx_set_string ::worksheet cell: "B"+hb_ntos(nLin) value: "Código"
    xlsx_set_string ::worksheet cell: "D"+hb_ntos(nLin) value: "Descripción"
-   xlsx_set_string ::worksheet cell: "I"+hb_ntos(nLin) value: "Cantidad"
-   xlsx_set_string ::worksheet cell: "K"+hb_ntos(nLin) value: "Precio Unit."
-   xlsx_set_string ::worksheet cell: "M"+hb_ntos(nLin) value: "Precio Total."
+   xlsx_set_string ::worksheet cell: "I"+hb_ntos(nLin) value: "Caj."
+   xlsx_set_string ::worksheet cell: "J"+hb_ntos(nLin) value: "Uni."
+   xlsx_set_string ::worksheet cell: "K"+hb_ntos(nLin) value: "Tot. Uni."
+   xlsx_set_string ::worksheet cell: "L"+hb_ntos(nLin) value: "Precio Unit."
+   xlsx_set_string ::worksheet cell: "N"+hb_ntos(nLin) value: "Precio Total."
    
    
    
@@ -117,32 +119,52 @@ procedure vta_imprimir( oForm, oQry )
    FOR EACH aLine IN aData
       xlsx_set_string ::worksheet cell: "B"+hb_ntos(aLine:__EnumIndex()+nLin) value: ALLTRIM(aLine[3])
       xlsx_set_string ::worksheet cell: "D"+hb_ntos(aLine:__EnumIndex()+nLin) value: ALLTRIM(aLine[4])
-      xlsx_set_string ::worksheet cell: "I"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[5])
-      xlsx_set_string ::worksheet cell: "K"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[6])
-	  xlsx_set_string ::worksheet cell: "M"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[8])
+	  //xlsx_set_string ::worksheet cell: "I"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[5])
+	  nUniCaj:=IIF(RIGHT(hb_ntos(aLine[3]),2)="01",0,val(RIGHT(aLine[3],2)))
+	  nUni:=IIF(RIGHT(hb_ntos(aLine[3]),2)="01",aLine[5],0)
+	   nCaj:=IIF(RIGHT(hb_ntos(aLine[3]),2)="01",0,aLine[5])
+	  nTotUniLi:=nCaj*nUniCaj+nUni
 	  
 	  
+      xlsx_set_string ::worksheet cell: "I"+hb_ntos(aLine:__EnumIndex()+nLin) value: IIF(RIGHT(hb_ntos(aLine[3]),2)="01","",hb_ntos(aLine[5]))
+	  xlsx_set_string ::worksheet cell: "J"+hb_ntos(aLine:__EnumIndex()+nLin) value: IIF(RIGHT(hb_ntos(aLine[3]),2)="01",hb_ntos(aLine[5]),"")
+	  xlsx_set_string ::worksheet cell: "K"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(nTotUniLi)
+      xlsx_set_string ::worksheet cell: "L"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[6])
+	  xlsx_set_string ::worksheet cell: "N"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[8])
+	  
+	//  ?nTotUniLi
+	//  ?nunicaj
+	
+//	//?valtype(::hFactura["monto_total"])
+//	?valtype(::nMontoOtrImp)
 	  
 	        
 
    NEXT
+   
+   
+   xlsx_set_string ::worksheet cell: "B18" value: "Esta factura estará sujeta al cobro del 3% por concepto de IGTF en caso de ser pagada en una moneda distinta a la de curso"
+   xlsx_set_string ::worksheet cell: "B19" value: "legal en el país, de acuerdo a lo publicado en la Providencia Administrativa SNAT/2022/000013 de fecha 03.03.2022"
+
 
    // xlsx_set_string ::worksheet cell: "M"+hb_ntos(nLin) value: TRANSFORM(::hFactura["monto_base"],P_92)
    
-	xlsx_set_string ::worksheet cell: "K20" value: "Monto Base:    " 
-    xlsx_set_string ::worksheet cell: "M20" value: TRANSFORM(::hFactura["monto_base"],P_92)
-	xlsx_set_string ::worksheet cell: "K21" value: "Monto Exento:  " 
-	xlsx_set_string ::worksheet cell: "M21" value: ::nMontoIvaE
-	xlsx_set_string ::worksheet cell: "K22" value: "IVA 8%:        "
-	xlsx_set_string ::worksheet cell: "M22" value: ::nMontoIvaR
-	xlsx_set_string ::worksheet cell: "K23" value: "IVA 16%:       "
-	xlsx_set_string ::worksheet cell: "M23" value: ::nMontoIvaG
-	xlsx_set_string ::worksheet cell: "K24" value: "Monto Total:   " 
-	xlsx_set_string ::worksheet cell: "M24" value:  TRANSFORM(::hFactura["monto_total"],P_92)
-	xlsx_set_string ::worksheet cell: "H25" value: "IGTF 3% sobre "
-	xlsx_set_string ::worksheet cell: "J25" value: "0,00 "
-	xlsx_set_string ::worksheet cell: "K25" value: "Monto IGTF "
-	xlsx_set_string ::worksheet cell: "M25" value: "0,00 "
+	xlsx_set_string ::worksheet cell: "K22" value: "Monto Base:    " 
+    xlsx_set_string ::worksheet cell: "M22" value: TRANSFORM(::hFactura["monto_base"],P_92)
+	xlsx_set_string ::worksheet cell: "K23" value: "Monto Exento:  " 
+	xlsx_set_string ::worksheet cell: "M23" value: ::nMontoIvaE
+	xlsx_set_string ::worksheet cell: "K24" value: "IVA 8%:        "
+	xlsx_set_string ::worksheet cell: "M24" value: ::nMontoIvaR
+	xlsx_set_string ::worksheet cell: "K25" value: "IVA 16%:       "
+	xlsx_set_string ::worksheet cell: "M25" value: ::nMontoIvaG
+	xlsx_set_string ::worksheet cell: "K26" value: "Otros Impuestos:   " 
+	xlsx_set_string ::worksheet cell: "M26" value: ::nMontoOtrImp
+	xlsx_set_string ::worksheet cell: "K27" value: "Monto Total:   " 
+	xlsx_set_string ::worksheet cell: "M27" value:  TRANSFORM(::hFactura["monto_total"],P_92)
+	//xlsx_set_string ::worksheet cell: "H27" value: "IGTF 3% sobre "
+	//xlsx_set_string ::worksheet cell: "J27" value: "0,00 "
+	//xlsx_set_string ::worksheet cell: "K27" value: "Monto IGTF "
+	//xlsx_set_string ::worksheet cell: "M27" value: "0,00 "
 //--------------------------------
    /* finalizamos */
    error := workbook_close( ::workbook )
@@ -151,11 +173,18 @@ procedure vta_imprimir( oForm, oQry )
    IF error > 0
       Alert( "Error en workbook_close(). " + hb_eol() + ;
          "Error " + AllTrim( Str( error ) ) + " = " + lxw_strerror( error ) )
-
+   ELSE
+      // Abrir el archivo con la aplicación predeterminada
+      #ifdef __PLATFORM__WINDOWS
+         hb_run( "start tmp\\vta_documento.xlsx" )
+      #else
+         // Para Linux/Mac (ajusta según necesites)
+         hb_run( "xdg-open tmp/vta_documento.xlsx" )
+      #endif
    ENDIF
 
   //workbook_open( "tmp/vta_documento.xlsx" )
-   View("Finalizado...")
+  // View("Finalizado...")
 return
 
 //eof
