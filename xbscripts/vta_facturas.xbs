@@ -25,6 +25,7 @@ procedure vta_facturas( oFormParent )
    ::rEmpresa  := oFormParent:oGEmpresa
    ::rVentas   := oFormParent:oGEmpresa:SetModulo("Ventas")
    ::rFacturas := ::rVentas:Facturas()
+  
 
    if hb_isNIL( ::rFacturas )
       MsgStop( "no se puede obtener información de facturas" )
@@ -254,14 +255,14 @@ procedure vta_facturas( oFormParent )
 
    //View( oLBoxFacs:GetCol(1):ClassName() )
    ::oLBoxFacs:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
-   //::oLBoxFacs:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
+   ::oLBoxFacs:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
 
    ::oLBoxFacs:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 4, "Fecha" )  //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 6, "Monto base" )       //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
 
    ::hCol := hb_hash()
@@ -637,6 +638,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColTitle( 09, "IVA (%)" )       //-- Columna IVA Porcentaje
       ::oLBoxDetal:SetColTitle( 10, "IVA (Monto)" )   //-- Columna IVA Monto
       ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
+      ::oLBoxDetal:SetColTitle( 21, "PVP Total" )         //-- Columna PVP Total Linea
 
       ::oLBoxDetal:Active()
 
@@ -681,6 +683,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       endif
 
    endif
+
 
    /* Desactivamos seleccion de linea */
    ::oModDetal:oTreeView:bRow_Activated := nil
@@ -871,26 +874,27 @@ return
 
 
 procedure __CalMontos( oTView, pModel, aIter, oForm )
-   local nBase, nMonto, nTotal, cIva, nImpPvp, nOtrImp
+   local nBase, nMonto, nTotal, cIva, nImpPvp, nOtrImp:=0
 
 //   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
 //                    ToNum( oTView:GetAutoValue(__PRECIO,   aIter)), 2 )
 
    nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
    nBase  := ToNum( ::oEntMonBase:GetValue() )
-   nOtrImp:= ToNum( ::oEntOtrImp:GetValue() )
-   nTotal := ROUND( nBase+nMonto+nOtrImp, 2 )
+   nOtrImp:= ToNum( ::oEntOtrImp:GetValue())
+   nTotal := ROUND( nBase+nMonto, 2 )
    ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
 
    // Calculate imp_pvp
-   nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
+ //  nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
+  nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ), 2 ) // imp_pvp * cantidad
 //   oTView:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) )
    nOtrImp += nImpPvp
 
    if ToNum( oTView:GetAutoValue( __IVAPORCEN, aIter )) > 0
       nMonto := ToNum( oTView:GetAutoValue( __IVAMONTO, aIter ) )
       nBase  := ToNum( ::oEntIvaG:GetValue() )
-      nTotal := ROUND( nBase+nMonto+nOtrImp, 2 )
+      nTotal := ROUND( nBase+nMonto, 2 )
       ::oEntIvaG:SetValue( TRANSFORM( nTotal, P_92 ) )
       if !hb_hHasKey( ::hFactura, "iva" )
          ::hFactura["iva"] := hb_hash()

@@ -6,7 +6,7 @@
 
 procedure mae_monedas( oForm, oWndParent, oEntParent )
 
-   local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oCliWnd, oRes, oImgBanner, oImageLogo, oBoxData
    local oLabTitulo, cLabTitulo := "Monedas"
    local cTipo,dFecha,nPorcentaje:=0
    local rVentas, rMonedas, oModMonedas, oLBoxCli
@@ -23,7 +23,7 @@ procedure mae_monedas( oForm, oWndParent, oEntParent )
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
 
    
-   DEFINE WINDOW oAliWnd ;
+   DEFINE WINDOW oCliWnd ;
           TITLE "Fiscalius. Monedas" ;
           SIZE 700,400 ;
           ID "window1" RESOURCE oRes
@@ -61,12 +61,10 @@ procedure mae_monedas( oForm, oWndParent, oEntParent )
  
  
    oLBoxCli:Active() 
+   // oLBoxCli:bNew  := {|oModel| vtc_edit( oForm, oCliWnd, oModMonedas, rVentas, .T. /*lNew*/ ) }
+   //oLBoxCli:bEdit := {|oModMonedas| vtc_edit( oForm, oCliWnd, oModMonedas, rVentas, .F. /*lNew*/ ) }
    
    
-   ACTIVATE WINDOW oAliWnd MODAL
+   ACTIVATE WINDOW oCliWnd MODAL
 
 return
-
-
-
-//eof
