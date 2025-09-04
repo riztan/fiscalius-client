@@ -8,10 +8,10 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
 
    local oInvWnd, oRes, oImgBanner, oImageLogo, oBoxData
    local oLabTitulo, cLabTitulo := "Productos"
-   local rVentas, rInventario, oModinventario, oLBoxInv
+   local rInventario, rProdutos, oModinventario, oLBoxInv
 
-   rVentas := ::oGEmpresa:SetModulo("Ventas")
-   rInventario := rVentas:Productos()
+   rInventario := ::oGEmpresa:SetModulo("Inventario")
+   rProductos := rInventario:Lista()
 
    if hb_isNIL(rInventario)
       MsgStop("No Hsy Productos Registrados")
@@ -44,8 +44,8 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
 
 
    DEFINE MODEL oModProductos ;
-          STRUCT rInventario:Struct() ;
-          DATA   rInventario:GetData()
+          STRUCT rProductos:Struct() ;
+          DATA   rProductos:GetData()
    
    DEFINE LISTBOX oLBoxInv ;
           MODEL oModProductos ;
