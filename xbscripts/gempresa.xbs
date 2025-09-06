@@ -94,7 +94,8 @@ CLASS GEMPRESA
    METHOD ChangeEmpresa( lChange )      INLINE ::ChangeCombobox( "empresa",    lChange )
 
    METHOD GetData()                  INLINE ::rEmpresa:GetData()
-   METHOD Monedas()                  INLINE ::rEmpresa:Modedas()
+   METHOD Monedas()                  INLINE ::rEmpresa:Monedas()
+   METHOD GetMoneda(uParam)          INLINE ::rEmpresa:GetMoneda(uParam)
    METHOD GetTasa(cMoneda, dFecha)   INLINE ::rEmpresa:GetTasa( cMoneda, dFecha )
 
    METHOD LoadFile()

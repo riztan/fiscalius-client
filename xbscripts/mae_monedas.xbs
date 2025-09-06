@@ -6,24 +6,21 @@
 
 procedure mae_monedas( oForm, oWndParent, oEntParent )
 
-   local oCliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oMonWnd, oRes, oImgBanner, oImageLogo, oBoxData
    local oLabTitulo, cLabTitulo := "Monedas"
    local cTipo,dFecha,nPorcentaje:=0
-   local rVentas, rMonedas, oModMonedas, oLBoxCli
+   local rMonedas, oModMonedas, oLBoxMon
 
-   rVentas := ::oGEmpresa:SetModulo("Ventas")
-   rMonedas := rVentas:Monedas()
+   rMonedas := ::oGEmpresa:Monedas()  
 
    if hb_isNIL(rMonedas)
       MsgStop("No Hay Monedas registradas")
       return
    endif
 
-
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
-
    
-   DEFINE WINDOW oCliWnd ;
+   DEFINE WINDOW oMonWnd ;
           TITLE "Fiscalius. Monedas" ;
           SIZE 700,400 ;
           ID "window1" RESOURCE oRes
@@ -43,7 +40,6 @@ procedure mae_monedas( oForm, oWndParent, oEntParent )
 
    DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
 
-
    //DEFINE BUTTON ::oBtn ACTION __vtaAlicuotaIVA( oForm, oFormParent, ::oBoxData, ::oModMonedas, .T.  ) ;
    //       ID "btn_add" RESOURCE ::oRes
 
@@ -51,20 +47,226 @@ procedure mae_monedas( oForm, oWndParent, oEntParent )
           STRUCT rMonedas:Struct() ;
           DATA   rMonedas:GetData()
    
-   DEFINE LISTBOX oLBoxCli ;
+   DEFINE LISTBOX oLBoxMon ;
           MODEL oModMonedas ;
           OF oBoxData
 
-   oLBoxCli:lBar  := .f.
+   oLBoxMon:lBar  := .f.
 
+   oLBoxMon:Active() 
 
- 
- 
-   oLBoxCli:Active() 
-   // oLBoxCli:bNew  := {|oModel| vtc_edit( oForm, oCliWnd, oModMonedas, rVentas, .T. /*lNew*/ ) }
-   //oLBoxCli:bEdit := {|oModMonedas| vtc_edit( oForm, oCliWnd, oModMonedas, rVentas, .F. /*lNew*/ ) }
-   
-   
-   ACTIVATE WINDOW oCliWnd MODAL
+//   oLBoxMon:bNew  := {|oModel| moneda_edit( oForm, oMonWnd, oModMonedas, .T. /*lNew*/ ) }
+//   oLBoxMon:bEdit := {|oModMonedas| moneda_edit( oForm, oMonWnd, oModMonedas, .F. /*lNew*/ ) } 
+
+   /* Desactivamos seleccion de linea */
+   oModMonedas:oTreeView:bRow_Activated := nil
+
+   /* Columna Código */
+   #define __CODIGO   2
+   oCol := oModMonedas:aCol[__CODIGO] // Codigo
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditMoneda( oForm, oSender, path, uVal, oModMonedas:aIter,;
+                                          oModMonedas:oLbx, oModMonedas:oTreeView, __CODIGO )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   /* Columna Nombre */
+   #define __NOMBRE   3
+   oCol := oModMonedas:aCol[__NOMBRE] // Codigo
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditMoneda( oForm, oSender, path, uVal, oModMonedas:aIter,;
+                                          oModMonedas:oLbx, oModMonedas:oTreeView, __NOMBRE )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   /* Columna Activo */
+   #define __ACTIVO   4
+   oCol := oModMonedas:aCol[__ACTIVO] // Codigo
+   //oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bAction := {|oSender, path, uVal, aIter|;
+                               __EditMoneda( oForm, oSender, path, uVal, oModMonedas:aIter,;
+                                          oModMonedas:oLbx, oModMonedas:oTreeView, __ACTIVO )  }
+   oCol:oRenderer:SetColumn( oCol )   
+
+   ACTIVATE WINDOW oMonWnd MODAL
 
 return
+
+
+
+procedure moneda_edit( oForm, oMonWnd, oModel, lNew )
+   local oWnd, oRes, oImgBanner
+   local oMonForm, hData
+
+   default lNew := .T.
+
+   SET PUBLIC oMonForm
+
+   oMonForm:lForce   := .F.
+   oMonForm:lClose   := .F.     //Bandera para indicar cierre
+   oMonForm:oModel   := oModel
+   oMonForm:rSession := ::rSession
+   oMonForm:lNew     := lNew
+
+   if lNew
+
+      oMonForm:cCodigo  := ""
+      oMonForm:cNombre  := ""
+      oMonForm:lActivo  := .t.
+   else
+
+      oMonForm:cCodigo  := oModel:GetCol( 2 )
+      oMonForm:cNombre  := oModel:GetCol( 3 )
+      oMonForm:lActivo  := oModel:GetCol( 4 )
+   endif
+
+   oMonForm:rMoneda := ::oGEmpresa:GetMoneda( {"codigo"=> oMonForm:cCodigo} )
+
+//View( oMonForm:rMoneda )
+
+   hData := oMonForm:rMoneda:Data()
+
+//   oMonForm:cNombreC  := hDataddd["nombre_corto"]
+//   oMonForm:cCedula   := hData["cedula"]
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_moneda.ui"
+
+   DEFINE WINDOW oMonForm:oWnd TITLE "Pruebas" SIZE 650,350 ;
+          OF oMonWnd ;
+          ID "window1" RESOURCE oRes
+
+
+      DEFINE IMAGE oMonForm:oImgBanner ID "img_banner" RESOURCE oRes
+      oMonForm:oImgBanner:Adjust(900)
+
+      DEFINE IMAGE oMonForm:oImgLogo   ID "img_logo"   RESOURCE oRes
+      oMonForm:oImgLogo:Adjust(60)
+/*
+      DEFINE ENTRY oMonForm:oEntCodigo VAR oMonForm:cCodigo ;
+             VALID iif( oMonForm:lClose, .T., __ValidaCodigo( oMonForm:oEntCodigo, oMonForm ) ) ;
+             ID "ent_codigo" RESOURCE oRes
+
+      DEFINE ENTRY oMonForm:oEntNombre VAR oMonForm:cNombre ID "ent_nombre" RESOURCE oRes
+
+      DEFINE ENTRY oMonForm:oEntNombreC VAR oMonForm:cNombreC ID "ent_nombre_corto" RESOURCE oRes
+
+      DEFINE ENTRY oMonForm:oEntCedula VAR oMonForm:cCedula ;
+             VALID iif( oMonForm:lClose, .T., __ValidaCedula( oMonForm:oEntCedula ) ) ;
+             ID "ent_cedula" RESOURCE oRes
+
+      DEFINE ENTRY oMonForm:oEntRif    VAR oMonForm:cRif    ;
+             VALID iif( oMonForm:lClose, .T., __ValidaRIF(oMonForm:oEntRif, oMonForm) ) ;
+             ID "ent_rif"    RESOURCE oRes
+
+      DEFINE ENTRY oMonForm:oEntMail   VAR oMonForm:cMail   ;
+             VALID iif( oMonForm:lClose, .T., __ValidaEmail( oMonForm:oEntMail ) ) ;
+             ID "ent_mail"   RESOURCE oRes
+
+      DEFINE ENTRY oMonForm:oEntTlf    VAR oMonForm:cTlf    ;
+             VALID iif( oMonForm:lClose, .T., __ValidaTlf( oMonForm:oEntTlf ) ) ;
+             ID "ent_tlf"    RESOURCE oRes
+
+      DEFINE TEXTVIEW oMonForm:oVTDir  VAR oMonForm:cDir    ID "tv_dir"     RESOURCE oRes
+*/
+//      DEFINE BUTTON oMonForm:oBtnSave   ACTION __MaeMonSave( oMonForm ) ID "btn_save" RESOURCE oRes
+
+      DEFINE BUTTON oMonForm:oBtnCancel ACTION ( oMonForm:lClose := .T., oMonForm:oWnd:End() ) ;
+             ID "btn_cancel" RESOURCE oRes
+
+   ACTIVATE WINDOW oMonForm:oWnd MODAL //VALID __MaeMonExit( oMonForm )
+
+return
+*/
+
+
+procedure __EditMoneda( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
+   local pNextCol, pPath, uPrevio
+
+   //-  ignoramos la edición si el documento esta anulado o cerrado.
+//   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
+//      return 
+//   endif
+
+   if nCol=__ACTIVO
+      __SetValue( oTreeView, oModel, aIter, nCol, uVal, cPath )
+      oTreeView:SetPosCol( aIter, __ACTIVO, .f. )
+      return
+   endif
+
+   if empty( uVal ) ; return ; endif
+
+   uPrevio := oTreeView:GetAutoValue( nCol )
+
+   if nCol=__CODIGO
+      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
+//      __Productos( oForm, uVal, oModel, nCol, oTreeView, aIter )
+      oTreeView:SetPosCol( aIter, __CODIGO, .f. )
+      return
+   endif
+
+//   if Empty( oTreeView:GetAutoValue( __CODIGO ) )
+      //View("No deberia poder editar sin concepto definido")
+//      oTreeView:SetPosCol( aIter, __CODIGO, .f. )
+//      return
+//   endif
+
+return
+
+
+
+PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue, cPath  )
+   local nMonto, nDescuento, nIvaPorcen, nIvaMonto:= 0
+   local pPath
+
+   if oTreeView:IsGetSelected( aIter )
+      
+      if nCol= __ACTIVO
+//View("aqui -> Col ="+hb_ntos(nCol))
+         pPath := gtk_tree_path_new_from_string( cPath )
+         uValue := !( oTreeView:GetValue( nCol, "Boolean", pPath , @aIter ) )
+      endif
+/*
+      if nCol= __CANTIDAD .or. nCol= __PRECIO .or. nCol= __DESCUENTO
+
+         if nCol = __DESCUENTO
+            nDescuento := VAL(uValue)
+            nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
+                      ToNum( oTreeView:GetAutoValue(__PRECIO,   aIter))) - nDescuento
+         else
+            nDescuento := VAL( oTreeView:GetAutoValue(__DESCUENTO, aIter) )
+         endif
+
+         if nCol = __CANTIDAD 
+            nMonto := (VAL(uValue) * ;
+                      ToNum( oTreeView:GetAutoValue(__PRECIO, aIter))) - nDescuento
+            nImpPvp := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(21, aIter) ), 2 ) // Calculate imp_pvp
+         elseif nCol = __PRECIO
+            nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
+                      VAL(uValue)) - nDescuento
+            nImpPvp := ToNum( oTreeView:GetAutoValue(21, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_pvp
+         else
+            nImpPvp := ToNum( oTreeView:GetAutoValue(21, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_pvp
+         endif
+         nMonto := ROUND( nMonto, 2 )
+         oModel:Set( aIter, __SUBTOTAL, STR( nMonto ) )
+         oModel:Set( aIter, 21, STR( nImpPvp ) ) // Set imp_pvp
+
+         nIvaPorcen := ToNum( oTreeView:GetAutoValue(__IVAPORCEN, aIter) )
+         if nIvaPorcen > 0
+            nIvaMonto := ROUND( nMonto * (nIvaPorcen / 100), 2 )
+            oModel:Set( aIter, __IVAMONTO, STR(nIvaMonto) )
+            //oModel:Set( aIter, __IVAMONTO, TRANSFORM(nIvaMonto, P_92) )
+         endif
+         oModel:Set( aIter, __TOTAL, STR( ROUND( nMonto + nIvaMonto ,2 ) ) )
+         //oModel:Set( aIter, __TOTAL, TRANSFORM( ROUND( nMonto + nIvaMonto ,2 ), P_92 ) )
+
+         uValue := STR( VAL(uValue) )
+         //uValue := TRANSFORM( VAL(uValue), P_92 )
+      endif
+*/
+      oModel:Set( aIter, nCol, uValue )
+
+   endif
+RETURN
+
+//eof
