@@ -4,16 +4,20 @@
 
 #include "tpy_xbs.ch"
 
-procedure mae_monedas( oForm, oWndParent, oEntParent )
+procedure mae_monedas( oParentForm, oWndParent, oEntParent )
 
    local oMonWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oBoxBotones, oBtnNewMon
    local oLabTitulo, cLabTitulo := "Monedas"
    local cTipo,dFecha,nPorcentaje:=0
-   local rMonedas, oModMonedas, oLBoxMon
+   local oModMonedas, oLBoxMon, oForm
 
-   rMonedas := ::oGEmpresa:Monedas()  
+   SET PUBLIC oForm
 
-   if hb_isNIL(rMonedas)
+   ::rMonedas    := oParentForm:oGEmpresa:Monedas()  
+   ::oParentForm := oParentForm
+
+   if hb_isNIL(::rMonedas)
       MsgStop("No Hay Monedas registradas")
       return
    endif
@@ -40,12 +44,18 @@ procedure mae_monedas( oForm, oWndParent, oEntParent )
 
    DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
 
+   DEFINE BOX oBoxBotones ID "box_botones" RESOURCE oRes
+   
+   DEFINE BUTTON oBtnNewMon TEXT "+ Nueva" ;
+          ACTION __BtnNewMon( oForm, oModMonedas, oLBoxMon ) ;
+          OF oBoxBotones 
+
    //DEFINE BUTTON ::oBtn ACTION __vtaAlicuotaIVA( oForm, oFormParent, ::oBoxData, ::oModMonedas, .T.  ) ;
    //       ID "btn_add" RESOURCE ::oRes
 
    DEFINE MODEL oModMonedas ;
-          STRUCT rMonedas:Struct() ;
-          DATA   rMonedas:GetData()
+          STRUCT ::rMonedas:Struct() ;
+          DATA   ::rMonedas:GetData()
    
    DEFINE LISTBOX oLBoxMon ;
           MODEL oModMonedas ;
@@ -126,7 +136,7 @@ procedure moneda_edit( oForm, oMonWnd, oModel, lNew )
 
    hData := oMonForm:rMoneda:Data()
 
-//   oMonForm:cNombreC  := hDataddd["nombre_corto"]
+//   oMonForm:cNombreC  := hData["nombre_corto"]
 //   oMonForm:cCedula   := hData["cedula"]
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_moneda.ui"
@@ -188,7 +198,7 @@ procedure __EditMoneda( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, n
 //   endif
 
    if nCol=__ACTIVO
-      __SetValue( oTreeView, oModel, aIter, nCol, uVal, cPath )
+      __SetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath )
       oTreeView:SetPosCol( aIter, __ACTIVO, .f. )
       return
    endif
@@ -198,11 +208,19 @@ procedure __EditMoneda( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, n
    uPrevio := oTreeView:GetAutoValue( nCol )
 
    if nCol=__CODIGO
-      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
-//      __Productos( oForm, uVal, oModel, nCol, oTreeView, aIter )
-      oTreeView:SetPosCol( aIter, __CODIGO, .f. )
-      return
+      uVal := LEFT( ALLTRIM(UPPER( uVal )), 4 )
    endif
+
+   //if nCol=__CODIGO
+      __SetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath, uPrevio )
+//      __Productos( oForm, uVal, oModel, nCol, oTreeView, aIter )
+      oTreeView:SetPosCol( aIter, nCol, .f. )
+
+//-- Evaluar si ya estan todos los datos, verificar que no hay nada repetido y proceder
+//   a almacenar. (RIGC Sept 23 - 2025)
+
+      return
+   //endif
 
 //   if Empty( oTreeView:GetAutoValue( __CODIGO ) )
       //View("No deberia poder editar sin concepto definido")
@@ -214,59 +232,75 @@ return
 
 
 
-PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue, cPath  )
+PROCEDURE __SetValue( oForm, oTreeView, oModel, aIter, nCol, uValue, cPath, uPrevio  )
    local nMonto, nDescuento, nIvaPorcen, nIvaMonto:= 0
-   local pPath
+   local pPath, hData := hb_hash(), hResult 
 
    if oTreeView:IsGetSelected( aIter )
       
       if nCol= __ACTIVO
-//View("aqui -> Col ="+hb_ntos(nCol))
          pPath := gtk_tree_path_new_from_string( cPath )
          uValue := !( oTreeView:GetValue( nCol, "Boolean", pPath , @aIter ) )
       endif
-/*
-      if nCol= __CANTIDAD .or. nCol= __PRECIO .or. nCol= __DESCUENTO
 
-         if nCol = __DESCUENTO
-            nDescuento := VAL(uValue)
-            nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
-                      ToNum( oTreeView:GetAutoValue(__PRECIO,   aIter))) - nDescuento
-         else
-            nDescuento := VAL( oTreeView:GetAutoValue(__DESCUENTO, aIter) )
-         endif
-
-         if nCol = __CANTIDAD 
-            nMonto := (VAL(uValue) * ;
-                      ToNum( oTreeView:GetAutoValue(__PRECIO, aIter))) - nDescuento
-            nImpPvp := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(21, aIter) ), 2 ) // Calculate imp_pvp
-         elseif nCol = __PRECIO
-            nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
-                      VAL(uValue)) - nDescuento
-            nImpPvp := ToNum( oTreeView:GetAutoValue(21, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_pvp
-         else
-            nImpPvp := ToNum( oTreeView:GetAutoValue(21, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_pvp
-         endif
-         nMonto := ROUND( nMonto, 2 )
-         oModel:Set( aIter, __SUBTOTAL, STR( nMonto ) )
-         oModel:Set( aIter, 21, STR( nImpPvp ) ) // Set imp_pvp
-
-         nIvaPorcen := ToNum( oTreeView:GetAutoValue(__IVAPORCEN, aIter) )
-         if nIvaPorcen > 0
-            nIvaMonto := ROUND( nMonto * (nIvaPorcen / 100), 2 )
-            oModel:Set( aIter, __IVAMONTO, STR(nIvaMonto) )
-            //oModel:Set( aIter, __IVAMONTO, TRANSFORM(nIvaMonto, P_92) )
-         endif
-         oModel:Set( aIter, __TOTAL, STR( ROUND( nMonto + nIvaMonto ,2 ) ) )
-         //oModel:Set( aIter, __TOTAL, TRANSFORM( ROUND( nMonto + nIvaMonto ,2 ), P_92 ) )
-
-         uValue := STR( VAL(uValue) )
-         //uValue := TRANSFORM( VAL(uValue), P_92 )
-      endif
-*/
       oModel:Set( aIter, nCol, uValue )
+
+      hData["id"]     := oTreeView:GetAutoValue( 1 )
+      hData["codigo"] := oTreeView:GetAutoValue( 2 )
+      hData["nombre"] := oTreeView:GetAutoValue( 3 )
+      hData["activo"] := oTreeView:GetAutoValue( 4 )
+
+      if Empty(hData["id"]) 
+         if !Empty( hData["codigo"] ) .and. ;
+            !Empty( hData["nombre"] ) .and. hb_isLogical( hData["activo"] )
+
+            ::rMoneda := ::oParentForm:oGEmpresa:GetMoneda( {"codigo" => ''} )
+
+            hResult := ::rMoneda:SetData( hData )
+            if !hResult["return"]
+               MsgAlert( hResult["message"] )
+               return
+            endif
+            if !::rMoneda:Save() 
+               MsgAlert( "Se presenta problema para registrar los datos.", "Atención" )
+               return
+            endif
+         endif
+      else
+//         View("editando registro... deberíase")
+         if nCol = 2
+            ::rMoneda := ::oParentForm:oGEmpresa:GetMoneda( {"codigo"=> uPrevio } )
+         else
+            ::rMoneda := ::oParentForm:oGEmpresa:GetMoneda( {"codigo"=> hData["codigo"] } )
+         endif
+
+         if !hb_isObject( ::rMoneda )
+            return
+         endif
+         ::rMoneda:SetData( hData )
+         if !::rMoneda:Save() 
+            MsgAlert( "Se presenta problema para actualizar los datos.", "Atención" )
+            return
+         endif
+         
+      endif
 
    endif
 RETURN
 
+
+
+Procedure __BtnNewMon( oForm, oModMonedas, oLBoxMon )
+   local aIter := ARRAY(4)
+
+   oModMonedas:oTreeView:SetFocus()
+   oModMonedas:GoTop()
+
+   APPEND LIST_STORE oModMonedas:oLbx ITER aIter ;
+      VALUES "", "", "", .F.
+   
+  oModMonedas:oTreeView:SetFocus()
+  oModMonedas:GoBottom()
+
+RETURN
 //eof

@@ -1248,7 +1248,7 @@ Fotos: Alexas_Fotos en Pixabay</property>
     <property name="transient_for">wnd_main</property>
     <property name="opacity">0.92000000000000004</property>
     <property name="program_name">Fiscalius</property>
-    <property name="version">0.1.0</property>
+    <property name="version">1.0</property>
     <property name="copyright" translatable="yes">Licencia bajo Software Libre GPLv3</property>
     <property name="comments" translatable="yes">Software de control de registros fiscales</property>
     <property name="license" translatable="yes">gAdaptaPro Versión 0.1.0 

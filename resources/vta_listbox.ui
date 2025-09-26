@@ -38,6 +38,25 @@
                     <property name="y">40</property>
                   </packing>
                 </child>
+                <child>
+                  <object class="GtkHBox" id="box_botones">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="x">100</property>
+                    <property name="y">60</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="expand">True</property>
