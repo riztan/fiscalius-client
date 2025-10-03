@@ -51,9 +51,10 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
           MODEL oModProductos ;
           OF oBoxData
 
-   oLBoxInv:lBar  := .f.
+   //oLBoxInv:lBar  := .f.
 
 
+//View( VALTYPE(oEntParent) )
    if hb_isObject( oEntParent )
       oLBoxInv:bEdit := {|oModel| (cCodProducto := oModel:GetCol(1),; 
                                    iif( !hb_isObject(oWndParent),                ;
@@ -61,6 +62,9 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
                                          oEntParent:setText( ALLTRIM(cCodProducto)+" - "+;
                                                              oModel:GetCol(3) )), ;
                                    oInvWnd:End() ) }
+   else
+      oLBoxInv:bNew  := {|oModProductos| inv_edit( oForm, oInvWnd, oModProductos, rInventario, .T. /*lNew*/ ) }
+      oLBoxInv:bEdit := {|oModProductos| inv_edit( oForm, oInvWnd, oModProductos, rInventario, .F. /*lNew*/ ) }
    endif
 
    oLBoxInv:Active() 
@@ -105,9 +109,11 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
 
    ACTIVATE WINDOW oInvWnd MODAL //OF oWndParent
 
-
 return
 
+//procedure inv_edit()
+//return
+#include "xbscripts/mae_inventario_edit.xbs"
 
 
 //eof
