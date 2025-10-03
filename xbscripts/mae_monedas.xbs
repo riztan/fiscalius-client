@@ -132,12 +132,8 @@ procedure moneda_edit( oForm, oMonWnd, oModel, lNew )
 
    oMonForm:rMoneda := ::oGEmpresa:GetMoneda( {"codigo"=> oMonForm:cCodigo} )
 
-//View( oMonForm:rMoneda )
 
    hData := oMonForm:rMoneda:Data()
-
-//   oMonForm:cNombreC  := hData["nombre_corto"]
-//   oMonForm:cCedula   := hData["cedula"]
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_moneda.ui"
 
@@ -151,34 +147,6 @@ procedure moneda_edit( oForm, oMonWnd, oModel, lNew )
 
       DEFINE IMAGE oMonForm:oImgLogo   ID "img_logo"   RESOURCE oRes
       oMonForm:oImgLogo:Adjust(60)
-/*
-      DEFINE ENTRY oMonForm:oEntCodigo VAR oMonForm:cCodigo ;
-             VALID iif( oMonForm:lClose, .T., __ValidaCodigo( oMonForm:oEntCodigo, oMonForm ) ) ;
-             ID "ent_codigo" RESOURCE oRes
-
-      DEFINE ENTRY oMonForm:oEntNombre VAR oMonForm:cNombre ID "ent_nombre" RESOURCE oRes
-
-      DEFINE ENTRY oMonForm:oEntNombreC VAR oMonForm:cNombreC ID "ent_nombre_corto" RESOURCE oRes
-
-      DEFINE ENTRY oMonForm:oEntCedula VAR oMonForm:cCedula ;
-             VALID iif( oMonForm:lClose, .T., __ValidaCedula( oMonForm:oEntCedula ) ) ;
-             ID "ent_cedula" RESOURCE oRes
-
-      DEFINE ENTRY oMonForm:oEntRif    VAR oMonForm:cRif    ;
-             VALID iif( oMonForm:lClose, .T., __ValidaRIF(oMonForm:oEntRif, oMonForm) ) ;
-             ID "ent_rif"    RESOURCE oRes
-
-      DEFINE ENTRY oMonForm:oEntMail   VAR oMonForm:cMail   ;
-             VALID iif( oMonForm:lClose, .T., __ValidaEmail( oMonForm:oEntMail ) ) ;
-             ID "ent_mail"   RESOURCE oRes
-
-      DEFINE ENTRY oMonForm:oEntTlf    VAR oMonForm:cTlf    ;
-             VALID iif( oMonForm:lClose, .T., __ValidaTlf( oMonForm:oEntTlf ) ) ;
-             ID "ent_tlf"    RESOURCE oRes
-
-      DEFINE TEXTVIEW oMonForm:oVTDir  VAR oMonForm:cDir    ID "tv_dir"     RESOURCE oRes
-*/
-//      DEFINE BUTTON oMonForm:oBtnSave   ACTION __MaeMonSave( oMonForm ) ID "btn_save" RESOURCE oRes
 
       DEFINE BUTTON oMonForm:oBtnCancel ACTION ( oMonForm:lClose := .T., oMonForm:oWnd:End() ) ;
              ID "btn_cancel" RESOURCE oRes
@@ -186,16 +154,11 @@ procedure moneda_edit( oForm, oMonWnd, oModel, lNew )
    ACTIVATE WINDOW oMonForm:oWnd MODAL //VALID __MaeMonExit( oMonForm )
 
 return
-*/
+
 
 
 procedure __EditMoneda( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
    local pNextCol, pPath, uPrevio
-
-   //-  ignoramos la edición si el documento esta anulado o cerrado.
-//   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
-//      return 
-//   endif
 
    if nCol=__ACTIVO
       __SetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath )
@@ -211,22 +174,8 @@ procedure __EditMoneda( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, n
       uVal := LEFT( ALLTRIM(UPPER( uVal )), 4 )
    endif
 
-   //if nCol=__CODIGO
-      __SetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath, uPrevio )
-//      __Productos( oForm, uVal, oModel, nCol, oTreeView, aIter )
-      oTreeView:SetPosCol( aIter, nCol, .f. )
-
-//-- Evaluar si ya estan todos los datos, verificar que no hay nada repetido y proceder
-//   a almacenar. (RIGC Sept 23 - 2025)
-
-      return
-   //endif
-
-//   if Empty( oTreeView:GetAutoValue( __CODIGO ) )
-      //View("No deberia poder editar sin concepto definido")
-//      oTreeView:SetPosCol( aIter, __CODIGO, .f. )
-//      return
-//   endif
+   __SetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath, uPrevio )
+   oTreeView:SetPosCol( aIter, nCol, .f. )
 
 return
 
