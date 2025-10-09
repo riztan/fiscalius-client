@@ -145,7 +145,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_clientes.ui"
 
-   DEFINE WINDOW oCliForm:oWnd TITLE "Pruebas" SIZE 650,350 ;
+   DEFINE WINDOW oCliForm:oWnd TITLE "Cliente" SIZE 650,350 ;
           OF oCliWnd ;
           ID "window1" RESOURCE oRes
 

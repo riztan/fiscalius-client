@@ -1,28 +1,26 @@
 /* mae_usuarios.xbs
  *
+ * Formulario para gestionar usuarios en Fiscalius
+ *
  */
 
 #include "tpy_xbs.ch"
 
 procedure mae_usuarios( oForm, oWndParent, oEntParent )
-
    local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
    local oLabTitulo, cLabTitulo := "Usuarios"
-   local cTipo,dFecha,nPorcentaje:=0
    local rVentas, rUsuarios, oModUsuarios, oLBoxCli
 
    rVentas := ::oGEmpresa:SetModulo("Ventas")
    rUsuarios := rVentas:Usuarios()
 
    if hb_isNIL(rUsuarios)
-      MsgStop("No Hay Usuarios registrados")
+      MsgStop("No hay usuarios registrados")
       return
    endif
 
-
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
 
-   
    DEFINE WINDOW oAliWnd ;
           TITLE "Fiscalius. Usuarios" ;
           SIZE 700,400 ;
@@ -43,10 +41,6 @@ procedure mae_usuarios( oForm, oWndParent, oEntParent )
 
    DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
 
-
-   //DEFINE BUTTON ::oBtn ACTION __vtaAlicuotaIVA( oForm, oFormParent, ::oBoxData, ::oModUsuarios, .T.  ) ;
-   //       ID "btn_add" RESOURCE ::oRes
-
    DEFINE MODEL oModUsuarios ;
           STRUCT rUsuarios:Struct() ;
           DATA   rUsuarios:GetData()
@@ -55,24 +49,230 @@ procedure mae_usuarios( oForm, oWndParent, oEntParent )
           MODEL oModUsuarios ;
           OF oBoxData
 
-   oLBoxCli:lBar  := .f.
+   oLBoxCli:lBar := .F.
+   oLBoxCli:bNew  := {|oModel| usu_edit( oForm, oAliWnd, oModUsuarios, rVentas, .T. /*lNew*/ ) }
+   oLBoxCli:bEdit := {|oModel| usu_edit( oForm, oAliWnd, oModUsuarios, rVentas, .F. /*lNew*/ ) }
 
+   oLBoxCli:SetColVisible( 1, .F. )    // Ocultamos ID
+   oLBoxCli:SetColVisible( 6, .F. )    // Ocultamos password
+   oLBoxCli:SetColTitle( 5, "Login" )  // Cambiamos el título
+   oLBoxCli:SetColTitle( 2, "Nombre" ) // Cambiamos el título
+   oLBoxCli:SetColTitle( 4, "Activo" ) // Cambiamos el título
+   oLBoxCli:SetColTitle( 3, "Nombre Corto" ) // Cambiamos el título
 
-   oLBoxCli:SetColVisible( 1, .F. )    //- Ocultamos ID
-    oLBoxCli:SetColVisible( 2, .F. )    //- Ocultamos nombre 
-	oLBoxCli:SetColVisible( 6, .F. )    //- Ocultamos password
-
-   oLBoxCli:SetColTitle( 3, "Nombre" )          //- Cambiamos el titulo 
-   oLBoxCli:SetColTitle( 4, "Activo" )          //- Cambiamos el titulo 
-   oLBoxCli:SetColTitle( 5, "Login" )          //- Cambiamos el titulo 
- 
-   oLBoxCli:Active() 
-   
-   
    ACTIVATE WINDOW oAliWnd MODAL
 
 return
 
+procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
+   local oRes, oUsuForm, hData
 
+   default lNew := .T.
+
+   SET PUBLIC oUsuForm
+
+   oUsuForm:lForce   := .F.
+   oUsuForm:lClose   := .F.
+   oUsuForm:oModel   := oModel
+   oUsuForm:rSession := ::rSession
+   oUsuForm:rVentas  := rVentas
+   oUsuForm:lNew     := lNew
+
+   if lNew
+      oUsuForm:cLogin      := ""
+      oUsuForm:cNombre     := ""
+      oUsuForm:cNombreC    := ""
+      oUsuForm:lActivo     := .T.
+      oUsuForm:cPass       := ""
+	  oUsuForm:cPass1       := ""
+   else
+      oUsuForm:cLogin      := oModel:GetCol( 5 )
+      oUsuForm:cPreLogin   := oModel:GetCol( 5 )
+      oUsuForm:cNombre     := oModel:GetCol( 2 )
+      oUsuForm:lActivo     := oModel:GetCol( 4 )
+      oUsuForm:cNombreC    := oModel:GetCol( 3 )
+      oUsuForm:cPass       := "" // Password no se carga por seguridad
+	  oUsuForm:cPass1       := ""
+   endif
+
+ 
+   oUsuForm:rUsuario := rVentas:Usuario( {"login" => oUsuForm:cLogin} )
+
+   hData := oUsuForm:rUsuario:Data()
+   oUsuForm:cNombreC := hData["nombre_corto"]
+   oUsuForm:lActivo  := hData["activo"]
+   
+   
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_usuarios.ui"
+
+   DEFINE WINDOW oUsuForm:oWnd TITLE "Usuario" SIZE 650,350 ;
+          OF oAliWnd ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oUsuForm:oImgBanner ID "img_banner" RESOURCE oRes
+      oUsuForm:oImgBanner:Adjust(900)
+
+      DEFINE IMAGE oUsuForm:oImgLogo ID "img_logo" RESOURCE oRes
+      oUsuForm:oImgLogo:Adjust(60)
+
+      DEFINE ENTRY oUsuForm:oEntLogin VAR oUsuForm:cLogin ;
+             VALID iif( oUsuForm:lClose, .T., __ValidaLogin( oUsuForm:oEntLogin, oUsuForm ) ) ;
+             ID "ent_login" RESOURCE oRes
+
+      DEFINE ENTRY oUsuForm:oEntNombre VAR oUsuForm:cNombre ID "ent_nombre" RESOURCE oRes
+
+      DEFINE ENTRY oUsuForm:oEntNombreC VAR oUsuForm:cNombreC ID "ent_nombre_corto" RESOURCE oRes
+
+      DEFINE CHECKBOX oUsuForm:oChkActivo VAR oUsuForm:lActivo ID "chk_activo" RESOURCE oRes
+
+      DEFINE ENTRY oUsuForm:oEntPass VAR oUsuForm:cPass ;
+             VALID iif( oUsuForm:lClose, .T., __ValidaPass( oUsuForm:oEntPass, oUsuForm ) ) ;
+             ID "ent_pass" RESOURCE oRes
+      //oUsuForm:oEntPass:SetPassword( .T. )
+	  
+	   DEFINE ENTRY oUsuForm:oEntPass1 VAR oUsuForm:cPass1 ;
+             VALID iif( oUsuForm:lClose, .T., __ValidaPass( oUsuForm:oEntPass1, oUsuForm ) ) ;
+             ID "ent_pass1" RESOURCE oRes
+
+      DEFINE BUTTON oUsuForm:oBtnSave ACTION __UsuSave( oUsuForm ) ID "btn_save" RESOURCE oRes
+
+      DEFINE BUTTON oUsuForm:oBtnCancel ACTION ( oUsuForm:lClose := .T., oUsuForm:oWnd:End() ) ;
+             ID "btn_cancel" RESOURCE oRes
+
+   ACTIVATE WINDOW oUsuForm:oWnd MODAL VALID __UsuExit( oUsuForm )
+
+return
+
+procedure __UsuSave( oForm )
+   local hData, uResp, aIter, lNew
+
+   // Validar login antes de guardar
+   if !__ValidaLogin( oForm:oEntLogin, oForm )
+      MsgAlert("El login ingresado es inválido o ya está registrado.", "Error")
+      oForm:oEntLogin:SetFocus()
+      return
+   endif
+
+   // Validar contraseña antes de guardar
+   if !__ValidaPass( oForm:oEntPass, oForm )
+      MsgAlert("La contraseña es inválida. Debe tener entre 6 y 10 caracteres.", "Error")
+      oForm:oEntPass:SetFocus()
+      return
+   endif
+
+   // Validar nombre antes de guardar
+   if Empty( oForm:cNombre )
+      MsgAlert("El nombre del usuario es obligatorio.", "Error")
+      oForm:oEntNombre:SetFocus()
+      return
+   endif
+
+   lNew := oForm:rUsuario:IsNew()
+
+   // Guardar los datos del usuario
+   hData := oForm:rUsuario:Data()
+   oForm:rUsuario:SetData( { "login"        => oForm:cLogin,  ;
+                             "nombre"       => oForm:cNombre,  ;
+                             "nombre_corto" => oForm:cNombreC, ;
+                             "activo"       => oForm:lActivo,  ;
+                             "pass"         => oForm:cPass     } )
+
+   uResp := oForm:rUsuario:Save()
+
+   if !( ValType( uResp ) = "H" .and. uResp["return"] = .T. )
+      MsgAlert("No se pudo guardar el usuario: " + uResp["message"], "Error")
+      return
+   endif
+
+   hData := oForm:rUsuario:Data()
+
+   // Actualizar el modelo
+   if lNew 
+      // Usuario nuevo: añadir una nueva fila al modelo
+      aIter := ARRAY(6)
+      APPEND LIST_STORE oForm:oModel:oLbx ITER aIter ;
+             VALUES hData["id"], ;
+                    hData["login"], ;
+                    hData["nombre"], ;
+                    hData["activo"], ;
+                    hData["nombre_corto"], ;
+                    hData["pass"]
+      gtk_tree_view_set_cursor( oForm:oModel:oTreeView:pWidget, oForm:oModel:oTreeView:GetPath( aIter ), NIL, .F. )
+   else
+      // Usuario existente: actualizar la fila seleccionada
+      oForm:oModel:SetValue( 5, hData["login"] )
+      oForm:oModel:SetValue( 2, hData["nombre"] )
+      oForm:oModel:SetValue( 4, hData["activo"] )
+      oForm:oModel:SetValue( 3, hData["nombre_corto"] )
+   endif
+
+   oForm:lForce := .T.
+   oForm:oWnd:End()
+
+return
+
+function __ValidaLogin( oEntLogin, oForm )
+   local cLogin, rUsuario
+
+   cLogin := oEntLogin:GetValue()
+
+   // No permitir login vacío
+   if Empty( cLogin )
+      MsgAlert( "Debe indicar un login para este usuario.", "Atención" )
+      return .F.
+   endif
+
+   // Verificar longitud (3 a 20 caracteres)
+   if LEN( cLogin ) < 3 .OR. LEN( cLogin ) > 20
+      MsgAlert( "El login debe tener entre 3 y 20 caracteres.", "Error" )
+      oEntLogin:SetFocus()
+      return .F.
+   endif
+
+   // Verificar unicidad del login
+   rUsuario := oForm:rVentas:Usuarios( {"login" => cLogin} )
+   if rUsuario:RecCount() > 0 .and. ( oForm:lNew .or. cLogin != oForm:cPreLogin )
+      MsgAlert( "El login ingresado ya está registrado.", "Atención" )
+      return .F.
+   endif
+
+   return .T.
+
+function __ValidaPass( oEntPass, oForm )
+   local cPass
+
+   cPass := oEntPass:GetValue()
+
+   // No permitir contraseña vacía para usuarios nuevos
+   if oForm:lNew .and. Empty( cPass )
+      MsgAlert( "Debe indicar una contraseña.", "Atención" )
+      return .F.
+   endif
+
+   // Para usuarios existentes, permitir contraseña vacía (no se actualiza)
+   if !oForm:lNew .and. Empty( cPass )
+      return .T.
+   endif
+
+   // Verificar longitud (6 a 10 caracteres)
+   if LEN( cPass ) < 6 .OR. LEN( cPass ) > 10
+      MsgAlert( "La contraseña debe tener entre 6 y 10 caracteres.", "Error" )
+      oEntPass:SetFocus()
+      return .F.
+   endif
+
+   return .T.
+
+function __UsuExit( oForm )
+   if oForm:lForce
+      return .T.
+   endif
+
+   if MsgNoYes( "¿Desea salir y descartar los cambios?", "Atención" )
+      return .T.
+   endif
+
+   return .F.
 
 //eof
