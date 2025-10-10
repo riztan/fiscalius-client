@@ -97,11 +97,11 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
       DEFINE ENTRY oInvForm:oEntNombre  VAR oInvForm:hData["nombre"]    ;
              ID "ent_nombre"  RESOURCE oRes
 
-      DEFINE ENTRY oInvForm:oEntDescri  VAR oInvForm:hData["descripcion"]    ;
-             ID "ent_descripcion"  RESOURCE oRes
+      DEFINE ENTRY oInvForm:oEntDescriG  VAR oInvForm:hData["descripcion_global"]    ;
+             ID "ent_descripcion_global"  RESOURCE oRes
 
-//      DEFINE ENTRY oInvForm:oEntDescri  VAR oInvForm:hData["descripcion"]   ;
-//             ID "ent_descrip"  RESOURCE oRes
+      DEFINE ENTRY oInvForm:oEntDescri  VAR oInvForm:hData["descripcion_local"]   ;
+             ID "ent_descripcion_local"  RESOURCE oRes
 
       DEFINE CHECKBOX oInvForm:oCheck_iva VAR oInvForm:hData["incluye_iva"] ; //oInvForm:lIVA ;
              ID "check_iva" RESOURCE oRes
