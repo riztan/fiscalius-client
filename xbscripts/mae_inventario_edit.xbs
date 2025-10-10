@@ -1,0 +1,405 @@
+/* mae_inventario_edit.xbs
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
+   local oWnd, oRes, oImgBanner
+//   local oImgLogo, oEntCodigo, cCodigo, oEntNombre, cNombre
+//   local oEntRif, cRif, oEntMail, cMail, oEntTlf, cTlf
+//   local oVtDir, cDir, oBtnSave, oBtnCancel
+   local oInvForm, hData, rProducto, oAlicuotas, aAlicuotas := {}
+
+   default lNew := .T.
+
+   SET PUBLIC oInvForm
+
+   oInvForm:lForce   := .F.
+   oInvForm:lClose   := .F.     //Bandera para indicar cierre
+   oInvForm:oModel   := oModel
+   oInvForm:rSession := ::rSession
+   oInvForm:rInventario  := rInventario
+   oInvForm:lNew     := lNew
+
+   if lNew
+
+      oInvForm:cCodigo  := ""
+      //oInvForm:cNombre  := ""
+   else
+
+      oInvForm:cCodigo  := oModel:GetCol( 4 )
+   endif
+
+//View( oInvForm:cCodigo )
+   oInvForm:rProducto := rInventario:Producto( {"codigo_local" => oInvForm:cCodigo} )
+//View( rInventario:Producto( oInvForm:cCodigo ) )
+//View( rProducto:ClassName() )
+
+   oInvForm:hData := oInvForm:rProducto:Data()
+//   oInvForm:cDescripcion := oInvForm:hData["descripcion"]
+//   oInvForm:cCodigo_barras := oInvForm:hData["codigo_barras"]
+   oInvForm:lIVA := .t. //iif( oInvForm:hData["incluye_iva"]="S", .T., .F. )
+//View( oInvForm:hData )
+
+   oAlicuotas := ::oGEmpresa:Alicuotas()
+   if !hb_isObject( oAlicuotas )
+      MsgStop( "Hay problema para obtener la lista de alicuotas" )
+      return 
+   endif 
+
+   oAlicuotas:GoTop()
+   While !oAlicuotas:Eof()
+
+      AADD( aAlicuotas, oAlicuotas:tipo_tasa ) 
+      oAlicuotas:Skip()
+   EndDo
+//View( aAlicuotas )
+//return
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_inventario.ui"
+
+   DEFINE WINDOW oInvForm:oWnd TITLE "Pruebas" SIZE 880,500 ;
+          OF oInvWnd ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oInvForm:oImgBanner ID "img_banner" RESOURCE oRes
+      oInvForm:oImgBanner:Adjust(400)
+
+      DEFINE IMAGE oInvForm:oImgLogo   ID "img_logo"   RESOURCE oRes
+      oInvForm:oImgLogo:Adjust(60)
+
+      DEFINE ENTRY oInvForm:oEntCodigoG VAR oInvForm:hData["codigo_global"] ;
+             VALID iif( oInvForm:lClose, .T., __MaeValCodigo( oInvForm:oEntCodigoG, oInvForm ) ) ;
+             ID "ent_codigo_global" RESOURCE oRes
+
+      DEFINE ENTRY oInvForm:oEntCodigo VAR oInvForm:hData["codigo_local"] ;
+             VALID iif( oInvForm:lClose, .T., __MaeValCodigo( oInvForm:oEntCodigo, oInvForm ) ) ;
+             ID "ent_codigo" RESOURCE oRes
+
+      DEFINE ENTRY oInvForm:oEntCodBar VAR oInvForm:hData["codigo_barras"] ;
+             ID "ent_codigo_barra" RESOURCE oRes
+
+//      DEFINE ENTRY oInvForm:oEntNombreC VAR oInvForm:cNombreC ID "ent_nombre_corto" RESOURCE oRes
+/*
+      DEFINE ENTRY oInvForm:oEntTasa VAR oInvForm:hData["tipo_tasa"] ;
+             VALID iif( oInvForm:lClose, .T., __ValidaTasa( oInvForm:oEntTasa ) ) ;
+             ID "ent_tasa" RESOURCE oRes
+*/
+      DEFINE BOX oInvForm:oBoxTasas ID "hbox_tasas" RESOURCE oRes
+      DEFINE COMBOBOX oInvForm:oCBTipoTasa VAR oInvForm:hData["tipo_tasa"] ITEMS aAlicuotas ;
+             OF oInvForm:oBoxTasas
+
+      DEFINE ENTRY oInvForm:oEntTipo    VAR oInvForm:hData["tipo_inventario"]    ;
+             VALID iif( oInvForm:lClose, .T., __ValidaTipo(oInvForm:oEntTipo, oInvForm) ) ;
+             ID "ent_tipo"    RESOURCE oRes
+
+      DEFINE ENTRY oInvForm:oEntNombre  VAR oInvForm:hData["nombre"]    ;
+             ID "ent_nombre"  RESOURCE oRes
+
+      DEFINE ENTRY oInvForm:oEntDescri  VAR oInvForm:hData["descripcion"]    ;
+             ID "ent_descripcion"  RESOURCE oRes
+
+//      DEFINE ENTRY oInvForm:oEntDescri  VAR oInvForm:hData["descripcion"]   ;
+//             ID "ent_descrip"  RESOURCE oRes
+
+      DEFINE CHECKBOX oInvForm:oCheck_iva VAR oInvForm:hData["incluye_iva"] ; //oInvForm:lIVA ;
+             ID "check_iva" RESOURCE oRes
+
+//      DEFINE CHECKBOX oInvForm:oCheck_imppvp VAR oInvForm:lImpPvp ;
+//             ID "check_imppvp" RESOURCE oRes
+      DEFINE MONEY ENTRY oInvForm:oEntImpPvp VAR oInvForm:hData["imp_pvp"] ;
+             ID "ent_imppvp"  RESOURCE oRes
+
+      DEFINE TEXTVIEW oInvForm:oVTDetal VAR oInvForm:hData["descripcion_detallada"] ;
+             ID "tv_detal"  RESOURCE oRes
+
+      DEFINE MONEY ENTRY oInvForm:oEntPrecio VAR oInvForm:hData["precio_unitario"] ;
+             ID "ent_precio"  RESOURCE oRes
+
+      DEFINE INTEGER ENTRY oInvForm:oEntStockMin VAR oInvForm:hData["stock_minimo"] ;
+             ID "ent_stock_minimo"  RESOURCE oRes
+
+      DEFINE INTEGER ENTRY oInvForm:oEntStock VAR oInvForm:hData["stock_total"] ;
+             ID "ent_stock"  RESOURCE oRes
+
+/*
+      DEFINE ENTRY oInvForm:oEntMail   VAR oInvForm:cMail   ;
+             VALID iif( oInvForm:lClose, .T., __ValidaEmail( oInvForm:oEntMail ) ) ;
+             ID "ent_mail"   RESOURCE oRes
+
+      DEFINE ENTRY oInvForm:oEntTlf    VAR oInvForm:cTlf    ;
+             VALID iif( oInvForm:lClose, .T., __ValidaTlf( oInvForm:oEntTlf ) ) ;
+             ID "ent_tlf"    RESOURCE oRes
+
+      DEFINE TEXTVIEW oInvForm:oVTDir  VAR oInvForm:cDir    ID "tv_dir"     RESOURCE oRes
+*/
+      DEFINE BUTTON oInvForm:oBtnSave   ACTION __MaeInvSave( oInvForm ) ID "btn_save" RESOURCE oRes
+
+      DEFINE BUTTON oInvForm:oBtnCancel ACTION ( oInvForm:lClose := .T., oInvForm:oWnd:End() ) ;
+             ID "btn_cancel" RESOURCE oRes
+
+   ACTIVATE WINDOW oInvForm:oWnd MODAL VALID __MaeInvExit( oInvForm )
+
+return
+
+
+
+Procedure __MaeInvSave( oForm )
+   local hData, uWidget, uResp, aIter, lNew
+   local cCol
+
+/*
+   if !__ValidaTipo( ::oEntTipo, oForm )
+      MsgAlert("El RIF ingresado es inválido. Debe tener el formato X-12345678-D (ej. J-12345678-9).", "Error")
+      ::oEntRif:SetFocus()
+      return
+   endif
+*/
+
+   lNew := ::rProducto:isNew()
+
+   if lNew
+      //::hData["tipo"         ] := "P" // (P)roducto
+      ::hData["unidad_medida"] := "UNIDAD"
+   endif
+
+   /* Algunas validaciones previas */
+   hData := ::hData
+
+//   if VALTYPE( ::hData["incluye_iva"] )="C"
+//      hData["incluye_iva"] :=  iif( ALLTRIM(Upper(::hData["incluye_iva"]))="S",.T.,.F. )
+//   endif
+
+   FOR EACH cCol IN {"precio_unitario","stock_total","stock_minimo","imp_pvp","codigo_barras"}
+      if VALTYPE( hData[ cCol ] )="C"
+         hData[ cCol ] := VAL( ::hData[cCol] )
+      endif
+   NEXT
+
+View( hData )
+
+   // Guardar los datos del producto
+   //hData := ::rProducto:Data()
+   ::rProducto:SetData( hData )
+
+   uResp := ::rProducto:Save()
+
+   if !(ValType( uResp ) = "L" .and. uResp = .T.)
+      MsgAlert("No se pudo guardar el producto.", "Error")
+      return
+   endif
+
+   hData := ::rProducto:Data()
+return
+//View( hb_valtoexp(hData) )
+
+   // Verificar si es un cliente nuevo (no hay selección en el modelo)
+   if lNew 
+      // Cliente nuevo: añadir una nueva fila al modelo
+      aIter := ARRAY(4)
+      APPEND LIST_STORE ::oModel:oLbx ITER aIter ;
+             VALUES hData["id"], ;
+                    hData["codigo"], ;
+                    hData["nombre"], ;
+                    hData["rif"], ;
+                    hData["direccion"], ;
+                    hData["telefono"], ;
+                    hData["email"], ;
+                    hData["nombre_corto"], ;
+                    hData["cedula"]
+      // Establecer el cursor en la nueva fila
+      gtk_tree_view_set_cursor( ::oModel:oTreeView:pWidget, ::oModel:oTreeView:GetPath( aIter ), NIL, .F. )
+   else
+      // Cliente existente: actualizar la fila seleccionada
+      ::oModel:SetValue( 2, hData["codigo"] )
+      ::oModel:SetValue( 3, hData["nombre"] )
+      ::oModel:SetValue( 4, hData["rif"] )
+      ::oModel:SetValue( 5, hData["direccion"] )
+      ::oModel:SetValue( 6, hData["telefono"] )
+      ::oModel:SetValue( 7, hData["email"] )
+      ::oModel:SetValue( 8, hData["nombre_corto"] ) // Añadir nombre_corto
+      ::oModel:SetValue( 9, hData["cedula"] )       // Añadir cedula
+   endif
+
+   // Actualizar los campos del formulario
+/*
+   ::oEntCodigo:SetValue( hData["codigo"] )
+   ::oEntNombre:SetValue( hData["nombre"] )
+   ::oEntNombreC:SetValue( hData["nombre_corto"] )
+   ::oEntCedula:SetValue( hb_ntos(hData["cedula"]) )
+   ::oEntRif:SetValue( hData["rif"] )
+   ::oEntMail:SetValue( hData["email"] )
+   ::oEntTlf:SetValue( hData["telefono"] )
+   ::oVTDir:SetValue( hData["direccion"] )
+*/
+   ::lForce := .T.
+   ::oWnd:End()
+
+return
+
+
+
+Function __MaeValCodigo( oEntCodigo, oForm )
+   local cCodigo, rInventario
+
+   cCodigo := oEntCodigo:GetValue()
+
+   // No Permitir código vacío 
+   if Empty( cCodigo )
+      MsgAlert( "Debe indicar un código para este cliente.", "Atención" )
+      return .F.
+   endif
+
+   // Verificar longitud (3 a 15 dígitos)
+   if LEN( cCodigo ) < 3 .OR. LEN( cCodigo ) > 15
+      MsgAlert("El código debe tener entre 3 y 15 dígitos.", "Error")
+      oEntCodigo:SetFocus()
+      return .F.
+   endif
+
+/*
+   rInventario := ::rInventario:Clientes( {"codigo" => cCodigo } )
+
+   if rInventario:RecCount()>0 .and. ( ::lNew .or. cCodigo!=::cPreCodigo )
+      MsgAlert( "El código ingresado ya está registrado", "Atención" )
+      Return .F.
+   endif
+*/
+   return .T.
+
+
+
+
+Function __ValidaTipo( oEntTipo, oForm )
+   local cCleanTipo, cTipo
+
+   cTipo := oEntTipo:GetValue()
+   // Normalizar: eliminar guiones y convertir a mayúsculas
+   cCleanTipo := UPPER( STRTRAN( cTipo, "-", "" ) )
+
+   return .T.
+
+
+
+Function __ValidaEmail( oEntMail )
+   local cMailLower, nAtPos, nDotPos
+   local cValidChars := "abcdefghijklmnopqrstuvwxyz0123456789.-_@"
+   local i, cMail
+
+   cMail := oEntMail:GetValue()
+
+   // Permitir email vacío (opcional)
+   if Empty( cMail )
+      return .T.
+   endif
+
+   // Convertir a minúsculas para simplificar validación
+   cMailLower := LOWER( cMail )
+
+   // Verificar longitud (mínimo 5, máximo 100 caracteres)
+   if LEN( cMailLower ) < 5 .OR. LEN( cMailLower ) > 100
+      MsgAlert("El correo electrónico debe tener entre 5 y 100 caracteres.", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar presencia de exactamente un @
+   nAtPos := AT( "@", cMailLower )
+   if nAtPos == 0 .OR. AT( "@", SUBSTR( cMailLower, nAtPos + 1 ) ) > 0
+      MsgAlert("El correo electrónico debe contener exactamente un símbolo @.", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar presencia de al menos un punto después del @
+   nDotPos := AT( ".", SUBSTR( cMailLower, nAtPos + 1 ) )
+   if nDotPos == 0
+      MsgAlert("El correo electrónico debe contener un dominio con extensión (ej. .com).", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar que no haya puntos consecutivos ni al inicio/final de la parte local
+   if AT( "..", cMailLower ) > 0 .OR. LEFT( cMailLower, 1 ) == "." .OR. SUBSTR( cMailLower, nAtPos - 1, 1 ) == "."
+      MsgAlert("El correo electrónico no puede contener puntos consecutivos ni empezar/terminar con un punto antes del @.", "Error")
+      oEntMail:SetFocus()
+      return .F.
+   endif
+
+   // Verificar caracteres básicos permitidos (letras, números, puntos, guiones, guiones bajos)
+   for i := 1 TO LEN( cMailLower )
+      if ! ( SUBSTR( cMailLower, i, 1 ) $ cValidChars )
+         MsgAlert("El correo electrónico contiene caracteres no permitidos.", "Error")
+         oEntMail:SetFocus()
+         return .F.
+      endif
+   next
+
+   return .T.
+
+
+
+Function __ValidaTlf( oEntTlf )
+   local cPhone
+
+   cPhone := oEntTlf:GetValue()
+
+   // Permitir teléfono vacío (opcional)
+   if Empty( cPhone )
+      return .T.
+   endif
+
+   // Verificar que solo contenga dígitos
+   if ! IsDigit( cPhone )
+      MsgAlert("El número de teléfono debe contener solo dígitos.", "Error")
+      oEntTlf:SetFocus()
+      return .F.
+   endif
+
+   // Verificar longitud (7 a 15 dígitos)
+   if LEN( cPhone ) < 7 .OR. LEN( cPhone ) > 15
+      MsgAlert("El número de teléfono debe tener entre 7 y 15 dígitos.", "Error")
+      oEntTlf:SetFocus()
+      return .F.
+   endif
+
+   return .T.
+
+
+/*
+Function __ValidaTasa( oEntTasa )
+   local cTasa
+
+   cTasa := oEntTasa:GetValue()
+
+   // Permitir cédula vacía (opcional)
+   if Empty( cTasa )
+      return .T.
+   endif
+
+   // Verificar que solo contenga dígitos
+
+   if ! IsDigit( cTasa )
+      MsgAlert("La Tasa debe contener solo dígitos.", "Error")
+      oEntTasa:SetFocus()
+      return .F.
+   endif
+
+   return .T.
+*/
+
+
+Function __MaeInvExit( oForm )
+
+  ::lClose := .T. //Activar bandera de cierre antes de validar salida
+//View( ::lForce )
+  if ::lForce; return .T. ; endif
+
+  if MsgNoYes("¿Desea salir y descartar los cambios?", "Atención.")
+     return .T.
+  endif
+
+return .F.
+
+//eof
