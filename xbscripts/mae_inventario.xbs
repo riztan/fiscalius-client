@@ -111,6 +111,7 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
 
 return
 
+
 //procedure inv_edit()
 //return
 #include "xbscripts/mae_inventario_edit.xbs"

@@ -15,12 +15,14 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
 
    SET PUBLIC oInvForm
 
-   oInvForm:lForce   := .F.
-   oInvForm:lClose   := .F.     //Bandera para indicar cierre
-   oInvForm:oModel   := oModel
-   oInvForm:rSession := ::rSession
-   oInvForm:rInventario  := rInventario
-   oInvForm:lNew     := lNew
+   oInvForm:oInvWnd    := oInvWnd
+   oInvForm:oModel     := oModel
+   oInvForm:lForce     := .F.
+   oInvForm:lClose     := .F.     //Bandera para indicar cierre
+   oInvForm:oModel     := oModel
+   oInvForm:rSession   := ::rSession
+   oInvForm:rInventario:= rInventario
+   oInvForm:lNew       := lNew
 
    if lNew
 
@@ -64,7 +66,7 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
           ID "window1" RESOURCE oRes
 
       DEFINE IMAGE oInvForm:oImgBanner ID "img_banner" RESOURCE oRes
-      oInvForm:oImgBanner:Adjust(400)
+      oInvForm:oImgBanner:Adjust(900,100)
 
       DEFINE IMAGE oInvForm:oImgLogo   ID "img_logo"   RESOURCE oRes
       oInvForm:oImgLogo:Adjust(60)
@@ -190,36 +192,59 @@ View( hData )
       return
    endif
 
+   //- Atualizar el modelo de datos de la ventana con la lista de productos.
+   View( ::oModel )
+
    hData := ::rProducto:Data()
-return
+///return
 //View( hb_valtoexp(hData) )
 
-   // Verificar si es un cliente nuevo (no hay selección en el modelo)
+   // Verificar si es un producto nuevo (no hay selección en el modelo)
    if lNew 
       // Cliente nuevo: añadir una nueva fila al modelo
       aIter := ARRAY(4)
       APPEND LIST_STORE ::oModel:oLbx ITER aIter ;
-             VALUES hData["id"], ;
-                    hData["codigo"], ;
-                    hData["nombre"], ;
-                    hData["rif"], ;
-                    hData["direccion"], ;
-                    hData["telefono"], ;
-                    hData["email"], ;
-                    hData["nombre_corto"], ;
-                    hData["cedula"]
+             VALUES hData["inventario_id"            ], ; //1
+                    hData["empresa_id"               ], ; //2
+                    hData["global_inventario_id"     ], ; //3
+                    hData["codigo_local"             ], ; //4
+                    hData["descripcion_local"        ], ; //5
+                    hData["descripcion_global"       ], ; //6
+                    hData["tipo_inventario"          ], ; //7
+                    hData["tipo_tasa"                ], ; //8
+                    hData["iva_porcentaje"           ], ; //9
+                    hData["precio_unitario"          ], ; //10
+                    hData["stock_total"              ], ; //1
+                    hData["stock_minimo"             ], ; //2
+                    hData["costo_unitario"           ], ; //3
+                    hData["activo"                   ], ; //4
+                    hData["fecha_creacion_inventario"], ; //5
+                    hData["detalle_id"               ], ; //6
+                    hData["almacen_id"               ], ; //7
+                    hData["ubicacion"                ], ; //8
+                    hData["stock_parcial"            ], ; //9
+                    hData["lote"                     ], ; //20
+                    hData["fecha_vencimiento"        ], ; //1
+                    hData["equivalencia_id"          ], ; //2
+                    hData["detalles_json"            ], ; //3
+                    hData["precio_full"              ], ; //4
+                    hData["fecha_creacion_inventario"], ; //5
+                    hData["incluye_iva"              ], ; //6
+                    hData["imp_pvp"                  ]    //7
+
       // Establecer el cursor en la nueva fila
       gtk_tree_view_set_cursor( ::oModel:oTreeView:pWidget, ::oModel:oTreeView:GetPath( aIter ), NIL, .F. )
    else
       // Cliente existente: actualizar la fila seleccionada
-      ::oModel:SetValue( 2, hData["codigo"] )
-      ::oModel:SetValue( 3, hData["nombre"] )
-      ::oModel:SetValue( 4, hData["rif"] )
-      ::oModel:SetValue( 5, hData["direccion"] )
-      ::oModel:SetValue( 6, hData["telefono"] )
-      ::oModel:SetValue( 7, hData["email"] )
-      ::oModel:SetValue( 8, hData["nombre_corto"] ) // Añadir nombre_corto
-      ::oModel:SetValue( 9, hData["cedula"] )       // Añadir cedula
+      ::oModel:SetValue(  4, hData["codigo_local"     ] )
+      ::oModel:SetValue(  5, hData["descripcion_local"] )
+      ::oModel:SetValue(  8, hData["tipo_tasa"        ] )
+      //::oModel:SetValue(  9, hData["iva_porcentaje"   ] )
+      ::oModel:SetValue( 10, hData["precio_unitario"  ] )
+      //::oModel:SetValue( 14, hData["activo"           ] )
+      //::oModel:SetValue( 25, hData["fecha_creacion_inventario"] )
+      ::oModel:SetValue( 26, hData["incluye_iva"      ] )
+      //::oModel:SetValue( 27, hData["imp_pvp"          ] )
    endif
 
    // Actualizar los campos del formulario
