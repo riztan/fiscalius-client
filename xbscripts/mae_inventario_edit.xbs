@@ -181,8 +181,6 @@ Procedure __MaeInvSave( oForm )
       endif
    NEXT
 
-View( hData )
-
    // Guardar los datos del producto
    //hData := ::rProducto:Data()
    ::rProducto:SetData( hData )
@@ -195,12 +193,8 @@ View( hData )
    endif
 
    //- Atualizar el modelo de datos de la ventana con la lista de productos.
-   View( ::oModel )
 
    hData := ::rProducto:Data()
-///return
-//View( hb_valtoexp(hData) )
-
    // Verificar si es un producto nuevo (no hay selección en el modelo)
    if lNew 
       // Cliente nuevo: añadir una nueva fila al modelo
@@ -238,14 +232,15 @@ View( hData )
       gtk_tree_view_set_cursor( ::oModel:oTreeView:pWidget, ::oModel:oTreeView:GetPath( aIter ), NIL, .F. )
    else
       // Cliente existente: actualizar la fila seleccionada
+//TODO: Actualizar correctamente estos valores, algunos explotan, hay que validar tipo de dato, etc
       ::oModel:SetValue(  4, hData["codigo_local"     ] )
       ::oModel:SetValue(  5, hData["descripcion_local"] )
       ::oModel:SetValue(  8, hData["tipo_tasa"        ] )
       //::oModel:SetValue(  9, hData["iva_porcentaje"   ] )
-      ::oModel:SetValue( 10, hData["precio_unitario"  ] )
+//      ::oModel:SetValue( 10, hData["precio_unitario"  ] )
       //::oModel:SetValue( 14, hData["activo"           ] )
       //::oModel:SetValue( 25, hData["fecha_creacion_inventario"] )
-      ::oModel:SetValue( 26, hData["incluye_iva"      ] )
+//      ::oModel:SetValue( 26, hData["incluye_iva"      ] )
       //::oModel:SetValue( 27, hData["imp_pvp"          ] )
    endif
 
