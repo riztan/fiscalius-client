@@ -71,12 +71,14 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
       DEFINE IMAGE oInvForm:oImgLogo   ID "img_logo"   RESOURCE oRes
       oInvForm:oImgLogo:Adjust(60)
 
+      oInvForm:cCodGlobalIni := oInvForm:hData["codigo_global"]
       DEFINE ENTRY oInvForm:oEntCodigoG VAR oInvForm:hData["codigo_global"] ;
-             VALID iif( oInvForm:lClose, .T., __MaeValCodigo( oInvForm:oEntCodigoG, oInvForm ) ) ;
+             VALID iif( oInvForm:lClose, .T., __MaeValCodigo( oInvForm:oEntCodigoG, oInvForm, "global" ) ) ;
              ID "ent_codigo_global" RESOURCE oRes
 
+      oInvForm:cCodLocalIni := oInvForm:hData["codigo_local"]
       DEFINE ENTRY oInvForm:oEntCodigo VAR oInvForm:hData["codigo_local"] ;
-             VALID iif( oInvForm:lClose, .T., __MaeValCodigo( oInvForm:oEntCodigo, oInvForm ) ) ;
+             VALID iif( oInvForm:lClose, .T., __MaeValCodigo( oInvForm:oEntCodigo, oInvForm, "local" ) ) ;
              ID "ent_codigo" RESOURCE oRes
 
       DEFINE ENTRY oInvForm:oEntCodBar VAR oInvForm:hData["codigo_barras"] ;
@@ -265,8 +267,8 @@ return
 
 
 
-Function __MaeValCodigo( oEntCodigo, oForm )
-   local cCodigo, rInventario
+Function __MaeValCodigo( oEntCodigo, oForm, cType )
+   local cCodigo, lReturn, lCheck
 
    cCodigo := oEntCodigo:GetValue()
 
@@ -283,15 +285,31 @@ Function __MaeValCodigo( oEntCodigo, oForm )
       return .F.
    endif
 
-/*
-   rInventario := ::rInventario:Clientes( {"codigo" => cCodigo } )
-
-   if rInventario:RecCount()>0 .and. ( ::lNew .or. cCodigo!=::cPreCodigo )
-      MsgAlert( "El código ingresado ya está registrado", "Atención" )
-      Return .F.
+   if cType == "global"
+//::cCodGlobalIni := oInvForm:hData["codigo_global"]
+//View(::hData["codigo_global"])
+      lCheck  := ALLTRIM(::cCodGlobalIni) != ALLTRIM(cCodigo)
+      lReturn := ::rInventario:GlobalExist( cCodigo )["return"]
+   else
+//View( ::cCodLocalIni )
+      lCheck  := ALLTRIM(::cCodLocalIni) != ALLTRIM(cCodigo)
+      lReturn := ::rInventario:GlobalExist( cCodigo )["return"]
    endif
-*/
-   return .T.
+
+//View( lCheck )
+   if ::rProducto:isNew() .OR. ( !::rProducto:isNew() .AND. lCheck )
+      //::cCodLocalIni := oInvForm:hData["codigo_local"]
+      //lReturn := iif( cType="global", ::rInventario:GlobalExist( cCodigo )["return"], ;
+      //                                ::rInventario:LocalExist( cCodigo )["return"] )
+      if lReturn 
+         MsgAlert( "El código ingresado ya está registrado", "Atención" )
+         oEntCodigo:SetText('')
+         oEntCodigo:SetFocus()
+         Return .F.
+      endif
+   endif
+
+Return .T.
 
 
 
