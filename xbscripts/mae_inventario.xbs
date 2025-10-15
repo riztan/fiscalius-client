@@ -25,7 +25,8 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
    DEFINE WINDOW oInvWnd ;
           TITLE "Fiscalius. Productos " ;
           SIZE 700,400 ;
-          ID "window1" RESOURCE oRes
+          ID "window1" RESOURCE oRes ;
+          OF oWndParent
 
    DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
           ID "lab_title" RESOURCE oRes
@@ -53,19 +54,24 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
 
    //oLBoxInv:lBar  := .f.
 
-
 //View( VALTYPE(oEntParent) )
    if hb_isObject( oEntParent )
-      oLBoxInv:bEdit := {|oModel| (cCodProducto := oModel:GetCol(1),; 
+      oLBoxInv:bEdit := {|oModProductos| (cCodProducto := oModProductos:GetCol(1),; 
                                    iif( !hb_isObject(oWndParent),                ;
                                          .t.,                                     ;
                                          oEntParent:setText( ALLTRIM(cCodProducto)+" - "+;
-                                                             oModel:GetCol(3) )), ;
+                                                             oModProductos:GetCol(3) )), ;
                                    oInvWnd:End() ) }
    else
-      oLBoxInv:bNew  := {|oModProductos| inv_edit( oForm, oInvWnd, oModProductos, rInventario, .T. /*lNew*/ ) }
-      oLBoxInv:bEdit := {|oModProductos| inv_edit( oForm, oInvWnd, oModProductos, rInventario, .F. /*lNew*/ ) }
+//View( oModProductos:ClassName() )
+      ::oModProductos := oModProductos //parche
+      oLBoxInv:bNew  := {|oModProductos| inv_edit( oForm, oInvWnd, ::oModProductos, rInventario, .T. /*lNew*/ ) }
+      oLBoxInv:bEdit := {|oModProductos| inv_edit( oForm, oInvWnd, ::oModProductos, rInventario, .F. /*lNew*/ ) }
+      oLBoxInv:bDel  := {|| View("Borrar") }
+      oLBoxInv:bPrint:= {|| View("Imprimir") }
    endif
+
+   oLBoxInv:bQuit := { || oInvWnd:End() }
 
    oLBoxInv:Active() 
 
@@ -107,7 +113,7 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
    //oLBoxInv:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 */
 
-   ACTIVATE WINDOW oInvWnd MODAL //OF oWndParent
+   ACTIVATE WINDOW oInvWnd MODAL
 
 return
 

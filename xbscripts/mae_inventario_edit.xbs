@@ -2,13 +2,10 @@
  *
  */
 
-#include "tpy_xbs.ch"
+//#include "tpy_xbs.ch"
 
 procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
    local oWnd, oRes, oImgBanner
-//   local oImgLogo, oEntCodigo, cCodigo, oEntNombre, cNombre
-//   local oEntRif, cRif, oEntMail, cMail, oEntTlf, cTlf
-//   local oVtDir, cDir, oBtnSave, oBtnCancel
    local oInvForm, hData, rProducto, oAlicuotas, aAlicuotas := {}
 
    default lNew := .T.
@@ -288,7 +285,7 @@ Function __MaeValCodigo( oEntCodigo, oForm, cType )
    else
 //View( ::cCodLocalIni )
       lCheck  := ALLTRIM(::cCodLocalIni) != ALLTRIM(cCodigo)
-      lReturn := ::rInventario:GlobalExist( cCodigo )["return"]
+      lReturn := ::rInventario:LocalExist( cCodigo )["return"]
    endif
 
 //View( lCheck )
