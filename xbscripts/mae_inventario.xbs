@@ -67,7 +67,8 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
       ::oModProductos := oModProductos //parche
       oLBoxInv:bNew  := {|oModProductos| inv_edit( oForm, oInvWnd, ::oModProductos, rInventario, .T. /*lNew*/ ) }
       oLBoxInv:bEdit := {|oModProductos| inv_edit( oForm, oInvWnd, ::oModProductos, rInventario, .F. /*lNew*/ ) }
-      oLBoxInv:bDel  := {|| View("Borrar") }
+//      oLBoxInv:bDel  := {|| rInventario:RemoveProduct( ::oModProductos:GetCol(4) ) }
+      oLBoxInv:bDel  := {|| __InvRemoveProduct( ::oModProductos, rInventario ) }
       oLBoxInv:bPrint:= {|| View("Imprimir") }
    endif
 
@@ -85,8 +86,8 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
    //oLBoxInv:SetColVisible( 10, .F. )    //- Ocultamos Precio
    oLBoxInv:SetColVisible( 11, .F. )    //- Ocultamos 
    oLBoxInv:SetColVisible( 12, .F. )    //- Ocultamos Id de Impuesto
-   oLBoxInv:SetColVisible( 13, .F. )    //- Ocultamo costo
-   //oLBoxInv:SetColVisible( 14, .F. )    //- Ocultamo Activo
+   oLBoxInv:SetColVisible( 13, .F. )    //- Ocultamos costo
+   //oLBoxInv:SetColVisible( 14, .F. )    //- Ocultamos Activo
    //oLBoxInv:SetColVisible( 15, .F. )    //- Ocultamos Fecha Creacion
    oLBoxInv:SetColVisible( 16, .F. )    //- Ocultamos id detalle
    oLBoxInv:SetColVisible( 17, .F. )    //- Ocultamos id almacen
@@ -118,8 +119,23 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
 return
 
 
-//procedure inv_edit()
-//return
+Procedure __InvRemoveProduct( oModel, rInventario )
+   local aIter := oModel:aIter
+   local lPrevio
+
+   uResp := rInventario:RemoveProduct( oModel:getCol(4) )
+
+   if uResp
+
+      lPrevio := oModel:oTreeView:GetAutoValue( 14 )
+      if oModel:oTreeView:IsGetSelected( aIter )
+         oModel:oLbx:Set( aIter, 14, !lPrevio )
+      endif
+   endif
+
+return
+
+
 #include "xbscripts/mae_inventario_edit.xbs"
 
 //eof
