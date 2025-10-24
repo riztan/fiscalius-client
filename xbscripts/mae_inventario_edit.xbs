@@ -30,7 +30,7 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
       oInvForm:cCodigo  := oModel:GetCol( 4 )
    endif
 
-//View( oInvForm:cCodigo )
+View( oInvForm:cCodigo )
    oInvForm:rProducto := rInventario:Producto( {"codigo_local" => oInvForm:cCodigo} )
 //View( rInventario:Producto( oInvForm:cCodigo ) )
 //View( rProducto:ClassName() )
@@ -192,38 +192,40 @@ Procedure __MaeInvSave( oForm )
    //- Atualizar el modelo de datos de la ventana con la lista de productos.
 
    hData := ::rProducto:Data()
+//View( hData )
    // Verificar si es un producto nuevo (no hay selección en el modelo)
    if lNew 
       // Cliente nuevo: añadir una nueva fila al modelo
       aIter := ARRAY(4)
+//View( valtype( hData["fecha_creacion_inventario"] ) )
       APPEND LIST_STORE ::oModel:oLbx ITER aIter ;
-             VALUES hData["inventario_id"            ], ; //1
-                    hData["empresa_id"               ], ; //2
-                    hData["global_inventario_id"     ], ; //3
+             VALUES hb_ntos(hData["inventario_id"    ]), ; //1
+                    hb_ntos(hData["empresa_id"       ]), ; //2
+                    hData["codigo_global"            ], ; //3
                     hData["codigo_local"             ], ; //4
                     hData["descripcion_local"        ], ; //5
                     hData["descripcion_global"       ], ; //6
                     hData["tipo_inventario"          ], ; //7
                     hData["tipo_tasa"                ], ; //8
-                    hData["iva_porcentaje"           ], ; //9
-                    hData["precio_unitario"          ], ; //10
-                    hData["stock_total"              ], ; //1
-                    hData["stock_minimo"             ], ; //2
-                    hData["costo_unitario"           ], ; //3
-                    hData["activo"                   ], ; //4
-                    hData["fecha_creacion_inventario"], ; //5
-                    hData["detalle_id"               ], ; //6
-                    hData["almacen_id"               ], ; //7
-                    hData["ubicacion"                ], ; //8
-                    hData["stock_parcial"            ], ; //9
-                    hData["lote"                     ], ; //20
-                    hData["fecha_vencimiento"        ], ; //1
-                    hData["equivalencia_id"          ], ; //2
-                    hData["detalles_json"            ], ; //3
-                    hData["precio_full"              ], ; //4
-                    hData["fecha_creacion_inventario"], ; //5
-                    hData["incluye_iva"              ], ; //6
-                    hData["imp_pvp"                  ]    //7
+                    hb_ntos(hData["iva_porcentaje"   ]), ; //9
+                    hb_ntos(hData["precio_unitario"  ]), ; //10
+                    hb_ntos(hData["stock_total"      ]), ; //1
+                    hb_ntos(hData["stock_minimo"     ]), ; //2
+                    hb_ntos(hData["costo_unitario"   ]), ; //3
+                    "",; //hData["activo"                   ], ; //4
+                    DTOC( DATE() ), ;  //hData["fecha_creacion_inventario"], ; //5
+                    "",; //hData["detalle_id"               ], ; //6
+                    "",; //hData["almacen_id"               ], ; //7
+                    "",; //hData["ubicacion"                ], ; //8
+                    "0" ,; //hData["stock_parcial"            ], ; //9
+                    "",; //hData["lote"                     ], ; //20
+                    "",; //hData["fecha_vencimiento"        ], ; //1
+                    "",; //hData["equivalencia_id"          ], ; //2
+                    "",; //hData["detalles_json"            ], ; //3
+                    "0",; //hData["precio_full"              ], ; //4
+                    "",; //hData["incluye_iva"              ], ; //6
+                    hb_ntos(hData["imp_pvp"                  ])   //7
+                    
 
       // Establecer el cursor en la nueva fila
       gtk_tree_view_set_cursor( ::oModel:oTreeView:pWidget, ::oModel:oTreeView:GetPath( aIter ), NIL, .F. )
