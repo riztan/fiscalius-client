@@ -313,6 +313,47 @@ Function __ValidaCodigo( oEntCodigo, oForm )
 
    rCliente := ::rVentas:Clientes( {"codigo" => cCodigo } )
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
    if rCliente:RecCount()>0 .and. ( ::lNew .or. cCodigo!=::cPreCodigo )
       MsgAlert( "El código ingresado ya está registrado", "Atención" )
       Return .F.
