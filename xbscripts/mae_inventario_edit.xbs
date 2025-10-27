@@ -36,6 +36,12 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
 //View( rProducto:ClassName() )
 
    oInvForm:hData := oInvForm:rProducto:Data()
+   //Actualizamos formatos numéricos.
+
+   oInvForm:hData["imp_pvp"        ] := TRANSFORM( oInvForm:hData["imp_pvp"        ], P_92 ) 
+   oInvForm:hData["precio_unitario"] := TRANSFORM( oInvForm:hData["precio_unitario"], P_92 )
+   oInvForm:hData["stock_minimo"   ] := TRANSFORM( oInvForm:hData["stock_minimo"   ], P_92 )
+   oInvForm:hData["stock_total"    ] := TRANSFORM( oInvForm:hData["stock_total"    ], P_92 )
 
 //   oInvForm:cDescripcion := oInvForm:hData["descripcion"]
 //   oInvForm:cCodigo_barras := oInvForm:hData["codigo_barras"]
@@ -112,19 +118,23 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
 
 //      DEFINE CHECKBOX oInvForm:oCheck_imppvp VAR oInvForm:lImpPvp ;
 //             ID "check_imppvp" RESOURCE oRes
-      DEFINE MONEY ENTRY oInvForm:oEntImpPvp VAR oInvForm:hData["imp_pvp"] ;
+      DEFINE MONEY ENTRY oInvForm:oEntImpPvp VAR oInvForm:hData["imp_pvp"]  ;
+             VALID __ValidaMonto( oInvForm:oEntImpPvp ) ;
              ID "ent_imppvp"  RESOURCE oRes
 
       DEFINE TEXTVIEW oInvForm:oVTDetal VAR oInvForm:hData["descripcion_detallada"] ;
              ID "tv_detal"  RESOURCE oRes
 
       DEFINE MONEY ENTRY oInvForm:oEntPrecio VAR oInvForm:hData["precio_unitario"] ;
+             VALID __ValidaMonto( oInvForm:oEntPrecio ) ;
              ID "ent_precio"  RESOURCE oRes
 
       DEFINE INTEGER ENTRY oInvForm:oEntStockMin VAR oInvForm:hData["stock_minimo"] ;
+             VALID __ValidaMonto( oInvForm:oEntStockMin ) ;
              ID "ent_stock_minimo"  RESOURCE oRes
 
       DEFINE INTEGER ENTRY oInvForm:oEntStock VAR oInvForm:hData["stock_total"] ;
+             VALID __ValidaMonto( oInvForm:oEntEntStok ) ;
              ID "ent_stock"  RESOURCE oRes
 
 /*
@@ -147,6 +157,16 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
 
 return
 
+
+
+Function __ValidaMonto( oEntry )
+
+   local cMonto := oEntry:GetText()
+
+//View( nValue )
+   oEntry:SetText( TRANSFORM( ToNum(cMonto), P_92) )
+
+return .t.
 
 
 Procedure __MaeInvSave( oForm )
