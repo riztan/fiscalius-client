@@ -84,7 +84,7 @@ procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
       oUsuForm:cNombreC    := ""
       oUsuForm:lActivo     := .T.
       oUsuForm:cPass       := ""
-	  oUsuForm:cPass1       := ""
+      oUsuForm:cPass1      := ""
    else
       oUsuForm:cLogin      := oModel:GetCol( 5 )
       oUsuForm:cPreLogin   := oModel:GetCol( 5 )
@@ -92,7 +92,7 @@ procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
       oUsuForm:lActivo     := oModel:GetCol( 4 )
       oUsuForm:cNombreC    := oModel:GetCol( 3 )
       oUsuForm:cPass       := "" // Password no se carga por seguridad
-	  oUsuForm:cPass1       := ""
+      oUsuForm:cPass1      := ""
    endif
 
  
@@ -145,6 +145,8 @@ procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
 
 return
 
+
+
 procedure __UsuSave( oForm )
    local hData, uResp, aIter, lNew
 
@@ -157,7 +159,7 @@ procedure __UsuSave( oForm )
 
    // Validar contraseña antes de guardar
    
-    if !__ValidaPass( oForm:oEntPass, oForm )
+    if !__ValidaPass( oForm:oEntPass, oForm:oEntPass1,  oForm )
       MsgAlert("La contraseña es inválida. Debe tener entre 6 y 10 caracteres.", "Error")
       oForm:oEntPass:SetFocus()
       return
@@ -185,6 +187,8 @@ procedure __UsuSave( oForm )
    uResp := oForm:rUsuario:Save()
 
    if !( ValType( uResp ) = "H" .and. uResp["return"] = .T. )
+      View( hb_valtoexp(uResp) )
+      return
       MsgAlert("No se pudo guardar el usuario: " + uResp["message"], "Error")
       return
    endif
@@ -216,6 +220,8 @@ procedure __UsuSave( oForm )
 
 return
 
+
+
 function __ValidaLogin( oEntLogin, oForm )
    local cLogin, rUsuario
 
@@ -236,7 +242,7 @@ function __ValidaLogin( oEntLogin, oForm )
 
    // Verificar unicidad del login
     //?view(::cprelogin)
-   rUsuario := oForm:rVentas:Usuarios( {"login" => cLogin} )
+   rUsuario := oForm:rVentas:Usuarios( {"filtro" => cLogin} )
    if rUsuario:RecCount() > 0 .and. ( ::lNew .or. cLogin != ::cPreLogin )
       MsgAlert( "El login ingresado ya está registrado.", "Atención" )
       return .F.
@@ -281,8 +287,9 @@ function __ValidaPass( oEntPass,oEntPass1, oForm )
       return .F.
    endif
 
+return .T.
 
-   return .T.
+
 
 function __UsuExit( oForm )
    if oForm:lForce
