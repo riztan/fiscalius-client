@@ -60,8 +60,6 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
       AADD( aAlicuotas, oAlicuotas:tipo_tasa ) 
       oAlicuotas:Skip()
    EndDo
-//View( aAlicuotas )
-//return
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_inventario.ui"
 
@@ -116,8 +114,6 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
       DEFINE CHECKBOX oInvForm:oCheck_iva VAR oInvForm:hData["incluye_iva"] ; //oInvForm:lIVA ;
              ID "check_iva" RESOURCE oRes
 
-//      DEFINE CHECKBOX oInvForm:oCheck_imppvp VAR oInvForm:lImpPvp ;
-//             ID "check_imppvp" RESOURCE oRes
       DEFINE MONEY ENTRY oInvForm:oEntImpPvp VAR oInvForm:hData["imp_pvp"]  ;
              VALID __ValidaMonto( oInvForm:oEntImpPvp ) ;
              ID "ent_imppvp"  RESOURCE oRes
@@ -137,17 +133,6 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
              VALID __ValidaMonto( oInvForm:oEntEntStok ) ;
              ID "ent_stock"  RESOURCE oRes
 
-/*
-      DEFINE ENTRY oInvForm:oEntMail   VAR oInvForm:cMail   ;
-             VALID iif( oInvForm:lClose, .T., __ValidaEmail( oInvForm:oEntMail ) ) ;
-             ID "ent_mail"   RESOURCE oRes
-
-      DEFINE ENTRY oInvForm:oEntTlf    VAR oInvForm:cTlf    ;
-             VALID iif( oInvForm:lClose, .T., __ValidaTlf( oInvForm:oEntTlf ) ) ;
-             ID "ent_tlf"    RESOURCE oRes
-
-      DEFINE TEXTVIEW oInvForm:oVTDir  VAR oInvForm:cDir    ID "tv_dir"     RESOURCE oRes
-*/
       DEFINE BUTTON oInvForm:oBtnSave   ACTION __MaeInvSave( oInvForm ) ID "btn_save" RESOURCE oRes
 
       DEFINE BUTTON oInvForm:oBtnCancel ACTION ( oInvForm:lClose := .T., oInvForm:oWnd:End() ) ;
@@ -163,10 +148,10 @@ Function __ValidaMonto( oEntry )
 
    local cMonto := oEntry:GetText()
 
-//View( nValue )
    oEntry:SetText( TRANSFORM( ToNum(cMonto), P_92) )
 
 return .t.
+
 
 
 Procedure __MaeInvSave( oForm )
