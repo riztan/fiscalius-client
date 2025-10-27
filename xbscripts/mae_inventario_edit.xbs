@@ -36,6 +36,7 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
 //View( rProducto:ClassName() )
 
    oInvForm:hData := oInvForm:rProducto:Data()
+
 //   oInvForm:cDescripcion := oInvForm:hData["descripcion"]
 //   oInvForm:cCodigo_barras := oInvForm:hData["codigo_barras"]
    oInvForm:lIVA := .t. //iif( oInvForm:hData["incluye_iva"]="S", .T., .F. )
@@ -78,7 +79,9 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
              VALID iif( oInvForm:lClose, .T., __MaeValCodigo( oInvForm:oEntCodigo, oInvForm, "local" ) ) ;
              ID "ent_codigo" RESOURCE oRes
 
+      oInvForm:cCodBarIni := oInvForm:hData["codigo_barras"]
       DEFINE ENTRY oInvForm:oEntCodBar VAR oInvForm:hData["codigo_barras"] ;
+             VALID iif( oInvForm:lClose, .T., __MaeValCodeBar( oInvForm:oEntCodBar, oInvForm ) ) ;
              ID "ent_codigo_barra" RESOURCE oRes
 
 //      DEFINE ENTRY oInvForm:oEntNombreC VAR oInvForm:cNombreC ID "ent_nombre_corto" RESOURCE oRes
@@ -304,6 +307,40 @@ Function __MaeValCodigo( oEntCodigo, oForm, cType )
 
 Return .T.
 
+
+
+Function __MaeValCodeBar( oEntCodigo, oForm )
+   local cCoigo, lCheck
+
+   cCodigo := oEntCodigo:GetValue()
+
+   // No Permitir código vacío 
+//   if Empty( cCodigo )
+//      MsgAlert( "Debe indicar un código para este cliente.", "Atención" )
+//      return .F.
+//   endif
+
+   // Verificar longitud (13 dígitos)
+   if LEN( cCodigo ) < 13 
+      MsgAlert("El código debe tener 13 digitos.", "Error")
+      oEntCodigo:SetFocus()
+      return .F.
+   endif
+
+   lCheck  := ALLTRIM(::cCodBarIni) != ALLTRIM(cCodigo)
+
+   if ::rProducto:isNew() .OR. ( !::rProducto:isNew() .AND. lCheck )
+      //::cCodBarIni := ::hData["codigo_barras"]
+      lReturn := ::rInventario:CodeBarExist( cCodigo )["return"]
+      if lReturn 
+         MsgAlert( "El código ingresado ya está registrado", "Atención" )
+         oEntCodigo:SetText('')
+         oEntCodigo:SetFocus()
+         Return .F.
+      endif
+   endif
+
+Return .T.
 
 
 
