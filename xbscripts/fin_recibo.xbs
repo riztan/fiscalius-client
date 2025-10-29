@@ -1,0 +1,58 @@
+/* vta_factura.xbs
+ *
+ */
+
+#include "tpy_xbs.ch"
+#define SEPARATOR  " "+CHR(199)+CHR(129)+" "
+
+
+procedure fin_recibo( oFormParent, oFormGParent )
+
+   local oForm
+
+   SET PUBLIC oForm
+
+   ::cEmpresa := oFormParent:cEmpresa
+
+   SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"fin_recibo.ui"
+
+   DEFINE WINDOW ::oWndRecibo TITLE "Cobranza. Recibo " ;
+      ID "window1" RESOURCE ::oRes ;
+      OF oFormParent:oFacWnd
+
+   DEFINE IMAGE ::oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png" ;
+          ID "image1" RESOURCE ::oRes
+          ::oImgBanner:Adjust(900)
+
+   DEFINE IMAGE ::oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE ::oRes
+          ::oImgLogo:Adjust(60)
+
+   DEFINE LABEL ::oLabInfo    TEXT "" MARKUP ID "lab_info"    RESOURCE ::oRes
+//   DEFINE LABEL ::oLabUsuario TEXT "" MARKUP ID "lab_usuario" RESOURCE ::oRes
+//   DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
+
+//::oLabInfo:SetText("Probando Sssonido")
+
+   DEFINE STATUSBAR ::oStatusBar ;
+          TEXT "" ;  //oTPuy:cSystem_Name + " | Hora: "+oTPuy:cTime ;
+          ID "statusbar" RESOURCE ::oRes
+
+   ::oStBar := TStatusBar():New( ::oStatusBar )
+   ::oStBar:Add( "empresa",{|| ::cEmpresa + SEPARATOR }  )
+   ::oStBar:Add( "username",{|| "Usuario: "+oTPuy:oUser:cNombre + " " }  )
+   ::oStBar:Refresh()
+
+   ::bTimer := {|| /*::oStBar:Refresh(),*/ ::oLabInfo:SetText("") }
+
+   DEFINE TIMER ::oTimer ;
+          INTERVAL 10000 ;
+          ACTION EVAL( ::bTimer )
+
+   ACTIVATE TIMER ::oTimer
+
+   ACTIVATE WINDOW ::oWndRecibo MODAL
+
+return

@@ -58,6 +58,10 @@ procedure vta_facturas( oFormParent )
           ACTION __VtaSave( oForm, oFormParent ) ;
           ID "btn_guardar" RESOURCE ::oRes
 
+   DEFINE BUTTON ::oBtnCobrar ;
+          ACTION __VtaCobrar( oForm, oFormParent ) ;
+          ID "btn_cobro" RESOURCE ::oRes
+
    DEFINE BUTTON ::oBtnImprime ;
           ACTION __VtaImprime( oForm ) ;
           ID "btn_print" RESOURCE ::oRes
@@ -1199,6 +1203,12 @@ procedure __VtaSaveDetal(oTView, pModel, aIter, oForm)
    AADD( ::aDetal, hDetal )
 
 return
+
+
+
+PROCEDURE __VtaCobrar( oForm, oFormParent)
+   oTPuy:RunXBS( "fin_recibo", oForm, oFormParent )
+RETURN
 
 
 
