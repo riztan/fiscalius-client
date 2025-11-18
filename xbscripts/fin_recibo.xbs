@@ -1,4 +1,4 @@
-/* vta_factura.xbs
+/* fin_reibo.xbs
  *
  */
 
@@ -12,7 +12,26 @@ procedure fin_recibo( oFormParent, oFormGParent )
 
    SET PUBLIC oForm
 
-   ::cEmpresa := oFormParent:cEmpresa
+   ::cEmpresa  := oFormParent:cEmpresa
+//   ::rFinanzas := oFormParent:oGEmpresa:SetModulo("Finanzas")
+
+
+   ::cCodCli := ""
+   ::cEntCli := ""
+   ::lParent := .F.
+
+   //-- crear en caso de no venir de un documento
+   ::rEmpresa  := NIL
+   ::rFinanzas := NIL
+
+   if hb_isObject( oFormParent )
+      ::cCodCli := oFormParent:cCodCli
+      ::cEntCli := oFormParent:cEntCli
+      ::lParent := .T.
+
+      ::rEmpresa  := oFormParent:rEmpresa
+      ::rFinanzas := ::rEmpresa:SetModulo("Finanzas")
+   endif
 
    SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"fin_recibo.ui"
 
@@ -36,6 +55,68 @@ procedure fin_recibo( oFormParent, oFormGParent )
 
 //::oLabInfo:SetText("Probando Sssonido")
 
+   DEFINE ENTRY  ::oEntCli VAR ::cEntCli ;
+       ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oWndRecibo, ::oEntCli, @::cCodCli) ;
+       VALID  .T. ;
+       ID "ent_clientes" RESOURCE ::oRes
+   
+   if ::lParent
+      ::oEntCli:SetEditable(.f.)
+      ::oEntCli:SetCanFocus(.F.)
+   endif
+
+   DEFINE BOX ::oBoxDocsPend ID "box_docs" RESOURCE ::oRes 
+   
+if ::lParent
+   ::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente" => "riztan" } )
+View( ::oDocuments )
+
+      if ::lParent //!hb_isNIL( ::rFactDetal )
+
+         DEFINE MODEL   ::oModDocuments       ;
+                STRUCT  ::oDocuments:Struct()  ;
+                DATA    ::oDocuments:GetData()
+      else
+         DEFINE MODEL   ::oModDetal           ;
+                STRUCT  {{"detalle_id",     "N",10, 0},;
+                         {"documento" ,     "N",10, 0},;
+                         {"codigo_local",   "C",10, 0},;
+                         {"descripcion",    "C",100,0},;
+                         {"cantidad",       "N",10, 0},;
+                         {"precio_unitario","N",13, 2},;
+                         {"descuento",      "N",13, 2},;
+                         {"subtotal",       "N",13, 2},;
+                         {"iva_porcentaje", "N",04, 2},;
+                         {"iva_monto",      "N",13, 2},;
+                         {"total",          "N",13, 2},;
+                         {"nombre_global",  "C",100,0},;
+                         {"tipo_inventario","C",01, 0},;
+                         {"lote",           "C",10, 0},;
+                         {"fecha_vcmto",    "D",10, 0},;
+                         {"id_ubicacion",   "N",10, 0},;
+                         {"almacen_id",     "N",10, 0},;
+                         {"nombre_almacen", "C",100,0},;
+                         {"detalles_json",  "C",255,0},;
+                         {"item",           "C",10, 0},;
+                         {"imp_pvp",        "N",13, 2}}; // Add imp_pvp
+                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0}}
+
+      endif   
+
+
+      DEFINE LISTBOX ::oLBoxDocsPen     ;
+             MODEL   ::oModDocuments    ;
+             OF      ::oBoxDocsPend
+
+      ::oLBoxDocsPen:lBar := .F.
+
+
+      ::oLBoxDocsPen:Active()
+endif
+
+__CxC( oForm )
+
+
    DEFINE STATUSBAR ::oStatusBar ;
           TEXT "" ;  //oTPuy:cSystem_Name + " | Hora: "+oTPuy:cTime ;
           ID "statusbar" RESOURCE ::oRes
@@ -56,3 +137,14 @@ procedure fin_recibo( oFormParent, oFormGParent )
    ACTIVATE WINDOW ::oWndRecibo MODAL
 
 return
+
+
+procedure __CxC( oForm )
+
+  local hFiltro := hb_hash()
+
+  hFiltro["cliente"] := "riztan"
+//View( ::rFinanzas:Help() )
+  ::rFinanzas:CuentasPorCobrar( hFiltro ) 
+
+//eof
