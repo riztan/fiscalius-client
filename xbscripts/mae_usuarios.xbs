@@ -99,6 +99,7 @@ procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
    oUsuForm:rUsuario := rVentas:Usuario( {"login" => oUsuForm:cLogin} )
 
    hData := oUsuForm:rUsuario:Data()
+   oUsuForm:cNombre := hData["nombre"]
    oUsuForm:cNombreC := hData["nombre_corto"]
    oUsuForm:lActivo  := hData["activo"]
    //oUsuForm:cPass  := hData["id"]
@@ -128,12 +129,12 @@ procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
       DEFINE CHECKBOX oUsuForm:oChkActivo VAR oUsuForm:lActivo ID "chk_activo" RESOURCE oRes
 
       DEFINE ENTRY oUsuForm:oEntPass VAR oUsuForm:cPass ;
-             VALID iif( oUsuForm:lClose, .T., __ValidaPass( oUsuForm:oEntPass,oUsuForm:oEntPass1,oUsuForm ) ) ;
+             VALID iif( oUsuForm:lClose, .T., __ValidaPass( oUsuForm:oEntPass,oUsuForm:oEntPass1,oUsuForm,1 ) ) ;
              ID "ent_pass" RESOURCE oRes
       //oUsuForm:oEntPass:SetPassword( .T. )
 	  
 	   DEFINE ENTRY oUsuForm:oEntPass1 VAR oUsuForm:cPass1 ;
-             VALID iif( oUsuForm:lClose, .T., __ValidaPass( oUsuForm:oEntPass,oUsuForm:oEntPass1, oUsuForm ) ) ;
+             VALID iif( oUsuForm:lClose, .T., __ValidaPass( oUsuForm:oEntPass,oUsuForm:oEntPass1, oUsuForm,2 ) ) ;
              ID "ent_pass1" RESOURCE oRes
 
       DEFINE BUTTON oUsuForm:oBtnSave ACTION __UsuSave( oUsuForm ) ID "btn_save" RESOURCE oRes
@@ -250,20 +251,23 @@ function __ValidaLogin( oEntLogin, oForm )
 
    return .T.
 
-function __ValidaPass( oEntPass,oEntPass1, oForm )
+function __ValidaPass( oEntPass,oEntPass1, oForm,lCampo )
    local cPass,cPass1
 
    cPass := oEntPass:GetValue()
    cPass1 := oEntPass1:GetValue()
+   
+    //view(cpass)
+	
 
    // No permitir contraseña vacía para usuarios nuevos
-   if oForm:lNew .and. Empty( cPass )
+   if oForm:lNew .and. Empty( cPass ) .AND. lCampo=1
       MsgAlert( "Debe indicar una contraseña.", "Atención" )
       return .F.
    endif
    
    // No permitir contraseña vacía para usuarios nuevos
-   if oForm:lNew .and. Empty( cPass1 )
+   if oForm:lNew .and. Empty( cPass1 ) .AND. lCampo=2
       MsgAlert( "Debe indicar una contraseña.", "Atención" )
       return .F.
    endif
