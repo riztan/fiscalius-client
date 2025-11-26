@@ -6,15 +6,19 @@
 #define SEPARATOR  " "+CHR(199)+CHR(129)+" "
 
 
-procedure fin_recibo( oFormParent, oFormGParent )
+procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
    local oForm, oModTmp
+   local aMedio, aData := {}
 
    SET PUBLIC oForm
 
    ::cEmpresa  := oFormParent:cEmpresa
 //   ::rFinanzas := oFormParent:oGEmpresa:SetModulo("Finanzas")
 
+   ::cTipoDoc:= cTipoDoc
+   ::cNumDoc := ""
+   ::nSaldo  := 0
 
    ::cCodCli := ""
    ::cEntCli := ""
@@ -31,6 +35,12 @@ procedure fin_recibo( oFormParent, oFormGParent )
 
       ::rEmpresa  := oFormParent:rEmpresa
       ::rFinanzas := ::rEmpresa:SetModulo("Finanzas")
+
+      ::cTipoDoc  := cTipoDoc
+      ::cDocNro   := oFormParent:oLabNumero:GetValue()
+      ::cDocMonto := oFormParent:oEntTotal:GetValue()
+      ::cDocSaldo := ::cDocMonto
+      ::nSaldo    := ToNum( ::cDocSaldo )
    endif
 
    SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"fin_recibo.ui"
@@ -63,11 +73,22 @@ procedure fin_recibo( oFormParent, oFormGParent )
    if ::lParent
       ::oEntCli:SetEditable(.f.)
       ::oEntCli:SetCanFocus(.F.)
+
+      DEFINE ENTRY ::oEntDocNro VAR ::cDocNro ;
+             ID "ent_doc_nro" RESOURCE ::oRes
+
+      DEFINE ENTRY ::oEntDocMonto VAR ::cDocMonto ;
+             ID "ent_doc_monto" RESOURCE ::oRes
+
+      DEFINE ENTRY ::oEntDocSaldo VAR ::cDocSaldo ;
+             ID "ent_doc_saldo" RESOURCE ::oRes
+
    endif
 
+   DEFINE FRAME ::oFrameDocsPend ID "frame_docs_pend" RESOURCE ::oRes
    DEFINE BOX ::oBoxDocsPend ID "box_docs" RESOURCE ::oRes 
    
-   if ::lParent
+   if !::lParent
       ::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente" => "riztan", "incluir_cero" => .t. } )
 
          if ::lParent //!hb_isNIL( ::rFactDetal )
@@ -148,9 +169,50 @@ procedure fin_recibo( oFormParent, oFormGParent )
 
          ::oLBoxDocsDetal:Active()
          ::oLBoxDocsPen:Active()
+   else
+
+      //View("llenamos valores del documento")
+
    endif
 
-//__CxC( oForm )
+   DEFINE BOX ::oBoxMedios ID "box_medios" RESOURCE ::oRes
+
+   DEFINE IMAGE ::oImgFondo ID "img_fondo" RESOURCE ::oRes 
+   ::oImgFondo:Adjust( 250 )
+
+   ::rMediosPago := ::rFinanzas:MediosPago()
+
+   FOR EACH aMedio IN ::rMediosPago:GetData()
+      AADD( aData, { aMedio[2], aMedio[3], "", "", "" } )
+   NEXT
+   
+   DEFINE MODEL  ::oModMedios ;
+          STRUCT { {"Codigo",      "C", 04, 00 }, ;
+                   {"Medio",       "C", 30, 00 }, ;
+                   {"Monto",       "C", 18, 00 }, ;
+                   {"Soporte Nro", "C", 10, 00 }, ;
+                   {"Origen",      "C", 10, 00 }  ;
+                 } ;
+          DATA   aData 
+
+
+   DEFINE LISTBOX ::oLBoxMedios   ;
+          MODEL   ::oModMedios    ;
+          OF      ::oBoxMedios
+
+   ::oLBoxMedios:lBar := .F.
+
+//   ::oLBoxMedios:SetColVisible( 1 /*Id            */, .F. ) 
+//   ::oLBoxMedios:SetColVisible( 2 /*Codigo        */, .F. ) 
+//   ::oLBoxMedios:SetColVisible( 4 /*Comportamiento*/, .F. ) 
+//   ::oLBoxMedios:SetColVisible( 5 /*GenITF        */, .F. ) 
+//   ::oLBoxMedios:SetColVisible( 6 /*Activo        */, .F. ) 
+//   ::oLBoxMedios:SetColVisible( 7 /*AfectaBco     */, .F. ) 
+
+   ::oLBoxMedios:Active()
+
+   __HacerModeloEditable( oForm )
+   __CalcSaldo( oForm )
 
    DEFINE STATUSBAR ::oStatusBar ;
           TEXT "" ;  //oTPuy:cSystem_Name + " | Hora: "+oTPuy:cTime ;
@@ -171,20 +233,18 @@ procedure fin_recibo( oFormParent, oFormGParent )
 
    ACTIVATE WINDOW ::oWndRecibo MODAL
    
-   ::oBoxDocDetal:Hide(.T.)
+   if ::lParent
+      //::oBoxDocsPend:Hide(.T.)
+      ::oFrameDocsPend:Hide(.T.)
+      ::oEntDocNro:SetEditable( .F. )
+      ::oEntDocMonto:SetEditable( .F. )
+      ::oEntDocSaldo:SetEditable( .F. )
+   else
+      ::oBoxDocDetal:Hide(.T.)
+   endif
 
 return
 
-
-/*
-procedure __CxC( oForm )
-
-  local hFiltro := hb_hash()
-
-  hFiltro["cliente"] := "riztan"
-//View( ::rFinanzas:Help() )
-  ::rFinanzas:CuentasPorCobrar( hFiltro ) 
-*/
 
 
 procedure __DetalDocument( oForm, uTransaccion, cAplicado, rFinanzas )
@@ -217,9 +277,127 @@ procedure __DetalDocument( oForm, uTransaccion, cAplicado, rFinanzas )
       rDetalles:Skip()
    EndDo
 
-   //View(  rDetalles:RecCount() )
-   
    rDetalles:End()
+return
+
+
+
+Procedure __SetMedioMonto( oForm, oModel, aIter, cMonto )
+   local nSaldo, nMonto, nMontoAnterior, nColumna := 3
+
+   nMontoAnterior := ToNum( oModel:oTreeView:GetAutoValue( nColumna ) )
+   nSaldo := ::nSaldo
+   nMonto := ToNum( cMonto )
+
+   if nMontoAnterior > 0
+      nSaldo := nSaldo + nMontoAnterior
+   endif
+
+   if nSaldo = 0
+      oModel:Set( aIter, nColumna, "" )
+      return
+   endif
+
+   if nMonto <= nSaldo
+      if nMonto = 0
+         oModel:oLbx:Set( aIter, nColumna, "" ) 
+      else
+         oModel:oLbx:Set( aIter, nColumna, TRANSFORM( nMonto, P_92 ) ) 
+      endif
+      ::nSaldo := nSaldo-nMonto
+      ::oEntDocSaldo:SetText( TRANSFORM( ::nSaldo, P_92 ) )
+   else
+      oModel:oLbx:Set( aIter, nColumna, TRANSFORM( nSaldo, P_92 ) ) 
+      ::nSaldo := 0
+      ::oEntDocSaldo:SetText( TRANSFORM( ::nSaldo, P_92 ) ) 
+   endif
+
+return
+
+
+
+Procedure __HacerModeloEditable( oForm )
+   local oCol
+   
+//   ::oModMedios:oTreeView:bRow_Activated := NIL
+
+   ::oLBoxMedios:bEdit := {| oModMedios | iif( oModMedios:oTreeView:isGetSelected( oModMedios:aIter ),;
+                                               (oModMedios:oTreeView:SetPosCol( oModMedios:aIter, 3, .F. ),;
+                                                __SetMedioMonto( oForm, oModMedios, oModMedios:aIter, ::cDocSaldo ) ; 
+                                               ), ;
+                                               NIL ;
+                                             ) ;
+                                           }
+
+   /* Columna Monto */
+   oCol := ::oModMedios:aCol[ 3 ] // Monto
+   oCol:oRenderer:SetEditable( .T. )
+
+//   oCol:oRenderer:OnEditing_Started( {|oSender,pCell, pEditable, cPath | ;
+//                                       iif( ::oModMedios:oTreeView:IsGetSelected( ::oModMedios:aIter ), ;
+//                                            ::oModMedios:oLbx:Set( ::oModMedios:aIter, 3, "1234" ),;
+//                                            NIL ;
+//                                          );
+//                                     } )
+
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditMedio( oForm, oSender, path, uVal, ::oModMedios:aIter,;
+                                            ::oModMedios, ::oModMedios:oTreeView, 3 )  }
+
+   oCol:oRenderer:SetColumn( oCol )
+
+   oCol := ::oModMedios:aCol[ 4 ] // Soporte
+   oCol:oRenderer:SetEditable( .T. )
+
+return
+
+
+
+Procedure __CalcSaldo( oForm )
+   local oCxC
+
+//View(::cTipoDoc)
+   oCxC := ::rFinanzas:CuentasPorCobrar( { "cliente"        => "riztan",  ;
+                                           "incluir_cero"   => .t.,       ;
+                                           "documento_id"   => ::cTipoDoc,;
+                                           "nro_documento"  => ::cDocNro  ;
+                                         };
+                                       )
+
+   if !hb_isObject( oCxC )
+      MsgAlert( "Problemas para obtener el saldo del documento." )
+      return
+   endif
+
+   if oCxC:RecCount()>0
+      ::nSaldo := ToNum( ::cDocMonto ) - oCxC:monto_aplicado
+      ::oEntDocSaldo:SetText( TRANSFORM( ::nSaldo, P_92 ) )
+   endif
+   oCxC:End()
+
+return
+
+
+
+Procedure __EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCol )
+
+   local nVal := ToNum( uVal )
+
+   uVal := TRANSFORM( nVal, P_92 )
+
+   if nVal = 0 ; uVal := "" ; endif
+
+   if oTreeView:IsGetSelected( aIter )
+      if nCol = 3
+         __SetMedioMonto( oForm, oModel, aIter, uVal )
+      else
+         oModel:oLbx:Set( aIter, nCol, uVal )
+      endif
+   endif
+
+   if nCol = 3
+      oTreeView:SetPosCol( aIter, 4, .F. )
+   endif
 return
 
 //eof

@@ -1207,7 +1207,7 @@ return
 
 
 PROCEDURE __VtaCobrar( oForm, oFormParent)
-   oTPuy:RunXBS( "fin_recibo", oForm, oFormParent )
+   oTPuy:RunXBS( "fin_recibo", oForm, oFormParent, "4" /*Factura*/ )
 RETURN
 
 
