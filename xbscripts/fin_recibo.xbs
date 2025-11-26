@@ -229,7 +229,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
           INTERVAL 10000 ;
           ACTION EVAL( ::bTimer )
 
-   ACTIVATE TIMER ::oTimer
+   //ACTIVATE TIMER ::oTimer
 
    ACTIVATE WINDOW ::oWndRecibo MODAL
    
@@ -282,12 +282,18 @@ return
 
 
 
-Procedure __SetMedioMonto( oForm, oModel, aIter, cMonto )
+Procedure __SetMedioMonto( oForm, oModel, aIter, cMonto, lIni )
    local nSaldo, nMonto, nMontoAnterior, nColumna := 3
+
+   default lIni := .F.
 
    nMontoAnterior := ToNum( oModel:oTreeView:GetAutoValue( nColumna ) )
    nSaldo := ::nSaldo
    nMonto := ToNum( cMonto )
+
+   if lIni .AND. nMontoAnterior > 0
+      nMonto := nMontoAnterior
+   endif
 
    if nMontoAnterior > 0
       nSaldo := nSaldo + nMontoAnterior
@@ -298,7 +304,9 @@ Procedure __SetMedioMonto( oForm, oModel, aIter, cMonto )
       return
    endif
 
-   if nMonto <= nSaldo
+   if nMonto < 0 ; nMonto := 0 ; endif
+
+   if nMonto <= nSaldo .AND. nMonto>=0
       if nMonto = 0
          oModel:oLbx:Set( aIter, nColumna, "" ) 
       else
@@ -306,7 +314,7 @@ Procedure __SetMedioMonto( oForm, oModel, aIter, cMonto )
       endif
       ::nSaldo := nSaldo-nMonto
       ::oEntDocSaldo:SetText( TRANSFORM( ::nSaldo, P_92 ) )
-   else
+   elseif nMonto>nSaldo
       oModel:oLbx:Set( aIter, nColumna, TRANSFORM( nSaldo, P_92 ) ) 
       ::nSaldo := 0
       ::oEntDocSaldo:SetText( TRANSFORM( ::nSaldo, P_92 ) ) 
@@ -323,7 +331,7 @@ Procedure __HacerModeloEditable( oForm )
 
    ::oLBoxMedios:bEdit := {| oModMedios | iif( oModMedios:oTreeView:isGetSelected( oModMedios:aIter ),;
                                                (oModMedios:oTreeView:SetPosCol( oModMedios:aIter, 3, .F. ),;
-                                                __SetMedioMonto( oForm, oModMedios, oModMedios:aIter, ::cDocSaldo ) ; 
+                                                __SetMedioMonto( oForm, oModMedios, oModMedios:aIter, ::cDocSaldo, .T. ) ; 
                                                ), ;
                                                NIL ;
                                              ) ;
@@ -396,7 +404,9 @@ Procedure __EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCo
    endif
 
    if nCol = 3
-      oTreeView:SetPosCol( aIter, 4, .F. )
+      if !Empty(uVal)
+         oTreeView:SetPosCol( aIter, 4, .F. )
+      endif
    endif
 return
 
