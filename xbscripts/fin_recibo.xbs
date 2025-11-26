@@ -89,7 +89,8 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    DEFINE BOX ::oBoxDocsPend ID "box_docs" RESOURCE ::oRes 
    
    if !::lParent
-      ::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente" => "riztan", "incluir_cero" => .t. } )
+
+      ::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente" => oParent:cCodCli, "incluir_cero" => .t. } )
 
          if ::lParent //!hb_isNIL( ::rFactDetal )
 
