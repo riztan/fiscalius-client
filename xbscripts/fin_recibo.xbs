@@ -10,6 +10,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
    local oForm, oModTmp
    local aMedio, aData := {}
+   local aStruct
 
    SET PUBLIC oForm
 
@@ -17,6 +18,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 //   ::rFinanzas := oFormParent:oGEmpresa:SetModulo("Finanzas")
 
    ::cTipoDoc:= cTipoDoc
+   ::cDocumento := ""
    ::cNumDoc := ""
    ::nSaldo  := 0
 
@@ -25,22 +27,28 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    ::lParent := .F.
 
    //-- crear en caso de no venir de un documento
-   ::rEmpresa  := NIL
-   ::rFinanzas := NIL
+   ::rEmpresa    := NIL
+   ::rFinanzas   := NIL
+   ::nTasaDivisa := 0
+   ::cDocTasa    := ""
 
    if hb_isObject( oFormParent )
-      ::cCodCli := oFormParent:cCodCli
-      ::cEntCli := oFormParent:cEntCli
-      ::lParent := .T.
+      ::cCodCli   := oFormParent:cCodCli
+      ::cEntCli   := oFormParent:cEntCli
+//      ::lParent   := .T.
 
       ::rEmpresa  := oFormParent:rEmpresa
       ::rFinanzas := ::rEmpresa:SetModulo("Finanzas")
 
-      ::cTipoDoc  := cTipoDoc
-      ::cDocNro   := oFormParent:oLabNumero:GetValue()
-      ::cDocMonto := oFormParent:oEntTotal:GetValue()
-      ::cDocSaldo := ::cDocMonto
-      ::nSaldo    := ToNum( ::cDocSaldo )
+      ::nTasaDivisa := 123
+      ::cDocTasa    := oFormParent:oComboDivisa:GetValue()
+
+      ::cTipoDoc   := cTipoDoc
+      ::cDocumento := "Factura:" //oFormParent:rVentas:Documentos({"id" => ::TipoDoc}):nombre
+      ::cDocNro    := oFormParent:oLabNumero:GetValue()
+      ::cDocMonto  := oFormParent:oEntTotal:GetValue()
+      ::cDocSaldo  := ::cDocMonto
+      ::nSaldo     := ToNum( ::cDocSaldo )
    endif
 
    SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"fin_recibo.ui"
@@ -70,12 +78,18 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
        VALID  .T. ;
        ID "ent_clientes" RESOURCE ::oRes
    
-   if ::lParent
+//   if ::lParent
       ::oEntCli:SetEditable(.f.)
       ::oEntCli:SetCanFocus(.F.)
 
-      DEFINE ENTRY ::oEntDocNro VAR ::cDocNro ;
-             ID "ent_doc_nro" RESOURCE ::oRes
+//      DEFINE LABEL ::oLabDocument TEXT ::cDocumento ;
+//             ID "lab_documento" RESOURCE ::oRes
+
+//      DEFINE ENTRY ::oEntDocNro VAR ::cDocNro ;
+//             ID "ent_doc_nro" RESOURCE ::oRes
+
+//      DEFINE ENTRY ::oEntDocTasa VAR ::cDocTasa ;
+//             ID "ent_doc_tasa" RESOURCE ::oRes
 
       DEFINE ENTRY ::oEntDocMonto VAR ::cDocMonto ;
              ID "ent_doc_monto" RESOURCE ::oRes
@@ -83,21 +97,39 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
       DEFINE ENTRY ::oEntDocSaldo VAR ::cDocSaldo ;
              ID "ent_doc_saldo" RESOURCE ::oRes
 
-   endif
+//   endif
+
+//   DEFINE FRAME ::oFrameDocPend ID "frame_doc_pend" RESOURCE ::oRes
 
    DEFINE FRAME ::oFrameDocsPend ID "frame_docs_pend" RESOURCE ::oRes
    DEFINE BOX ::oBoxDocsPend ID "box_docs" RESOURCE ::oRes 
    
    if !::lParent
 
-      ::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente" => oParent:cCodCli, "incluir_cero" => .t. } )
+      ::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente" => oFormParent:cCodCli, "incluir_cero" => .t. } )
 
-         if ::lParent //!hb_isNIL( ::rFactDetal )
+//View( ::oDocuments:Reccount() )
+//View( ::oDocuments:GetData() )
+//View( "revisar" )
+//         if ::lParent //!hb_isNIL( ::rFactDetal )
+
+//View( ::oDocuments:Struct() )
+            aStruct := ::oDocuments:Struct()
+            AADD( aStruct, {"Relacionado","L",0,0} )
+//View( aStruct )
+            aData := {}
+//View(::cDocNro)
+            AEVAL( ::oDocuments:GetData(), {|a| AADD( a, iif(::cDocNro=a[9],.t.,.f.) ), ;
+                                                AADD( aData, a )  } )
+//View(LEN(aData))
+//return
+//      ::cDocNro    := oFormParent:oLabNumero:GetValue()
 
             DEFINE MODEL   ::oModDocuments       ;
-                   STRUCT  ::oDocuments:Struct()  ;
-                   DATA    ::oDocuments:GetData()
-         else
+                   STRUCT  aStruct ; //::oDocuments:Struct()  ;
+                   DATA    aData     //::oDocuments:GetData()
+//View( ::oDocuments:GetData() )
+/*         else
             DEFINE MODEL   ::oModDocuments           ;
                    STRUCT  {{"empresa_id",     "N", 10, 0},;
                             {"cliente_id",     "N", 10, 0},;
@@ -105,16 +137,17 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
                             {"cliente",        "C",100, 0},;
                             {"rif",            "C", 20, 0},;
                             {"transaccion_id", "N", 10, 0},;
+                            {"documento_id",   "N", 10, 0},;
                             {"tipo_documento", "C", 50, 0},;
-                            {"documento",        "C", 15, 0},;
-                            {"fecha_documento",  "D", 10, 0},;
-                            {"monto_documento",  "N", 10, 2},;
+                            {"documento",      "C", 15, 0},;
+                            {"fecha_documento","D", 10, 0},;
+                            {"monto_documento","N", 10, 2},;
                             {"monto_aplicado", "N", 10, 2},;
                             {"saldo_pendiente","N", 10, 2},;
                             {"estado_cxc",     "C",200, 0}};
                    DATA    {{0,'','','',0,'','',0,0,0,'',''}}
-
-         endif   
+*/
+//         endif   
 
 
          DEFINE LISTBOX ::oLBoxDocsPen     ;
@@ -126,8 +159,9 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
          oModTmp := ::oModDocuments 
          ::oLBoxDocsPen:bEdit := {| oModTmp | __DetalDocument( oForm,                                ;
                                                                oModTmp:oTreeView:GetAutoValue(  6 ), ;
-                                                               oModTmp:oTreeView:GetAutoValue( 11 ), ;
+                                                               oModTmp:oTreeView:GetAutoValue( 12 ), ;
                                                                ::rFinanzas ) }
+         ::lDetalHide := .t.
 
          ::oLBoxDocsPen:SetColVisible( 01, .f. )  // empresa_id
          ::oLBoxDocsPen:SetColVisible( 02, .f. )  // cliente_id
@@ -135,14 +169,15 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
          ::oLBoxDocsPen:SetColVisible( 04, .f. )  // cliente
          ::oLBoxDocsPen:SetColVisible( 05, .f. )  // rif
          ::oLBoxDocsPen:SetColVisible( 06, .f. )  // transaccion_id
+         ::oLBoxDocsPen:SetColVisible( 07, .f. )  // documento_id
 
-         ::oLBoxDocsPen:SetColTitle( 07, "Tipo"          )
-         ::oLBoxDocsPen:SetColTitle( 08, "Nro. Documento")  
-         ::oLBoxDocsPen:SetColTitle( 09, "Fecha"         )  
-         ::oLBoxDocsPen:SetColTitle( 10, "Monto Doc."    )  
-         ::oLBoxDocsPen:SetColTitle( 11, "Monto Apli."   )  
-         ::oLBoxDocsPen:SetColTitle( 12, "Saldo"         )  
-         ::oLBoxDocsPen:SetColTitle( 13, "Estado"        )
+         ::oLBoxDocsPen:SetColTitle( 08, "Tipo"          )
+         ::oLBoxDocsPen:SetColTitle( 09, "Nro. Documento")  
+         ::oLBoxDocsPen:SetColTitle( 10, "Fecha"         )  
+         ::oLBoxDocsPen:SetColTitle( 11, "Monto Doc."    )  
+         ::oLBoxDocsPen:SetColTitle( 12, "Monto Apli."   )  
+         ::oLBoxDocsPen:SetColTitle( 13, "Saldo"         )  
+         ::oLBoxDocsPen:SetColTitle( 14, "Estado"        )
 
 
          DEFINE BOX ::oBoxDocDetal ID "box_docs_detal" RESOURCE ::oRes
@@ -150,7 +185,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
          DEFINE MODEL   ::oModDocDetals           ;
                 STRUCT  {{"cobranza_id",    "N", 10, 0},;
                          {"fecha_cobranza", "D", 10, 0},;
-                         {"monto_aplicado" ,"N", 10, 2},;
+                         {"monto_aplicado", "N", 10, 2},;
                          {"medios_pago",    "C",100, 0},;
                          {"observaciones",  "C",100, 0}};
                 DATA    {{0,'',0,'',''}}
@@ -172,17 +207,18 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
          ::oLBoxDocsPen:Active()
    else
 
-      //View("llenamos valores del documento")
+   //   View("llenamos valores del documento")
 
    endif
 
    DEFINE BOX ::oBoxMedios ID "box_medios" RESOURCE ::oRes
 
    DEFINE IMAGE ::oImgFondo ID "img_fondo" RESOURCE ::oRes 
-   ::oImgFondo:Adjust( 250 )
+   ::oImgFondo:Adjust( 160 )
 
    ::rMediosPago := ::rFinanzas:MediosPago()
 
+   aData := {}
    FOR EACH aMedio IN ::rMediosPago:GetData()
       AADD( aData, { aMedio[2], aMedio[3], "", "", "" } )
    NEXT
@@ -236,11 +272,12 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    
    if ::lParent
       //::oBoxDocsPend:Hide(.T.)
-      ::oFrameDocsPend:Hide(.T.)
+      //::oFrameDocsPend:Hide(.T.)
       ::oEntDocNro:SetEditable( .F. )
       ::oEntDocMonto:SetEditable( .F. )
       ::oEntDocSaldo:SetEditable( .F. )
    else
+      //::oFrameDocPend:Hide(.T.)
       ::oBoxDocDetal:Hide(.T.)
    endif
 
@@ -253,12 +290,20 @@ procedure __DetalDocument( oForm, uTransaccion, cAplicado, rFinanzas )
 
    nAplicado := VAL(cAplicado)
 
-   if nAplicado == 0
+   if nAplicado == 0 .OR. !::lDetalHide
       ::oBoxDocDetal:Hide(.T.)
+      ::lDetalHide := .T.
       return
    endif
 
+//   if !::lDetalHide
+//View( ::lDetalHide )
+//      ::oBoxDocDetal:Hide(.T.)
+//      ::lDetalHide := .T.
+//   endif
+
    ::oBoxDocDetal:Show(.T.)
+   ::lDetalHide := .F.
 
    rDetalles := rFinanzas:DetallePagosFactura( uTransaccion )
 
@@ -366,7 +411,7 @@ Procedure __CalcSaldo( oForm )
    local oCxC
 
 //View(::cTipoDoc)
-   oCxC := ::rFinanzas:CuentasPorCobrar( { "cliente"        => "riztan",  ;
+   oCxC := ::rFinanzas:CuentasPorCobrar( { "cliente"        => ::cCodCli, ;
                                            "incluir_cero"   => .t.,       ;
                                            "documento_id"   => ::cTipoDoc,;
                                            "nro_documento"  => ::cDocNro  ;
