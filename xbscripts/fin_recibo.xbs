@@ -46,8 +46,8 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
       ::cTipoDoc   := cTipoDoc
       ::cDocumento := "Factura:" //oFormParent:rVentas:Documentos({"id" => ::TipoDoc}):nombre
       ::cDocNro    := oFormParent:oLabNumero:GetValue()
-      ::cDocMonto  := oFormParent:oEntTotal:GetValue()
-      ::cDocSaldo  := ::cDocMonto
+      ::cDocMonto  := "" //oFormParent:oEntTotal:GetValue()
+      ::cDocSaldo  := "" //::cDocMonto
       ::nSaldo     := ToNum( ::cDocSaldo )
    endif
 
@@ -119,7 +119,9 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 //View( aStruct )
             aData := {}
 //View(::cDocNro)
-            AEVAL( ::oDocuments:GetData(), {|a| AADD( a, iif(::cDocNro=a[9],.t.,.f.) ), ;
+            //::oEntDocMonto:SetText('0')
+            AEVAL( ::oDocuments:GetData(), {|a| AADD( a, iif(::cDocNro=a[9],;
+                                                         (__CalRecMonto(oForm, a[11] ),.t.),.f.) ), ;
                                                 AADD( aData, a )  } )
 //View(LEN(aData))
 //return
@@ -158,6 +160,8 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
          oModTmp := ::oModDocuments 
          ::oLBoxDocsPen:bEdit := {| oModTmp | __DetalDocument( oForm,                                ;
+                                                               oModTmp,                              ;
+                                                               oModTmp:aIter,                        ;
                                                                oModTmp:oTreeView:GetAutoValue(  6 ), ;
                                                                oModTmp:oTreeView:GetAutoValue( 12 ), ;
                                                                ::rFinanzas ) }
@@ -285,22 +289,45 @@ return
 
 
 
-procedure __DetalDocument( oForm, uTransaccion, cAplicado, rFinanzas )
-   local rDetalles, nAplicado, aIter := ARRAY(4)
+procedure __CalRecMonto( oForm, nDocMonto )
+   local nMonto := ToNum( ::oEntDocMonto:GetValue() )
+   local nSaldo := ToNum( ::oEntDocSaldo:GetValue() )
+
+   nMonto += iif( hb_isString(nDocMonto), ToNum( nDocMonto ), nDocMonto ) 
+   nSaldo += iif( hb_isString(nDocMonto), ToNum( nDocMonto ), nDocMonto ) 
+   ::nSaldo := nSaldo
+//   nSaldo += nMonto
+   ::oEntDocMonto:SetText( TRANSFORM( nMonto, P_92 ) )
+   ::oEntDocSaldo:SetText( TRANSFORM( nSaldo, P_92 ) )
+   //::oEntDocSaldo:SetText( TRANSFORM( nMonto, P_92 ) )
+return
+
+
+
+procedure __DetalDocument( oForm, oModel, aIter, uTransaccion, cAplicado, rFinanzas )
+   local nCol := 15, nDocMonto := 11
+   local rDetalles, nAplicado//, aIter := ARRAY(4)
+   local lPrevio := oModel:oTreeView:GetAutoValue( nCol )
 
    nAplicado := VAL(cAplicado)
+
+   if oModel:oTreeView:IsGetSelected( aIter )
+      oModel:oLbx:Set( aIter, nCol, !oModel:oTreeView:GetAutoValue( nCol ) ) 
+      //-- Proceder a recalcular Montos.
+      if oModel:oTreeView:GetAutoValue(nCol)
+         __CalRecMonto( oForm, oModel:oTreeView:GetAutoValue( nDocMonto ) ) 
+      else
+         if lPrevio
+            __CalRecMonto( oForm, ToNum(oModel:oTreeView:GetAutoValue( nDocMonto )) * -1 ) 
+         endif
+      endif
+   endif
 
    if nAplicado == 0 .OR. !::lDetalHide
       ::oBoxDocDetal:Hide(.T.)
       ::lDetalHide := .T.
       return
    endif
-
-//   if !::lDetalHide
-//View( ::lDetalHide )
-//      ::oBoxDocDetal:Hide(.T.)
-//      ::lDetalHide := .T.
-//   endif
 
    ::oBoxDocDetal:Show(.T.)
    ::lDetalHide := .F.
@@ -425,7 +452,7 @@ Procedure __CalcSaldo( oForm )
 
    if oCxC:RecCount()>0
       ::nSaldo := ToNum( ::cDocMonto ) - oCxC:monto_aplicado
-      ::oEntDocSaldo:SetText( TRANSFORM( ::nSaldo, P_92 ) )
+      //::oEntDocSaldo:SetText( TRANSFORM( ::nSaldo, P_92 ) )
    endif
    oCxC:End()
 
