@@ -224,7 +224,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
    aData := {}
    FOR EACH aMedio IN ::rMediosPago:GetData()
-      AADD( aData, { aMedio[2], aMedio[3], "", "", "" } )
+      AADD( aData, { aMedio[2], aMedio[3], "", "", "", aMedio[8] } )
    NEXT
    
    DEFINE MODEL  ::oModMedios ;
@@ -232,7 +232,8 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
                    {"Medio",       "C", 30, 00 }, ;
                    {"Monto",       "C", 18, 00 }, ;
                    {"Soporte Nro", "C", 10, 00 }, ;
-                   {"Origen",      "C", 10, 00 }  ;
+                   {"Origen",      "C", 10, 00 }, ;
+                   {"Requiere Soporte", "L", 0, 0 } ;
                  } ;
           DATA   aData 
 
@@ -243,12 +244,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
    ::oLBoxMedios:lBar := .F.
 
-//   ::oLBoxMedios:SetColVisible( 1 /*Id            */, .F. ) 
-//   ::oLBoxMedios:SetColVisible( 2 /*Codigo        */, .F. ) 
-//   ::oLBoxMedios:SetColVisible( 4 /*Comportamiento*/, .F. ) 
-//   ::oLBoxMedios:SetColVisible( 5 /*GenITF        */, .F. ) 
-//   ::oLBoxMedios:SetColVisible( 6 /*Activo        */, .F. ) 
-//   ::oLBoxMedios:SetColVisible( 7 /*AfectaBco     */, .F. ) 
+   ::oLBoxMedios:SetColVisible( 6 /*Requiere Soporte*/, .F. ) 
 
    ::oLBoxMedios:Active()
 
@@ -427,8 +423,23 @@ Procedure __HacerModeloEditable( oForm )
 
    oCol:oRenderer:SetColumn( oCol )
 
+   //---- Soporte
    oCol := ::oModMedios:aCol[ 4 ] // Soporte
    oCol:oRenderer:SetEditable( .T. )
+
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditMedio( oForm, oSender, path, uVal, ::oModMedios:aIter,;
+                                            ::oModMedios, ::oModMedios:oTreeView, 4 )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   //---- Origen
+   oCol := ::oModMedios:aCol[ 5 ] // Origen
+   oCol:oRenderer:SetEditable( .T. )
+
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditMedio( oForm, oSender, path, uVal, ::oModMedios:aIter,;
+                                            ::oModMedios, ::oModMedios:oTreeView, 5 )  }
+   oCol:oRenderer:SetColumn( oCol )
 
 return
 
@@ -464,23 +475,34 @@ Procedure __EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCo
 
    local nVal := ToNum( uVal )
 
-   uVal := TRANSFORM( nVal, P_92 )
-
-   if nVal = 0 ; uVal := "" ; endif
+   default uVal := ''
 
    if oTreeView:IsGetSelected( aIter )
       if nCol = 3
+         uVal := TRANSFORM( nVal, P_92 )
+         if nVal = 0 ; uVal := "" ; endif
          __SetMedioMonto( oForm, oModel, aIter, uVal )
+         if empty( uVal )
+            oModel:oLbx:Set( aIter, 4, '' )
+            oModel:oLbx:Set( aIter, 5, '' )
+         endif
       else
          oModel:oLbx:Set( aIter, nCol, uVal )
       endif
    endif
 
-   if nCol = 3
+   if nCol = 3 .and. oTreeView:GetAutoValue( 6 )
       if !Empty(uVal)
          oTreeView:SetPosCol( aIter, 4, .F. )
       endif
    endif
+
+   if nCol = 4
+      if !Empty( oTreeView:GetAutoValue( 3 ) )
+         oTreeView:SetPosCol( aIter, 5, .F. )
+      endif
+   endif
+   
 return
 
 //eof
