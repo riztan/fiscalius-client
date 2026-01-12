@@ -78,6 +78,19 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
        VALID  .T. ;
        ID "ent_clientes" RESOURCE ::oRes
    
+   ::cCaja := ''
+   DEFINE ENTRY ::oEntCaja VAR ::cCaja ;
+       ACTION oTPuy:RunXBS("fin_cajas", oFormParent, ::oWndRecibo, ::oEntCaja, @::cCaja) ;
+       VALID .T. ;
+       ID "ent_caja" RESOURCE ::oRes
+
+   ::cFecha := DTOC( DATE() )
+   ::cPFecha := ::cFecha
+   DEFINE ENTRY TYPE DATE ::oEntFecha VAR ::cFecha CALENDAR FORM ::oWndRecibo ;
+          VALID .T. ; //__FactValFecha( oForm, ::oEntFecha, @::cPFecha ) ;
+          ID "ent_fecha" RESOURCE ::oRes ;
+          OF ::oWndRecibo
+
 //   if ::lParent
       ::oEntCli:SetEditable(.f.)
       ::oEntCli:SetCanFocus(.F.)
@@ -251,6 +264,10 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    __HacerModeloEditable( oForm )
    __CalcSaldo( oForm )
 
+   DEFINE BUTTON ::oBtnSave ;
+      ACTION __fr_Save( oForm ) ;
+      ID "btn_save" RESOURCE ::oRes
+
    DEFINE STATUSBAR ::oStatusBar ;
           TEXT "" ;  //oTPuy:cSystem_Name + " | Hora: "+oTPuy:cTime ;
           ID "statusbar" RESOURCE ::oRes
@@ -266,7 +283,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
           INTERVAL 10000 ;
           ACTION EVAL( ::bTimer )
 
-   //ACTIVATE TIMER ::oTimer
+   ACTIVATE TIMER ::oTimer
 
    ACTIVATE WINDOW ::oWndRecibo MODAL
    
@@ -292,10 +309,8 @@ procedure __CalRecMonto( oForm, nDocMonto )
    nMonto += iif( hb_isString(nDocMonto), ToNum( nDocMonto ), nDocMonto ) 
    nSaldo += iif( hb_isString(nDocMonto), ToNum( nDocMonto ), nDocMonto ) 
    ::nSaldo := nSaldo
-//   nSaldo += nMonto
    ::oEntDocMonto:SetText( TRANSFORM( nMonto, P_92 ) )
    ::oEntDocSaldo:SetText( TRANSFORM( nSaldo, P_92 ) )
-   //::oEntDocSaldo:SetText( TRANSFORM( nMonto, P_92 ) )
 return
 
 
@@ -448,6 +463,7 @@ return
 Procedure __CalcSaldo( oForm )
    local oCxC
 
+View( " __CalcSaldo " )
 //View(::cTipoDoc)
    oCxC := ::rFinanzas:CuentasPorCobrar( { "cliente"        => ::cCodCli, ;
                                            "incluir_cero"   => .t.,       ;
@@ -504,5 +520,18 @@ Procedure __EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCo
    endif
    
 return
+
+
+
+Function __fr_Save( oForm )
+
+//View( ValType( ::nSaldo ) )
+   if ::nSaldo > 0
+      ::oLabInfo:SetText("Hay Saldo Pendiente, no puede guardar.")
+   endif
+
+Return
+
+
 
 //eof

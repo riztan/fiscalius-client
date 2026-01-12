@@ -1,0 +1,314 @@
+/* vta_clientes.xbs
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure fin_cajas( oForm, oWndParent, oEntParent, cCodCaja, cFiltro, cDocumento )
+
+   local oCajaWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Cajas"
+   local rVentas, rCajas, oModCajas, oLBoxCli, hParam
+
+   default cCodCaja to ""
+   default cFiltro     to ""
+   default cDocumento  to ""
+
+   if !Empty(cDocumento) .or. !Empty(cFiltro)
+      hParam := hb_hash()
+   endif
+
+   if !Empty( cDocumento )
+      hParam["documento"] := cDocumento
+   endif
+   if !Empty( cFiltro )
+      hParam[ "filtro" ] := cFiltro
+   endif
+
+//   rVentas := ::oGEmpresa:SetModulo("Ventas")
+//   rCajas := rVentas:Cajas( hParam )
+
+//   ::rEmpresa  := oFormParent:rEmpresa
+   ::rFinanzas := ::rEmpresa:SetModulo("Finanzas")
+   rCajas  := ::rFinanzas:Cajas()
+
+   if hb_isNIL(rCajas)
+      MsgStop("???")
+      return
+   endif
+
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+
+   DEFINE WINDOW oCajaWnd ;
+          TITLE "Fiscalius. Caja" ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes
+
+          if oWndParent != NIL 
+             gtk_window_set_transient_for( oCajaWnd:pWidget, oWndParent:pWidget )
+          endif
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+
+   DEFINE MODEL oModCajas ;
+          STRUCT rCajas:Struct() ;
+          DATA   rCajas:GetData()
+   
+   DEFINE LISTBOX oLBoxCli ;
+          MODEL oModCajas ;
+          OF oBoxData
+
+   oLBoxCli:lBar  := .f.
+
+   if hb_isObject( oEntParent )
+      oLBoxCli:bEdit := {|oModel| (cCodCaja := oModel:GetCol(1),; 
+                                   iif( !hb_isObject(oWndParent),                ;
+                                         .T.,                                     ;
+                                         oEntParent:setText( ALLTRIM(cCodCaja)+" - "+;
+                                                             oModel:GetCol(3) )), ;
+                                   oCajaWnd:End() ) }
+//   else 
+//      oLBoxCli:bNew  := {|oModel| fcaj_edit( oForm, oCajaWnd, oModCajas, rVentas, .T. /*lNew*/ ) }
+//      oLBoxCli:bEdit := {|oModCajas| fcaj_edit( oForm, oCajaWnd, oModCajas, rVentas, .F. /*lNew*/ ) }
+   endif
+   
+   
+   
+   oLBoxCli:SetColVisible( 1, .F. )    //- Ocultamos ID
+
+   oLBoxCli:SetColTitle( 2, "Código" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 3, "Nombre" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 4, "Moneda Principal" )//- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 5, "Activa" )          //- Cambiamos el titulo 
+
+   oLBoxCli:SetColVisible(  6, .F. )    //- Ocultamos ID
+   oLBoxCli:SetColVisible(  7, .F. )    //- Ocultamos ID
+   oLBoxCli:SetColVisible(  8, .F. )    //- Ocultamos ID
+   oLBoxCli:SetColVisible(  9, .F. )    //- Ocultamos ID
+   oLBoxCli:SetColVisible( 10, .F. )    //- Ocultamos ID
+   oLBoxCli:SetColVisible( 11, .F. )    //- Ocultamos ID
+   oLBoxCli:SetColVisible( 12, .F. )    //- Ocultamos ID
+
+   ACTIVATE WINDOW oCajaWnd MODAL //OF oWndParent
+
+return
+
+
+/*
+procedure fcaj_edit( oForm, oCajaWnd, oModel, rVentas, lNew )
+   local oWnd, oRes, oImgBanner
+//   local oImgLogo, oEntCodigo, cCodigo, oEntNombre, cNombre
+//   local oEntRif, cRif, oEntMail, cMail, oEntTlf, cTlf
+//   local oVtDir, cDir, oBtnSave, oBtnCancel
+   local oCajaForm, hData
+
+   default lNew := .T.
+
+   SET PUBLIC oCajaForm
+
+   oCajaForm:lForce   := .F.
+   oCajaForm:lClose   := .F.     //Bandera para indicar cierre
+   oCajaForm:oModel   := oModel
+   oCajaForm:rSession := ::rSession
+   oCajaForm:rVentas  := rVentas
+   oCajaForm:lNew     := lNew
+
+   if lNew
+
+      oCajaForm:cCodigo  := ""
+      oCajaForm:cNombre  := ""
+      oCajaForm:cRif     := ""
+      oCajaForm:cDir     := ""
+      oCajaForm:cTlf     := ""
+      oCajaForm:cMail    := ""
+      oCajaForm:cCedula  := ""
+   else
+
+      oCajaForm:cCodigo  := oModel:GetCol( 2 )
+      oCajaForm:cPreCodigo  := oModel:GetCol( 2 )
+      oCajaForm:cNombre  := oModel:GetCol( 3 )
+      oCajaForm:cRif     := oModel:GetCol( 4 )
+      oCajaForm:cPreRif  := oModel:GetCol( 4 )
+      oCajaForm:cDir     := oModel:GetCol( 5 )
+      oCajaForm:cTlf     := oModel:GetCol( 6 )
+      oCajaForm:cMail    := oModel:GetCol( 7 )
+   endif
+
+   oCajaForm:rCaja := rFinanzas:Cajas( {"codigo"=> oCajaForm:cCodigo} )
+
+   hData := oCajaForm:rCaja:Data()
+   oCajaForm:cNombreC  := hData["nombre_corto"]
+   oCajaForm:cCedula   := hData["cedula"]
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_clientes.ui"
+
+   DEFINE WINDOW oCajaForm:oWnd TITLE "Caja" SIZE 650,350 ;
+          OF oCajaWnd ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oCajaForm:oImgBanner ID "img_banner" RESOURCE oRes
+      oCajaForm:oImgBanner:Adjust(900)
+
+      DEFINE IMAGE oCajaForm:oImgLogo   ID "img_logo"   RESOURCE oRes
+      oCajaForm:oImgLogo:Adjust(60)
+
+      DEFINE ENTRY oCajaForm:oEntCodigo VAR oCajaForm:cCodigo ;
+             VALID iif( oCajaForm:lClose, .T., __ValidaCodigo( oCajaForm:oEntCodigo, oCajaForm ) ) ;
+             ID "ent_codigo" RESOURCE oRes
+
+      DEFINE ENTRY oCajaForm:oEntNombre VAR oCajaForm:cNombre ID "ent_nombre" RESOURCE oRes
+
+      DEFINE ENTRY oCajaForm:oEntNombreC VAR oCajaForm:cNombreC ID "ent_nombre_corto" RESOURCE oRes
+
+      DEFINE ENTRY oCajaForm:oEntCedula VAR oCajaForm:cCedula ;
+             VALID iif( oCajaForm:lClose, .T., __ValidaCedula( oCajaForm:oEntCedula ) ) ;
+             ID "ent_cedula" RESOURCE oRes
+
+      DEFINE ENTRY oCajaForm:oEntRif    VAR oCajaForm:cRif    ;
+             VALID iif( oCajaForm:lClose, .T., __ValidaRIF(oCajaForm:oEntRif, oCajaForm) ) ;
+             ID "ent_rif"    RESOURCE oRes
+
+      DEFINE ENTRY oCajaForm:oEntMail   VAR oCajaForm:cMail   ;
+             VALID iif( oCajaForm:lClose, .T., __ValidaEmail( oCajaForm:oEntMail ) ) ;
+             ID "ent_mail"   RESOURCE oRes
+
+      DEFINE ENTRY oCajaForm:oEntTlf    VAR oCajaForm:cTlf    ;
+             VALID iif( oCajaForm:lClose, .T., __ValidaTlf( oCajaForm:oEntTlf ) ) ;
+             ID "ent_tlf"    RESOURCE oRes
+
+      DEFINE TEXTVIEW oCajaForm:oVTDir  VAR oCajaForm:cDir    ID "tv_dir"     RESOURCE oRes
+
+      DEFINE BUTTON oCajaForm:oBtnSave   ACTION __FinCajaSave( oCajaForm ) ID "btn_save" RESOURCE oRes
+
+      DEFINE BUTTON oCajaForm:oBtnCancel ACTION ( oCajaForm:lClose := .T., oCajaForm:oWnd:End() ) ;
+             ID "btn_cancel" RESOURCE oRes
+
+   ACTIVATE WINDOW oCajaForm:oWnd MODAL VALID __FinCajaExit( oCajaForm )
+
+return
+
+
+
+Procedure __FinCajaSave( oForm )
+/*
+   local hData, uWidget, uResp, aIter, lNew
+
+   // Validar el RIF antes de guardar
+   if !__ValidaRIF( ::oEntRif, oForm )
+      MsgAlert("El RIF ingresado es inválido. Debe tener el formato X-12345678-D (ej. J-12345678-9).", "Error")
+      ::oEntRif:SetFocus()
+      return
+   endif
+
+   // Validar el email antes de guardar
+   if !Empty( ::cMail ) .and. !__ValidaEmail( ::oEntMail )
+      MsgAlert("El correo electrónico ingresado es inválido. Debe tener el formato usuario@dominio.com.", "Error")
+      ::oEntMail:SetFocus()
+      return
+   endif
+
+   // Validar el número de teléfono antes de guardar
+   if !Empty( ::cTlf ) .and. !__ValidaTlf( ::oEntTlf )
+      MsgAlert("El número de teléfono debe contener solo dígitos y tener entre 7 y 15 caracteres.", "Error")
+      ::oEntTlf:SetFocus()
+      return
+   endif
+
+   // Validar la cédula antes de guardar
+   if !Empty( ::cCedula ) .and. !__ValidaCedula( ::oEntCedula )
+      MsgAlert("La cédula debe contener solo dígitos y tener entre 7 y 8 caracteres.", "Error")
+      ::oEntCedula:SetFocus()
+      return
+   endif
+
+   lNew := ::rCaja:isNew()
+
+   // Guardar los datos del cliente
+   hData := ::rCaja:Data()
+   ::rCaja:SetData( { "codigo"       => ::cCodigo,  ;
+                         "nombre"       => ::cNombre,  ;
+                         "nombre_corto" => ::cNombreC, ;
+                         "rif"          => ::cRif,     ;
+                         "email"        => ::cMail,    ;
+                         "telefono"     => ::cTlf,     ;
+                         "direccion"    => ::cDir,     ;
+                         "cedula"       => ::cCedula   ;
+                       } )
+
+   uResp := ::rCaja:Save()
+
+   if !(ValType( uResp ) = "L" .and. uResp = .T.)
+      MsgAlert("No se pudo guardar el cliente.", "Error")
+      return
+   endif
+
+   hData := ::rCaja:Data()
+//View( hb_valtoexp(hData) )
+
+   // Verificar si es un cliente nuevo (no hay selección en el modelo)
+   if lNew 
+      // Caja nuevo: añadir una nueva fila al modelo
+      aIter := ARRAY(4)
+      APPEND LIST_STORE ::oModel:oLbx ITER aIter ;
+             VALUES hData["id"], ;
+                    hData["codigo"], ;
+                    hData["nombre"], ;
+                    hData["rif"], ;
+                    hData["direccion"], ;
+                    hData["telefono"], ;
+                    hData["email"], ;
+                    hData["nombre_corto"], ;
+                    hData["cedula"]
+      // Establecer el cursor en la nueva fila
+      gtk_tree_view_set_cursor( ::oModel:oTreeView:pWidget, ::oModel:oTreeView:GetPath( aIter ), NIL, .F. )
+   else
+      // Caja existente: actualizar la fila seleccionada
+      ::oModel:SetValue( 2, hData["codigo"] )
+      ::oModel:SetValue( 3, hData["nombre"] )
+      ::oModel:SetValue( 4, hData["rif"] )
+      ::oModel:SetValue( 5, hData["direccion"] )
+      ::oModel:SetValue( 6, hData["telefono"] )
+      ::oModel:SetValue( 7, hData["email"] )
+      ::oModel:SetValue( 8, hData["nombre_corto"] ) // Añadir nombre_corto
+      ::oModel:SetValue( 9, hData["cedula"] )       // Añadir cedula
+   endif
+
+   // Actualizar los campos del formulario
+
+   ::lForce := .T.
+   ::oWnd:End()
+*/
+return
+
+
+
+
+Function __FinCajaExit( oForm )
+
+  ::lClose := .T. //Activar bandera de cierre antes de validar salida
+//View( ::lForce )
+  if ::lForce; return .T. ; endif
+
+  if MsgNoYes("¿Desea salir y descartar los cambios?", "Atención.")
+     return .T.
+  endif
+
+return .F.
+
+//eof
