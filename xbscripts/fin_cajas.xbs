@@ -25,10 +25,6 @@ procedure fin_cajas( oForm, oWndParent, oEntParent, cCodCaja, cFiltro, cDocument
       hParam[ "filtro" ] := cFiltro
    endif
 
-//   rVentas := ::oGEmpresa:SetModulo("Ventas")
-//   rCajas := rVentas:Cajas( hParam )
-
-//   ::rEmpresa  := oFormParent:rEmpresa
    ::rFinanzas := ::rEmpresa:SetModulo("Finanzas")
    rCajas  := ::rFinanzas:Cajas()
 
