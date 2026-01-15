@@ -97,7 +97,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    ::cDivisa := ""
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
-          ON CHANGE .t.; //MsgInfo("divisa!") ;
+          ON CHANGE __finrec_CalcDivisa( oForm ) ;  //("divisa!") ;
           OF ::oBoxDivisa
 
    ::oEntCli:SetEditable(.f.)
@@ -116,6 +116,11 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
    if !::lParent
 
+      ::cText := ''
+      DEFINE TEXTVIEW ::oTVReExpresados VAR ::cText READONLY ;
+             ID "tv_reexpresados" RESOURCE ::oRes
+
+
       ::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente"           => oFormParent:cCodCli,;
                                                      "tasa_actual"       => hb_aTokens( ::oComboDivisa:GetValue(), " " )[2], ;
                                                      "moneda_deseada_id" => '2', ;
@@ -127,19 +132,6 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
       AEVAL( ::oDocuments:GetData(), {|a| a[16] := iif(::cDocNro=a[9],;
                                                    (__CalRecMonto(oForm, a[11] ),.t.),.f.), ;
                                           AADD( aData, a )  } )
-
-      ::cText := ''
-      DEFINE TEXTVIEW ::oTVReExpresados VAR ::cText READONLY ;
-             ID "tv_reexpresados" RESOURCE ::oRes
-
-/*
-            ::aStart := ARRAY(14)
-            ::oTVReExpresados:oBuffer:GetIterAtOffSet( ::aStart, -1 )
-            ::oTVReExpresados:CreateTag( "title", { ;//"background", "", ;
-                                                    "foreground", "darkblue",   ;
-                                                    "size", 10*PANGO_SCALE, ;
-                                                  } )
-*/
 
       DEFINE MODEL   ::oModDocuments       ;
              STRUCT  aStruct ; //::oDocuments:Struct()  ;
@@ -184,12 +176,14 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
                                                            .t. ) ;
                                                  } )
 
-      ::oLBoxDocsPen:bEdit := {| oModTmp | __DetalDocument( oForm,                                ;
-                                                            oModTmp,                              ;
-                                                            oModTmp:aIter,                        ;
-                                                            oModTmp:oTreeView:GetAutoValue(  6 ), ;
-                                                            oModTmp:oTreeView:GetAutoValue( 13 ), ;
-                                                            ::rFinanzas ) }
+      //::oLBoxDocsPen:bEdit := {| oModTmp | __DetalDocument( oForm,                                ;
+      //                                                      oModTmp,                              ;
+      //                                                      oModTmp:aIter,                        ;
+      //                                                      oModTmp:oTreeView:GetAutoValue(  6 ), ;
+      //                                                      oModTmp:oTreeView:GetAutoValue( 13 ), ;
+      //                                                      ::rFinanzas ) }
+      ::oLBoxDocsPen:bEdit := {||.t.}
+
       ::lDetalHide := .t.
 
       ::oLBoxDocsPen:SetColVisible( 01, .f. )  // empresa_id
@@ -243,10 +237,9 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
       ::oLBoxDocsDetal:Active()
       ::oLBoxDocsPen:Active()
-   else
 
+   //else
    //   View("llenamos valores del documento")
-
    endif
 
    DEFINE BOX ::oBoxMedios ID "box_medios" RESOURCE ::oRes
@@ -522,7 +515,11 @@ Procedure __EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCo
             oModel:oLbx:Set( aIter, 5, '' )
          endif
       else
-         oModel:oLbx:Set( aIter, nCol, uVal )
+         if !Empty( oTreeView:GetAutoValue( 3 ) )
+            oModel:oLbx:Set( aIter, nCol, uVal )
+         else
+            return
+         endif
       endif
    endif
 
@@ -532,7 +529,7 @@ Procedure __EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCo
       endif
    endif
 
-   if nCol = 4
+   if nCol = 4 
       if !Empty( oTreeView:GetAutoValue( 3 ) )
          oTreeView:SetPosCol( aIter, 5, .F. )
       endif
@@ -632,6 +629,15 @@ procedure __finrec_textview( oForm  )
    ::oTVReExpresados:Insert_tag(CRLF+"Diferencia Cambiaria: "+;
                                 ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 22 )), ;
                                 "title", aStart)
+
+return
+
+
+
+
+procedure __finrec_CalcDivisa( oForm )
+
+   ::oLabInfo:SetText("recalcula divisa...")
 
 return
 
