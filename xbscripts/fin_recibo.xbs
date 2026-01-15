@@ -56,7 +56,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"fin_recibo.ui"
 
    DEFINE WINDOW ::oWndRecibo TITLE "Cobranza. Recibo " ;
-      SIZE 850, 570;
+      SIZE 980, 570;
       ID "window1" RESOURCE ::oRes ;
       OF oFormParent:oFacWnd
 
@@ -71,10 +71,6 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
           ::oImgLogo:Adjust(60)
 
    DEFINE LABEL ::oLabInfo    TEXT "" MARKUP ID "lab_info"    RESOURCE ::oRes
-//   DEFINE LABEL ::oLabUsuario TEXT "" MARKUP ID "lab_usuario" RESOURCE ::oRes
-//   DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
-
-//::oLabInfo:SetText("Probando Sssonido")
 
    DEFINE ENTRY  ::oEntCli VAR ::cEntCli ;
        ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oWndRecibo, ::oEntCli, @::cCodCli) ;
@@ -104,28 +100,20 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
           ON CHANGE .t.; //MsgInfo("divisa!") ;
           OF ::oBoxDivisa
 
-//   if ::lParent
-      ::oEntCli:SetEditable(.f.)
-      ::oEntCli:SetCanFocus(.F.)
+   ::oEntCli:SetEditable(.f.)
+   ::oEntCli:SetCanFocus(.F.)
 
-      DEFINE ENTRY ::oEntDocMonto VAR ::cDocMonto ;
-             ID "ent_doc_monto" RESOURCE ::oRes
+   DEFINE ENTRY ::oEntDocMonto VAR ::cDocMonto ;
+          ID "ent_doc_monto" RESOURCE ::oRes
 
-      DEFINE ENTRY ::oEntDocSaldo VAR ::cDocSaldo ;
-             ID "ent_doc_saldo" RESOURCE ::oRes
-
-//   endif
-
-//   DEFINE FRAME ::oFrameDocPend ID "frame_doc_pend" RESOURCE ::oRes
+   DEFINE ENTRY ::oEntDocSaldo VAR ::cDocSaldo ;
+          ID "ent_doc_saldo" RESOURCE ::oRes
 
    DEFINE FRAME ::oFrameDocsPend ID "frame_docs_pend" RESOURCE ::oRes
    DEFINE BOX ::oBoxDocsPend ID "box_docs" RESOURCE ::oRes 
 
    DEFINE BOX ::oBoxReExpresar ID "box_reexpresar" RESOURCE ::oRes
 
-//View( ::oComboDivisa:GetValue() )   
-//View( hb_aTokens( ::oComboDivisa:GetValue(), " " )[2] )
-//return
    if !::lParent
 
       ::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente"           => oFormParent:cCodCli,;
@@ -133,39 +121,29 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
                                                      "moneda_deseada_id" => '2', ;
                                                      "incluir_cero"      => .t. } )
 
-//View( ::oDocuments:Reccount() )
-//View( ::oDocuments:GetData() )
-//return
-//View( "revisar" )
-//         if ::lParent //!hb_isNIL( ::rFactDetal )
+      aStruct := ::oDocuments:Struct()
+      aData := {}
 
-//View( ::oDocuments:Struct() )
-            aStruct := ::oDocuments:Struct()
-//            AADD( aStruct, {"Relacionado","L",0,0} )
-//View( aStruct )
-//return
-            aData := {}
-//View(::cDocNro)
-            //::oEntDocMonto:SetText('0')
-            AEVAL( ::oDocuments:GetData(), {|a| a[16] := iif(::cDocNro=a[9],;
-                                                         (__CalRecMonto(oForm, a[11] ),.t.),.f.), ;
-                                                AADD( aData, a )  } )
+      AEVAL( ::oDocuments:GetData(), {|a| a[16] := iif(::cDocNro=a[9],;
+                                                   (__CalRecMonto(oForm, a[11] ),.t.),.f.), ;
+                                          AADD( aData, a )  } )
 
-//View(LEN(aData))
-//View( aData )
-//return
-//      ::cDocNro    := oFormParent:oLabNumero:GetValue()
+      ::cText := ''
+      DEFINE TEXTVIEW ::oTVReExpresados VAR ::cText READONLY ;
+             ID "tv_reexpresados" RESOURCE ::oRes
 
-            ::cText := ''
-            DEFINE TEXTVIEW ::oTVReExpresados VAR ::cText READONLY ;
-                   ID "tv_reexpresados" RESOURCE ::oRes
+/*
+            ::aStart := ARRAY(14)
+            ::oTVReExpresados:oBuffer:GetIterAtOffSet( ::aStart, -1 )
+            ::oTVReExpresados:CreateTag( "title", { ;//"background", "", ;
+                                                    "foreground", "darkblue",   ;
+                                                    "size", 10*PANGO_SCALE, ;
+                                                  } )
+*/
 
-            DEFINE MODEL   ::oModDocuments       ;
-                   STRUCT  aStruct ; //::oDocuments:Struct()  ;
-                   DATA    aData     //::oDocuments:GetData()
-//View( aStruct )
-//View( ::oDocuments:GetData() )
-//return
+      DEFINE MODEL   ::oModDocuments       ;
+             STRUCT  aStruct ; //::oDocuments:Struct()  ;
+             DATA    aData     //::oDocuments:GetData()
 /*         else
             DEFINE MODEL   ::oModDocuments           ;
                    STRUCT  {{"empresa_id",     "N", 10, 0},;
@@ -187,76 +165,84 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 //         endif   
 
 
-         DEFINE LISTBOX ::oLBoxDocsPen     ;
-                MODEL   ::oModDocuments    ;
-                OF      ::oBoxDocsPend
+      DEFINE LISTBOX ::oLBoxDocsPen     ;
+             MODEL   ::oModDocuments    ;
+             OF      ::oBoxDocsPend
 
-         ::oLBoxDocsPen:lBar := .F.
+      ::oLBoxDocsPen:lBar := .F.
 
-         oModTmp := ::oModDocuments 
-         ::oModDocuments:oTreeView:OnCursorChanged( {|| iif( ToNum(::oModDocuments:oTreeView:GetAutoValue( 17 ))>0 ;
-                                                             .and. ToNum(::oModDocuments:oTreeView:GetAutoValue( 20 ))>0 ,;
-                                                             (__finrec_textview( oForm  ),::oBoxReExpresar:Show()), ;
-                                                             ::oBoxReExpresar:Hide() ), ;
-                                                        iif( !Empty( ::oModDocuments:oTreeView:GetAutoValue( 13 ) ), ;
-                                                              __DetalDocument( oForm, oModTmp, oModTmp:aIter, ;
-                                                                               oModTmp:oTreeView:GetAutoValue(  6 ),;
-                                                                               oModTmp:oTreeView:GetAutoValue( 13 ),;
-                                                                               ::rFinanzas, .F. ), ;
-                                                              .t. ) ;
-                                                    } )
+      oModTmp := ::oModDocuments 
+      ::oModDocuments:oTreeView:OnCursorChanged( {|| iif( ToNum(::oModDocuments:oTreeView:GetAutoValue( 17 ))>0 ;
+                                                          .and. ToNum(::oModDocuments:oTreeView:GetAutoValue( 20 ))>0 ,;
+                                                          (__finrec_textview( oForm  ),::oBoxReExpresar:Show()), ;
+                                                          ::oBoxReExpresar:Hide() ), ;
+                                                     iif( !Empty( ::oModDocuments:oTreeView:GetAutoValue( 13 ) ), ;
+                                                           __DetalDocument( oForm, oModTmp, oModTmp:aIter, ;
+                                                                            oModTmp:oTreeView:GetAutoValue(  6 ),;
+                                                                            oModTmp:oTreeView:GetAutoValue( 13 ),;
+                                                                            ::rFinanzas, .F. ), ;
+                                                           .t. ) ;
+                                                 } )
 
-         ::oLBoxDocsPen:bEdit := {| oModTmp | __DetalDocument( oForm,                                ;
-                                                               oModTmp,                              ;
-                                                               oModTmp:aIter,                        ;
-                                                               oModTmp:oTreeView:GetAutoValue(  6 ), ;
-                                                               oModTmp:oTreeView:GetAutoValue( 13 ), ;
-                                                               ::rFinanzas ) }
-         ::lDetalHide := .t.
+      ::oLBoxDocsPen:bEdit := {| oModTmp | __DetalDocument( oForm,                                ;
+                                                            oModTmp,                              ;
+                                                            oModTmp:aIter,                        ;
+                                                            oModTmp:oTreeView:GetAutoValue(  6 ), ;
+                                                            oModTmp:oTreeView:GetAutoValue( 13 ), ;
+                                                            ::rFinanzas ) }
+      ::lDetalHide := .t.
 
-         ::oLBoxDocsPen:SetColVisible( 01, .f. )  // empresa_id
-         ::oLBoxDocsPen:SetColVisible( 02, .f. )  // cliente_id
-         ::oLBoxDocsPen:SetColVisible( 03, .f. )  // codigo_cliente
-         ::oLBoxDocsPen:SetColVisible( 04, .f. )  // cliente
-         ::oLBoxDocsPen:SetColVisible( 05, .f. )  // rif
-         ::oLBoxDocsPen:SetColVisible( 06, .f. )  // transaccion_id
-         ::oLBoxDocsPen:SetColVisible( 07, .f. )  // documento_id
-         ::oLBoxDocsPen:SetColVisible( 12, .f. )  // moneda_id
+      ::oLBoxDocsPen:SetColVisible( 01, .f. )  // empresa_id
+      ::oLBoxDocsPen:SetColVisible( 02, .f. )  // cliente_id
+      ::oLBoxDocsPen:SetColVisible( 03, .f. )  // codigo_cliente
+      ::oLBoxDocsPen:SetColVisible( 04, .f. )  // cliente
+      ::oLBoxDocsPen:SetColVisible( 05, .f. )  // rif
+      ::oLBoxDocsPen:SetColVisible( 06, .f. )  // transaccion_id
+      ::oLBoxDocsPen:SetColVisible( 07, .f. )  // documento_id
+      ::oLBoxDocsPen:SetColVisible( 12, .f. )  // moneda_id
 
-         ::oLBoxDocsPen:SetColTitle( 08, "Tipo"          )
-         ::oLBoxDocsPen:SetColTitle( 09, "Nro. Documento")  
-         ::oLBoxDocsPen:SetColTitle( 10, "Fecha"         )  
-         ::oLBoxDocsPen:SetColTitle( 11, "Monto Doc."    )  
-         ::oLBoxDocsPen:SetColTitle( 13, "Monto Apli."   )  
-         ::oLBoxDocsPen:SetColTitle( 14, "Saldo"         )  
-         ::oLBoxDocsPen:SetColTitle( 15, "Estado"        )
+      ::oLBoxDocsPen:SetColTitle( 08, "Tipo"          )
+      ::oLBoxDocsPen:SetColTitle( 09, "Nro. Documento")  
+      ::oLBoxDocsPen:SetColTitle( 10, "Fecha"         )  
+      ::oLBoxDocsPen:SetColTitle( 11, "Monto Doc."    )  
+      ::oLBoxDocsPen:SetColTitle( 13, "Monto Apli."   )  
+      ::oLBoxDocsPen:SetColTitle( 14, "Saldo"         )  
+      ::oLBoxDocsPen:SetColTitle( 15, "Estado"        )
+      ::oLBoxDocsPen:SetColTitle( 16, "Seleccionado"  )
+      ::oLBoxDocsPen:SetColTitle( 17, "Tasa Doc."     )
+      ::oLBoxDocsPen:SetColTitle( 18, "Monto Convert" )
+      ::oLBoxDocsPen:SetColTitle( 19, "Saldo Convert" )
+      ::oLBoxDocsPen:SetColTitle( 20, "Tasa Actual"   )
+      ::oLBoxDocsPen:SetColTitle( 21, "Equiv Actual"  )
+      ::oLBoxDocsPen:SetColTitle( 22, "Diferencial "  )
+      ::oLBoxDocsPen:SetColTitle( 23, "% Diferencial" )
 
 
-         DEFINE BOX ::oBoxDocDetal ID "box_docs_detal" RESOURCE ::oRes
+      DEFINE BOX ::oBoxDocDetal ID "box_docs_detal" RESOURCE ::oRes
 
-         DEFINE MODEL   ::oModDocDetals           ;
-                STRUCT  {{"cobranza_id",    "N", 10, 0},;
-                         {"fecha_cobranza", "D", 10, 0},;
-                         {"monto_aplicado", "N", 10, 2},;
-                         {"medios_pago",    "C",100, 0},;
-                         {"observaciones",  "C",100, 0}};
-                DATA    {{0,'',0,'',''}}
+      DEFINE MODEL   ::oModDocDetals           ;
+             STRUCT  {{"cobranza_id",    "N", 10, 0},;
+                      {"fecha_cobranza", "D", 10, 0},;
+                      {"monto_aplicado", "N", 10, 2},;
+                      {"medios_pago",    "C",100, 0},;
+                      {"observaciones",  "C",100, 0}};
+             DATA    {{0,'',0,'',''}}
 
-         DEFINE LISTBOX ::oLBoxDocsDetal   ;
-                MODEL   ::oModDocDetals    ;
-                OF      ::oBoxDocDetal
+      DEFINE LISTBOX ::oLBoxDocsDetal   ;
+             MODEL   ::oModDocDetals    ;
+             OF      ::oBoxDocDetal
 
-         ::oLBoxDocsDetal:lBar  := .F.
-         ::oLBoxDocsDetal:bEdit := {|| .T. }
+      ::oLBoxDocsDetal:lBar  := .F.
+      ::oLBoxDocsDetal:bEdit := {|| .T. }
 
-         ::oLBoxDocsDetal:SetColTitle( 01, "Recibo"        )
-         ::oLBoxDocsDetal:SetColTitle( 02, "Fecha"         )
-         ::oLBoxDocsDetal:SetColTitle( 03, "Aplicado"      )
-         ::oLBoxDocsDetal:SetColTitle( 04, "Medio de Pago" )
-         ::oLBoxDocsDetal:SetColTitle( 05, "Observaciones" )
+      ::oLBoxDocsDetal:SetColTitle( 01, "Recibo"        )
+      ::oLBoxDocsDetal:SetColTitle( 02, "Fecha"         )
+      ::oLBoxDocsDetal:SetColTitle( 03, "Aplicado"      )
+      ::oLBoxDocsDetal:SetColTitle( 04, "Medio de Pago" )
+      ::oLBoxDocsDetal:SetColTitle( 05, "Observaciones" )
 
-         ::oLBoxDocsDetal:Active()
-         ::oLBoxDocsPen:Active()
+      ::oLBoxDocsDetal:Active()
+      ::oLBoxDocsPen:Active()
    else
 
    //   View("llenamos valores del documento")
@@ -297,7 +283,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    ::oLBoxMedios:Active()
 
    __HacerModeloEditable( oForm )
-   __CalcSaldo( oForm )
+   //__CalcSaldo( oForm )
 
    DEFINE BUTTON ::oBtnSave ;
       ACTION __fr_Save( oForm ) ;
@@ -360,9 +346,6 @@ procedure __DetalDocument( oForm, oModel, aIter, uTransaccion, cAplicado, rFinan
    default lSelect := .T.
 
    nAplicado := VAL(cAplicado)
-
-//View( lSelect )
-//   if nAplicado <=0 ; RETURN ; endif
 
    if oModel:oTreeView:IsGetSelected( aIter ) .and. lSelect
       oModel:oLbx:Set( aIter, nCol, !oModel:oTreeView:GetAutoValue( nCol ) ) 
@@ -467,13 +450,6 @@ Procedure __HacerModeloEditable( oForm )
    oCol := ::oModMedios:aCol[ 3 ] // Monto
    oCol:oRenderer:SetEditable( .T. )
 
-//   oCol:oRenderer:OnEditing_Started( {|oSender,pCell, pEditable, cPath | ;
-//                                       iif( ::oModMedios:oTreeView:IsGetSelected( ::oModMedios:aIter ), ;
-//                                            ::oModMedios:oLbx:Set( ::oModMedios:aIter, 3, "1234" ),;
-//                                            NIL ;
-//                                          );
-//                                     } )
-
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
                                __EditMedio( oForm, oSender, path, uVal, ::oModMedios:aIter,;
                                             ::oModMedios, ::oModMedios:oTreeView, 3 )  }
@@ -501,12 +477,13 @@ Procedure __HacerModeloEditable( oForm )
 return
 
 
-
+/*
 Procedure __CalcSaldo( oForm )
    local oCxC
 
 //View( " __CalcSaldo " )
 //View(::cTipoDoc)
+return
    oCxC := ::rFinanzas:CuentasPorCobrar( { "cliente"        => ::cCodCli, ;
                                            "incluir_cero"   => .t.,       ;
                                            "documento_id"   => ::cTipoDoc,;
@@ -526,7 +503,7 @@ Procedure __CalcSaldo( oForm )
    oCxC:End()
 
 return
-
+*/
 
 
 Procedure __EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCol )
@@ -611,7 +588,6 @@ function __FinValFecha( oForm, oEnt, dValPrevio )
    ::aDivisas := {}
    ::aMonedas := {}
    While !rQry:Eof()
-//      if rQry:codigo="USD" //-- de momento solo tomamos la tasa USD
         if rQry:valor > 0
          AADD( ::aDivisas, ALLTRIM(rQry:codigo)+" "+;
                            hb_ntos( rQry:valor ) )
@@ -625,14 +601,37 @@ function __FinValFecha( oForm, oEnt, dValPrevio )
    endif
 
 //View( hb_valtoexp( ::aMonedas ) )
-
 return lRes
 
 
 
 procedure __finrec_textview( oForm  )
+   local aStart := ARRAY(14)
 
-   ::oTVReExpresados:SetText( "probanddo ssssonido" )
+   ::oTVReExpresados:SetText('')
+
+   aStart := ARRAY(14)
+   ::oTVReExpresados:oBuffer:GetIterAtOffSet( aStart, -1 )
+   ::oTVReExpresados:CreateTag( "title", { ;//"background", "", ;
+                                           "foreground", "darkblue",   ;
+                                           "size", 10*PANGO_SCALE, ;
+                                         } )
+
+   ::oTVReExpresados:Insert_tag(CRLF+"Tasa a la fecha del documento: "+;
+                                ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 17 )), ;
+                                "title", aStart)
+   ::oTVReExpresados:Insert_tag(CRLF+"Monto convertido: "+;
+                                ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 18 )), ;
+                                "title", aStart)
+   ::oTVReExpresados:Insert_tag(CRLF+"Saldo convertido: "+;
+                                ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 19 )), ;
+                                "title", aStart)
+   ::oTVReExpresados:Insert_tag(CRLF+"Monto equivalente en tasa actual: "+;
+                                ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 21 )), ;
+                                "title", aStart)
+   ::oTVReExpresados:Insert_tag(CRLF+"Diferencia Cambiaria: "+;
+                                ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 22 )), ;
+                                "title", aStart)
 
 return
 
