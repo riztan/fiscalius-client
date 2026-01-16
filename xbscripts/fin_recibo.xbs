@@ -8,9 +8,8 @@
 
 procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
-   local oForm, oModTmp
-   local aMedio, aData := {}
-   local aStruct
+   local oForm 
+   local aMedio 
 
    SET PUBLIC oForm
 
@@ -56,7 +55,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"fin_recibo.ui"
 
    DEFINE WINDOW ::oWndRecibo TITLE "Cobranza. Recibo " ;
-      SIZE 980, 570;
+      SIZE 1100, 570;
       ID "window1" RESOURCE ::oRes ;
       OF oFormParent:oFacWnd
 
@@ -97,7 +96,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    ::cDivisa := ""
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
-          ON CHANGE __finrec_CalcDivisa( oForm ) ;  //("divisa!") ;
+          ON CHANGE __finrec_CalcDivisa( oForm, oFormParent ) ;  //("divisa!") ;
           OF ::oBoxDivisa
 
    ::oEntCli:SetEditable(.f.)
@@ -120,97 +119,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
       DEFINE TEXTVIEW ::oTVReExpresados VAR ::cText READONLY ;
              ID "tv_reexpresados" RESOURCE ::oRes
 
-
-      ::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente"           => oFormParent:cCodCli,;
-                                                     "tasa_actual"       => hb_aTokens( ::oComboDivisa:GetValue(), " " )[2], ;
-                                                     "moneda_deseada_id" => '2', ;
-                                                     "incluir_cero"      => .t. } )
-
-      aStruct := ::oDocuments:Struct()
-      aData := {}
-
-      AEVAL( ::oDocuments:GetData(), {|a| a[16] := iif(::cDocNro=a[9],;
-                                                   (__CalRecMonto(oForm, a[11] ),.t.),.f.), ;
-                                          AADD( aData, a )  } )
-
-      DEFINE MODEL   ::oModDocuments       ;
-             STRUCT  aStruct ; //::oDocuments:Struct()  ;
-             DATA    aData     //::oDocuments:GetData()
-/*         else
-            DEFINE MODEL   ::oModDocuments           ;
-                   STRUCT  {{"empresa_id",     "N", 10, 0},;
-                            {"cliente_id",     "N", 10, 0},;
-                            {"codigo_cliente" ,"C", 50, 0},;
-                            {"cliente",        "C",100, 0},;
-                            {"rif",            "C", 20, 0},;
-                            {"transaccion_id", "N", 10, 0},;
-                            {"documento_id",   "N", 10, 0},;
-                            {"tipo_documento", "C", 50, 0},;
-                            {"documento",      "C", 15, 0},;
-                            {"fecha_documento","D", 10, 0},;
-                            {"monto_documento","N", 10, 2},;
-                            {"monto_aplicado", "N", 10, 2},;
-                            {"saldo_pendiente","N", 10, 2},;
-                            {"estado_cxc",     "C",200, 0}};
-                   DATA    {{0,'','','',0,'','',0,0,0,'',''}}
-*/
-//         endif   
-
-
-      DEFINE LISTBOX ::oLBoxDocsPen     ;
-             MODEL   ::oModDocuments    ;
-             OF      ::oBoxDocsPend
-
-      ::oLBoxDocsPen:lBar := .F.
-
-      oModTmp := ::oModDocuments 
-      ::oModDocuments:oTreeView:OnCursorChanged( {|| iif( ToNum(::oModDocuments:oTreeView:GetAutoValue( 17 ))>0 ;
-                                                          .and. ToNum(::oModDocuments:oTreeView:GetAutoValue( 20 ))>0 ,;
-                                                          (__finrec_textview( oForm  ),::oBoxReExpresar:Show()), ;
-                                                          ::oBoxReExpresar:Hide() ), ;
-                                                     iif( !Empty( ::oModDocuments:oTreeView:GetAutoValue( 13 ) ), ;
-                                                           __DetalDocument( oForm, oModTmp, oModTmp:aIter, ;
-                                                                            oModTmp:oTreeView:GetAutoValue(  6 ),;
-                                                                            oModTmp:oTreeView:GetAutoValue( 13 ),;
-                                                                            ::rFinanzas, .F. ), ;
-                                                           .t. ) ;
-                                                 } )
-
-      //::oLBoxDocsPen:bEdit := {| oModTmp | __DetalDocument( oForm,                                ;
-      //                                                      oModTmp,                              ;
-      //                                                      oModTmp:aIter,                        ;
-      //                                                      oModTmp:oTreeView:GetAutoValue(  6 ), ;
-      //                                                      oModTmp:oTreeView:GetAutoValue( 13 ), ;
-      //                                                      ::rFinanzas ) }
-      ::oLBoxDocsPen:bEdit := {||.t.}
-
-      ::lDetalHide := .t.
-
-      ::oLBoxDocsPen:SetColVisible( 01, .f. )  // empresa_id
-      ::oLBoxDocsPen:SetColVisible( 02, .f. )  // cliente_id
-      ::oLBoxDocsPen:SetColVisible( 03, .f. )  // codigo_cliente
-      ::oLBoxDocsPen:SetColVisible( 04, .f. )  // cliente
-      ::oLBoxDocsPen:SetColVisible( 05, .f. )  // rif
-      ::oLBoxDocsPen:SetColVisible( 06, .f. )  // transaccion_id
-      ::oLBoxDocsPen:SetColVisible( 07, .f. )  // documento_id
-      ::oLBoxDocsPen:SetColVisible( 12, .f. )  // moneda_id
-
-      ::oLBoxDocsPen:SetColTitle( 08, "Tipo"          )
-      ::oLBoxDocsPen:SetColTitle( 09, "Nro. Documento")  
-      ::oLBoxDocsPen:SetColTitle( 10, "Fecha"         )  
-      ::oLBoxDocsPen:SetColTitle( 11, "Monto Doc."    )  
-      ::oLBoxDocsPen:SetColTitle( 13, "Monto Apli."   )  
-      ::oLBoxDocsPen:SetColTitle( 14, "Saldo"         )  
-      ::oLBoxDocsPen:SetColTitle( 15, "Estado"        )
-      ::oLBoxDocsPen:SetColTitle( 16, "Seleccionado"  )
-      ::oLBoxDocsPen:SetColTitle( 17, "Tasa Doc."     )
-      ::oLBoxDocsPen:SetColTitle( 18, "Monto Convert" )
-      ::oLBoxDocsPen:SetColTitle( 19, "Saldo Convert" )
-      ::oLBoxDocsPen:SetColTitle( 20, "Tasa Actual"   )
-      ::oLBoxDocsPen:SetColTitle( 21, "Equiv Actual"  )
-      ::oLBoxDocsPen:SetColTitle( 22, "Diferencial "  )
-      ::oLBoxDocsPen:SetColTitle( 23, "% Diferencial" )
-
+      __finrec_LoadDocs(oForm, oFormParent)
 
       DEFINE BOX ::oBoxDocDetal ID "box_docs_detal" RESOURCE ::oRes
 
@@ -313,6 +222,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    endif
 
    ::oModDocuments:oTreeView:SetFocus()
+   ::oModDocuments:GoTop()
 
 return
 
@@ -333,7 +243,7 @@ return
 
 procedure __DetalDocument( oForm, oModel, aIter, uTransaccion, cAplicado, rFinanzas, lSelect )
    local nCol := 16, nDocMonto := 11
-   local rDetalles, nAplicado//, aIter := ARRAY(4)
+   local rDetalles, nAplicado
    local lPrevio := oModel:oTreeView:GetAutoValue( nCol )
 
    default lSelect := .T.
@@ -352,14 +262,12 @@ procedure __DetalDocument( oForm, oModel, aIter, uTransaccion, cAplicado, rFinan
       endif
    endif
 
-   if nAplicado == 0 .OR. !::lDetalHide .and. lSelect
+   if nAplicado == 0 
       ::oBoxDocDetal:Hide(.T.)
-      ::lDetalHide := .T.
       return
    endif
 
    ::oBoxDocDetal:Show(.T.)
-   ::lDetalHide := .F.
 
    rDetalles := rFinanzas:DetallePagosFactura( uTransaccion )
 
@@ -499,6 +407,7 @@ return
 */
 
 
+
 Procedure __EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCol )
 
    local nVal := ToNum( uVal )
@@ -535,6 +444,130 @@ Procedure __EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCo
       endif
    endif
    
+return
+
+
+
+procedure __finrec_LoadDocs(oForm, oFormParent)
+   local aData, aStruct, oModTmp, aItem, aIter := ARRAY(4)
+
+   if oForm:IsDef( "oEntDocMonto" )
+      ::oEntDocMonto:SetText( '' )
+      ::oEntDocSaldo:SetText( '' )
+   endif
+//View("verifica")
+
+   ::cDocMonto  := "" 
+   ::cDocSaldo  := "" 
+   ::nSaldo     := ToNum( ::cDocSaldo )
+
+   ::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente"           => oFormParent:cCodCli,;
+                                                  "tasa_actual"       => hb_aTokens( ::oComboDivisa:GetValue(), " " )[2], ;
+                                                  "moneda_deseada_id" => '2', ;
+                                                  "incluir_cero"      => .t. } )
+
+   aStruct := ::oDocuments:Struct()
+   aData := {}
+
+   AEVAL( ::oDocuments:GetData(), {|a| a[16] := iif(::cDocNro=a[9],;
+                                                (__CalRecMonto(oForm, a[11] ),.t.),.f.), ;
+                                       AADD( aData, a )  } )
+
+   if !oForm:IsDef( "oModDocuments" )
+
+      DEFINE MODEL   ::oModDocuments       ;
+             STRUCT  aStruct ; //::oDocuments:Struct()  ;
+             DATA    aData     //::oDocuments:GetData()
+/*         else
+            DEFINE MODEL   ::oModDocuments           ;
+                   STRUCT  {{"empresa_id",     "N", 10, 0},;
+                            {"cliente_id",     "N", 10, 0},;
+                            {"codigo_cliente" ,"C", 50, 0},;
+                            {"cliente",        "C",100, 0},;
+                            {"rif",            "C", 20, 0},;
+                            {"transaccion_id", "N", 10, 0},;
+                            {"documento_id",   "N", 10, 0},;
+                            {"tipo_documento", "C", 50, 0},;
+                            {"documento",      "C", 15, 0},;
+                            {"fecha_documento","D", 10, 0},;
+                            {"monto_documento","N", 10, 2},;
+                            {"monto_aplicado", "N", 10, 2},;
+                            {"saldo_pendiente","N", 10, 2},;
+                            {"estado_cxc",     "C",200, 0}};
+                   DATA    {{0,'','','',0,'','',0,0,0,'',''}}
+*/
+//         endif   
+
+      DEFINE LISTBOX ::oLBoxDocsPen     ;
+             MODEL   ::oModDocuments    ;
+             OF      ::oBoxDocsPend
+
+      ::oLBoxDocsPen:lBar := .F.
+
+      oModTmp := ::oModDocuments 
+      ::oModDocuments:oTreeView:OnCursorChanged( {|| iif( ToNum(::oModDocuments:oTreeView:GetAutoValue( 17 ))>0 ;
+                                                          .and. ToNum(::oModDocuments:oTreeView:GetAutoValue( 20 ))>0 ,;
+                                                          (__finrec_textview( oForm  ),::oBoxReExpresar:Show()), ;
+                                                          ::oBoxReExpresar:Hide() ), ;
+                                                     iif( !Empty( ::oModDocuments:oTreeView:GetAutoValue( 13 ) ), ;
+                                                           __DetalDocument( oForm, oModTmp, oModTmp:aIter, ;
+                                                                            oModTmp:oTreeView:GetAutoValue(  6 ),;
+                                                                            oModTmp:oTreeView:GetAutoValue( 13 ),;
+                                                                            ::rFinanzas, .F. ), ;
+                                                           .t. ) ;
+                                                 } )
+
+      ::oLBoxDocsPen:bEdit := {| oModTmp | __DetalDocument( oForm,                                ;
+                                                            oModTmp,                              ;
+                                                            oModTmp:aIter,                        ;
+                                                            oModTmp:oTreeView:GetAutoValue(  6 ), ;
+                                                            oModTmp:oTreeView:GetAutoValue( 13 ), ;
+                                                            ::rFinanzas, .T. ) }
+      //::oLBoxDocsPen:bEdit := {||.t.}
+
+      ::oLBoxDocsPen:SetColVisible( 01, .f. )  // empresa_id
+      ::oLBoxDocsPen:SetColVisible( 02, .f. )  // cliente_id
+      ::oLBoxDocsPen:SetColVisible( 03, .f. )  // codigo_cliente
+      ::oLBoxDocsPen:SetColVisible( 04, .f. )  // cliente
+      ::oLBoxDocsPen:SetColVisible( 05, .f. )  // rif
+      ::oLBoxDocsPen:SetColVisible( 06, .f. )  // transaccion_id
+      ::oLBoxDocsPen:SetColVisible( 07, .f. )  // documento_id
+      ::oLBoxDocsPen:SetColVisible( 12, .f. )  // moneda_id
+
+      ::oLBoxDocsPen:SetColTitle( 08, "Tipo"          )
+      ::oLBoxDocsPen:SetColTitle( 09, "Nro. Doc."     )  
+      ::oLBoxDocsPen:SetColTitle( 10, "Fecha"         )  
+      ::oLBoxDocsPen:SetColTitle( 11, "Monto Doc."    )  
+      ::oLBoxDocsPen:SetColTitle( 13, "Monto Apli."   )  
+      ::oLBoxDocsPen:SetColTitle( 14, "Saldo"         )  
+      ::oLBoxDocsPen:SetColTitle( 15, "Estado"        )
+      ::oLBoxDocsPen:SetColTitle( 16, "Sel."          )
+      ::oLBoxDocsPen:SetColTitle( 17, "Tasa Doc."     )
+      ::oLBoxDocsPen:SetColTitle( 18, "Monto Convert" )
+      ::oLBoxDocsPen:SetColTitle( 19, "Saldo Convert" )
+      ::oLBoxDocsPen:SetColTitle( 20, "Tasa Actual"   )
+      ::oLBoxDocsPen:SetColTitle( 21, "Equiv Actual"  )
+      ::oLBoxDocsPen:SetColTitle( 22, "Diferencial "  )
+      ::oLBoxDocsPen:SetColTitle( 23, "% Diferencial" )
+
+   else
+//::oLabInfo:SetText("actualizamos el modelo")
+//View( aData )
+      ::oModDocuments:oTreeView:ClearModel(.T.)
+      FOR EACH aItem IN aData
+         APPEND LIST_STORE ::oModDocuments:oLbx ITER aIter          ;
+                VALUES  hb_ntos(aItem[1]), hb_ntos(aItem[2]), ALLTRIM(aItem[3]), ;
+                        ALLTRIM(aItem[4]), ALLTRIM(aItem[5]), hb_ntos(aItem[6]), ;
+                        hb_ntos(aItem[7]), ALLTRIM(aItem[8]), ALLTRIM(aItem[9]), ;
+                        DTOC(aItem[10]), TRANSFORM(aItem[11],P_92), hb_ntos([12]), ;
+                        TRANSFORM(aItem[13],P_92),TRANSFORM(aItem[14],P_92), ;
+                        ALLTRIM(aItem[15]), aItem[16], TRANSFORM(aItem[17],P_92), ;
+                        TRANSFORM(aItem[18],P_92), TRANSFORM(aItem[19],P_92), ;
+                        TRANSFORM(aItem[20],P_92), TRANSFORM(aItem[21],P_92), ;
+                        TRANSFORM(aItem[22],P_92), TRANSFORM(aItem[23],P_92)
+      NEXT
+   endif
+
 return
 
 
@@ -605,9 +638,19 @@ return lRes
 procedure __finrec_textview( oForm  )
    local aStart := ARRAY(14)
 
-   ::oTVReExpresados:SetText('')
+//   ::oTVReExpresados:SetText('')
 
-   aStart := ARRAY(14)
+   ::oTVReExpresados:SetText(CRLF+"Tasa a la fecha del documento: "+;
+                             ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 17 ))+ ;
+                             CRLF+"Monto convertido: "+;
+                             ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 18 ))+ ;
+                             CRLF+"Saldo convertido: "+;
+                             ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 19 ))+ ;
+                             CRLF+"Monto equivalente en tasa actual: "+;
+                             ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 21 ))+ ;
+                             CRLF+"Diferencia Cambiaria: "+;
+                             ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 22 ))) 
+/*
    ::oTVReExpresados:oBuffer:GetIterAtOffSet( aStart, -1 )
    ::oTVReExpresados:CreateTag( "title", { ;//"background", "", ;
                                            "foreground", "darkblue",   ;
@@ -629,15 +672,16 @@ procedure __finrec_textview( oForm  )
    ::oTVReExpresados:Insert_tag(CRLF+"Diferencia Cambiaria: "+;
                                 ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 22 )), ;
                                 "title", aStart)
-
+*/
 return
 
 
 
 
-procedure __finrec_CalcDivisa( oForm )
+procedure __finrec_CalcDivisa( oForm, oFormParent)
 
-   ::oLabInfo:SetText("recalcula divisa...")
+   __finrec_LoadDocs(oForm, oFormParent)
+//View( ::oModDocuments:aItems )
 
 return
 
