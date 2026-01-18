@@ -185,7 +185,6 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    ::oLBoxMedios:Active()
 
    __fr_HacerModeloEditable( oForm )
-   //__CalcSaldo( oForm )
 
    DEFINE BUTTON ::oBtnSave ;
       ACTION __fr_Save( oForm ) ;
@@ -221,6 +220,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
       ::oBoxDocDetal:Hide(.T.)
    endif
 
+    __fr_CalMonto( oForm )
    ::oModDocuments:oTreeView:SetFocus()
    ::oModDocuments:GoTop()
 
@@ -228,15 +228,45 @@ return
 
 
 
-procedure __fr_CalMonto( oForm, nDocMonto )
+procedure __fr_CalMonto( oForm, nDocMonto, nDocAplicado, nDocSaldo )
+
+   local aData //:= ::oModDocuments:oTreeView:FillArray()
+   local aLine, nAplicado := 0
+
+   if !::IsDef("oModDocuments")
+      return
+   endif
+   aData := ::oModDocuments:oTreeView:FillArray()
+//View( aData )
+   FOR EACH aLine IN aData
+      if aLine[16]
+         //nAplicadoAntes += ToNum(aLine[24])
+         nAplicado      += ToNum(aLine[13]) 
+         //nSaldo         += ToNum(aLine[14]) - nAplicado
+         //nMonto         += nAplicado //ToNum(aLine[11]) - nAplicado
+      endif
+   NEXT
+
+   ::nSaldo := nAplicado
+   ::oEntDocMonto:SetText( TRANSFORM( nAplicado, P_92 ) )
+   ::oEntDocSaldo:SetText( TRANSFORM( ::nSaldo, P_92 ) )
+
+
+//View( hb_ntos(nMonto)+" - "+hb_ntos(nAplicado)+" - "+hb_ntos( nSaldo ) )
+/*
    local nMonto := ToNum( ::oEntDocMonto:GetValue() )
    local nSaldo := ToNum( ::oEntDocSaldo:GetValue() )
+   local nAplicado := ToNum( nDocAplicado )
+
+//View( nDocAplicado )
 
    nMonto += iif( hb_isString(nDocMonto), ToNum( nDocMonto ), nDocMonto ) 
-   nSaldo += iif( hb_isString(nDocMonto), ToNum( nDocMonto ), nDocMonto ) 
-   ::nSaldo := nSaldo
+   //nSaldo += iif( hb_isString(nDocMonto), ToNum( nDocMonto ), nDocMonto ) 
+   nSaldo += iif( hb_isString(nDocSaldo), ToNum( nDocSaldo ), nDocSaldo ) 
+   ::nSaldo := nSaldo - nAplicado
    ::oEntDocMonto:SetText( TRANSFORM( nMonto, P_92 ) )
    ::oEntDocSaldo:SetText( TRANSFORM( nSaldo, P_92 ) )
+*/
 return
 
 
@@ -254,12 +284,11 @@ procedure __fr_DetalDocument( oForm, oModel, aIter, uTransaccion, cAplicado, rFi
       oModel:oLbx:Set( aIter, nCol, !oModel:oTreeView:GetAutoValue( nCol ) ) 
       //-- Proceder a recalcular Montos.
       if oModel:oTreeView:GetAutoValue(nCol)
-         __fr_CalMonto( oForm, oModel:oTreeView:GetAutoValue( nDocMonto ) ) 
+         oModel:oLbx:Set( aIter, 13, oModel:oTreeView:GetAutoValue(14) ) 
       else
-         if lPrevio
-            __fr_CalMonto( oForm, ToNum(oModel:oTreeView:GetAutoValue( nDocMonto )) * -1 ) 
-         endif
+         oModel:oLbx:Set( aIter, 13, 0 ) 
       endif
+      __fr_CalMonto( oForm )
    endif
 
    if nAplicado == 0 
@@ -408,6 +437,39 @@ return
 
 
 
+Procedure __fr_EditAplicado( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCol )
+
+   local nVal := ToNum( uVal )
+
+   default uVal := ''
+
+   if oTreeView:IsGetSelected( aIter )
+      if nCol = 13
+         if uVal = "." .or. uVal = "=" ; nVal := ToNum( oTreeView:GetAutoValue( 14 )) ; endif
+         if nVal = 0 ; uVal := "" ; endif
+         if nVAl > ToNum( oTreeView:GetAutoValue(11) ) //Monto
+            nVal := ToNum( oTreeView:GetAutoValue(11) ) - ;
+                    ToNum( oTreeView:GetAutoValue(24) ) // Monto Aplicado anterior.
+         endif
+         uVal := TRANSFORM( nVal, P_92 )
+         //__fr_SetMedioMonto( oForm, oModel, aIter, uVal )
+         oModel:oLbx:Set( aIter, nCol, uVal )
+         if !oTreeView:GetAutoValue( 16 ) .and. nVal > 0
+            oModel:oLbx:Set( aIter, 16, .T. )
+         endif
+      endif
+//procedure __fr_CalMonto( oForm, nDocMonto, nDocAplicado, nDocSaldo )
+//View( ToNum(oTreeView:GetAutoValue(13))+ToNum(oTreeView:GetAutoValue(24) ))
+      __fr_CalMonto( oForm ) //, oTreeView:GetAutoValue(11),;
+                            //ToNum(oTreeView:GetAutoValue(13))+ToNum(oTreeView:GetAutoValue(24)),;
+                            //oTreeView:GetAutoValue(14) )
+
+   endif
+
+return
+
+
+
 Procedure __fr_EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCol )
 
    local nVal := ToNum( uVal )
@@ -466,12 +528,21 @@ procedure __fr_LoadDocs(oForm, oFormParent)
                                                   "moneda_deseada_id" => '2', ;
                                                   "incluir_cero"      => .t. } )
 
-   aStruct := ::oDocuments:Struct()
+//   aStruct := AADD( ::oDocuments:Struct(), {"aplicado_anterior", "N", 15, 2 } )
+   aStruct := {}
+   AEVAL( ::oDocuments:Struct(), {|a| AADD( aStruct, a ) }  )
+   AADD( aStruct, {"aplicado_anterior", "N", 15, 2 } )
+
    aData := {}
 
-   AEVAL( ::oDocuments:GetData(), {|a| a[16] := iif(::cDocNro=a[9],;
-                                                (__fr_CalMonto(oForm, a[11] ),.t.),.f.), ;
+   AEVAL( ::oDocuments:GetData(), {|a| AADD( a, a[13] ), ; // Monto aplicado anterior.
+                                       a[14] := a[11] - a[13], ; //Saldo
+                                       a[16] := iif(::cDocNro=a[9],;
+                                                    (a[13] := a[14], .t.), ;
+                                                    (a[13] := 0,     .f.)), ;
                                        AADD( aData, a )  } )
+                                                   //),; //(__fr_CalMonto(oForm, a[11], a[13], a[14] ),.t.),.f.), ;
+
 
    if !oForm:IsDef( "oModDocuments" )
 
@@ -504,6 +575,17 @@ procedure __fr_LoadDocs(oForm, oFormParent)
 
       ::oLBoxDocsPen:lBar := .F.
 
+      /* Columna Monto Aplicado */
+      oCol := ::oModDocuments:aCol[ 13 ] // Monto Aplicadp
+      oCol:oRenderer:SetEditable( .T. )
+
+      oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                                  __fr_EditAplicado( oForm, oSender, path, uVal, ::oModDocuments:aIter,;
+                                                     ::oModDocuments, ::oModDocuments:oTreeView, 13 )  }
+
+      oCol:oRenderer:SetColumn( oCol )
+
+
       oModTmp := ::oModDocuments 
       ::oModDocuments:oTreeView:OnCursorChanged( {|| iif( ToNum(::oModDocuments:oTreeView:GetAutoValue( 17 ))>0 ;
                                                           .and. ToNum(::oModDocuments:oTreeView:GetAutoValue( 20 ))>0 ,;
@@ -512,7 +594,7 @@ procedure __fr_LoadDocs(oForm, oFormParent)
                                                      iif( !Empty( ::oModDocuments:oTreeView:GetAutoValue( 13 ) ), ;
                                                            __fr_DetalDocument( oForm, oModTmp, oModTmp:aIter, ;
                                                                                oModTmp:oTreeView:GetAutoValue(  6 ),;
-                                                                               oModTmp:oTreeView:GetAutoValue( 13 ),;
+                                                                               oModTmp:oTreeView:GetAutoValue( 24 ),;
                                                                                ::rFinanzas, .F. ), ;
                                                            .t. ) ;
                                                  } )
@@ -521,7 +603,7 @@ procedure __fr_LoadDocs(oForm, oFormParent)
                                                                oModTmp,                              ;
                                                                oModTmp:aIter,                        ;
                                                                oModTmp:oTreeView:GetAutoValue(  6 ), ;
-                                                               oModTmp:oTreeView:GetAutoValue( 13 ), ;
+                                                               oModTmp:oTreeView:GetAutoValue( 24 ), ;
                                                                ::rFinanzas, .T. ) }
       //::oLBoxDocsPen:bEdit := {||.t.}
 
@@ -681,6 +763,8 @@ return
 procedure __fr_CalcDivisa( oForm, oFormParent)
 
    __fr_LoadDocs(oForm, oFormParent)
+   __fr_CalMonto( oForm )
+   ::oModDocuments:oTreeView:SetFocus()
 //View( ::oModDocuments:aItems )
 
 return
