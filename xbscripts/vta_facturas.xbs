@@ -599,6 +599,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                                                            a[12],;
                                                            a[13],;
                                                            a[14],;
+                                                           a[15],;
                                                            a[16],;
                                                            a[17],;
                                                            a[18],;
@@ -672,8 +673,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColTitle( 09, "IVA (%)" )       //-- Columna IVA Porcentaje
       ::oLBoxDetal:SetColTitle( 10, "IVA (Monto)" )   //-- Columna IVA Monto
       ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
-      ::oLBoxDetal:SetColTitle( 21, "PVP Total" )         //-- Columna PVP Total Linea
-      ::oLBoxDetal:SetColTitle( 22, "PVP Total 1" )         //-- Columna PVP Total Linea
+      ::oLBoxDetal:SetColTitle( 21, "PVP Total" )     //-- Columna PVP Total Linea
+      ::oLBoxDetal:SetColTitle( 22, "PVP Total 1" )   //-- Columna PVP Total Linea
 
       ::oLBoxDetal:Active()
 
@@ -708,7 +709,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                              aLine[18], ;
                              aLine[19], ;
                              hb_ntos(aLine[20]),;
-                             hb_ntos(aLine[21])
+                             hb_ntos(aLine[21]), hb_ntos(aLine[21]) 
             CATCH oErr
                View( oErr:Description )
             END
