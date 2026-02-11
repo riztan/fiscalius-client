@@ -14,6 +14,8 @@ procedure mae_usuarios( oForm, oWndParent, oEntParent )
    rVentas := ::oGEmpresa:SetModulo("Ventas")
    rUsuarios := rVentas:Usuarios()
 
+   ::rVentas := rVentas
+
    if hb_isNIL(rUsuarios)
       MsgStop("No hay usuarios registrados")
       return
@@ -54,15 +56,18 @@ procedure mae_usuarios( oForm, oWndParent, oEntParent )
    oLBoxCli:bEdit := {|oModel| usu_edit( oForm, oAliWnd, oModUsuarios, rVentas, .F. /*lNew*/ ) }
 
    oLBoxCli:SetColVisible( 1, .F. )    // Ocultamos ID
-   oLBoxCli:SetColVisible( 6, .F. )    // Ocultamos password
-   oLBoxCli:SetColTitle( 5, "Login" )  // Cambiamos el título
+   oLBoxCli:SetColVisible( 5, .F. )    // Ocultamos password
+
    oLBoxCli:SetColTitle( 2, "Nombre" ) // Cambiamos el título
-   oLBoxCli:SetColTitle( 4, "Activo" ) // Cambiamos el título
    oLBoxCli:SetColTitle( 3, "Nombre Corto" ) // Cambiamos el título
+   oLBoxCli:SetColTitle( 4, "Login" )  // Cambiamos el título
+   oLBoxCli:SetColTitle( 6, "Activo" ) // Cambiamos el título
 
    ACTIVATE WINDOW oAliWnd MODAL
 
 return
+
+
 
 procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
    local oRes, oUsuForm, hData
@@ -78,6 +83,10 @@ procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
    oUsuForm:rVentas  := rVentas
    oUsuForm:lNew     := lNew
 
+   oUsuForm:oAliWnd  := oAliWnd
+   oUsuForm:oModel   := oModel
+   oUsuForm:oParent  := oForm
+
    if lNew
       oUsuForm:cLogin      := ""
       oUsuForm:cNombre     := ""
@@ -86,26 +95,24 @@ procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
       oUsuForm:cPass       := ""
       oUsuForm:cPass1      := ""
    else
-      oUsuForm:cLogin      := oModel:GetCol( 5 )
-      oUsuForm:cPreLogin   := oModel:GetCol( 5 )
       oUsuForm:cNombre     := oModel:GetCol( 2 )
-      oUsuForm:lActivo     := oModel:GetCol( 4 )
       oUsuForm:cNombreC    := oModel:GetCol( 3 )
-      oUsuForm:cPass       := "" // Password no se carga por seguridad
-      oUsuForm:cPass1      := ""
+      oUsuForm:cLogin      := oModel:GetCol( 4 )
+      oUsuForm:cPreLogin   := oModel:GetCol( 4 )
+      oUsuForm:lActivo     := oModel:GetCol( 6 )
+      oUsuForm:cPass       := '' //oModel:GetCol( 6 ) // Password no se carga por seguridad
+      oUsuForm:cPass1      := '' //oModel:GetCol( 6 )
    endif
 
  
    oUsuForm:rUsuario := rVentas:Usuario( {"login" => oUsuForm:cLogin} )
 
    hData := oUsuForm:rUsuario:Data()
-   oUsuForm:cNombre := hData["nombre"]
-   oUsuForm:cNombreC := hData["nombre_corto"]
-   oUsuForm:lActivo  := hData["activo"]
+   //oUsuForm:cNombre  := hData["nombre"]
+   //oUsuForm:cNombreC := hData["nombre_corto"]
+   //oUsuForm:lActivo  := hData["activo"]
    //oUsuForm:cPass  := hData["id"]
    
-   
-
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_usuarios.ui"
 
    DEFINE WINDOW oUsuForm:oWnd TITLE "Usuario" SIZE 650,350 ;
@@ -128,12 +135,12 @@ procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
 
       DEFINE CHECKBOX oUsuForm:oChkActivo VAR oUsuForm:lActivo ID "chk_activo" RESOURCE oRes
 
-      DEFINE ENTRY oUsuForm:oEntPass VAR oUsuForm:cPass ;
+      DEFINE ENTRY oUsuForm:oEntPass VAR oUsuForm:cPass PASSWORD ;
              VALID iif( oUsuForm:lClose, .T., __ValidaPass( oUsuForm:oEntPass,oUsuForm:oEntPass1,oUsuForm,1 ) ) ;
              ID "ent_pass" RESOURCE oRes
       //oUsuForm:oEntPass:SetPassword( .T. )
 	  
-	   DEFINE ENTRY oUsuForm:oEntPass1 VAR oUsuForm:cPass1 ;
+	   DEFINE ENTRY oUsuForm:oEntPass1 VAR oUsuForm:cPass1 PASSWORD ;
              VALID iif( oUsuForm:lClose, .T., __ValidaPass( oUsuForm:oEntPass,oUsuForm:oEntPass1, oUsuForm,2 ) ) ;
              ID "ent_pass1" RESOURCE oRes
 
@@ -173,23 +180,27 @@ procedure __UsuSave( oForm )
       oForm:oEntNombre:SetFocus()
       return
    endif
-
   
    lNew := oForm:rUsuario:IsNew()
 
    // Guardar los datos del usuario
    hData := oForm:rUsuario:Data()
-   oForm:rUsuario:SetData( { "login"        => oForm:cLogin,  ;
+   oForm:rUsuario:SetData( { "login"        => oForm:cLogin,   ;
                              "nombre"       => oForm:cNombre,  ;
                              "nombre_corto" => oForm:cNombreC, ;
                              "activo"       => oForm:lActivo,  ;
                              "pass"         => oForm:cPass     } )
 
    uResp := oForm:rUsuario:Save()
+//View( Valtype(uResp) )
 
    if !( ValType( uResp ) = "H" .and. uResp["return"] = .T. )
-      View( hb_valtoexp(uResp) )
+      //View( hb_valtoexp(uResp) )
+      __ModUsuRefresh(oForm)
+      oForm:lForce := .T.
+      oForm:oWnd:End()
       return
+   else
       MsgAlert("No se pudo guardar el usuario: " + uResp["message"], "Error")
       return
    endif
@@ -215,6 +226,8 @@ procedure __UsuSave( oForm )
       oForm:oModel:SetValue( 4, hData["activo"] )
       oForm:oModel:SetValue( 3, hData["nombre_corto"] )
    endif
+
+   __ModUsuRefresh(oForm)
 
    oForm:lForce := .T.
    oForm:oWnd:End()
@@ -251,6 +264,8 @@ function __ValidaLogin( oEntLogin, oForm )
 
    return .T.
 
+
+
 function __ValidaPass( oEntPass,oEntPass1, oForm,lCampo )
    local cPass,cPass1
 
@@ -258,7 +273,6 @@ function __ValidaPass( oEntPass,oEntPass1, oForm,lCampo )
    cPass1 := oEntPass1:GetValue()
    
     //view(cpass)
-	
 
    // No permitir contraseña vacía para usuarios nuevos
    if oForm:lNew .and. Empty( cPass ) .AND. lCampo=1
@@ -305,5 +319,33 @@ function __UsuExit( oForm )
    endif
 
    return .F.
+
+
+procedure __ModUsuRefresh(oForm)
+   local aLine, aIter := ARRAY(4)
+   local bDetalCode
+
+   rUsuarios := oForm:oParent:rVentas:Usuarios()
+
+   if ::isDef("oModel") .and. ::oModel:oTreeView:IsGetSelected( aIter )
+      ::oModel:oTreeView:ClearModel(.t.)
+      FOR EACH aLine IN rUsuarios:GetData()
+         APPEND LIST_STORE ::oModel:oLbx ITER aIter ;
+                VALUES hb_ntos(aLine[ 1]), ALLTRIM(aLine[ 2]), ;
+                       ALLTRIM(aLine[ 3]), aLine[ 4], ;
+                       ALLTRIM(aLine[ 5]), '' 
+
+      NEXT
+
+//      bDetalCode := {|oTView, pModel, aIter | ;
+//                     iif( oTView:GetAutoValue(1, aIter)==::hFactura["numero"], ;
+//                          gtk_tree_view_set_cursor( oTview:pWidget, oTView:getPath(aIter), NIL, .F.  ),;
+//                          .t. ) }
+//      ::oLBoxFacs:ForEach( bDetalCode )
+
+else
+View("NO")
+   endif
+return 
 
 //eof
