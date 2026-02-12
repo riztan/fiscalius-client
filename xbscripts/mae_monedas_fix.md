@@ -78,6 +78,40 @@ endif
 3. **Estado del Registro**: El sistema debe distinguir claramente entre "registro nuevo" y "registro existente"
 4. **Testing de CRUD**: Probar completamente el ciclo Crear-Leer-Actualizar-Eliminar
 
+## Advertencias para Desarrolladores
+
+⚠️ **¡IMPORTANTE!** Este patrón de bug puede repetirse en otros scripts con:
+
+- **TreeViews editables inline** que permiten crear nuevos registros
+- **Modelos locales** que no se sincronizan con IDs del servidor
+- **Callbacks de edición** que llaman a `Save()` sin actualizar estado
+
+**Scripts revisar prioridad:**
+- `mae_clientes2.xbs` - Similar estructura de TreeView editable
+- `mae_inventario.xbs` - Probable patrón similar
+- Cualquier script con `DEFINE MODEL` y `oRenderer:SetEditable(.T.)`
+
+**Patrón a buscar:**
+```xbase
+// Después de Save() exitoso, buscar esta actualización:
+hData := ::rObject:Data()
+if !Empty( hData["id"] )
+   oModel:Set( aIter, __ID, hb_ntos(hData["id"]) )
+endif
+```
+
+## Mejora Sugerida
+
+Considerar crear una función helper para estandarizar este patrón:
+```xbase
+FUNCTION __UpdateModelAfterSave( oModel, aIter, hObject, nIDCol )
+   LOCAL hData := hObject:Data()
+   if !Empty( hData["id"] )
+      oModel:Set( aIter, nIDCol, hb_ntos(hData["id"]) )
+   endif
+RETURN .T.
+```
+
 ## Impacto del Fix
 
 - ✅ Corrige error de duplicación de monedas
