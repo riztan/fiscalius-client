@@ -100,9 +100,9 @@ if !Empty( hData["id"] )
 endif
 ```
 
-## Mejora Sugerida
+## Mejora Sugerida - Helper Estandarizado
 
-Considerar crear una función helper para estandarizar este patrón:
+### Función Helper Principal
 ```xbase
 FUNCTION __UpdateModelAfterSave( oModel, aIter, hObject, nIDCol )
    LOCAL hData := hObject:Data()
@@ -111,6 +111,122 @@ FUNCTION __UpdateModelAfterSave( oModel, aIter, hObject, nIDCol )
    endif
 RETURN .T.
 ```
+
+### Implementación Completa con Validaciones
+```xbase
+FUNCTION __UpdateModelAfterSave( oModel, aIter, hObject, nIDCol, cLogContext )
+   LOCAL hData, nID
+   
+   // Validaciones obligatorias
+   if hb_isNIL(oModel) .or. hb_isNIL(aIter) .or. hb_isNIL(hObject)
+      MsgAlert("Error: Parámetros inválidos en __UpdateModelAfterSave", "DEBUG")
+      RETURN .F.
+   endif
+   
+   // Obtener datos actualizados del objeto remoto
+   hData := hObject:Data()
+   if hb_isNIL(hData) .or. !hb_isHash(hData)
+      if !Empty(cLogContext)
+         MsgAlert("Error: No se pueden obtener datos del objeto en " + cLogContext, "DEBUG")
+      endif
+      RETURN .F.
+   endif
+   
+   // Verificar si existe ID asignado
+   if !hb_hHasKey(hData, "id") .or. Empty(hData["id"])
+      if !Empty(cLogContext)
+         // Es normal para registros nuevos que aún no tienen ID
+         MsgInfo("Registro sin ID en " + cLogContext + " - posible creación nueva", "DEBUG")
+      endif
+      RETURN .T.
+   endif
+   
+   // Extraer y validar ID
+   nID := hData["id"]
+   if hb_isNIL(nIDCol) .or. nIDCol <= 0
+      MsgAlert("Error: Columna ID inválida en __UpdateModelAfterSave", "DEBUG")
+      RETURN .F.
+   endif
+   
+   // Actualizar modelo local
+   oModel:Set( aIter, nIDCol, hb_ntos(nID) )
+   
+   // Log opcional para debugging
+   if !Empty(cLogContext)
+      MsgInfo("Modelo actualizado - ID: " + hb_ntos(nID) + " en " + cLogContext, "DEBUG")
+   endif
+   
+RETURN .T.
+```
+
+### Implementación en Scripts Existentes
+```xbase
+// Al final del proceso de guardado (después de Save())
+if !::rMoneda:Save() 
+   MsgAlert("Se presenta problema para registrar los datos.", "Atención")
+   return
+endif
+
+// Línea original reemplazada por helper
+// hData := ::rMoneda:Data()
+// if !Empty( hData["id"] )
+//    oModel:Set( aIter, __ID, hb_ntos(hData["id"]) )
+// endif
+
+// Nueva implementación estandarizada
+__UpdateModelAfterSave( oModel, aIter, ::rMoneda, __ID, "mae_monedas" )
+```
+
+### Helper para Validación Previa al Guardar
+```xbase
+FUNCTION __ValidateBeforeSave( hObject, aRequiredFields, cContext )
+   LOCAL hData, cField
+   
+   if hb_isNIL(hObject)
+      MsgAlert("Error: Objeto nulo en " + cContext, "VALIDACIÓN")
+      RETURN .F.
+   endif
+   
+   hData := hObject:Data()
+   if hb_isNIL(hData)
+      MsgAlert("Error: No hay datos en " + cContext, "VALIDACIÓN")
+      RETURN .F.
+   endif
+   
+   // Validar campos requeridos
+   for each cField in aRequiredFields
+      if !hb_hHasKey(hData, cField) .or. Empty(hData[cField])
+         MsgAlert("Campo requerido vacío: " + cField + " en " + cContext, "VALIDACIÓN")
+         RETURN .F.
+      endif
+   next
+   
+RETURN .T.
+```
+
+### Uso Combinado en Scripts
+```xbase
+// Validación previa al guardar
+if !__ValidateBeforeSave(::rMoneda, {"codigo", "nombre"}, "mae_monedas")
+   return
+endif
+
+// Proceso de guardado
+if !::rMoneda:Save() 
+   MsgAlert("Se presenta problema para registrar los datos.", "Atención")
+   return
+endif
+
+// Actualización del modelo local
+__UpdateModelAfterSave( oModel, aIter, ::rMoneda, __ID, "mae_monedas" )
+```
+
+### Beneficios del Helper
+1. **Estandarización**: Mismo comportamiento en todos los scripts
+2. **Validaciones**: Chequeos robustos de parámetros y datos
+3. **Debugging**: Logs opcionales para troubleshooting
+4. **Prevención**: Validaciones previas al guardar
+5. **Mantenimiento**: Cambios en un solo lugar para todo el sistema
 
 ## Impacto del Fix
 
