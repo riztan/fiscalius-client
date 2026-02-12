@@ -17,6 +17,8 @@ procedure mae_monedas( oParentForm, oWndParent, oEntParent )
    ::rMonedas    := oParentForm:oGEmpresa:Monedas()  
    ::oParentForm := oParentForm
 
+   ::hMoneda := hb_hash()
+
    if hb_isNIL(::rMonedas)
       MsgStop("No Hay Monedas registradas")
       return
@@ -71,6 +73,9 @@ procedure mae_monedas( oParentForm, oWndParent, oEntParent )
    /* Desactivamos seleccion de linea */
    oModMonedas:oTreeView:bRow_Activated := nil
 
+   /* Columna ID     */
+   #define __ID       1
+   
    /* Columna Código */
    #define __CODIGO   2
    oCol := oModMonedas:aCol[__CODIGO] // Codigo
@@ -82,7 +87,7 @@ procedure mae_monedas( oParentForm, oWndParent, oEntParent )
 
    /* Columna Nombre */
    #define __NOMBRE   3
-   oCol := oModMonedas:aCol[__NOMBRE] // Codigo
+   oCol := oModMonedas:aCol[__NOMBRE] // Nombre
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
                                __EditMoneda( oForm, oSender, path, uVal, oModMonedas:aIter,;
@@ -91,7 +96,7 @@ procedure mae_monedas( oParentForm, oWndParent, oEntParent )
 
    /* Columna Activo */
    #define __ACTIVO   4
-   oCol := oModMonedas:aCol[__ACTIVO] // Codigo
+   oCol := oModMonedas:aCol[__ACTIVO] // Activo
    //oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bAction := {|oSender, path, uVal, aIter|;
                                __EditMoneda( oForm, oSender, path, uVal, oModMonedas:aIter,;
@@ -214,9 +219,13 @@ PROCEDURE __SetValue( oForm, oTreeView, oModel, aIter, nCol, uValue, cPath, uPre
                MsgAlert( "Se presenta problema para registrar los datos.", "Atención" )
                return
             endif
+            hData := ::rMoneda:Data()
+            if !Empty( hData["id"] )
+               oModel:Set( aIter, __ID, hb_ntos(hData["id"]) )
+            endif
          endif
       else
-//         View("editando registro... deberíase")
+         //View("editando registro... deberíase")
          if nCol = 2
             ::rMoneda := ::oParentForm:oGEmpresa:GetMoneda( {"codigo"=> uPrevio } )
          else
