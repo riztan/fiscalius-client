@@ -182,7 +182,7 @@ Procedure __MaeInvSave( oForm )
 
    FOR EACH cCol IN {"precio_unitario","stock_total","stock_minimo","imp_pvp","codigo_barras"}
       if VALTYPE( hData[ cCol ] )="C"
-         hData[ cCol ] := VAL( ::hData[cCol] )
+         hData[ cCol ] := TONUM( ::hData[cCol] )
       endif
    NEXT
 

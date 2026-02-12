@@ -9,11 +9,12 @@
 4. **`preguntas-tecnicas.md`** (3,616 bytes) - 17 categorías de preguntas técnicas
 5. **`respuestas-tecnicas.md`** (15,082 bytes) - Todas las respuestas técnicas organizadas
 6. **`manual-programador.md`** (10,830 bytes) - **Guía técnica completa** ⭐
+7. **`bugs-fixes.md`** (4,892 bytes) - **Registro de bugs y soluciones** ⭐
 
 ### 📊 **Estadísticas**
-- **Total de documentación**: ~39,241 bytes (38 KB)
-- **Cobertura completa**: Arquitectura, desarrollo, usuario, IA
-- **Actualizaciones**: 2 commits realizados (9e10134, a5c75e4)
+- **Total de documentación**: ~44,133 bytes (43 KB)
+- **Cobertura completa**: Arquitectura, desarrollo, usuario, IA, bugs
+- **Actualizaciones**: 3 commits realizados (9e10134, a5c75e4, nuevo fix)
 
 ---
 
@@ -61,6 +62,7 @@
 2. **`manual-programador.md`** - Arquitectura completa
 3. **`respuestas-tecnicas.md`** - Base de conocimiento
 4. **`preguntas-tecnicas.md`** - Preguntas de referencia
+5. **`bugs-fixes.md`** - Problemas conocidos y soluciones
 
 ### **Flujo de Recordatorio**
 1. Leer reglas (especialmente NO MODIFICAR)
@@ -87,5 +89,6 @@ Al reiniciar, el contexto se reactivará con:
 3. **Base de conocimiento** técnica completa
 4. **Flujos de desarrollo** documentados
 5. **Referencias** a todos los repositorios clave
+6. **Registro de bugs** conocidos y sus soluciones
 
 **El proyecto está completamente documentado y listo para desarrollo continuo.**
