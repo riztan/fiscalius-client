@@ -1,30 +1,31 @@
-/* mae_alicuotas.xbs
+/* mae_medios_pago.xbs
+ *
+ * Formulario para gestionar Medios de Pago en Fiscalius
  *
  */
 
 #include "tpy_xbs.ch"
 
 procedure mae_medios_pago( oForm, oWndParent, oEntParent )
-
    local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
-   local oLabTitulo, cLabTitulo := "Medios de pago"
-   local cTipo,dFecha,nPorcentaje:=0
-   local rVentas, rMediospago, oModMediospago, oLBoxCli
+   local oLabTitulo, cLabTitulo := "Medios de Pago"
+   local rVentas, rMediosPago, oModMediosPago, oLBoxCli
 
    rVentas := ::oGEmpresa:SetModulo("Ventas")
-   rMediospago := rVentas:Mediospago()
+   rMediosPago := rVentas:MediosPago()
+   //view(rMediosPago:GetData())
 
-   if hb_isNIL(rMediospago)
-      MsgStop("No Hay Medios de pago registrados")
+   ::rVentas := rVentas
+
+   if hb_isNIL(rMediosPago)
+      MsgStop("No hay Medios de Pago registrados")
       return
    endif
 
-
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
 
-   
    DEFINE WINDOW oAliWnd ;
-          TITLE "Fiscalius. Medios de pago" ;
+          TITLE "Fiscalius. Medios de Pago" ;
           SIZE 700,400 ;
           ID "window1" RESOURCE oRes
 
@@ -43,30 +44,267 @@ procedure mae_medios_pago( oForm, oWndParent, oEntParent )
 
    DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
 
-
-   //DEFINE BUTTON ::oBtn ACTION __vtaAlicuotaIVA( oForm, oFormParent, ::oBoxData, ::oModMediospago, .T.  ) ;
-   //       ID "btn_add" RESOURCE ::oRes
-
-   DEFINE MODEL oModMediospago ;
-          STRUCT rMediospago:Struct() ;
-          DATA   rMediospago:GetData()
+   DEFINE MODEL oModMediosPago ;
+          STRUCT rMediosPago:Struct() ;
+          DATA   rMediosPago:GetData()
    
    DEFINE LISTBOX oLBoxCli ;
-          MODEL oModMediospago ;
+          MODEL oModMediosPago ;
           OF oBoxData
 
-   oLBoxCli:lBar  := .f.
+   oLBoxCli:lBar := .F.
+   oLBoxCli:bNew  := {|oModel| medpag_edit( oForm, oAliWnd, oModMediosPago, rVentas, .T. /*lNew*/ ) }
+   oLBoxCli:bEdit := {|oModel| medpag_edit( oForm, oAliWnd, oModMediosPago, rVentas, .F. /*lNew*/ ) }
 
+   oLBoxCli:SetColVisible( 1, .F. )    // Ocultamos ID
+  
+  
+   oLBoxCli:SetColTitle( 2, "Código" ) // Cambiamos el título
+   oLBoxCli:SetColTitle( 3, "Nombre" ) // Cambiamos el título
+   oLBoxCli:SetColTitle( 4, "Comportamiento" ) // Cambiamos el título
+   oLBoxCli:SetColTitle( 5, "IGTF" )  // Cambiamos el título
+   oLBoxCli:SetColTitle( 6, "Afec. C/B" ) // Cambiamos el título
+   oLBoxCli:SetColTitle( 7, "Activo" ) // Cambiamos el título
+   
 
- 
- 
-   oLBoxCli:Active() 
-   
-   
    ACTIVATE WINDOW oAliWnd MODAL
 
 return
 
 
+
+procedure medpag_edit( oForm, oAliWnd, oModel, rVentas, lNew )
+   local oRes, oUsuForm, hData
+
+   default lNew := .T.
+
+   SET PUBLIC oUsuForm
+
+   oUsuForm:lForce   := .F.
+   oUsuForm:lClose   := .F.
+   oUsuForm:oModel   := oModel
+   oUsuForm:rSession := ::rSession
+   oUsuForm:rVentas  := rVentas
+   oUsuForm:lNew     := lNew
+
+   oUsuForm:oAliWnd  := oAliWnd
+   oUsuForm:oModel   := oModel
+   oUsuForm:oParent  := oForm
+
+   if lNew
+      oUsuForm:cCodigo     := ""
+      oUsuForm:cNombre     := ""
+      oUsuForm:cComporta   := ""
+       oUsuForm:lGenITF    := .F.
+      oUsuForm:cAfeCajBco  := "C"
+      oUsuForm:lActivo     := .T.
+   else
+      oUsuForm:cCodigo      := oModel:GetCol( 2 )
+      oUsuForm:cPreCodigo   := oModel:GetCol( 2 )
+      oUsuForm:cNombre     := oModel:GetCol( 3 )
+      oUsuForm:cComporta    := oModel:GetCol( 4 )
+      oUsuForm:lGenITF    := oModel:GetCol( 5 )
+      oUsuForm:cAfeCajBco    := oModel:GetCol( 6 )
+      oUsuForm:lActivo     := oModel:GetCol( 7 )
+   endif
+
+ 
+   oUsuForm:rMedioPago := rVentas:MedioPago( {"codigo" => oUsuForm:cCodigo} )
+
+   hData := oUsuForm:rMedioPago:Data()
+   //oUsuForm:cNombre  := hData["nombre"]
+   //oUsuForm:cNombreC := hData["nombre_corto"]
+   //oUsuForm:lActivo  := hData["activo"]
+   //oUsuForm:cPass  := hData["id"]
+   
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_medios_pago.ui"
+
+   DEFINE WINDOW oUsuForm:oWnd TITLE "Medios de Pago" SIZE 650,350 ;
+          OF oAliWnd ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oUsuForm:oImgBanner ID "img_banner" RESOURCE oRes
+      oUsuForm:oImgBanner:Adjust(900)
+
+      DEFINE IMAGE oUsuForm:oImgLogo ID "img_logo" RESOURCE oRes
+      oUsuForm:oImgLogo:Adjust(60)
+
+      DEFINE ENTRY oUsuForm:oEntCodigo VAR oUsuForm:cCodigo ;
+             VALID iif( oUsuForm:lClose, .T., __ValCodMP( oUsuForm:oEntCodigo, oUsuForm ) ) ;
+             ID "ent_codigo" RESOURCE oRes
+
+      DEFINE ENTRY oUsuForm:oEntNombre VAR oUsuForm:cNombre ID "ent_nombre" RESOURCE oRes
+
+      DEFINE ENTRY oUsuForm:oEntComporta VAR oUsuForm:cComporta ID "ent_comporta" RESOURCE oRes
+
+      DEFINE CHECKBOX oUsuForm:oChkGenITF VAR oUsuForm:lGenITF ID "chk_genitf" RESOURCE oRes
+      
+      DEFINE ENTRY oUsuForm:oEntAfeCajBco VAR oUsuForm:cAfeCajBco ID "ent_afecajbco" RESOURCE oRes
+      
+      DEFINE CHECKBOX oUsuForm:oChkActivo VAR oUsuForm:lActivo ID "chk_activo" RESOURCE oRes
+
+     
+
+      DEFINE BUTTON oUsuForm:oBtnSave ACTION __MedPagSave( oUsuForm ) ID "btn_save" RESOURCE oRes
+
+      DEFINE BUTTON oUsuForm:oBtnCancel ACTION ( oUsuForm:lClose := .T., oUsuForm:oWnd:End() ) ;
+             ID "btn_cancel" RESOURCE oRes
+
+   ACTIVATE WINDOW oUsuForm:oWnd MODAL VALID __MedPagExit( oUsuForm )
+
+return
+
+
+
+procedure __MedPagSave( oForm )
+   local hData, uResp, aIter, lNew
+
+   // Validar codigo antes de guardar
+   if !__ValCodMP( oForm:oEntCodigo, oForm )
+      MsgAlert("El codigo ingresado es inválido o ya está registrado.", "Error")
+      oForm:oEntCodigo:SetFocus()
+      return
+   endif
+
+   // Validar comportamiento antes de guardar
+ 
+
+   // Validar nombre antes de guardar
+   if Empty( oForm:cNombre )
+      MsgAlert("El nombre del Medio de pago es obligatorio.", "Error")
+      oForm:oEntNombre:SetFocus()
+      return
+   endif
+  
+   lNew := oForm:rMedioPago:IsNew()
+
+   // Guardar los datos del MedioPago
+   hData := oForm:rMedioPago:Data()
+   oForm:rMedioPago:SetData( { "codigo"        => oForm:cCodigo,   ;
+                             "nombre"       => oForm:cNombre,  ;
+                             "comportamiento" => oForm:cComporta, ;
+                             "genitf"       => oForm:lGenITF,  ;                             
+                             "activo"       => oForm:lActivo,  ;
+                             "afecajbco"         => oForm:cAfeCajBco     } )
+
+   uResp := oForm:rMedioPago:Save()
+//View( Valtype(uResp) )
+
+   if !( ValType( uResp ) = "H" .and. uResp["return"] = .T. )
+      //View( hb_valtoexp(uResp) )
+      __ModUsuRefresh(oForm)
+      oForm:lForce := .T.
+      oForm:oWnd:End()
+      return
+   else
+      MsgAlert("No se pudo guardar el Medio de pago: " + uResp["message"], "Error")
+      return
+   endif
+
+   hData := oForm:rMedioPago:Data()
+
+   // Actualizar el modelo
+   if lNew 
+      // MedioPago nuevo: añadir una nueva fila al modelo
+      aIter := ARRAY(7)
+      APPEND LIST_STORE oForm:oModel:oLbx ITER aIter ;
+             VALUES hData["id"], ;
+                    hData["codigo"], ;
+                    hData["nombre"], ;
+                    hData["comportamiento"], ;
+                    hData["genitf"], ;
+                    hData["afecajbco"], ;
+                    hData["activo"]
+      gtk_tree_view_set_cursor( oForm:oModel:oTreeView:pWidget, oForm:oModel:oTreeView:GetPath( aIter ), NIL, .F. )
+   else
+      // MedioPago existente: actualizar la fila seleccionada
+      oForm:oModel:SetValue( 2, hData["codigo"] )
+      oForm:oModel:SetValue( 3, hData["nombre"] )
+      oForm:oModel:SetValue( 4, hData["comportamiento"] )
+      oForm:oModel:SetValue( 5, hData["genitf"] )
+      oForm:oModel:SetValue( 7, hData["activo"] )
+      oForm:oModel:SetValue( 6, hData["afecajbco"] )
+      
+   endif
+
+   __ModUsuRefresh(oForm)
+
+   oForm:lForce := .T.
+   oForm:oWnd:End()
+
+return
+
+
+
+function __ValCodMP( oEntCodigo, oForm )
+   local cCodigo, rMedioPago
+
+   cCodigo := oEntCodigo:GetValue()
+
+   // No permitir codigo vacío
+   if Empty( cCodigo )
+      MsgAlert( "Debe indicar un codigo para este Medio de pago.", "Atención" )
+      return .F.
+   endif
+
+   // Verificar longitud 
+   if LEN( cCodigo ) < 2 .OR. LEN( cCodigo ) > 4
+      MsgAlert( "El codigo debe tener entre 2 y 4 caracteres.", "Error" )
+      oEntCodigo:SetFocus()
+      return .F.
+   endif
+
+   // Verificar unicidad del codigo
+    //?view(::cPreCodigo)
+   rMedioPago := oForm:rVentas:MediosPago( {"filtro" => cCodigo} )
+   if rMedioPago:RecCount() > 0 .and. ( ::lNew .or. cCodigo != ::cPreCodigo )
+      MsgAlert( "El codigo ingresado ya está registrado.", "Atención" )
+      return .F.
+   endif
+
+   return .T.
+
+
+
+
+
+function __MedPagExit( oForm )
+   if oForm:lForce
+      return .T.
+   endif
+
+   if MsgNoYes( "¿Desea salir y descartar los cambios?", "Atención" )
+      return .T.
+   endif
+
+   return .F.
+
+
+procedure __ModUsuRefresh(oForm)
+   local aLine, aIter := ARRAY(4)
+   local bDetalCode
+
+   rMediosPago := oForm:oParent:rVentas:MediosPago()
+
+   if ::isDef("oModel") .and. ::oModel:oTreeView:IsGetSelected( aIter )
+      ::oModel:oTreeView:ClearModel(.t.)
+      FOR EACH aLine IN rMediosPago:GetData()
+         APPEND LIST_STORE ::oModel:oLbx ITER aIter ;
+                VALUES hb_ntos(aLine[ 1]), ALLTRIM(aLine[ 2]), ;
+                       ALLTRIM(aLine[ 3]),ALLTRIM(aLine[4]), aLine[5], ;
+                       ALLTRIM(aLine[ 6]),aLine[ 7]
+
+      NEXT
+
+//      bDetalCode := {|oTView, pModel, aIter | ;
+//                     iif( oTView:GetAutoValue(1, aIter)==::hFactura["numero"], ;
+//                          gtk_tree_view_set_cursor( oTview:pWidget, oTView:getPath(aIter), NIL, .F.  ),;
+//                          .t. ) }
+//      ::oLBoxFacs:ForEach( bDetalCode )
+
+else
+View("NO")
+   endif
+return 
 
 //eof
