@@ -1,5 +1,6 @@
 # Documentación de vta_imprimir.xbs
 
+
 ## Cambios Realizados
 
 ### 1. Agregado campo "Impuesto al PVP" en el detalle de impresión de factura

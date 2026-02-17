@@ -154,7 +154,7 @@ procedure vta_imprimir( oForm, oQry )
    xlsx_set_string ::worksheet cell: "B19" value: "legal en el país, de acuerdo a lo publicado en la Providencia Administrativa SNAT/2022/000013 de fecha 03.03.2022"
 
 
-    // xlsx_set_string ::worksheet cell: "N"+hb_ntos(nLin) value: TRANSFORM(::hFactura["monto_base"],P_92)
+     // xlsx_set_string ::worksheet cell: "N"+hb_ntos(nLin) value: TRANSFORM(::hFactura["monto_base"],P_92)
    
 	xlsx_set_string ::worksheet cell: "H22" value: "Tasa de Cambio:    " 
     xlsx_set_string ::worksheet cell: "J22" value: SUBSTR(::cDivisa,5)
