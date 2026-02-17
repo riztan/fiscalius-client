@@ -1,5 +1,33 @@
 # Configuración de Cambios - Fiscalius Client
 
+## 2026-02-17 - Bug Fix: Cálculo de Impuesto PVP × Cantidad
+
+### Problema Resuelto:
+1. **vta_facturas.xbs línea 928**: El cálculo de `imp_pvp` no multiplicaba por cantidad
+   - **Causa raíz**: Código comentaba la multiplicación y usaba solo el valor unitario
+   - **Síntoma**: Factura con 2 unidades de producto con imp_pvp=4.34 mostraba otros_imp=4.34 en lugar de 8.68
+
+### Cambios Realizados:
+1. **Línea 928**: Corregido el cálculo
+   ```xbase
+   // ANTES (incorrecto):
+   nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ), 2 ) // NO multiplicaba por cantidad
+   
+   // DESPUÉS (correcto):
+   nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 )
+   ```
+
+### Impacto:
+- Factura #7 ahora muestra correctamente: 116 + 18.56 (IVA) + 8.68 (imp_pvp × 2) = 143.24 Bs
+- Coherencia verificada: BD = API = Cliente
+
+### Revisión de Coherencia Realizada:
+- **Servidor (fiscalius-server)**: CxCxFlujo() sin valores hardcoded
+- **Base de datos**: otros_imp y monto_total corregidos para factura #7
+- **Cliente**: Bug de cálculo × cantidad corregido
+
+---
+
 ## 2026-02-07 - Preparación para Gestión Segura de API Keys
 
 ### Cambios Realizados:

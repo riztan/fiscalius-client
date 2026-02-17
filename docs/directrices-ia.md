@@ -52,6 +52,20 @@ Antes de afirmar algo, debes:
 ❌ Mal: "esto debería funcionar"
 ✅ Bien: "Revisé el archivo `vta_facturas.xbs:120-145` y el flujo crea el objeto factura, valida campos requeridos y llama a `SaveInvoice()`. La estructura es consistente con el resto del sistema."
 
+### 🚫 REGLA #3: NUNCA USAR VALORES PREDETERMINADOS
+- **NUNCA** usar valores hardcoded, simulados o predeterminados como fallback
+- **NUNCA** inventar datos - siempre verificar con la base de datos real
+- **SIEMPRE** retornar error si falta un dato requerido
+- **VERIFICAR** contra datos existentes antes de asumir comportamiento
+- **Ejemplo correcto**: Si no hay tasa de cambio, retornar error; NO usar valor por defecto
+
+### 🚫 REGLA #4: VERIFICAR COHERENCIA DE DATOS
+Cuando se reporten inconsistencias:
+- **VERIFICAR** datos en: Base de datos → API → Cliente
+- **COMPARAR** los tres niveles para encontrar la fuente del problema
+- **DOCUMENTAR** cualquier discrepancia encontrada
+- **EJEMPLO**: Si cliente muestra 138.90 pero BD tiene 143.24, investigar el origen de cada valor
+
 ## ANÁLISIS SEGURO
 
 Cuando analices el código:

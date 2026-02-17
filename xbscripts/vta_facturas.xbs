@@ -925,7 +925,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
 
    // Calculate imp_pvp
  //  nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
-  nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ), 2 ) // imp_pvp * cantidad
+   nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
 //   oTView:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) )
    nOtrImp += nImpPvp
 
