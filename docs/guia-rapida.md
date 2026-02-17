@@ -41,10 +41,15 @@ fiscalius-client/
 - `fin_recibo.xbs` - Gestión de recibos
 - `fin_cajas.xbs` - Control de cajas
 
-### Sistema
-- `netio_check.xbs` - Verificación de conectividad
-- `netio_login.xbs` - Autenticación
-- `menu.xbs` - Sistema de menús
+### Flujos de Documentos
+El sistema maneja flujos de documentos automáticamente:
+- **IVA**: Impuesto al Valor Agregado
+- **RETI**: Retención de IVA
+- **ISLR**: Retención de ISLR  
+- **OIMP**: Otros Impuestos (imp_pvp)
+- **ASiento**: Asientos contables
+
+El cliente usa el método `CxCxFlujo()` del servidor para obtener los flujos.
 
 ## Puntos de Entrada
 1. **`begin.xbs`**: Inicialización del sistema
