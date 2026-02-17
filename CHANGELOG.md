@@ -1,5 +1,34 @@
 # Configuración de Cambios - Fiscalius Client
 
+## 2026-02-17 - Migración fin_recibo.xbs a CxCxFlujo()
+
+### Cambios Realizados:
+1. **Migración a CxCxFlujo()**: Cambia de `CuentasPorCobrar()` al nuevo método
+   - `__fr_LoadDocs()` ahora usa `::rFinanzas:CxCxFlujo()` en lugar de `CuentasPorCobrar()`
+
+2. **Visualización de flujos**: Muestra los flujos del documento en textview
+   - `__fr_textview()` ahora parsea JSON de columna 28 (derivados)
+   - Genera texto con tipo, monto y número de cada flujo
+
+3. **Mejora parsing JSON**: Validación de tipos al procesar derivados
+   - Verifica `VALTYPE()` antes de convertir valores
+   - Maneja tanto strings como números
+
+4. **Actualización de columnas**: Agrega campos de conversión monetaria
+   - Tasa Actual, Monto Convertido (USD), Saldo Convertido (USD)
+
+### Impacto:
+- Recibo de cobranza ahora usa el nuevo método optimizado
+- Visualización completa de flujos (IVA, retenciones, etc.)
+
+## 2026-02-16 - Formulario Medios de Pago (Draiver Rojas)
+
+### Cambios Realizados:
+- Agrega formulario de gestión de medios de pago
+- Nuevos scripts relacionados con mae_monederos
+
+---
+
 ## 2026-02-17 - Bug Fix: Cálculo de Impuesto PVP × Cantidad
 
 ### Problema Resuelto:

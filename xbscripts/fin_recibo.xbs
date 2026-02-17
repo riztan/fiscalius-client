@@ -137,13 +137,13 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
       ::oLBoxDocsDetal:lBar  := .F.
       ::oLBoxDocsDetal:bEdit := {|| .T. }
-
+/*
       ::oLBoxDocsDetal:SetColTitle( 01, "Recibo"        )
       ::oLBoxDocsDetal:SetColTitle( 02, "Fecha"         )
       ::oLBoxDocsDetal:SetColTitle( 03, "Aplicado"      )
       ::oLBoxDocsDetal:SetColTitle( 04, "Medio de Pago" )
       ::oLBoxDocsDetal:SetColTitle( 05, "Observaciones" )
-
+*/
       ::oLBoxDocsDetal:Active()
       ::oLBoxDocsPen:Active()
 
@@ -407,35 +407,6 @@ Procedure __fr_HacerModeloEditable( oForm )
 return
 
 
-/*
-Procedure __CalcSaldo( oForm )
-   local oCxC
-
-//View( " __CalcSaldo " )
-//View(::cTipoDoc)
-return
-   oCxC := ::rFinanzas:CuentasPorCobrar( { "cliente"        => ::cCodCli, ;
-                                           "incluir_cero"   => .t.,       ;
-                                           "documento_id"   => ::cTipoDoc,;
-                                           "nro_documento"  => ::cDocNro  ;
-                                         };
-                                       )
-
-   if !hb_isObject( oCxC )
-      MsgAlert( "Problemas para obtener el saldo del documento." )
-      return
-   endif
-
-   if oCxC:RecCount()>0
-      ::nSaldo := ToNum( ::cDocMonto ) - oCxC:monto_aplicado
-      //::oEntDocSaldo:SetText( TRANSFORM( ::nSaldo, P_92 ) )
-   endif
-   oCxC:End()
-
-return
-*/
-
-
 
 Procedure __fr_EditAplicado( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCol )
 
@@ -458,12 +429,10 @@ Procedure __fr_EditAplicado( oForm, oSender, path, uVal, aIter, oModel, oTreeVie
             oModel:oLbx:Set( aIter, 16, .T. )
          endif
       endif
-//procedure __fr_CalMonto( oForm, nDocMonto, nDocAplicado, nDocSaldo )
-//View( ToNum(oTreeView:GetAutoValue(13))+ToNum(oTreeView:GetAutoValue(24) ))
-      __fr_CalMonto( oForm ) //, oTreeView:GetAutoValue(11),;
-                            //ToNum(oTreeView:GetAutoValue(13))+ToNum(oTreeView:GetAutoValue(24)),;
-                            //oTreeView:GetAutoValue(14) )
 
+      __fr_CalMonto( oForm ) 
+
+      //-- Inicializar valores en medios de pago (RIGC)
    endif
 
 return
@@ -523,7 +492,11 @@ procedure __fr_LoadDocs(oForm, oFormParent)
    ::cDocSaldo  := "" 
    ::nSaldo     := ToNum( ::cDocSaldo )
 
-   ::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente"           => oFormParent:cCodCli,;
+//::rFinanzas:CxCxFlujo( {"cliente" => oFormParent:cCodCli } )
+//View( VALTYPE(oFormParent:cCodCli) )
+
+   //::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente"           => oFormParent:cCodCli,;
+   ::oDocuments := ::rFinanzas:CxCxFlujo( {"cliente"           => oFormParent:cCodCli,;
                                                   "tasa_actual"       => hb_aTokens( ::oComboDivisa:GetValue(), " " )[2], ;
                                                   "moneda_deseada_id" => '2', ;
                                                   "incluir_cero"      => .t. } )
@@ -615,7 +588,7 @@ procedure __fr_LoadDocs(oForm, oFormParent)
       ::oLBoxDocsPen:SetColVisible( 06, .f. )  // transaccion_id
       ::oLBoxDocsPen:SetColVisible( 07, .f. )  // documento_id
       ::oLBoxDocsPen:SetColVisible( 12, .f. )  // moneda_id
-
+/*
       ::oLBoxDocsPen:SetColTitle( 08, "Tipo"          )
       ::oLBoxDocsPen:SetColTitle( 09, "Nro. Doc."     )  
       ::oLBoxDocsPen:SetColTitle( 10, "Fecha"         )  
@@ -631,23 +604,23 @@ procedure __fr_LoadDocs(oForm, oFormParent)
       ::oLBoxDocsPen:SetColTitle( 21, "Equiv Actual"  )
       ::oLBoxDocsPen:SetColTitle( 22, "Diferencial "  )
       ::oLBoxDocsPen:SetColTitle( 23, "% Diferencial" )
-
+*/
    else
 //::oLabInfo:SetText("actualizamos el modelo")
 //View( aData )
       ::oModDocuments:oTreeView:ClearModel(.T.)
-      FOR EACH aItem IN aData
-         APPEND LIST_STORE ::oModDocuments:oLbx ITER aIter          ;
-                VALUES  hb_ntos(aItem[1]), hb_ntos(aItem[2]), ALLTRIM(aItem[3]), ;
-                        ALLTRIM(aItem[4]), ALLTRIM(aItem[5]), hb_ntos(aItem[6]), ;
-                        hb_ntos(aItem[7]), ALLTRIM(aItem[8]), ALLTRIM(aItem[9]), ;
-                        DTOC(aItem[10]), TRANSFORM(aItem[11],P_92), hb_ntos([12]), ;
-                        TRANSFORM(aItem[13],P_92),TRANSFORM(aItem[14],P_92), ;
-                        ALLTRIM(aItem[15]), aItem[16], TRANSFORM(aItem[17],P_92), ;
-                        TRANSFORM(aItem[18],P_92), TRANSFORM(aItem[19],P_92), ;
-                        TRANSFORM(aItem[20],P_92), TRANSFORM(aItem[21],P_92), ;
-                        TRANSFORM(aItem[22],P_92), TRANSFORM(aItem[23],P_92)
-      NEXT
+       FOR EACH aItem IN aData
+          APPEND LIST_STORE ::oModDocuments:oLbx ITER aIter          ;
+                 VALUES  hb_ntos(aItem[1]), hb_ntos(aItem[2]), ALLTRIM(aItem[3]), ;
+                         ALLTRIM(aItem[4]), ALLTRIM(aItem[5]), hb_ntos(aItem[6]), ;
+                         hb_ntos(aItem[7]), ALLTRIM(aItem[8]), ALLTRIM(aItem[9]), ;
+                         DTOC(aItem[10]), TRANSFORM(aItem[11],P_92), ALLTRIM(aItem[12]), ;
+                         TRANSFORM(aItem[13],P_92),TRANSFORM(aItem[14],P_92), ;
+                         ALLTRIM(aItem[15]), aItem[16], TRANSFORM(aItem[17],P_92), ;
+                         TRANSFORM(aItem[18],P_92), TRANSFORM(aItem[19],P_92), ;
+                         TRANSFORM(aItem[20],P_92), TRANSFORM(aItem[21],P_92), ;
+                         TRANSFORM(aItem[22],P_92), TRANSFORM(aItem[23],P_92)
+       NEXT
    endif
 
 return
@@ -719,19 +692,76 @@ return lRes
 
 procedure __fr_textview( oForm  )
    local aStart := ARRAY(14)
+   local cDerivados, hDerivados, aFlujos, hFlujo
+   local cTextoFlujos := ""
+   local cDocNro, cTipo, nMonto, cNro
 
-//   ::oTVReExpresados:SetText('')
+   // Obtener nro de documento de columna 9
+   cDocNro := ::oModDocuments:oTreeView:GetAutoValue( 9 )
 
-   ::oTVReExpresados:SetText(CRLF+"Tasa a la fecha del documento: "+;
+   // Obtener derivados de columna 28
+   cDerivados := ::oModDocuments:oTreeView:GetAutoValue( 28 )
+
+   // Parsear JSON y generar texto genérico
+   cTextoFlujos := ""
+   if !Empty(cDerivados) .and. VALTYPE(cDerivados) = "C"
+      hDerivados := hb_jsonDecode( cDerivados )
+      if hb_isHash( hDerivados ) .and. hb_hHasKey( hDerivados, "flujos" )
+         aFlujos := hDerivados["flujos"]
+         if VALTYPE(aFlujos) = "A" .and. Len(aFlujos) > 0
+            cTextoFlujos := CRLF+CRLF+"--- FLUJOS Doc#"+cDocNro+" ---"
+            FOR EACH hFlujo IN aFlujos
+               // Genérico: verificar tipo de dato antes de convertir
+               cTipo := ""
+               if hb_hHasKey(hFlujo,"tipo")
+                  if VALTYPE(hFlujo["tipo"]) = "C"
+                     cTipo := hFlujo["tipo"]
+                  elseif VALTYPE(hFlujo["tipo"]) = "N"
+                     cTipo := hb_ntos(hFlujo["tipo"])
+                  endif
+               endif
+               
+               nMonto := 0
+               if hb_hHasKey(hFlujo,"monto")
+                  if VALTYPE(hFlujo["monto"]) = "N"
+                     nMonto := hFlujo["monto"]
+                  endif
+               endif
+               
+               cNro := ""
+               if hb_hHasKey(hFlujo,"numero")
+                  if VALTYPE(hFlujo["numero"]) = "C"
+                     cNro := hFlujo["numero"]
+                  elseif VALTYPE(hFlujo["numero"]) = "N"
+                     cNro := hb_ntos(hFlujo["numero"])
+                  endif
+               endif
+               
+               if nMonto != 0
+                  cTextoFlujos += CRLF + cTipo + ": " + hb_ntos(nMonto) + " (Nro:" + cNro + ")"
+               endif
+            NEXT
+         endif
+      endif
+   endif
+
+   ::oTVReExpresados:SetText( CRLF+"Tasa a la fecha del documento: "+;
                              ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 17 ))+ ;
-                             CRLF+"Monto convertido: "+;
+                             CRLF+"Tasa Actual: "+;
                              ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 18 ))+ ;
-                             CRLF+"Saldo convertido: "+;
+                             CRLF+"Monto equivalente en Bs: "+;
                              ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 19 ))+ ;
-                             CRLF+"Monto equivalente en tasa actual: "+;
-                             ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 21 ))+ ;
                              CRLF+"Diferencia Cambiaria: "+;
-                             ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 22 ))) 
+                             ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 20 ))+ ;
+                             CRLF+"% Diferencial: "+;
+                             ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 21 ))+ ;
+                             CRLF+"Monto Convertido (USD): "+;
+                             ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 26 ))+ ;
+                             CRLF+"Saldo Convertido (USD): "+;
+                             ALLTRIM(::oModDocuments:oTreeView:GetAutoValue( 27 ))+ ;
+                             cTextoFlujos )
+
+return
 /*
    ::oTVReExpresados:oBuffer:GetIterAtOffSet( aStart, -1 )
    ::oTVReExpresados:CreateTag( "title", { ;//"background", "", ;
