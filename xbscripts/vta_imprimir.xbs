@@ -46,6 +46,7 @@ procedure vta_imprimir( oForm, oQry )
    local aClientes:=rClientes:Data(),nCaj:=0,nUni:=0,nTotUniLi:=0,nUniCaj:=0
   
 
+   //view(::oEntTotal:GetValue())
    SET DECIMAL TO 2
 
    SET PUBLIC hTotal
@@ -107,29 +108,35 @@ procedure vta_imprimir( oForm, oQry )
 
    xlsx_set_string ::worksheet cell: "B"+hb_ntos(nLin) value: "Código"
    xlsx_set_string ::worksheet cell: "D"+hb_ntos(nLin) value: "Descripción"
-   xlsx_set_string ::worksheet cell: "I"+hb_ntos(nLin) value: "Caj."
-   xlsx_set_string ::worksheet cell: "J"+hb_ntos(nLin) value: "Uni."
-   xlsx_set_string ::worksheet cell: "K"+hb_ntos(nLin) value: "Tot. Uni."
-   xlsx_set_string ::worksheet cell: "L"+hb_ntos(nLin) value: "Precio Unit."
+   xlsx_set_string ::worksheet cell: "H"+hb_ntos(nLin) value: "Caj."
+   xlsx_set_string ::worksheet cell: "I"+hb_ntos(nLin) value: "Uni."
+   xlsx_set_string ::worksheet cell: "J"+hb_ntos(nLin) value: "Tot. Uni."
+   xlsx_set_string ::worksheet cell: "K"+hb_ntos(nLin) value: "Precio Unit."
+   xlsx_set_string ::worksheet cell: "M"+hb_ntos(nLin) value: "PVP Total"
    xlsx_set_string ::worksheet cell: "N"+hb_ntos(nLin) value: "Precio Total."
    
    
    
-
+	//view(::cDivisa)
    FOR EACH aLine IN aData
       xlsx_set_string ::worksheet cell: "B"+hb_ntos(aLine:__EnumIndex()+nLin) value: ALLTRIM(aLine[3])
       xlsx_set_string ::worksheet cell: "D"+hb_ntos(aLine:__EnumIndex()+nLin) value: ALLTRIM(aLine[4])
 	  //xlsx_set_string ::worksheet cell: "I"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[5])
-	  nUniCaj:=IIF(RIGHT(hb_ntos(aLine[3]),2)="01",0,val(RIGHT(aLine[3],2)))
-	  nUni:=IIF(RIGHT(hb_ntos(aLine[3]),2)="01",aLine[5],0)
-	   nCaj:=IIF(RIGHT(hb_ntos(aLine[3]),2)="01",0,aLine[5])
+	 // nUniCaj:=IIF(RIGHT(hb_ntos(aLine[3]),2)="01",0,val(RIGHT(aLine[3],2)))
+	  nUniCaj:=IIF(RIGHT(aLine[3], 2) ="01",0,tonum(RIGHT(aLine[3],2)))
+
+	  nUni:=TONUM(iif(nUniCaj>0,0, hb_ntos(aLine[5])))
+	  //nCaj:=IIF(RIGHT(hb_ntos(aLine[3]),2)=="01",0,tonum(aLine[5]))
+	  nCaj:=TONUM(IIF(nUniCaj>0,hb_ntos(aLine[5]),0))
+	  //view(ncaj)
 	  nTotUniLi:=nCaj*nUniCaj+nUni
 	  
 	  
-      xlsx_set_string ::worksheet cell: "I"+hb_ntos(aLine:__EnumIndex()+nLin) value: IIF(RIGHT(hb_ntos(aLine[3]),2)="01","",hb_ntos(aLine[5]))
-	  xlsx_set_string ::worksheet cell: "J"+hb_ntos(aLine:__EnumIndex()+nLin) value: IIF(RIGHT(hb_ntos(aLine[3]),2)="01",hb_ntos(aLine[5]),"")
-	  xlsx_set_string ::worksheet cell: "K"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(nTotUniLi)
-      xlsx_set_string ::worksheet cell: "L"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[6])
+      xlsx_set_string ::worksheet cell: "H"+hb_ntos(aLine:__EnumIndex()+nLin) value: IIF(nCaj>0,hb_ntos(aLine[5]),0)
+	  xlsx_set_string ::worksheet cell: "I"+hb_ntos(aLine:__EnumIndex()+nLin) value: IIF(nUni>0,hb_ntos(aLine[5]),0)
+	  xlsx_set_string ::worksheet cell: "J"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(nTotUniLi)
+      xlsx_set_string ::worksheet cell: "K"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[6])
+	  xlsx_set_string ::worksheet cell: "M"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(ROUND(aLine[21]*(nCaj+nUni),2))
 	  xlsx_set_string ::worksheet cell: "N"+hb_ntos(aLine:__EnumIndex()+nLin) value: hb_ntos(aLine[8])
 	  
 	//  ?nTotUniLi
@@ -147,24 +154,26 @@ procedure vta_imprimir( oForm, oQry )
    xlsx_set_string ::worksheet cell: "B19" value: "legal en el país, de acuerdo a lo publicado en la Providencia Administrativa SNAT/2022/000013 de fecha 03.03.2022"
 
 
-   // xlsx_set_string ::worksheet cell: "M"+hb_ntos(nLin) value: TRANSFORM(::hFactura["monto_base"],P_92)
+     // xlsx_set_string ::worksheet cell: "N"+hb_ntos(nLin) value: TRANSFORM(::hFactura["monto_base"],P_92)
    
-	xlsx_set_string ::worksheet cell: "K22" value: "Monto Base:    " 
-    xlsx_set_string ::worksheet cell: "M22" value: TRANSFORM(::hFactura["monto_base"],P_92)
-	xlsx_set_string ::worksheet cell: "K23" value: "Monto Exento:  " 
-	xlsx_set_string ::worksheet cell: "M23" value: ::nMontoIvaE
-	xlsx_set_string ::worksheet cell: "K24" value: "IVA 8%:        "
-	xlsx_set_string ::worksheet cell: "M24" value: ::nMontoIvaR
-	xlsx_set_string ::worksheet cell: "K25" value: "IVA 16%:       "
-	xlsx_set_string ::worksheet cell: "M25" value: ::nMontoIvaG
-	xlsx_set_string ::worksheet cell: "K26" value: "Otros Impuestos:   " 
-	xlsx_set_string ::worksheet cell: "M26" value: ::nMontoOtrImp
-	xlsx_set_string ::worksheet cell: "K27" value: "Monto Total:   " 
-	xlsx_set_string ::worksheet cell: "M27" value:  TRANSFORM(::hFactura["monto_total"],P_92)
-	//xlsx_set_string ::worksheet cell: "H27" value: "IGTF 3% sobre "
-	//xlsx_set_string ::worksheet cell: "J27" value: "0,00 "
-	//xlsx_set_string ::worksheet cell: "K27" value: "Monto IGTF "
-	//xlsx_set_string ::worksheet cell: "M27" value: "0,00 "
+	xlsx_set_string ::worksheet cell: "H22" value: "Tasa de Cambio:    " 
+    xlsx_set_string ::worksheet cell: "J22" value: SUBSTR(::cDivisa,5)
+	xlsx_set_string ::worksheet cell: "L22" value: "Monto Base:    " 
+    xlsx_set_string ::worksheet cell: "N22" value: hb_ntos(tonum(TRANSFORM(::hFactura["monto_base"],P_92)))
+	xlsx_set_string ::worksheet cell: "L23" value: "Monto Exento:  " 
+	xlsx_set_string ::worksheet cell: "N23" value: hb_ntos(tonum(::nMontoIvaE))
+	xlsx_set_string ::worksheet cell: "L24" value: "IVA 8%:        "
+	xlsx_set_string ::worksheet cell: "N24" value: hb_ntos(tonum(::nMontoIvaR))
+	xlsx_set_string ::worksheet cell: "L25" value: "IVA 16%:       "
+	xlsx_set_string ::worksheet cell: "N25" value: hb_ntos(tonum(::nMontoIvaG))
+	xlsx_set_string ::worksheet cell: "L26" value: "Otros Impuestos:   " 
+	xlsx_set_string ::worksheet cell: "N26" value: hb_ntos(tonum(::nMontoOtrImp))
+	xlsx_set_string ::worksheet cell: "L27" value: "Monto Total:   " 
+	xlsx_set_string ::worksheet cell: "N27" value:  hb_ntos(tonum(::oEntTotal:GetValue()))
+	//xlsx_set_string ::worksheet cell: "I27" value: "IGTF 3% sobre "
+	//xlsx_set_string ::worksheet cell: "K27" value: "0,00 "
+	//xlsx_set_string ::worksheet cell: "L27" value: "Monto IGTF "
+	//xlsx_set_string ::worksheet cell: "N27" value: "0,00 "
 //--------------------------------
    /* finalizamos */
    error := workbook_close( ::workbook )
