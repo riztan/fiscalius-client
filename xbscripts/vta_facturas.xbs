@@ -515,7 +515,12 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
-      ::oEntOtrImp:SetValue( "0" )
+      // Usar otros_imp desde el servidor si existe, sino inicializar en 0
+      if hb_hHasKey( ::hFactura, "otros_imp" )
+         ::oEntOtrImp:SetValue( TRANSFORM( ::hFactura["otros_imp"], P_92 ) )
+      else
+         ::oEntOtrImp:SetValue( "0" )
+      endif
 
       ::oEntRetIva:SetValue( "" )
       ::oEntRetIvaF:SetValue( "" )
