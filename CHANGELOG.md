@@ -1,6 +1,33 @@
 # Configuración de Cambios - Fiscalius Client
 
-## 2026-02-17 - Migración fin_recibo.xbs a CxCxFlujo()
+## 2026-02-18 - Fix vta_facturas.xbs y mejoras de retención
+
+### Cambios Realizados:
+1. **Fix saltos de línea**: Convertidos CRLF → LF en vta_facturas.xbs
+   - Archivo corregido para eliminar caracteres ^M
+
+### Cambios en Servidor (asociados):
+1. **Validación SetRetIVA()**: 
+   - Campos requeridos: porcentaje > 0, monto > 0, fecha_retencion no vacía
+   - Validación matemática: monto_retencion = monto_iva * porcentaje_retencion / 100
+   - Sanitización de comprobante con sql_sanitize()
+
+2. **Validación SetRetISLR()**:
+   - Campos requeridos: monto > 0, comprobante no vacío, fecha no vacía
+   - Sanitización de comprobante
+
+3. **Función ValidarRespuesta()**: 
+   - Nueva función genérica para validar respuestas de SetRetIVA/SetRetISLR
+   - Verifica claves "ok" y "return" en hash de respuesta
+
+4. **Save() documentos cerrados**:
+   - Cuando documento estado = "C", solo guarda derivados (IVA, ISLR, OIMP)
+
+5. **ActualizarFlujos()**:
+   - Mejorado con validación de respuestas
+   - Retorna tpy_message en lugar de .T.
+
+---
 
 ### Cambios Realizados:
 1. **Migración a CxCxFlujo()**: Cambia de `CuentasPorCobrar()` al nuevo método

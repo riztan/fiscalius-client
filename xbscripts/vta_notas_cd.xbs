@@ -11,7 +11,7 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
 
    default cTipoDocumento := "C"
 
-View( cTipoDocumento )
+//View( cTipoDocumento )
 
    SET PUBLIC oForm
 
