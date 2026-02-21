@@ -906,10 +906,10 @@ procedure __Calcula( oForm )
    ::oEntIvaR:SetValue("0")
    ::oEntIvaG:SetValue("0")
    ::oEntOtrImp:SetValue("0") // Initialize otros_imp
-   ::hFactura["iva"] := {=>}
+   ::hFactura["iva"] := hb_hash()  // Initialize IVA hash here, once
    ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
    ::oLBoxDetal:ForEach( ::bDetalCode )
-//   ::oEntOtrImp:SetValue( TRANSFORM( nOtrosImp, P_92 ) ) // Set otros_imp
+   //::oEntOtrImp:SetValue( TRANSFORM( nOtrosImp, P_92 ) ) // Set others_imp
 return
 
 
@@ -926,9 +926,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    nTotal := ROUND( nBase+nMonto, 2 )
    ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
 
-   ::hFactura["iva"] := hb_hash()
-
-   // Calculate imp_pvp
+    // Calculate imp_pvp
  //  nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
    nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
 //   oTView:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) )
@@ -942,7 +940,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
       //if !hb_hHasKey( ::hFactura, "iva" )
       //   ::hFactura["iva"] := hb_hash()
       //endif
-      cIva := ALLTRIM( oTView:GetAutoValue(__IVAPORCEN, aIter) )
+      cIva := ALLTRIM( STRTRAN(STRTRAN(oTView:GetAutoValue(__IVAPORCEN, aIter),",",""), ".","") )
       if hb_hHasKey( ::hFactura["iva"], cIva )
          nMonto += ::hFactura["iva"][cIva]["monto"]
       endif
@@ -975,7 +973,6 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
    ::oEntOtrImp:SetValue( TRANSFORM( nOtrImp, P_92 ) ) // Set otros_imp
 
-//View( ::hFactura["iva"] )
 return
 
 
@@ -1113,11 +1110,12 @@ return
 
 
 Procedure __VtaSave( oForm, oFormParent )
-   local bSaveDetal, uResp, dUltimaFecha, aIter := ARRAY(4)
+   local bSaveDetal, uResp, dUltimaFecha, aIter := ARRAY(4), lSuccess := .F.
 
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
        __Calcula( oForm )
+//View( hb_valtoexp( ::hFactura ) )
       ::rFactura:ActualizarFlujos( ::hFactura )
       MsgAlert( "Este documento no es objeto para ser alterado y luego almacenar.", "Atención" )
       return 
@@ -1140,6 +1138,7 @@ Procedure __VtaSave( oForm, oFormParent )
    ::hFactura["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue()) // Vencimiento
    ::hFactura["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
    ::hFactura["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
+   ::hFactura["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
    ::hFactura["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
 
@@ -1161,7 +1160,19 @@ Procedure __VtaSave( oForm, oFormParent )
 //View( ::hFactura )
    uResp := ::rFactura:Save()
 
-   if hb_isLogical( uResp ) .and. uResp
+   // Verificar si hubo error
+   lSuccess := .F.
+   if hb_isLogical(uResp) .and. uResp
+      lSuccess := .T.
+   elseif hb_isHash(uResp) .and. hb_hHasKey(uResp, "ok") .and. uResp["ok"]
+      lSuccess := .T.
+   endif
+
+   if lSuccess
+      // Mostrar mensaje de advertencia si existe
+      if hb_isHash(uResp) .and. hb_hHasKey(uResp, "message")
+         ::oLabInfo:SetText( uResp["message"] )
+      endif
 //View("atualizamos hFactura ")
       ::hFactura   := ::rFactura:Data()
 //View( ::hFactura )
@@ -1200,15 +1211,9 @@ Procedure __VtaSave( oForm, oFormParent )
          if ::oModFacturas:oTreeView:IsGetSelected( aIter )
             __vtaFactura( oForm, oFormParent, ::oBoxFactura, ::oModFacturas, .F. )
          endif
-      endif
-   endif
+       endif
+    endif
 
-//View( uResp )
-   if uResp
-      ::cPreEstado := LEFT( ::oComboEstado:GetValue(), 1 )
-      ::oLabInfo:SetText( "Actualizado." )
-   endif
-   
 return
 
 

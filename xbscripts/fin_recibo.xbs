@@ -614,9 +614,9 @@ procedure __fr_LoadDocs(oForm, oFormParent)
                  VALUES  hb_ntos(aItem[1]), hb_ntos(aItem[2]), ALLTRIM(aItem[3]), ;
                          ALLTRIM(aItem[4]), ALLTRIM(aItem[5]), hb_ntos(aItem[6]), ;
                          hb_ntos(aItem[7]), ALLTRIM(aItem[8]), ALLTRIM(aItem[9]), ;
-                         DTOC(aItem[10]), TRANSFORM(aItem[11],P_92), ALLTRIM(aItem[12]), ;
+                         DTOC(aItem[10]), TRANSFORM(aItem[11],P_92), hb_ntos(aItem[12]), ;
                          TRANSFORM(aItem[13],P_92),TRANSFORM(aItem[14],P_92), ;
-                         ALLTRIM(aItem[15]), aItem[16], TRANSFORM(aItem[17],P_92), ;
+                         hb_ntos(aItem[15]), aItem[16], TRANSFORM(aItem[17],P_92), ;
                          TRANSFORM(aItem[18],P_92), TRANSFORM(aItem[19],P_92), ;
                          TRANSFORM(aItem[20],P_92), TRANSFORM(aItem[21],P_92), ;
                          TRANSFORM(aItem[22],P_92), TRANSFORM(aItem[23],P_92)
