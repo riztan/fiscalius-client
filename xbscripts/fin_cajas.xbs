@@ -1,5 +1,5 @@
-/* vta_clientes.xbs
- *
+/* fin_cajas.xbs
+ * Gestión de Cajas
  */
 
 #include "tpy_xbs.ch"
@@ -8,7 +8,8 @@ procedure fin_cajas( oForm, oWndParent, oEntParent, cCodCaja, cFiltro, cDocument
 
    local oCajaWnd, oRes, oImgBanner, oImageLogo, oBoxData
    local oLabTitulo, cLabTitulo := "Cajas"
-   local rVentas, rCajas, oModCajas, oLBoxCli, hParam
+   local rCajas, oModCajas, oLBoxCli, hParam
+   local rFinanzas
 
    default cCodCaja to ""
    default cFiltro     to ""
@@ -25,8 +26,8 @@ procedure fin_cajas( oForm, oWndParent, oEntParent, cCodCaja, cFiltro, cDocument
       hParam[ "filtro" ] := cFiltro
    endif
 
-   ::rFinanzas := ::rEmpresa:SetModulo("Finanzas")
-   rCajas  := ::rFinanzas:Cajas()
+   rFinanzas := ::rEmpresa:SetModulo("Finanzas")
+   rCajas  := rFinanzas:Cajas()
 
    if hb_isNIL(rCajas)
       MsgStop("???")
@@ -72,6 +73,11 @@ procedure fin_cajas( oForm, oWndParent, oEntParent, cCodCaja, cFiltro, cDocument
 
    oLBoxCli:lBar  := .f.
 
+   // Por defecto, permitir agregar y editar
+   oLBoxCli:bNew  := {|oModel| fcaj_edit( oForm, oCajaWnd, oModCajas, rFinanzas, .T. /*lNew*/ ) }
+   oLBoxCli:bEdit := {|oModel| fcaj_edit( oForm, oCajaWnd, oModCajas, rFinanzas, .F. /*lNew*/ ) }
+
+   // Si hay oEntParent, cambiar bEdit para seleccionar y cerrar
    if hb_isObject( oEntParent )
       oLBoxCli:bEdit := {|oModel| (cCodCaja := oModel:GetCol(1),; 
                                    iif( !hb_isObject(oWndParent),                ;
@@ -79,12 +85,7 @@ procedure fin_cajas( oForm, oWndParent, oEntParent, cCodCaja, cFiltro, cDocument
                                          oEntParent:setText( ALLTRIM(cCodCaja)+" - "+;
                                                              oModel:GetCol(3) )), ;
                                    oCajaWnd:End() ) }
-//   else 
-//      oLBoxCli:bNew  := {|oModel| fcaj_edit( oForm, oCajaWnd, oModCajas, rVentas, .T. /*lNew*/ ) }
-//      oLBoxCli:bEdit := {|oModCajas| fcaj_edit( oForm, oCajaWnd, oModCajas, rVentas, .F. /*lNew*/ ) }
    endif
-   
-   
    
    oLBoxCli:SetColVisible( 1, .F. )    //- Ocultamos ID
 
@@ -106,53 +107,42 @@ procedure fin_cajas( oForm, oWndParent, oEntParent, cCodCaja, cFiltro, cDocument
 return
 
 
-/*
-procedure fcaj_edit( oForm, oCajaWnd, oModel, rVentas, lNew )
-   local oWnd, oRes, oImgBanner
-//   local oImgLogo, oEntCodigo, cCodigo, oEntNombre, cNombre
-//   local oEntRif, cRif, oEntMail, cMail, oEntTlf, cTlf
-//   local oVtDir, cDir, oBtnSave, oBtnCancel
-   local oCajaForm, hData
+procedure fcaj_edit( oForm, oCajaWnd, oModel, rFinanzas, lNew )
+   local oRes, oCajaForm, hData
 
    default lNew := .T.
 
    SET PUBLIC oCajaForm
 
    oCajaForm:lForce   := .F.
-   oCajaForm:lClose   := .F.     //Bandera para indicar cierre
+   oCajaForm:lClose   := .F.
    oCajaForm:oModel   := oModel
    oCajaForm:rSession := ::rSession
-   oCajaForm:rVentas  := rVentas
+   oCajaForm:rFinanzas  := rFinanzas
    oCajaForm:lNew     := lNew
 
+   oCajaForm:oAliWnd  := oCajaWnd
+   oCajaForm:oModel   := oModel
+   oCajaForm:oParent  := oForm
+
    if lNew
-
-      oCajaForm:cCodigo  := ""
-      oCajaForm:cNombre  := ""
-      oCajaForm:cRif     := ""
-      oCajaForm:cDir     := ""
-      oCajaForm:cTlf     := ""
-      oCajaForm:cMail    := ""
-      oCajaForm:cCedula  := ""
+      oCajaForm:cCodigo     := ""
+      oCajaForm:cNombre     := ""
+      oCajaForm:cMoneda     := "VES"
+      oCajaForm:lActivo     := .T.
    else
-
-      oCajaForm:cCodigo  := oModel:GetCol( 2 )
-      oCajaForm:cPreCodigo  := oModel:GetCol( 2 )
-      oCajaForm:cNombre  := oModel:GetCol( 3 )
-      oCajaForm:cRif     := oModel:GetCol( 4 )
-      oCajaForm:cPreRif  := oModel:GetCol( 4 )
-      oCajaForm:cDir     := oModel:GetCol( 5 )
-      oCajaForm:cTlf     := oModel:GetCol( 6 )
-      oCajaForm:cMail    := oModel:GetCol( 7 )
+      oCajaForm:cCodigo      := oModel:GetCol( 2 )
+      oCajaForm:cPreCodigo   := oModel:GetCol( 2 )
+      oCajaForm:cNombre     := oModel:GetCol( 3 )
+      oCajaForm:cMoneda     := oModel:GetCol( 4 )
+      oCajaForm:lActivo     := oModel:GetCol( 5 )
    endif
 
-   oCajaForm:rCaja := rFinanzas:Cajas( {"codigo"=> oCajaForm:cCodigo} )
+   oCajaForm:rCaja := rFinanzas:Caja( oCajaForm:cCodigo )
 
    hData := oCajaForm:rCaja:Data()
-   oCajaForm:cNombreC  := hData["nombre_corto"]
-   oCajaForm:cCedula   := hData["cedula"]
-
-   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_clientes.ui"
+   
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"fin_cajas.ui"
 
    DEFINE WINDOW oCajaForm:oWnd TITLE "Caja" SIZE 650,350 ;
           OF oCajaWnd ;
@@ -161,36 +151,27 @@ procedure fcaj_edit( oForm, oCajaWnd, oModel, rVentas, lNew )
       DEFINE IMAGE oCajaForm:oImgBanner ID "img_banner" RESOURCE oRes
       oCajaForm:oImgBanner:Adjust(900)
 
-      DEFINE IMAGE oCajaForm:oImgLogo   ID "img_logo"   RESOURCE oRes
+      DEFINE IMAGE oCajaForm:oImgLogo ID "img_logo" RESOURCE oRes
       oCajaForm:oImgLogo:Adjust(60)
 
+      // Código
       DEFINE ENTRY oCajaForm:oEntCodigo VAR oCajaForm:cCodigo ;
-             VALID iif( oCajaForm:lClose, .T., __ValidaCodigo( oCajaForm:oEntCodigo, oCajaForm ) ) ;
+             VALID iif( oCajaForm:lClose, .T., __ValCodCaja( oCajaForm:oEntCodigo, oCajaForm ) ) ;
              ID "ent_codigo" RESOURCE oRes
 
+      // Nombre
       DEFINE ENTRY oCajaForm:oEntNombre VAR oCajaForm:cNombre ID "ent_nombre" RESOURCE oRes
 
-      DEFINE ENTRY oCajaForm:oEntNombreC VAR oCajaForm:cNombreC ID "ent_nombre_corto" RESOURCE oRes
+      // Moneda Principal (reutilizando campo de comportamiento)
+      DEFINE ENTRY oCajaForm:oEntMoneda VAR oCajaForm:cMoneda ID "ent_comporta" RESOURCE oRes
 
-      DEFINE ENTRY oCajaForm:oEntCedula VAR oCajaForm:cCedula ;
-             VALID iif( oCajaForm:lClose, .T., __ValidaCedula( oCajaForm:oEntCedula ) ) ;
-             ID "ent_cedula" RESOURCE oRes
+      // Activo (reutilizando checkboxes)
+      DEFINE CHECKBOX oCajaForm:oChkActivo VAR oCajaForm:lActivo ID "chk_activo" RESOURCE oRes
 
-      DEFINE ENTRY oCajaForm:oEntRif    VAR oCajaForm:cRif    ;
-             VALID iif( oCajaForm:lClose, .T., __ValidaRIF(oCajaForm:oEntRif, oCajaForm) ) ;
-             ID "ent_rif"    RESOURCE oRes
+      // Ocultar campos no usados
+      // No hay forma fácil de ocultarlos en XBScript sin modificarlos
 
-      DEFINE ENTRY oCajaForm:oEntMail   VAR oCajaForm:cMail   ;
-             VALID iif( oCajaForm:lClose, .T., __ValidaEmail( oCajaForm:oEntMail ) ) ;
-             ID "ent_mail"   RESOURCE oRes
-
-      DEFINE ENTRY oCajaForm:oEntTlf    VAR oCajaForm:cTlf    ;
-             VALID iif( oCajaForm:lClose, .T., __ValidaTlf( oCajaForm:oEntTlf ) ) ;
-             ID "ent_tlf"    RESOURCE oRes
-
-      DEFINE TEXTVIEW oCajaForm:oVTDir  VAR oCajaForm:cDir    ID "tv_dir"     RESOURCE oRes
-
-      DEFINE BUTTON oCajaForm:oBtnSave   ACTION __FinCajaSave( oCajaForm ) ID "btn_save" RESOURCE oRes
+      DEFINE BUTTON oCajaForm:oBtnSave ACTION __FinCajaSave( oCajaForm ) ID "btn_save" RESOURCE oRes
 
       DEFINE BUTTON oCajaForm:oBtnCancel ACTION ( oCajaForm:lClose := .T., oCajaForm:oWnd:End() ) ;
              ID "btn_cancel" RESOURCE oRes
@@ -200,106 +181,109 @@ procedure fcaj_edit( oForm, oCajaWnd, oModel, rVentas, lNew )
 return
 
 
-
 Procedure __FinCajaSave( oForm )
-/*
-   local hData, uWidget, uResp, aIter, lNew
+   local hData, uResp, aIter, lNew
 
-   // Validar el RIF antes de guardar
-   if !__ValidaRIF( ::oEntRif, oForm )
-      MsgAlert("El RIF ingresado es inválido. Debe tener el formato X-12345678-D (ej. J-12345678-9).", "Error")
-      ::oEntRif:SetFocus()
+   // Validar código antes de guardar
+   if Empty( oForm:cCodigo )
+      MsgAlert("El código de caja es obligatorio.", "Error")
+      oForm:oEntCodigo:SetFocus()
       return
    endif
 
-   // Validar el email antes de guardar
-   if !Empty( ::cMail ) .and. !__ValidaEmail( ::oEntMail )
-      MsgAlert("El correo electrónico ingresado es inválido. Debe tener el formato usuario@dominio.com.", "Error")
-      ::oEntMail:SetFocus()
+   // Validar nombre antes de guardar
+   if Empty( oForm:cNombre )
+      MsgAlert("El nombre de la caja es obligatorio.", "Error")
+      oForm:oEntNombre:SetFocus()
       return
    endif
 
-   // Validar el número de teléfono antes de guardar
-   if !Empty( ::cTlf ) .and. !__ValidaTlf( ::oEntTlf )
-      MsgAlert("El número de teléfono debe contener solo dígitos y tener entre 7 y 15 caracteres.", "Error")
-      ::oEntTlf:SetFocus()
+   lNew := oForm:rCaja:IsNew()
+
+   // Guardar los datos de la caja
+   oForm:rCaja:SetData( { "codigo"         => oForm:cCodigo,  ;
+                          "nombre"         => oForm:cNombre,  ;
+                          "moneda_principal" => oForm:cMoneda, ;
+                          "activa"        => oForm:lActivo } )
+
+   uResp := oForm:rCaja:Save()
+
+   if !( ValType( uResp ) = "H" .and. hb_hHasKey(uResp,"return") .and. uResp["return"] = .T. )
+      if ValType( uResp ) = "H" .and. hb_hHasKey(uResp,"message")
+         MsgAlert("No se pudo guardar la caja: " + uResp["message"], "Error")
+      else
+         MsgAlert("No se pudo guardar la caja.", "Error")
+      endif
       return
    endif
 
-   // Validar la cédula antes de guardar
-   if !Empty( ::cCedula ) .and. !__ValidaCedula( ::oEntCedula )
-      MsgAlert("La cédula debe contener solo dígitos y tener entre 7 y 8 caracteres.", "Error")
-      ::oEntCedula:SetFocus()
-      return
-   endif
+   hData := oForm:rCaja:Data()
 
-   lNew := ::rCaja:isNew()
-
-   // Guardar los datos del cliente
-   hData := ::rCaja:Data()
-   ::rCaja:SetData( { "codigo"       => ::cCodigo,  ;
-                         "nombre"       => ::cNombre,  ;
-                         "nombre_corto" => ::cNombreC, ;
-                         "rif"          => ::cRif,     ;
-                         "email"        => ::cMail,    ;
-                         "telefono"     => ::cTlf,     ;
-                         "direccion"    => ::cDir,     ;
-                         "cedula"       => ::cCedula   ;
-                       } )
-
-   uResp := ::rCaja:Save()
-
-   if !(ValType( uResp ) = "L" .and. uResp = .T.)
-      MsgAlert("No se pudo guardar el cliente.", "Error")
-      return
-   endif
-
-   hData := ::rCaja:Data()
-//View( hb_valtoexp(hData) )
-
-   // Verificar si es un cliente nuevo (no hay selección en el modelo)
+   // Actualizar el modelo
    if lNew 
-      // Caja nuevo: añadir una nueva fila al modelo
-      aIter := ARRAY(4)
-      APPEND LIST_STORE ::oModel:oLbx ITER aIter ;
+      // Caja nueva: añadir una nueva fila al modelo
+      aIter := ARRAY(5)
+      APPEND LIST_STORE oForm:oModel:oLbx ITER aIter ;
              VALUES hData["id"], ;
                     hData["codigo"], ;
                     hData["nombre"], ;
-                    hData["rif"], ;
-                    hData["direccion"], ;
-                    hData["telefono"], ;
-                    hData["email"], ;
-                    hData["nombre_corto"], ;
-                    hData["cedula"]
-      // Establecer el cursor en la nueva fila
-      gtk_tree_view_set_cursor( ::oModel:oTreeView:pWidget, ::oModel:oTreeView:GetPath( aIter ), NIL, .F. )
+                    hData["moneda_principal"], ;
+                    hData["activa"]
+      gtk_tree_view_set_cursor( oForm:oModel:oTreeView:pWidget, oForm:oModel:oTreeView:GetPath( aIter ), NIL, .F. )
    else
       // Caja existente: actualizar la fila seleccionada
-      ::oModel:SetValue( 2, hData["codigo"] )
-      ::oModel:SetValue( 3, hData["nombre"] )
-      ::oModel:SetValue( 4, hData["rif"] )
-      ::oModel:SetValue( 5, hData["direccion"] )
-      ::oModel:SetValue( 6, hData["telefono"] )
-      ::oModel:SetValue( 7, hData["email"] )
-      ::oModel:SetValue( 8, hData["nombre_corto"] ) // Añadir nombre_corto
-      ::oModel:SetValue( 9, hData["cedula"] )       // Añadir cedula
+      oForm:oModel:SetValue( 2, hData["codigo"] )
+      oForm:oModel:SetValue( 3, hData["nombre"] )
+      oForm:oModel:SetValue( 4, hData["moneda_principal"] )
+      oForm:oModel:SetValue( 5, hData["activa"] )
    endif
 
-   // Actualizar los campos del formulario
+   oForm:lForce := .T.
+   oForm:oWnd:End()
 
-   ::lForce := .T.
-   ::oWnd:End()
-*/
 return
 
+
+Function __ValCodCaja( oEntCodigo, oForm )
+   local cCodigo, rCaja
+
+   cCodigo := oEntCodigo:GetValue()
+
+   // No permitir código vacío
+   if Empty( cCodigo )
+      MsgAlert( "Debe indicar un código para la caja.", "Atención" )
+      return .F.
+   endif
+
+   // Verificar longitud 
+   if LEN( cCodigo ) < 2 .OR. LEN( cCodigo ) > 10
+      MsgAlert( "El código debe tener entre 2 y 10 caracteres.", "Error" )
+      oEntCodigo:SetFocus()
+      return .F.
+   endif
+
+   // Verificar unicidad del código
+   rCaja := oForm:rFinanzas:Cajas()
+   if rCaja:RecCount() > 0 .and. ( oForm:lNew .or. cCodigo != oForm:cPreCodigo )
+      // Buscar si existe el código
+      rCaja:GoTop()
+      while !rCaja:Eof()
+         if ALLTRIM(rCaja:FieldGet(2)) == cCodigo
+            MsgAlert( "El código ingresado ya está registrado.", "Atención" )
+            return .F.
+         endif
+         rCaja:Skip()
+      end
+   endif
+
+   return .T.
 
 
 
 Function __FinCajaExit( oForm )
 
-  ::lClose := .T. //Activar bandera de cierre antes de validar salida
-//View( ::lForce )
-  if ::lForce; return .T. ; endif
+  oForm:lClose := .T. //Activar bandera de cierre antes de validar salida
+  if oForm:lForce; return .T. ; endif
 
   if MsgNoYes("¿Desea salir y descartar los cambios?", "Atención.")
      return .T.

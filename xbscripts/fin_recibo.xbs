@@ -483,8 +483,9 @@ return
 
 
 
-procedure __fr_LoadDocs(oForm, oFormParent)
-   local aData, aStruct, oModTmp, aItem, aIter := ARRAY(4)
+ procedure __fr_LoadDocs(oForm, oFormParent)
+    local aData, aStruct, oModTmp, aItem, aIter := ARRAY(4)
+    local aDivisaTokens, nTasaActual
 
    if oForm:IsDef( "oEntDocMonto" )
       ::oEntDocMonto:SetText( '' )
@@ -499,11 +500,13 @@ procedure __fr_LoadDocs(oForm, oFormParent)
 //::rFinanzas:CxCxFlujo( {"cliente" => oFormParent:cCodCli } )
 //View( VALTYPE(oFormParent:cCodCli) )
 
-   //::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente"           => oFormParent:cCodCli,;
-   ::oDocuments := ::rFinanzas:CxCxFlujo( {"cliente"           => oFormParent:cCodCli,;
-                                                  "tasa_actual"       => hb_aTokens( ::oComboDivisa:GetValue(), " " )[2], ;
-                                                  "moneda_deseada_id" => '2', ;
-                                                  "incluir_cero"      => .t. } )
+    //::oDocuments := ::rFinanzas:CuentasPorCobrar( {"cliente"           => oFormParent:cCodCli,;
+    aDivisaTokens := hb_aTokens( ::oComboDivisa:GetValue(), " " )
+    nTasaActual := iif( Len(aDivisaTokens)>=2, Val(aDivisaTokens[2]), 0 )
+    ::oDocuments := ::rFinanzas:CxCxFlujo( {"cliente"           => oFormParent:cCodCli,;
+                                                   "tasa_actual"       => nTasaActual, ;
+                                                   "moneda_deseada_id" => '2', ;
+                                                   "incluir_cero"      => .t. } )
 
 //   aStruct := AADD( ::oDocuments:Struct(), {"aplicado_anterior", "N", 15, 2 } )
    aStruct := {}
@@ -636,6 +639,7 @@ return
     local aApps := {}, aInsts := {}, aLine
     local hData := {}, hResp
     local nMontoDocs := 0, nMontoInst := 0
+    local aDivisaTokens, nTasa, cMoneda
 
     // Validar saldo
     if ::nSaldo > 0
@@ -653,9 +657,9 @@ return
     aDoc := ::oModDocuments:oTreeView:FillArray()
     FOR EACH aLine IN aDoc
        // Columna 16 = seleccionado, Columna 6 = transaccion_id, Columna 13 = monto_aplicado
-       if aLine[16] .AND. aLine[13] > 0
-          AADD( aApps, { "transaccion_id" => aLine[6], "monto_aplicado" => aLine[13] } )
-          nMontoDocs += aLine[13]
+       if aLine[16] .AND. ToNum(aLine[13]) > 0
+          AADD( aApps, { "transaccion_id" => aLine[6], "monto_aplicado" => ToNum(aLine[13]) } )
+          nMontoDocs += ToNum(aLine[13])
        endif
     NEXT
 
@@ -663,9 +667,9 @@ return
     aMedios := ::oModMedios:oTreeView:FillArray()
     FOR EACH aLine IN aMedios
        // Columna 3 = monto, Columna 1 = codigo, Columna 4 = soporte_nro
-       if aLine[3] > 0
-          AADD( aInsts, { "medio_pago_id" => aLine[1], "monto" => aLine[3], "soporte_nro" => aLine[4] } )
-          nMontoInst += aLine[3]
+       if ToNum(aLine[3]) > 0
+          AADD( aInsts, { "medio_pago_id" => aLine[1], "monto" => ToNum(aLine[3]), "soporte_nro" => aLine[4] } )
+          nMontoInst += ToNum(aLine[3])
        endif
     NEXT
 
@@ -676,12 +680,21 @@ return
     endif
 
     // Armar hash de datos
+    // Proteger en caso de divisa vacía
+    aDivisaTokens := hb_aTokens( ::cDivisa, " " )
+    nTasa := 0
+    cMoneda := ""
+    if Len(aDivisaTokens) >= 2
+       nTasa := ToNum(aDivisaTokens[2])
+       cMoneda := aDivisaTokens[1]
+    endif
+
     hData := {;
        "fecha"        => ::cFecha, ;
        "caja_id"      => ::cCaja, ;
        "cliente_id"   => ::cCodCli, ;
-       "tasa_cambio"  => ToNum( hb_aTokens( ::cDivisa, " " )[2] ), ;
-       "moneda"       => hb_aTokens( ::cDivisa, " " )[1], ;
+       "tasa_cambio"  => nTasa, ;
+       "moneda"       => cMoneda, ;
        "aplicaciones" => aApps, ;
        "instrumentos"  => aInsts, ;
        "estado"       => "B" ;
