@@ -23,6 +23,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    ::cCodCli := ""
    ::cEntCli := ""
    ::lParent := .F.
+   ::lNew := .T.
 
    //-- crear en caso de no venir de un documento
    ::rEmpresa    := NIL
@@ -220,11 +221,14 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
       ::oBoxDocDetal:Hide(.T.)
    endif
 
-    __fr_CalMonto( oForm )
-   ::oModDocuments:oTreeView:SetFocus()
-   ::oModDocuments:GoTop()
+     __fr_CalMonto( oForm )
+    ::oModDocuments:oTreeView:SetFocus()
+    ::oModDocuments:GoTop()
 
-return
+    // Crear objeto cobranza en el servidor (para nuevo recibo)
+    ::rCobranza := ::rFinanzas:Cobranza( '' )
+
+ return
 
 
 
@@ -627,37 +631,91 @@ return
 
 
 
-Function __fr_Save( oForm )
-   local aDoc := {}
+ Function __fr_Save( oForm )
+    local aDoc := {}
+    local aApps := {}, aInsts := {}, aLine
+    local hData := {}, hResp
+    local nMontoDocs := 0, nMontoInst := 0
 
-//View( ValType( ::nSaldo ) )
-   if ::nSaldo > 0
-      ::oLabInfo:SetText("Hay Saldo Pendiente, no puede guardar.")
-      return .F.
-   endif
+    // Validar saldo
+    if ::nSaldo > 0
+       ::oLabInfo:SetText("Hay Saldo Pendiente, no puede guardar.")
+       return .F.
+    endif
 
-//View( ::oModDocuments:oTreeView:GetAutoValue(2) )
-/*
-   ::oModDocuments:oTreeView:ForEach( {|o, pModel, aIter, pPath|  ;
-                                       iif( ::oModDocuments:oTreeView:GetAutoValue(16) , ;
-                                            AADD( aDoc, {::oModDocuments:oTreeView:GetAutoValue(06),;
-                                                         ::oModDocuments:oTreeView:GetAutoValue(07),;
-                                                         ::oModDocuments:oTreeView:GetAutoValue(08),;
-                                                         ::oModDocuments:oTreeView:GetAutoValue(09),;
-                                                         ::oModDocuments:oTreeView:GetAutoValue(10),;
-                                                         ::oModDocuments:oTreeView:GetAutoValue(11),;
-                                                         ::oModDocuments:oTreeView:GetAutoValue(12),;
-                                                         ::oModDocuments:oTreeView:GetAutoValue(13),;
-                                                         ::oModDocuments:oTreeView:GetAutoValue(14),;
-                                                         ::oModDocuments:oTreeView:GetAutoValue(15) ;
-                                                        } ), ;
-                                           nil )  } )
-*/
-   aDoc := ::oModDocuments:oTreeView:FillArray()
-   View( (aDoc) )
-//   ::oModDocuments:oTreeView:ForEach(   )
+    // Verificar que existe el objeto cobranza
+    if !hb_isObject( ::rCobranza )
+       ::oLabInfo:SetText("Error: No se ha creado el objeto cobranza.")
+       return .F.
+    endif
 
-Return .T.
+    // Recolectar aplicaciones (documentos seleccionados)
+    aDoc := ::oModDocuments:oTreeView:FillArray()
+    FOR EACH aLine IN aDoc
+       // Columna 16 = seleccionado, Columna 6 = transaccion_id, Columna 13 = monto_aplicado
+       if aLine[16] .AND. aLine[13] > 0
+          AADD( aApps, { "transaccion_id" => aLine[6], "monto_aplicado" => aLine[13] } )
+          nMontoDocs += aLine[13]
+       endif
+    NEXT
+
+    // Recolectar instrumentos de pago (medios)
+    aMedios := ::oModMedios:oTreeView:FillArray()
+    FOR EACH aLine IN aMedios
+       // Columna 3 = monto, Columna 1 = codigo, Columna 4 = soporte_nro
+       if aLine[3] > 0
+          AADD( aInsts, { "medio_pago_id" => aLine[1], "monto" => aLine[3], "soporte_nro" => aLine[4] } )
+          nMontoInst += aLine[3]
+       endif
+    NEXT
+
+    // Validar equilibrio: monto documentos = monto instrumentos
+    if nMontoDocs != nMontoInst
+       ::oLabInfo:SetText("Error: Montos no cuadran. Docs: " + hb_ntos(nMontoDocs) + " vs Inst: " + hb_ntos(nMontoInst))
+       return .F.
+    endif
+
+    // Armar hash de datos
+    hData := {;
+       "fecha"        => ::cFecha, ;
+       "caja_id"      => ::cCaja, ;
+       "cliente_id"   => ::cCodCli, ;
+       "tasa_cambio"  => ToNum( hb_aTokens( ::cDivisa, " " )[2] ), ;
+       "moneda"       => hb_aTokens( ::cDivisa, " " )[1], ;
+       "aplicaciones" => aApps, ;
+       "instrumentos"  => aInsts, ;
+       "estado"       => "B" ;
+    }
+
+    // Enviar datos al servidor
+    hResp := ::rCobranza:SetData( hData )
+    if hb_isHash(hResp) .and. hb_hHasKey(hResp, "return") .and. !hResp["return"]
+       ::oLabInfo:SetText( hResp["message"] )
+       return .F.
+    endif
+
+    // Guardar en servidor
+    hResp := ::rCobranza:Save()
+    
+    // Verificar respuesta
+    if hb_isLogical(hResp) .and. hResp
+       ::oLabInfo:SetText("Recibo guardado exitosamente")
+       ::lNew := .F.
+       return .T.
+    elseif hb_isHash(hResp) .and. hb_hHasKey(hResp, "ok") .and. hResp["ok"]
+       ::oLabInfo:SetText("Recibo guardado exitosamente")
+       ::lNew := .F.
+       return .T.
+    endif
+
+    // Error
+    if hb_isHash(hResp) .and. hb_hHasKey(hResp, "message")
+       ::oLabInfo:SetText( hResp["message"] )
+    else
+       ::oLabInfo:SetText("Error al guardar recibo")
+    endif
+
+ return .F.
 
 
 
