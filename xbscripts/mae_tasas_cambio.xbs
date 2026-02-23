@@ -1,0 +1,68 @@
+/* mae_tasas_cambio.xbs
+ *
+ * Formulario para consultar histórico de Tasas de Cambio en Fiscalius
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure mae_tasas_cambio( oForm, oWndParent, oEntParent )
+   local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Tasas de Cambio"
+   local rTasasCambio, oModTasas, oLBoxCli
+
+   rTasasCambio := ::oGEmpresa:TasasDeCambio()
+
+   if hb_isNIL(rTasasCambio)
+      MsgStop("No hay tasas de cambio registradas")
+      return
+   endif
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+   DEFINE WINDOW oAliWnd ;
+          TITLE "Fiscalius. Tasas de Cambio" ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+   DEFINE MODEL oModTasas ;
+          STRUCT rTasasCambio:Struct() ;
+          DATA   rTasasCambio:GetData()
+   
+   DEFINE LISTBOX oLBoxCli ;
+          MODEL oModTasas ;
+          OF oBoxData
+
+   oLBoxCli:lBar := .F.
+   oLBoxCli:bEdit := {|| .T. }   // Deshabilitar edición
+    
+   oLBoxCli:SetColVisible( 1, .F. )    // Ocultamos ID
+   
+   oLBoxCli:SetColTitle( 2, "Moneda" )
+   oLBoxCli:SetColTitle( 3, "Nombre Moneda" )
+   oLBoxCli:SetColTitle( 4, "Fecha" )
+   oLBoxCli:SetColTitle( 5, "Valor" )
+   oLBoxCli:SetColTitle( 6, "Moneda Base" )
+   oLBoxCli:SetColTitle( 7, "Nombre Moneda Base" )
+   
+
+   oLBoxCli:Active()
+
+   ACTIVATE WINDOW oAliWnd MODAL
+
+ return

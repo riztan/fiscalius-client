@@ -97,6 +97,7 @@ CLASS GEMPRESA
    METHOD Monedas()                  INLINE ::rEmpresa:Monedas()
    METHOD GetMoneda(uParam)          INLINE ::rEmpresa:GetMoneda(uParam)
    METHOD GetTasa(cMoneda, dFecha)   INLINE ::rEmpresa:GetTasa( cMoneda, dFecha )
+   METHOD TasasDeCambio()            INLINE ::rEmpresa:TasasDeCambio()
 
    METHOD Alicuotas()                INLINE ::rEmpresa:Alicuotas()
 
