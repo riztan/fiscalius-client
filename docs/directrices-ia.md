@@ -20,6 +20,14 @@
 
 ## COMPORTAMIENTO ESPERADO
 
+### ⚠️ REGLA #0: PRUDENCIA Y CAUTELA
+Antes de modificar código, SIEMPRE:
+- Explica qué vas a hacer
+- Espera confirmación del usuario
+- No hacer cambios mentales ("a diestra y siniestra")
+- Si hay errores, pregunta antes de corregir
+- Deja que el usuario te apoye/verifique
+
 ### ✅ Puedes hacer sin permiso:
 - Leer cualquier archivo del proyecto
 - Analizar código existente

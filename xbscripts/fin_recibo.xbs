@@ -24,6 +24,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    ::cEntCli := ""
    ::lParent := .F.
    ::lNew := .T.
+   ::cReciboNum := ''
 
    //-- crear en caso de no venir de un documento
    ::rEmpresa    := NIL
@@ -77,6 +78,9 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
        VALID  .T. ;
        ID "ent_clientes" RESOURCE ::oRes
    
+   DEFINE LABEL ::oLabReciboNum VAR ::cReciboNum ;
+       ID "lab_recibo_num" RESOURCE ::oRes 
+
    ::cCaja := ''
    DEFINE ENTRY ::oEntCaja VAR ::cCaja ;
        ACTION oTPuy:RunXBS("fin_cajas", oFormParent, ::oWndRecibo, ::oEntCaja, @::cCaja) ;
@@ -639,7 +643,7 @@ return
     local aApps := {}, aInsts := {}, aLine
     local hData := {}, hResp
     local nMontoDocs := 0, nMontoInst := 0
-    local aDivisaTokens, nTasa, cMoneda
+    local aDivisaTokens, nTasa, cMoneda, cCajaCod
 
     // Validar saldo
     if ::nSaldo > 0
@@ -689,9 +693,15 @@ return
        cMoneda := aDivisaTokens[1]
     endif
 
+    // Parsear caja_id: extraer código de "CODIGO - NOMBRE"
+    cCajaCod := ::cCaja
+    if " - " $ ::cCaja
+       cCajaCod := AllTrim( hb_aTokens( ::cCaja, " - " )[1] )
+    endif
+
     hData := {;
        "fecha"        => ::cFecha, ;
-       "caja_id"      => ::cCaja, ;
+       "caja_id"      => cCajaCod, ;
        "cliente_id"   => ::cCodCli, ;
        "tasa_cambio"  => nTasa, ;
        "moneda"       => cMoneda, ;
@@ -709,16 +719,20 @@ return
 
     // Guardar en servidor
     hResp := ::rCobranza:Save()
-    
+
     // Verificar respuesta
     if hb_isLogical(hResp) .and. hResp
        ::oLabInfo:SetText("Recibo guardado exitosamente")
        ::lNew := .F.
+       ::oLabReciboNum:SetText( ::rCobranza:Data()["numero"] )
        return .T.
+/*
     elseif hb_isHash(hResp) .and. hb_hHasKey(hResp, "ok") .and. hResp["ok"]
        ::oLabInfo:SetText("Recibo guardado exitosamente")
        ::lNew := .F.
+       ::oLabReciboNum:SetText( hResp["numero"] )
        return .T.
+*/
     endif
 
     // Error

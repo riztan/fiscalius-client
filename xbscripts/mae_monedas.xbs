@@ -166,7 +166,7 @@ procedure __EditMoneda( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, n
    local pNextCol, pPath, uPrevio
 
    if nCol=__ACTIVO
-      __SetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath )
+      __MonSetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath )
       oTreeView:SetPosCol( aIter, __ACTIVO, .f. )
       return
    endif
@@ -179,14 +179,14 @@ procedure __EditMoneda( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, n
       uVal := LEFT( ALLTRIM(UPPER( uVal )), 4 )
    endif
 
-   __SetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath, uPrevio )
+   __MonSetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath, uPrevio )
    oTreeView:SetPosCol( aIter, nCol, .f. )
 
 return
 
 
 
-PROCEDURE __SetValue( oForm, oTreeView, oModel, aIter, nCol, uValue, cPath, uPrevio  )
+PROCEDURE __MonSetValue( oForm, oTreeView, oModel, aIter, nCol, uValue, cPath, uPrevio  )
    local nMonto, nDescuento, nIvaPorcen, nIvaMonto:= 0
    local pPath, hData := hb_hash(), hResult 
 
@@ -235,6 +235,7 @@ PROCEDURE __SetValue( oForm, oTreeView, oModel, aIter, nCol, uValue, cPath, uPre
          if !hb_isObject( ::rMoneda )
             return
          endif
+
          ::rMoneda:SetData( hData )
          if !::rMoneda:Save() 
             MsgAlert( "Se presenta problema para actualizar los datos.", "Atención" )

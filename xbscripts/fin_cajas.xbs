@@ -79,7 +79,7 @@ procedure fin_cajas( oForm, oWndParent, oEntParent, cCodCaja, cFiltro, cDocument
 
    // Si hay oEntParent, cambiar bEdit para seleccionar y cerrar
    if hb_isObject( oEntParent )
-      oLBoxCli:bEdit := {|oModel| (cCodCaja := oModel:GetCol(1),; 
+      oLBoxCli:bEdit := {|oModel| (cCodCaja := oModel:GetCol(2),;  // Código en columna 2
                                    iif( !hb_isObject(oWndParent),                ;
                                          .T.,                                     ;
                                          oEntParent:setText( ALLTRIM(cCodCaja)+" - "+;
