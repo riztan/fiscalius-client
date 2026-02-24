@@ -1264,7 +1264,7 @@ RETURN
 
 PROCEDURE __VtaImprime( oForm )
 
-   oTPuy:RunXBS( "vta_imprimir", oForm )
+   oTPuy:RunXBS( "vta_imprimir_pdf", oForm )
  
 RETURN
 
