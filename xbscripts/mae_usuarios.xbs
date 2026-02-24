@@ -183,7 +183,6 @@ procedure __UsuSave( oForm )
   
    lNew := oForm:rUsuario:IsNew()
 
-View(oForm:lActivo)
    // Guardar los datos del usuario
    hData := oForm:rUsuario:Data()
    oForm:rUsuario:SetData( { "login"        => oForm:cLogin,   ;
