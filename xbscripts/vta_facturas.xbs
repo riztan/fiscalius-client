@@ -611,7 +611,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                                                            a[19],;
                                                            a[20],;
                                                            a[21],;
-                                                           a[21]} ;
+                                                           a[21]/a[5]} ;
                                                  ) } )
          
 
@@ -667,7 +667,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColVisible( 18, .f. )     //- Almacen Nombre
       ::oLBoxDetal:SetColVisible( 19, .f. )     //- Detalles (JSON)
       ::oLBoxDetal:SetColVisible( 20, .f. )     //- Item
-      ::oLBoxDetal:SetColVisible( 22, .f. )     //- imp_pvp
+//      ::oLBoxDetal:SetColVisible( 22, .f. )     //- imp_pvp
 
       ::oLBoxDetal:SetColTitle( 03, "Código" )        //-- Columna Código
       ::oLBoxDetal:SetColTitle( 04, "Descripción" )   //-- Columna Descripción
@@ -679,7 +679,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColTitle( 10, "IVA (Monto)" )   //-- Columna IVA Monto
       ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
       ::oLBoxDetal:SetColTitle( 21, "PVP Total" )     //-- Columna PVP Total Linea
-      ::oLBoxDetal:SetColTitle( 22, "PVP Total 1" )   //-- Columna PVP Total Linea
+      ::oLBoxDetal:SetColTitle( 22, "PVP Total Unit" )   //-- Columna PVP Total Linea
 
       ::oLBoxDetal:Active()
 
@@ -714,7 +714,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                              aLine[18], ;
                              aLine[19], ;
                              hb_ntos(aLine[20]),;
-                             hb_ntos(aLine[21]), hb_ntos(aLine[21]) 
+                             hb_ntos(aLine[21]), hb_ntos(aLine[21]/aLine[5]) 
             CATCH oErr
                View( oErr:Description )
             END
@@ -927,8 +927,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
 
     // Calculate imp_pvp
- //  nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
-   nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
+   nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 22, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
 //   oTView:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) )
    nOtrImp += nImpPvp
 
@@ -1176,7 +1175,6 @@ Procedure __VtaSave( oForm, oFormParent )
 //View("atualizamos hFactura ")
       ::hFactura   := ::rFactura:Data()
 //View( ::hFactura )
-//View( ::hFactura )
       //-- Importante invocar SetDetal después de rFactura:Save() 
       //   para obtener primero el nro del documento
       ::aDetal := {}
@@ -1225,8 +1223,8 @@ procedure __VtaSaveDetal(oTView, pModel, aIter, oForm)
 //   View( oTView:GetAutoValue( 1 ) )
 //   View( oTView:GetAutoValue( 3 ) )
 
-   //hDetal["id"               ] := ALLTRIM(oTView:GetAutoValue( 01 ))
-   hDetal["numero"           ] := ::hFactura[ "numero" ]
+    //hDetal["id"               ] := ALLTRIM(oTView:GetAutoValue( 01 ))
+   hDetal["documento_id"     ] := ::hFactura[ "id" ]
    hDetal["codigo_local"     ] := ALLTRIM(oTView:GetAutoValue( 03, aIter ))
    hDetal["descripcion"      ] := oTView:GetAutoValue( 04, aIter )
    hDetal["cantidad"         ] := VAL( oTView:GetAutoValue( 05, aIter ) )
