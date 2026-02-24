@@ -1,0 +1,142 @@
+/*
+ * vta_imprimir_pdf.xbs
+ * Genera archivo PDF de factura usando TIMPRIMEPDF
+ * Basado en test_pdf.xbs como referencia
+ * 
+ * Autor: Desarrollo Fiscalius
+ * Fecha: 2026-02-24
+ */
+
+#include "tpy_xbs.ch"
+#include "harupdf.ch"
+#include "tutilpdf.ch"
+
+procedure vta_imprimir_pdf( oForm )
+
+   local oPDF
+   local aData := ::rFactDetal:GetData()
+   local rClientes := ::rVentas:Clientes({"filtro" => ::cEntCli})
+   local aClientes := rClientes:Data()
+   local i, nCaj, nUni, nUniCaj, nTotUniLi, aLine
+   local nY := 1
+   local cFilePDF := "tmp/vta_documento_" + STRTRAN(::hFactura["numero"], "/", "_") + ".pdf"
+
+   FERASE( cFilePDF )
+
+   oPDF := TIMPRIMEPDF():New( cFilePDF )
+   oPDF:PageSetSize( HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_PORTRAIT )
+
+   // =====================================
+   // TÍTULO
+   // =====================================
+   oPDF:SetFont( "Helvetica-Bold", 20 )
+   oPDF:CMSAY( nY, 1.4, "F A C T U R A" )
+
+   oPDF:SetFont( "Helvetica", 12 )
+   oPDF:CMSAY( nY, 12, "Nro: " + STRZERO( VAL(::hFactura["numero"]), 8 ) )
+   oPDF:CMSAY( nY + 0.5, 12, "Fecha: " + DTOC( ::hFactura["fecha"] ) )
+
+   nY += 1.5
+
+   // =====================================
+   // DATOS CLIENTE
+   // =====================================
+   oPDF:SetFont( "Helvetica-Bold", 11 )
+   oPDF:CMSAY( nY, 1.4, "Cliente: " )
+
+   oPDF:SetFont( "Helvetica", 11 )
+   oPDF:CMSAY( nY, 3.6, ::cEntCli )
+
+   nY += 0.5
+
+   oPDF:SetFont( "Helvetica", 10 )
+   oPDF:CMSAY( nY, 1.4, "RIF: " + aClientes[1,4] )
+
+   oPDF:CMSAY( nY, 6, "Telf: " + aClientes[1,6] )
+
+   oPDF:CMSAY( nY, 12, "Vence: " + DTOC( ::hFactura["fecha_vencimiento"] ) )
+
+   nY += 0.5
+
+   oPDF:SetFont( "Helvetica", 9 )
+   oPDF:CMSAY( nY, 1.4, "Dir: " + LEFT(aClientes[1,5], 60) )
+
+   nY += 0.8
+
+   // =====================================
+   // TABLA - ENCABEZADO
+   // =====================================
+   oPDF:SetFont( "Helvetica-Bold", 10 )
+   oPDF:CMSAY( nY, 1.4, "CODIGO" )
+   oPDF:CMSAY( nY, 3.6, "DESCRIPCION" )
+   oPDF:CMSAY( nY, 12, "CANT" )
+   oPDF:CMSAY( nY, 14.5, "PRECIO" )
+   oPDF:CMSAY( nY, 17, "TOTAL" )
+
+   nY += 0.5
+
+   // =====================================
+   // DETALLE
+   // =====================================
+   oPDF:SetFont( "Courier", 9 )
+
+   FOR i := 1 TO LEN( aData )
+      aLine := aData[i]
+      nUniCaj := IIF( RIGHT(aLine[3], 2) == "01", 0, TONUM(RIGHT(aLine[3],2)) )
+      nUni    := TONUM( IIF(nUniCaj > 0, 0, hb_ntos(aLine[5])) )
+      nCaj    := TONUM( IIF(nUniCaj > 0, hb_ntos(aLine[5]), 0) )
+      nTotUniLi := nCaj * nUniCaj + nUni
+
+      oPDF:CMSAY( nY, 1.4, LEFT(ALLTRIM(aLine[3]), 12) )
+      oPDF:CMSAY( nY, 3.6, LEFT(ALLTRIM(aLine[4]), 35) )
+      oPDF:CMSAY( nY, 12, hb_ntos(nTotUniLi) )
+      oPDF:CMSAY( nY, 14.5, TRANSFORM(aLine[6], "@E 9,999.99") )
+      oPDF:CMSAY( nY, 17, TRANSFORM(aLine[8], "@E 99,999.99") )
+
+      nY += 0.35
+   NEXT
+
+   nY += 0.5
+
+   // =====================================
+   // TOTALES
+   // =====================================
+   oPDF:SetFont( "Helvetica-Bold", 11 )
+   oPDF:CMSAY( nY, 10.9, "SubTotal:" )
+   oPDF:CMSAY( nY, 15.7, ::hFactura["monto_base"] )
+
+   nY += 0.4
+
+   oPDF:CMSAY( nY, 10.9, "IVA (16%):" )
+   oPDF:CMSAY( nY, 15.7, ::nMontoIvaG )
+
+   nY += 0.4
+
+   oPDF:CMSAY( nY, 10.9, "Otros Imp:" )
+   oPDF:CMSAY( nY, 15.7, ::nMontoOtrImp )
+
+   nY += 0.5
+
+   oPDF:SetFont( "Helvetica-Bold", 14 )
+   oPDF:CMSAY( nY, 10.9, "TOTAL:" )
+   oPDF:CMSAY( nY, 15.7, ::oEntTotal:GetValue() ) 
+
+   // =====================================
+   // PIE
+   // =====================================
+   nY += 1.2
+
+   oPDF:SetFont( "Helvetica", 7 )
+   oPDF:CMSAY( nY, 1.4, "Esta factura esta sujeta al cobro del 3% IGTF segun Providencia SNAT/2022/000013" )
+
+   // Guardar
+   oPDF:End( .T. )
+
+   // Abrir
+   #ifdef __PLATFORM__WINDOWS
+      hb_run( "start " + cFilePDF )
+   #else
+      hb_run( "xdg-open " + cFilePDF )
+   #endif
+
+return
