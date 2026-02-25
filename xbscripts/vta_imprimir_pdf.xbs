@@ -29,12 +29,13 @@ procedure vta_imprimir_pdf( oForm )
    // =====================================
    // TÍTULO
    // =====================================
-   oPDF:SetFont( "Helvetica-Bold", 20 )
-   oPDF:CMSAY( nY, 1.4, "F A C T U R A" )
+   nY += 3
+   oPDF:SetFont( "Helvetica-Bold", 12 )
+   oPDF:CMSAY( nY, 14, "F A C T U R A" )
 
    oPDF:SetFont( "Helvetica", 12 )
-   oPDF:CMSAY( nY, 12, "Nro: " + STRZERO( VAL(::hFactura["numero"]), 8 ) )
-   oPDF:CMSAY( nY + 0.5, 12, "Fecha: " + DTOC( ::hFactura["fecha"] ) )
+   oPDF:CMSAY( nY, 17, "Nro: " + STRZERO( VAL(::hFactura["numero"]), 8 ) )
+   oPDF:CMSAY( nY + 0.5, 17, "Fecha: " + DTOC( ::hFactura["fecha"] ) )
 
    nY += 1.5
 
@@ -67,11 +68,12 @@ procedure vta_imprimir_pdf( oForm )
    // TABLA - ENCABEZADO
    // =====================================
    oPDF:SetFont( "Helvetica-Bold", 10 )
-   oPDF:CMSAY( nY, 1.4, "CODIGO" )
-   oPDF:CMSAY( nY, 3.6, "DESCRIPCION" )
-   oPDF:CMSAY( nY, 12, "CANT" )
-   oPDF:CMSAY( nY, 14.5, "PRECIO" )
-   oPDF:CMSAY( nY, 17, "TOTAL" )
+   oPDF:CMSAY( nY, 1.0, "Código" )
+   oPDF:CMSAY( nY, 3.2, "Descripcion" )
+   oPDF:CMSAY( nY, 11.2, "Cant" )
+   oPDF:CMSAY( nY, 13.6, "Precio Uni." )
+   oPDF:CMSAY( nY, 16.1, "Total" )
+   oPDF:CMSAY( nY, 19.1, "Imp. Pvp" )
 
    nY += 0.5
 
@@ -87,14 +89,21 @@ procedure vta_imprimir_pdf( oForm )
       nCaj    := TONUM( IIF(nUniCaj > 0, hb_ntos(aLine[5]), 0) )
       nTotUniLi := nCaj * nUniCaj + nUni
 
-      oPDF:CMSAY( nY, 1.4, LEFT(ALLTRIM(aLine[3]), 12) )
-      oPDF:CMSAY( nY, 3.6, LEFT(ALLTRIM(aLine[4]), 35) )
-      oPDF:CMSAY( nY, 12, hb_ntos(nTotUniLi) )
-      oPDF:CMSAY( nY, 14.5, TRANSFORM(aLine[6], "@E 9,999.99") )
-      oPDF:CMSAY( nY, 17, TRANSFORM(aLine[8], "@E 99,999.99") )
+      oPDF:CMSAY( nY, 1.0, LEFT(ALLTRIM(aLine[3]), 12) )
+      oPDF:CMSAY( nY, 3.2, LEFT(ALLTRIM(aLine[4]), 35) )
+      //oPDF:CMSAY( nY, 11.2, hb_ntos(nTotUniLi) )
+      oPDF:CMSAY( nY, 11.2, hb_ntos(nUni+nCaj) )
+      oPDF:CMSAY( nY, 13.6, TRANSFORM(aLine[6], "@E 9,999.99") )
+      oPDF:CMSAY( nY, 16.1, TRANSFORM(aLine[8], "@E 99,999.99") )
+      oPDF:CMSAY( nY, 19.1, TRANSFORM(aLine[21], "@E 99,999.99") )
 
       nY += 0.35
    NEXT
+   
+   
+  FOR i:=1 TO 10-LEN(aData)
+    nY += 0.35
+  NEXT
 
    nY += 0.5
 
@@ -102,24 +111,25 @@ procedure vta_imprimir_pdf( oForm )
    // TOTALES
    // =====================================
    oPDF:SetFont( "Helvetica-Bold", 11 )
-   oPDF:CMSAY( nY, 10.9, "SubTotal:" )
-   oPDF:CMSAY( nY, 15.7, ::hFactura["monto_base"] )
+   oPDF:CMSAY( nY, 15.9, "SubTotal:" )
+   oPDF:CMSAY( nY, 19.1, TRANSFORM(::hFactura["monto_base"], "@E 999,999.99") )
+  // oPDF:CMSAY( nY, 17.7, hb_ntos(tonum(TRANSFORM(::hFactura["monto_base"],P_92))))
 
    nY += 0.4
 
-   oPDF:CMSAY( nY, 10.9, "IVA (16%):" )
-   oPDF:CMSAY( nY, 15.7, ::nMontoIvaG )
+   oPDF:CMSAY( nY, 15.9, "IVA (16%):" )
+   oPDF:CMSAY( nY, 19.1, TRANSFORM(tonum(::nMontoIvaG), "@E 999,999.99") )
 
    nY += 0.4
 
-   oPDF:CMSAY( nY, 10.9, "Otros Imp:" )
-   oPDF:CMSAY( nY, 15.7, ::nMontoOtrImp )
+   oPDF:CMSAY( nY, 15.9, "Otros Imp:" )
+   oPDF:CMSAY( nY, 19.1, TRANSFORM(tonum(::nMontoOtrImp),"@E 999,999.99") )
 
    nY += 0.5
 
    oPDF:SetFont( "Helvetica-Bold", 14 )
-   oPDF:CMSAY( nY, 10.9, "TOTAL:" )
-   oPDF:CMSAY( nY, 15.7, ::oEntTotal:GetValue() ) 
+   oPDF:CMSAY( nY, 15.5, "TOTAL:" )
+   oPDF:CMSAY( nY, 18.7,TRANSFORM(tonum(::oEntTotal:GetValue()),"@E 999,999.99")) 
 
    // =====================================
    // PIE
@@ -127,7 +137,10 @@ procedure vta_imprimir_pdf( oForm )
    nY += 1.2
 
    oPDF:SetFont( "Helvetica", 7 )
-   oPDF:CMSAY( nY, 1.4, "Esta factura esta sujeta al cobro del 3% IGTF segun Providencia SNAT/2022/000013" )
+   //oPDF:CMSAY( nY, 1.4, "Esta factura esta sujeta al cobro del 3% IGTF segun Providencia SNAT/2022/000013" )
+   oPDF:CMSAY( nY, 1.4, "Esta factura estará sujeta al cobro del 3% por concepto de IGTF en caso de ser pagada en una moneda distinta a la de curso")
+    nY += 0.5
+   oPDF:CMSAY( nY, 1.4, "legal en el país, de acuerdo a lo publicado en la Providencia Administrativa SNAT/2022/000013 de fecha 03.03.2022")
 
    // Guardar
    oPDF:End( .T. )
