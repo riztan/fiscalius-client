@@ -117,6 +117,77 @@ DEFINE MODEL oModClientes STRUCT rClientes:Struct() DATA rClientes:GetData()
 DEFINE LISTBOX oLBoxCli MODEL oModClientes
 ```
 
+### **Variables y Alcance**
+
+- **`::variable`** → solo para **variables de instancia de clase** (en métodos de clase)
+- **`local variable`** → en **procedures** (no tienen clase)
+- **ERROR común**: usar `::` en procedures → compilación falla
+
+### **ENTRY con UI**
+- Requiere 2 variables:
+  - `local oEntFecha` (el objeto Entry)
+  - `local cEntFecha` (el valor/variable)
+- Asignar valor inicial antes de DEFINE: `cEntFecha := ""`
+- Definir con `VAR cEntFecha` y `ID` del .ui
+```xbase
+local oEntFecha, cEntFecha
+cEntFecha := ""
+DEFINE ENTRY TYPE DATE oEntFecha VAR cEntFecha CALENDAR ;
+       ID "ent_fecha" RESOURCE oRes
+```
+
+### **BOX y Botones del UI**
+```xbase
+// BOX del UI
+DEFINE BOX oBoxData ID "box_data" RESOURCE oRes EXPAND FILL
+
+// Botones del UI
+DEFINE BUTTON oBtnBuscar ID "btn_buscar" RESOURCE oRes
+```
+
+### **ListBox**
+- Configuraciones (SetColVisible, SetColTitle) **antes** de `Active()`
+```xbase
+oLBox:lBar := .F.
+oLBox:SetColVisible( 1, .F. )
+oLBox:SetColTitle( 1, "Titulo" )
+oLBox:Active()
+```
+
+### **Refrescar Modelo (Botón Buscar)**
+Para refrescar datos en un ListBox:
+```xbase
+// 1. Obtener nuevos datos
+oDatos := rEmpresa:Metodo( hParam )
+
+// 2. Limpiar modelo existente
+oModel:oTreeView:ClearModel(.t.)
+
+// 3. Agregar datos al modelo
+FOR EACH aLine IN oDatos:GetData()
+   APPEND LIST_STORE oModel:oLbx ITER aIter ;
+          VALUES aLine[1], aLine[2], aLine[3], aLine[4]
+NEXT
+```
+
+### **Conversión de Fechas (Servidor)**
+Manejar diferentes formatos de fecha string:
+```xbase
+// Convertir string a fecha
+dFecha := CTOD(cFecha)
+if empty(dFecha) .and. "-" $ cFecha
+   dFecha := STOD( STRTRAN( cFecha, "-", "" ) )
+endif
+if empty(dFecha) .and. "/" $ cFecha
+   if Len(cFecha) == 10
+      dFecha := STOD( SubStr(cFecha,7,4) + SubStr(cFecha,4,2) + SubStr(cFecha,1,2) )
+   endif
+endif
+if empty(dFecha) .and. Len(cFecha) == 8 .and. !("/" $ cFecha) .and. !("-" $ cFecha)
+   dFecha := STOD( cFecha )
+endif
+```
+
 ### **Manejo de Eventos**
 - **Sistema**: Basado en señales GTK estándar
 - **Gestión**: T-GTK (gclass) - https://github.com/FiveTechSoft/T-Gtk/tree/master/src/gclass
