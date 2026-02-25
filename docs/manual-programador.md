@@ -154,6 +154,40 @@ oLBox:SetColTitle( 1, "Titulo" )
 oLBox:Active()
 ```
 
+### **Refrescar Modelo (Botón Buscar)**
+Para refrescar datos en un ListBox:
+```xbase
+// 1. Obtener nuevos datos
+oDatos := rEmpresa:Metodo( hParam )
+
+// 2. Limpiar modelo existente
+oModel:oTreeView:ClearModel(.t.)
+
+// 3. Agregar datos al modelo
+FOR EACH aLine IN oDatos:GetData()
+   APPEND LIST_STORE oModel:oLbx ITER aIter ;
+          VALUES aLine[1], aLine[2], aLine[3], aLine[4]
+NEXT
+```
+
+### **Conversión de Fechas (Servidor)**
+Manejar diferentes formatos de fecha string:
+```xbase
+// Convertir string a fecha
+dFecha := CTOD(cFecha)
+if empty(dFecha) .and. "-" $ cFecha
+   dFecha := STOD( STRTRAN( cFecha, "-", "" ) )
+endif
+if empty(dFecha) .and. "/" $ cFecha
+   if Len(cFecha) == 10
+      dFecha := STOD( SubStr(cFecha,7,4) + SubStr(cFecha,4,2) + SubStr(cFecha,1,2) )
+   endif
+endif
+if empty(dFecha) .and. Len(cFecha) == 8 .and. !("/" $ cFecha) .and. !("-" $ cFecha)
+   dFecha := STOD( cFecha )
+endif
+```
+
 ### **Manejo de Eventos**
 - **Sistema**: Basado en señales GTK estándar
 - **Gestión**: T-GTK (gclass) - https://github.com/FiveTechSoft/T-Gtk/tree/master/src/gclass

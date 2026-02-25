@@ -102,8 +102,9 @@ return
 
 procedure __AuditoriaBuscar( oWnd, rEmpresa, oModel, oList, oEntFechaDesde, oEntFechaHasta, oEntTabla, oEntUsuario )
    local hParam := hb_hash()
-   local oAuditoria
+   local oAuditoria, aData
    local cFechaDesde, cFechaHasta, cTabla, cUsuario
+   local aLine, aIter := ARRAY(4)
 
    // Obtener valores de los campos de filtro
    cFechaDesde := alltrim( oEntFechaDesde:GetText() )
@@ -133,8 +134,18 @@ procedure __AuditoriaBuscar( oWnd, rEmpresa, oModel, oList, oEntFechaDesde, oEnt
    oAuditoria := rEmpresa:Auditoria( hParam )
 
    if !hb_isNIL( oAuditoria )
-      oModel:Clear()
-      oModel:AddData( oAuditoria:GetData() )
+      // Limpiar modelo existente
+      oModel:oTreeView:ClearModel(.t.)
+
+      // Agregar datos al modelo
+      aData := oAuditoria:GetData()
+      FOR EACH aLine IN aData
+         APPEND LIST_STORE oModel:oLbx ITER aIter ;
+                VALUES hb_ntos(aLine[1]), ALLTRIM(aLine[2]), ALLTRIM(aLine[3]), ;
+                       hb_ntos(aLine[4]), ALLTRIM(aLine[5]), ALLTRIM(aLine[6]), ;
+                       ALLTRIM(aLine[7]), ALLTRIM(aLine[8])
+                //VALUES aLine[1], aLine[2], aLine[3], aLine[4], aLine[5], aLine[6], aLine[7], aLine[8]
+      NEXT
    endif
 
 return
