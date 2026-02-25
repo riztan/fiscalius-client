@@ -24,7 +24,7 @@ procedure mae_itf( oForm, oWndParent, oEntParent )
 
    
    DEFINE WINDOW oAliWnd ;
-          TITLE "Fiscalius. Alicuotas de IVA" ;
+          TITLE "Fiscalius. % de IGTF" ;
           SIZE 700,400 ;
           ID "window1" RESOURCE oRes
 
