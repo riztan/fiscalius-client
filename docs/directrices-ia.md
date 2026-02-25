@@ -138,4 +138,6 @@ Basado en análisis previo:
 > **PRECISIÓN EN TODO MOMENTO**
 
 ---
+
+*Estas directrices son sobre comportamiento y reglas del proyecto.*
 *Estas directrices deben ser seguidas estrictamente. La seguridad y estabilidad del código son la máxima prioridad.*

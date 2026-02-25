@@ -117,6 +117,43 @@ DEFINE MODEL oModClientes STRUCT rClientes:Struct() DATA rClientes:GetData()
 DEFINE LISTBOX oLBoxCli MODEL oModClientes
 ```
 
+### **Variables y Alcance**
+
+- **`::variable`** → solo para **variables de instancia de clase** (en métodos de clase)
+- **`local variable`** → en **procedures** (no tienen clase)
+- **ERROR común**: usar `::` en procedures → compilación falla
+
+### **ENTRY con UI**
+- Requiere 2 variables:
+  - `local oEntFecha` (el objeto Entry)
+  - `local cEntFecha` (el valor/variable)
+- Asignar valor inicial antes de DEFINE: `cEntFecha := ""`
+- Definir con `VAR cEntFecha` y `ID` del .ui
+```xbase
+local oEntFecha, cEntFecha
+cEntFecha := ""
+DEFINE ENTRY TYPE DATE oEntFecha VAR cEntFecha CALENDAR ;
+       ID "ent_fecha" RESOURCE oRes
+```
+
+### **BOX y Botones del UI**
+```xbase
+// BOX del UI
+DEFINE BOX oBoxData ID "box_data" RESOURCE oRes EXPAND FILL
+
+// Botones del UI
+DEFINE BUTTON oBtnBuscar ID "btn_buscar" RESOURCE oRes
+```
+
+### **ListBox**
+- Configuraciones (SetColVisible, SetColTitle) **antes** de `Active()`
+```xbase
+oLBox:lBar := .F.
+oLBox:SetColVisible( 1, .F. )
+oLBox:SetColTitle( 1, "Titulo" )
+oLBox:Active()
+```
+
 ### **Manejo de Eventos**
 - **Sistema**: Basado en señales GTK estándar
 - **Gestión**: T-GTK (gclass) - https://github.com/FiveTechSoft/T-Gtk/tree/master/src/gclass

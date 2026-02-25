@@ -1,0 +1,140 @@
+/* auditoria.xbs
+ *
+ * Formulario para consultar log de auditoría en Fiscalius
+ * Usa archivo de recursos: auditoria.ui
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure auditoria( oForm, oWndParent, oEntParent )
+   local oAudWnd, oRes
+   local rEmpresa, oAuditoria, oModAuditoria, oLBoxAud
+   local oBtnBuscar, oBtnSalir
+   local cEntFechaDesde, cEntFechaHasta, cEntTabla, cEntUsuario
+   local oEntFechaDesde, oEntFechaHasta, oEntTabla, oEntUsuario
+
+   // Variables para ENTRY
+   cEntFechaDesde := ""
+   cEntFechaHasta := ""
+   cEntTabla := ""
+   cEntUsuario := ""
+
+   rEmpresa := ::oGEmpresa
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"auditoria.ui"
+
+   DEFINE WINDOW oAudWnd ;
+          TITLE "Fiscalius. Auditor\u00eda" ;
+          SIZE 900,550 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ID "img_banner" RESOURCE oRes
+   oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ID "img_logo" RESOURCE oRes
+   oImgLogo:Adjust(60)
+
+   // Campos de filtro del UI
+   DEFINE ENTRY TYPE DATE oEntFechaDesde VAR cEntFechaDesde CALENDAR ;
+          VALID .T. ;
+          ID "ent_fecha_desde" RESOURCE oRes
+
+   DEFINE ENTRY TYPE DATE oEntFechaHasta VAR cEntFechaHasta CALENDAR ;
+          ID "ent_fecha_hasta" RESOURCE oRes
+
+   DEFINE ENTRY oEntTabla VAR cEntTabla ;
+          ID "ent_tabla" RESOURCE oRes
+
+   //DEFINE ENTRY oEntUsuario VAR cEntUsuario ;
+   //       ID "ent_nombre" RESOURCE oRes
+
+   // Botones del UI
+   DEFINE BUTTON oBtnBuscar ;
+          ACTION __AuditoriaBuscar( oAudWnd, rEmpresa, oModAuditoria, oLBoxAud, ;
+                                     oEntFechaDesde, oEntFechaHasta, oEntTabla, oEntUsuario ) ;
+          ID "btn_buscar" RESOURCE oRes
+
+   DEFINE BUTTON oBtnSalir ;
+          ACTION oAudWnd:End() ;
+          ID "btn_salir" RESOURCE oRes
+
+   // Box para el listbox
+   DEFINE BOX oBoxData ID "box_data" RESOURCE oRes EXPAND FILL
+
+   // Cargar datos iniciales (últimos 100 registros)
+   oAuditoria := rEmpresa:Auditoria( {"limite" => 100 } )
+
+   if hb_isNIL( oAuditoria )
+      MsgStop("No hay datos de auditor\u00eda disponibles")
+      return
+   endif
+
+   DEFINE MODEL oModAuditoria ;
+          STRUCT oAuditoria:Struct() ;
+          DATA   oAuditoria:GetData()
+
+   DEFINE LISTBOX oLBoxAud ;
+          MODEL oModAuditoria ;
+          OF oBoxData
+
+   oLBoxAud:lBar := .F.
+
+   // Ocultar columnas técnicas
+   oLBoxAud:SetColVisible( 1, .F. )    // ID
+   oLBoxAud:SetColVisible( 2, .F. )    // schema_nombre
+
+   // Títulos de columnas
+   oLBoxAud:SetColTitle( 3, "Tabla" )
+   oLBoxAud:SetColTitle( 4, "Registro ID" )
+   oLBoxAud:SetColTitle( 5, "Acción" )
+   oLBoxAud:SetColTitle( 6, "Descripción" )
+   oLBoxAud:SetColTitle( 7, "Usuario" )
+   oLBoxAud:SetColTitle( 8, "Fecha" )
+
+   oLBoxAud:Active()
+
+   ACTIVATE WINDOW oAudWnd MODAL
+
+return
+
+
+
+procedure __AuditoriaBuscar( oWnd, rEmpresa, oModel, oList, oEntFechaDesde, oEntFechaHasta, oEntTabla, oEntUsuario )
+   local hParam := hb_hash()
+   local oAuditoria
+   local cFechaDesde, cFechaHasta, cTabla, cUsuario
+
+   // Obtener valores de los campos de filtro
+   cFechaDesde := alltrim( oEntFechaDesde:GetText() )
+   cFechaHasta := alltrim( oEntFechaHasta:GetText() )
+   cTabla      := alltrim( oEntTabla:GetText() )
+   //cUsuario    := alltrim( oEntUsuario:GetText() )
+
+   // Construir parámetros
+   if !empty( cFechaDesde )
+      hParam[ "fecha_desde" ] := cFechaDesde
+   endif
+
+   if !empty( cFechaHasta )
+      hParam[ "fecha_hasta" ] := cFechaHasta
+   endif
+
+   if !empty( cTabla )
+      hParam[ "tabla" ] := cTabla
+   endif
+
+   //if !empty( cUsuario )
+   //   hParam[ "usuario" ] := cUsuario
+   //endif
+
+   hParam[ "limite" ] := 500
+
+   oAuditoria := rEmpresa:Auditoria( hParam )
+
+   if !hb_isNIL( oAuditoria )
+      oModel:Clear()
+      oModel:AddData( oAuditoria:GetData() )
+   endif
+
+return

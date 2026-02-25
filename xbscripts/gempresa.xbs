@@ -101,6 +101,8 @@ CLASS GEMPRESA
 
    METHOD Alicuotas()                INLINE ::rEmpresa:Alicuotas()
 
+   METHOD Auditoria( hParam )        INLINE ::rEmpresa:Auditoria( hParam )
+
    METHOD LoadFile()
    METHOD SaveFile()
 
