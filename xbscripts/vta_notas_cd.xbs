@@ -212,6 +212,11 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
           ID "ent_ivagen" RESOURCE ::oRes 
    ::oEntIvaG:Justify( GTK_JUSTIFY_RIGHT )
 
+   ::nMontoOtrImp := 0
+   DEFINE MONEY ENTRY ::oEntOtrImp VAR ::nMontoOtrImp ;
+          ID "ent_otrimp" RESOURCE ::oRes 
+   ::oEntOtrImp:Justify( GTK_JUSTIFY_RIGHT )
+
    ::nMontoTotal := 0
    DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ;
           ID "ent_montotal" RESOURCE ::oRes 
@@ -294,6 +299,21 @@ procedure __NC_Docs( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() )
 
    if ::hDocumento["estado"] = "C"
       RETURN
+   endif
+
+   if rFacturas == NIL .or. !hb_isObject(rFacturas)
+      MsgAlert( "No hay facturas disponibles para este cliente" )
+      RETURN
+   endif
+
+   if rFacturas:RecCount() = 1
+      if hb_isNIL( rFacturas:numero )
+         MsgAlert( "No hay facturas disponibles para este cliente" )
+         RETURN
+      endif
+      ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:numero) )
+      ::rFactDetal := ::rDocumento:DetalFrom()
+      return
    endif
 
    if rFacturas:RecCount() = 1
@@ -547,38 +567,32 @@ procedure __DetalRefresh( oForm )
 
    if !hb_isObject( ::oModDetal )
 
-      if !hb_isNIL( ::rFactDetal )
-
-         DEFINE MODEL   ::oModDetal           ;
-                STRUCT  ::rFactDetal:Struct() ;
-                DATA    ::rFactDetal:GetData()
-      else
-
-         DEFINE MODEL   ::oModDetal           ;
-                STRUCT  {{"detalle_id",     "N",10, 0},;
-                         {"documento" ,     "N",10, 0},;
-                         {"codigo_local",   "C",10, 0},;
-                         {"descripcion",    "C",100,0},;
-                         {"cantidad",       "N",10, 0},;
-                         {"precio_unitario","N",13, 2},;
-                         {"descuento",      "N",13, 2},;
-                         {"subtotal",       "N",13, 2},;
-                         {"iva_porcentaje", "N",04, 2},;
-                         {"iva_monto",      "N",04, 2},;
-                         {"total",          "N",13, 2},;
-                         {"nombre_global",  "C",100,0},;
-                         {"tipo_inventario","C",01, 0},;
-                         {"lote",           "C",10, 0},;
-                         {"fecha_vcmto",    "D",10, 0},;
-                         {"id_ubicacion",   "N",10, 0},;
-                         {"almacen_id",     "N",10, 0},;
-                         {"nombre_almacen", "C",20, 0},;
-                         {"detalles_json",  "C",100,0},;
-                         {"item",           "N",10, 0} ;
-                        } ;
-                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0}}
-
-      endif
+      // Siempre usamos estructura manual con 22 columnas
+      DEFINE MODEL   ::oModDetal           ;
+             STRUCT  {{"detalle_id",     "N",10, 0},;
+                     {"documento" ,     "N",10, 0},;
+                     {"codigo_local",   "C",10, 0},;
+                     {"descripcion",    "C",100,0},;
+                     {"cantidad",       "N",10, 0},;
+                     {"precio_unitario","N",13, 2},;
+                     {"descuento",      "N",13, 2},;
+                     {"subtotal",       "N",13, 2},;
+                     {"iva_porcentaje", "N",04, 2},;
+                     {"iva_monto",      "N",04, 2},;
+                     {"total",          "N",13, 2},;
+                     {"nombre_global",  "C",100,0},;
+                     {"tipo_inventario","C",01, 0},;
+                     {"lote",           "C",10, 0},;
+                     {"fecha_vcmto",    "D",10, 0},;
+                     {"id_ubicacion",   "N",10, 0},;
+                     {"almacen_id",     "N",10, 0},;
+                     {"nombre_almacen", "C",20, 0},;
+                     {"detalles_json",  "C",100,0},;
+                     {"item",           "N",10, 0},;
+                     {"imp_pvp",        "N",13, 2},;
+                     {"imp_pvp_unit",   "N",13, 2} ;
+                    } ;
+             DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0}}
 
       DEFINE LISTBOX ::oLBoxDetal ;
              MODEL   ::oModDetal  ;
@@ -600,7 +614,7 @@ procedure __DetalRefresh( oForm )
       ::oLBoxDetal:SetColVisible( 17, .f. )     //- Almacen Id
       ::oLBoxDetal:SetColVisible( 18, .f. )     //- Almacen Nombre
       ::oLBoxDetal:SetColVisible( 19, .f. )     //- Detalles (JSON)
-      ::oLBoxDetal:SetColVisible( 20, .f. )     //- Item
+//      ::oLBoxDetal:SetColVisible( 20, .f. )     //- Item
 
       ::oLBoxDetal:SetColTitle( 03, "Código" )        //-- Columna Código
       ::oLBoxDetal:SetColTitle( 04, "Descripción" )   //-- Columna Descripción
@@ -611,6 +625,8 @@ procedure __DetalRefresh( oForm )
       ::oLBoxDetal:SetColTitle( 09, "IVA (%)" )       //-- Columna IVA Porcentaje
       ::oLBoxDetal:SetColTitle( 10, "IVA (Monto)" )   //-- Columna IVA Monto
       ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
+      ::oLBoxDetal:SetColTitle( 21, "Imp.PVP" )      //-- Columna Otros Impuestos
+      ::oLBoxDetal:SetColTitle( 22, "Imp.PVP Unit" ) //-- Columna Otros Imp Unitario
 
       ::oLBoxDetal:Active()
 
@@ -644,7 +660,9 @@ procedure __DetalRefresh( oForm )
                              hb_ntos(aLine[17]), ;
                              aLine[18], ;
                              aLine[19], ;
-                             hb_ntos(aLine[20])
+                            hb_ntos(aLine[20]), ;
+                            hb_ntos(aLine[21]), ;
+                            hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0))
             CATCH oErr
                View( oErr:Description )
             END
@@ -697,6 +715,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
+      ::oEntOtrImp:SetValue( "0" )
       ::oEntMonBase:SetValue( "0" )
 
       ::oComboEstado:SetValue("Borrador", .F. ) 
@@ -783,7 +802,12 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       endif
 
       ::oEntMonBase:SetValue( TRANSFORM(::hDocumento["monto_base"],P_92) ) //oModel:GetCol("monto base") )
-      ::oEntTotal:SetValue( TRANSFORM(::hDocumento["monto_total"],P_92) )  
+      if hb_hHasKey( ::hDocumento, "otros_imp" )
+         ::oEntOtrImp:SetValue( TRANSFORM(::hDocumento["otros_imp"],P_92) )
+      else
+         ::oEntOtrImp:SetValue( "0" )
+      endif
+      ::oEntTotal:SetValue( TRANSFORM(::hDocumento["monto_total"],P_92) )
 
       ::lConfirm := .F.
       do case
@@ -805,38 +829,32 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    if !hb_isObject( ::oModDetal )
 
-      if !hb_isNIL( ::rFactDetal )
-
-         DEFINE MODEL   ::oModDetal           ;
-                STRUCT  ::rFactDetal:Struct() ;
-                DATA    ::rFactDetal:GetData()
-      else
-
-         DEFINE MODEL   ::oModDetal           ;
-                STRUCT  {{"detalle_id",     "N",10, 0},;
-                         {"documento" ,     "N",10, 0},;
-                         {"codigo_local",   "C",10, 0},;
-                         {"descripcion",    "C",100,0},;
-                         {"cantidad",       "N",10, 0},;
-                         {"precio_unitario","N",13, 2},;
-                         {"descuento",      "N",13, 2},;
-                         {"subtotal",       "N",13, 2},;
-                         {"iva_porcentaje", "N",04, 2},;
-                         {"iva_monto",      "N",04, 2},;
-                         {"total",          "N",13, 2},;
-                         {"nombre_global",  "C",100,0},;
-                         {"tipo_inventario","C",01, 0},;
-                         {"lote",           "C",10, 0},;
-                         {"fecha_vcmto",    "D",10, 0},;
-                         {"id_ubicacion",   "N",10, 0},;
-                         {"almacen_id",     "N",10, 0},;
-                         {"nombre_almacen", "C",20, 0},;
-                         {"detalles_json",  "C",100,0},;
-                         {"item",           "N",10, 0} ;
-                        } ;
-                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0}}
-
-      endif
+      // Siempre usamos estructura manual con 22 columnas
+      DEFINE MODEL   ::oModDetal           ;
+             STRUCT  {{"detalle_id",     "N",10, 0},;
+                     {"documento" ,     "N",10, 0},;
+                     {"codigo_local",   "C",10, 0},;
+                     {"descripcion",    "C",100,0},;
+                     {"cantidad",       "N",10, 0},;
+                     {"precio_unitario","N",13, 2},;
+                     {"descuento",      "N",13, 2},;
+                     {"subtotal",       "N",13, 2},;
+                     {"iva_porcentaje", "N",04, 2},;
+                     {"iva_monto",      "N",04, 2},;
+                     {"total",          "N",13, 2},;
+                     {"nombre_global",  "C",100,0},;
+                     {"tipo_inventario","C",01, 0},;
+                     {"lote",           "C",10, 0},;
+                     {"fecha_vcmto",    "D",10, 0},;
+                     {"id_ubicacion",   "N",10, 0},;
+                     {"almacen_id",     "N",10, 0},;
+                     {"nombre_almacen", "C",20, 0},;
+                     {"detalles_json",  "C",100,0},;
+                     {"item",           "N",10, 0},;
+                     {"imp_pvp",        "N",13, 2},;
+                     {"imp_pvp_unit",   "N",13, 2} ;
+                    } ;
+             DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0}}
 
       DEFINE LISTBOX ::oLBoxDetal ;
              MODEL   ::oModDetal  ;
@@ -869,6 +887,8 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColTitle( 09, "IVA (%)" )       //-- Columna IVA Porcentaje
       ::oLBoxDetal:SetColTitle( 10, "IVA (Monto)" )   //-- Columna IVA Monto
       ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
+      ::oLBoxDetal:SetColTitle( 21, "Imp.PVP" )      //-- Columna Otros Impuestos
+      ::oLBoxDetal:SetColTitle( 22, "Imp.PVP Unit" ) //-- Columna Otros Imp Unitario
 
       ::oLBoxDetal:Active()
 
@@ -902,7 +922,9 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
                              hb_ntos(aLine[17]), ;
                              aLine[18], ;
                              aLine[19], ;
-                             hb_ntos(aLine[20])
+                            hb_ntos(aLine[20]), ;
+                            hb_ntos(aLine[21]), ;
+                            hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0))
             CATCH oErr
                View( oErr:Description )
             END
@@ -1087,6 +1109,7 @@ procedure __NCCalcula( oForm )
    ::oEntIvaE:SetValue("0")
    ::oEntIvaR:SetValue("0")
    ::oEntIvaG:SetValue("0")
+   ::oEntOtrImp:SetValue("0")
    ::hDocumento["iva"] := {=>}
    ::bDetalCode := {|oTView, pModel, aIter| __NCCalMontos( oTView, pModel, aIter, oForm ) }
    ::oLBoxDetal:ForEach( ::bDetalCode )
@@ -1094,16 +1117,19 @@ return
 
 
 
-procedure __NCCalMontos( oTView, pModel, aIter, oForm )
-   local nBase, nMonto, nTotal, cIva
+ procedure __NCCalMontos( oTView, pModel, aIter, oForm )
+    local nBase, nMonto, nTotal, cIva
 
-//   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
-//                    ToNum( oTView:GetAutoValue(__PRECIO,   aIter)), 2 )
+    nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
+    nBase  := ToNum( ::oEntMonBase:GetValue() )
+    nTotal := ROUND( nBase+nMonto, 2 )
+    ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
 
-   nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
-   nBase  := ToNum( ::oEntMonBase:GetValue() )
-   nTotal := ROUND( nBase+nMonto, 2 )
-   ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
+    // Calcular total otros impuestos (imp_pvp)
+    nMonto := ToNum( oTView:GetAutoValue( 21, aIter ) )
+    nBase  := ToNum( ::oEntOtrImp:GetValue() )
+    nTotal := ROUND( nBase+nMonto, 2 )
+    ::oEntOtrImp:SetValue( TRANSFORM( nTotal, P_92 ) )
 
    if ToNum( oTView:GetAutoValue( __IVAPORCEN, aIter )) > 0  // <-- ToDo: Usar Datos de IVA
 //View("calculando IVA")
@@ -1138,7 +1164,8 @@ procedure __NCCalMontos( oTView, pModel, aIter, oForm )
    nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
              ToNum( ::oEntIvaE:GetValue() ) +;
              ToNum( ::oEntIvaR:GetValue() ) +;
-             ToNum( ::oEntIvaG:GetValue() ), 2 ) 
+             ToNum( ::oEntIvaG:GetValue() ) +;
+             ToNum( ::oEntOtrImp:GetValue() ), 2 ) 
             
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
 
@@ -1156,15 +1183,16 @@ procedure __AddDetal( oForm )
    endif
 
    APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
-          VALUES aLine[ 1], aLine[ 2], aLine[ 3],;
-                 aLine[ 4], aLine[ 5], ;
-                 aLine[ 6], aLine[ 7], ;
-                 aLine[ 8], aLine[ 9], ; 
-                 aLine[10], aLine[11], ; 
-                 aLine[12], aLine[13], ;
-                 aLine[14], aLine[15], ;
-                 aLine[16], aLine[17], ;
-                 aLine[18], aLine[19], aLine[20]
+          VALUES hb_ntos(aLine[ 1]), hb_ntos(aLine[ 2]), aLine[ 3],;
+                 aLine[ 4], hb_ntos(aLine[ 5]), ;
+                 hb_ntos(aLine[ 6]), hb_ntos(aLine[ 7]), ;
+                 hb_ntos(aLine[ 8]), hb_ntos(aLine[ 9]), ; 
+                 hb_ntos(aLine[10]), hb_ntos(aLine[11]), ; 
+                 hb_ntos(aLine[12]), aLine[13], ;
+               aLine[14], aLine[15], ;
+               aLine[16], hb_ntos(aLine[17]), ;
+               aLine[18], aLine[19], hb_ntos(aLine[20]), hb_ntos(aLine[21]), ;
+               hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0))
 
    ::oModDetal:oTreeView:SetFocus()
    ::oModDetal:GoBottom()
@@ -1310,6 +1338,7 @@ Procedure __NCSave( oForm, oFormParent )
    ::hDocumento["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue()) // Vencimiento
    ::hDocumento["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
    ::hDocumento["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
+   ::hDocumento["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
    ::hDocumento["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hDocumento["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
 
@@ -1518,9 +1547,9 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, __IVAPORCEN, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),;
-                         oTreeView:SetPosCol( aIter, __CANTIDAD, .f. ), ;
-			 ::oInvWnd:End() }
+STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),;
+                          ::oModDetal:oTreeView:SetPosCol( ::oModDetal:aIter, __CANTIDAD, .f. ), ;
+                          ::oInvWnd:End() }
 
    oLBoxInv:Active()
    oModProductos:oTreeView:SetRules( .t. )
@@ -1548,8 +1577,8 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 
    oLBoxInv:SetColTitle( 4, "Código" )          //- Cambiamos el titulo 
 
-   ACTIVATE WINDOW ::oFactsRelWnd MODAL
+   ACTIVATE WINDOW ::oInvWnd MODAL
 
-RETURN 
+RETURN
 
 //eof
