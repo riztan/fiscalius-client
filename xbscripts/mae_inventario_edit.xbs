@@ -42,6 +42,8 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
    oInvForm:hData["precio_unitario"] := TRANSFORM( oInvForm:hData["precio_unitario"], P_92 )
    oInvForm:hData["stock_minimo"   ] := TRANSFORM( oInvForm:hData["stock_minimo"   ], P_92 )
    oInvForm:hData["stock_total"    ] := TRANSFORM( oInvForm:hData["stock_total"    ], P_92 )
+   oInvForm:hData["capacidad"        ] := TRANSFORM( oInvForm:hData["capacidad"        ], P_92 ) 
+   oInvForm:hData["grados_alcohol"        ] := TRANSFORM( oInvForm:hData["grados_alcohol"        ], P_92 ) 
 
 //   oInvForm:cDescripcion := oInvForm:hData["descripcion"]
 //   oInvForm:cCodigo_barras := oInvForm:hData["codigo_barras"]
@@ -63,7 +65,7 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_inventario.ui"
 
-   DEFINE WINDOW oInvForm:oWnd TITLE "Pruebas" SIZE 880,500 ;
+   DEFINE WINDOW oInvForm:oWnd TITLE "Productos" SIZE 880,500 ;
           OF oInvWnd ;
           ID "window1" RESOURCE oRes
 
@@ -132,6 +134,14 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
       DEFINE INTEGER ENTRY oInvForm:oEntStock VAR oInvForm:hData["stock_total"] ;
              VALID __ValidaMonto( oInvForm:oEntEntStok ) ;
              ID "ent_stock"  RESOURCE oRes
+			 
+	  DEFINE INTEGER ENTRY oInvForm:oEntCapacidad VAR oInvForm:hData["capacidad"] ;
+             ID "ent_capacidad"  RESOURCE oRes
+			 
+	 DEFINE INTEGER ENTRY oInvForm:oEntGradosAlcohol VAR oInvForm:hData["grados_alcohol"] ;
+             VALID __ValidaMonto( oInvForm:oEntGradosAlcohol ) ;
+             ID "ent_grados_alcohol"  RESOURCE oRes
+
 
       DEFINE BUTTON oInvForm:oBtnSave   ACTION __MaeInvSave( oInvForm ) ID "btn_save" RESOURCE oRes
 
@@ -157,6 +167,17 @@ return .t.
 Procedure __MaeInvSave( oForm )
    local hData, uWidget, uResp, aIter, lNew
    local cCol
+   
+  //VIEW(::hData)
+  //return .t.
+   //VIEW(::oEntNombre)
+   
+   if Empty(::hData["nombre"])
+     MsgAlert("El nombre General no tiene datos", "Error")
+    return
+   endif
+   
+ 
 
 /*
    if !__ValidaTipo( ::oEntTipo, oForm )
@@ -176,18 +197,27 @@ Procedure __MaeInvSave( oForm )
    /* Algunas validaciones previas */
    hData := ::hData
 
+   // Convertir incluye_iva a boolean para PostgreSQL
+   if hb_hHasKey(hData, "incluye_iva")
+      if VALTYPE(hData["incluye_iva"]) = "C"
+         hData["incluye_iva"] := iif( ALLTRIM(Upper(hData["incluye_iva"]))="S", .T., .F. )
+      elseif VALTYPE(hData["incluye_iva"]) = "N"
+         hData["incluye_iva"] := iif( hData["incluye_iva"] = 1, .T., .F. )
+      endif
+   endif
+
 //   if VALTYPE( ::hData["incluye_iva"] )="C"
 //      hData["incluye_iva"] :=  iif( ALLTRIM(Upper(::hData["incluye_iva"]))="S",.T.,.F. )
 //   endif
 
-   FOR EACH cCol IN {"precio_unitario","stock_total","stock_minimo","imp_pvp","codigo_barras"}
+   FOR EACH cCol IN {"precio_unitario","stock_total","stock_minimo","imp_pvp","codigo_barras","capacidad","grados_alcohol"}
       if VALTYPE( hData[ cCol ] )="C"
          hData[ cCol ] := TONUM( ::hData[cCol] )
       endif
    NEXT
 
    // Guardar los datos del producto
-   //hData := ::rProducto:Data()
+  // hData := ::rProducto:Data()
    ::rProducto:SetData( hData )
 
    uResp := ::rProducto:Save()
@@ -200,10 +230,10 @@ Procedure __MaeInvSave( oForm )
    //- Atualizar el modelo de datos de la ventana con la lista de productos.
 
    hData := ::rProducto:Data()
-//View( hData )
+View( hData )
    // Verificar si es un producto nuevo (no hay selección en el modelo)
    if lNew 
-      // Cliente nuevo: añadir una nueva fila al modelo
+      // Producto nuevo: añadir una nueva fila al modelo
       aIter := ARRAY(4)
       APPEND LIST_STORE ::oModel:oLbx ITER aIter ;
              VALUES hb_ntos(hData["inventario_id"    ]), ; //1
@@ -231,13 +261,15 @@ Procedure __MaeInvSave( oForm )
                     "",; //hData["detalles_json"            ], ; //3
                     "0",; //hData["precio_full"              ], ; //4
                     "",; //hData["incluye_iva"              ], ; //6
+					"0",; //hData["capacidad"              ], ; //
+					"0",; //hData["grados_alcohol"              ], ; //
                     hb_ntos(hData["imp_pvp"                  ])   //7
                     
 
       // Establecer el cursor en la nueva fila
       gtk_tree_view_set_cursor( ::oModel:oTreeView:pWidget, ::oModel:oTreeView:GetPath( aIter ), NIL, .F. )
    else
-      // Cliente existente: actualizar la fila seleccionada
+      // Producto existente: actualizar la fila seleccionada
 //TODO: Actualizar correctamente estos valores, algunos explotan, hay que validar tipo de dato, etc
       ::oModel:SetValue(  4, hData["codigo_local"     ] )
       ::oModel:SetValue(  5, hData["descripcion_local"] )
@@ -275,7 +307,7 @@ Function __MaeValCodigo( oEntCodigo, oForm, cType )
 
    // No Permitir código vacío 
    if Empty( cCodigo )
-      MsgAlert( "Debe indicar un código para este cliente.", "Atención" )
+      MsgAlert( "Debe indicar un código para este producto.", "Atención" )
       return .F.
    endif
 
@@ -321,7 +353,7 @@ Function __MaeValCodeBar( oEntCodigo, oForm )
 
    // No Permitir código vacío 
 //   if Empty( cCodigo )
-//      MsgAlert( "Debe indicar un código para este cliente.", "Atención" )
+//      MsgAlert( "Debe indicar un código para este producto.", "Atención" )
 //      return .F.
 //   endif
 

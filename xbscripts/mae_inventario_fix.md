@@ -1,4 +1,10 @@
-# Fix de Pérdida de Decimales en mae_inventario_edit.xbs
+# Fixes de mae_inventario_edit.xbs
+
+Este documento registra los bugs y sus soluciones implementadas en el módulo de inventario.
+
+---
+
+## 🐛 Fix #1: Pérdida de Decimales en imp_pvp
 
 ## 🐛 **Problema Identificado**
 
@@ -151,3 +157,116 @@ oModel:Set( aIter, nCol, TRANSFORM( decimal_value, P_92 ) )
 ---
 
 *Este documento debe mantenerse actualizado con cualquier cambio relacionado con el manejo de decimales en el módulo de inventario.*
+
+---
+
+## 🐛 Fix #2: Campo "Incluye IVA" No se Guardaba
+
+### **Problema Identificado**
+
+Al marcar o desmarcar el checkbox "Incluye IVA" en el formulario de productos, el cambio no se reflejaba en la base de datos.
+
+**Síntoma:** El campo `incluye_iva` siempre mantenía su valor original después de guardar
+
+---
+
+### **Análisis del Problema**
+
+#### **Ubicación del Bug**
+- **Archivo**: `mae_inventario_edit.xbs`
+- **Línea afectada**: 176-187 (procedimiento `__MaeInvSave`)
+
+#### **Causa Raíz**
+El campo `incluye_iva` **no se procesaba** antes de guardar. La conversión solo afectaba a campos numéricos:
+
+```xbase
+// Código original - solo procesaba estos campos:
+FOR EACH cCol IN {"precio_unitario","stock_total","stock_minimo","imp_pvp","codigo_barras"}
+   // ... conversión
+NEXT
+
+// ❌ incluye_iva NO estaba en la lista
+```
+
+Además, había código comentado que intentaba manejar este campo:
+
+```xbase
+// Código comentado que no se ejecutaba:
+//   if VALTYPE( ::hData["incluye_iva"] )="C"
+//      hData["incluye_iva"] :=  iif( ALLTRIM(Upper(::hData["incluye_iva"]))="S",.T.,.F. )
+//   endif
+```
+
+---
+
+### **Solución Implementada**
+
+#### **Verificar estructura de la tabla**
+```sql
+-- Tabla: orseit.mae_inventario
+-- Campo: incluye_iva (boolean)
+```
+
+#### **Corrección implementada (Líneas 179-187)**
+
+```xbase
+// Convertir incluye_iva a boolean para PostgreSQL
+if hb_hHasKey(hData, "incluye_iva")
+   if VALTYPE(hData["incluye_iva"]) = "C"
+      hData["incluye_iva"] := iif( ALLTRIM(Upper(hData["incluye_iva"]))="S", .T., .F. )
+   elseif VALTYPE(hData["incluye_iva"]) = "N"
+      hData["incluye_iva"] := iif( hData["incluye_iva"] = 1, .T., .F. )
+   endif
+endif
+```
+
+#### **Qué hace la solución:**
+1. Verifica si la clave `incluye_iva` existe en el hash de datos
+2. Si viene como **string** ("S" o "N"): convierte a boolean
+3. Si viene como **número** (1 o 0): convierte a boolean
+4. PostgreSQL recibe el tipo correcto (boolean)
+
+---
+
+### **Pruebas Recomendadas**
+
+1. **Crear nuevo producto** con "Incluye IVA" marcado → verificar en BD
+2. **Editar producto existente** y cambiar el checkbox → verificar cambio en BD
+3. **Desmarcar "Incluye IVA"** → verificar que se guarde como `false`
+4. **Verificar consulta SQL:**
+   ```sql
+   SELECT codigo_local, incluye_iva FROM orseit.mae_inventario;
+   ```
+
+---
+
+### **Referencia Técnica**
+
+- **Tabla**: `orseit.mae_inventario`
+- **Campo**: `incluye_iva` (boolean, nullable)
+- **Componente UI**: `CHECKBOX` en `mae_inventario.ui`
+
+---
+
+## 📚 **Referencias Relacionadas**
+
+- **Fix #1 (imp_pvp)**: `mae_inventario_edit.xbs:183-187, 234`
+- **Fix #2 (incluye_iva)**: `mae_inventario_edit.xbs:179-187`
+- **Documentación general**: `../docs/bugs-fixes.md`
+- **Changelog**: `../CHANGELOG.md`
+
+---
+
+## 🔄 **Historial de Fixes**
+
+| # | Fecha | Problema | Estado |
+|---|-------|----------|--------|
+| 1 | 2026-02-12 | Pérdida de decimales en imp_pvp | ✅ Corregido |
+| 2 | 2026-02-13 | Campo incluye_iva no se guardaba | ✅ Corregido |
+
+- **Responsable**: Asistente IA con revisión y aprobación del usuario
+- **Aprobado por**: Usuario
+
+---
+
+*Este documento debe mantenerse actualizado con cualquier cambio relacionado con el módulo de inventario.*

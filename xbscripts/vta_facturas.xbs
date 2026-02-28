@@ -206,6 +206,12 @@ procedure vta_facturas( oFormParent )
           ID "ent_montotal" RESOURCE ::oRes 
    ::oEntTotal:Justify( GTK_JUSTIFY_RIGHT )
    ::oEntTotal:SetEditable( .F. )
+   
+      ::nMonTotBs := 0
+   DEFINE MONEY ENTRY ::oEntTotBs VAR ::nMonTotBs ;
+          ID "ent_montotbs" RESOURCE ::oRes 
+   ::oEntTotBs:Justify( GTK_JUSTIFY_RIGHT )
+   ::oEntTotBs:SetEditable( .F. )
 
 
    // -- Caja de Retenciones
@@ -481,6 +487,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::cPreEstado   := ::cComboEstado
    
       ::oEntTotal:SetValue( "0" )
+	  ::oEntTotBs:SetValue( "0" )
       ::oEntRetIva:SetValue( "" )
       ::oEntRetIvaF:SetValue( "" )
       ::oEntMonRetIva:SetValue( "" )
@@ -564,6 +571,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
       ::oEntMonBase:SetValue( TRANSFORM(::hFactura["monto_base"],P_92) ) //oModel:GetCol(::hCol["monto base"]) )
       ::oEntTotal:SetValue( TRANSFORM(::hFactura["monto_total"],P_92) )  
+	  ::oEntTotBs:SetValue( TRANSFORM(::hFactura["monto_total"]*TONUM(SUBSTR(::cDivisa,5)),P_92) )  
 
       ::lConfirm := .F.
       do case
@@ -668,6 +676,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColVisible( 19, .f. )     //- Detalles (JSON)
       ::oLBoxDetal:SetColVisible( 20, .f. )     //- Item
 //      ::oLBoxDetal:SetColVisible( 22, .f. )     //- imp_pvp
+	  ::oLBoxDetal:SetColVisible( 23, .f. )     
+	  ::oLBoxDetal:SetColVisible( 24, .f. )    
 
       ::oLBoxDetal:SetColTitle( 03, "Código" )        //-- Columna Código
       ::oLBoxDetal:SetColTitle( 04, "Descripción" )   //-- Columna Descripción
@@ -680,6 +690,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
       ::oLBoxDetal:SetColTitle( 21, "PVP Total" )     //-- Columna PVP Total Linea
       ::oLBoxDetal:SetColTitle( 22, "PVP Total Unit" )   //-- Columna PVP Total Linea
+	  //::oLBoxDetal:SetColTitle( 23, "Capacidad" )   //-- Columna 
 
       ::oLBoxDetal:Active()
 
@@ -901,6 +912,7 @@ procedure __Calcula( oForm )
    local nOtrosImp := 0
 
    ::oEntTotal:SetValue("0")
+   ::oEntTotBs:SetValue("0")
    ::oEntMonBase:SetValue("0")
    ::oEntIvaE:SetValue("0")
    ::oEntIvaR:SetValue("0")
@@ -915,28 +927,48 @@ return
 
 
 procedure __CalMontos( oTView, pModel, aIter, oForm )
-   local nBase, nMonto, nTotal, cIva, nImpPvp, nOtrImp:=0
+   local nBase:=0, nMonto:=0, nTotal:=0, cIva, nImpPvp, nOtrImp:=0
 
 //   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
 //                    ToNum( oTView:GetAutoValue(__PRECIO,   aIter)), 2 )
 
-   nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
-   nBase  := ToNum( ::oEntMonBase:GetValue() )
-   nOtrImp:= ToNum( ::oEntOtrImp:GetValue())
-   nTotal := ROUND( nBase+nMonto, 2 )
-   ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
+   nPorcentaje := ToNum( oTView:GetAutoValue( __IVAPORCEN, aIter ) )
+   if nPorcentaje>0
+    nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
+    //view(nmonto)
+    nBase  := ToNum( ::oEntMonBase:GetValue() )
+    nOtrImp:= ToNum( ::oEntOtrImp:GetValue())
+    nTotal := ROUND( nBase+nMonto, 2 )
+    ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
+   endif
 
     // Calculate imp_pvp
    nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 22, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
 //   oTView:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) )
    nOtrImp += nImpPvp
+   
+   
+   if nPorcentaje = 0  // Producto exento de IVA
+   	  nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
+      nBase := ToNum( ::oEntIvaE:GetValue() )
+      nTotal := ROUND( nBase + nMonto, 2 )
+      ::oEntIvaE:SetValue( TRANSFORM( nTotal, P_92 ) )
+   endif
+   
 
-   if ToNum( oTView:GetAutoValue( __IVAPORCEN, aIter )) > 0
+
+      if nPorcentaje > 0
       nMonto := ToNum( oTView:GetAutoValue( __IVAMONTO, aIter ) )
-      nBase  := ToNum( ::oEntIvaG:GetValue() )
-      nTotal := ROUND( nBase+nMonto, 2 )
-      ::oEntIvaG:SetValue( TRANSFORM( nTotal, P_92 ) )
-      //if !hb_hHasKey( ::hFactura, "iva" )
+      if nPorcentaje = 8  // IVA Reducido
+         nBase  := ToNum( ::oEntIvaR:GetValue() )
+         nTotal := ROUND( nBase+nMonto, 2 )
+         ::oEntIvaR:SetValue( TRANSFORM( nTotal, P_92 ) )
+      elseif nPorcentaje = 16  // IVA General
+         nBase  := ToNum( ::oEntIvaG:GetValue() )
+         nTotal := ROUND( nBase+nMonto, 2 )
+         ::oEntIvaG:SetValue( TRANSFORM( nTotal, P_92 ) )
+      endif
+            //if !hb_hHasKey( ::hFactura, "iva" )
       //   ::hFactura["iva"] := hb_hash()
       //endif
       cIva := ALLTRIM( STRTRAN(STRTRAN(oTView:GetAutoValue(__IVAPORCEN, aIter),",",""), ".","") )
@@ -970,6 +1002,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
                     ToNum( ::oEntIvaG:GetValue() ) +;
                     nOtrImp, 2 ) // Include otros_imp
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
+   ::oEntTotBs:SetValue( TRANSFORM( nTotal*TONUM(SUBSTR(::cDivisa,5)), P_92 ) ) 
    ::oEntOtrImp:SetValue( TRANSFORM( nOtrImp, P_92 ) ) // Set otros_imp
 
 return

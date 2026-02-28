@@ -3,6 +3,24 @@
 
 ## Cambios Realizados
 
+### 4. Agregado campos capacidad y grados_alcohol en impresión de factura
+
+Se agregaron los campos de capacidad y grados de alcohol del producto en el detalle de la factura impresa.
+
+**Origen de datos**: 
+- Los campos vienen de `tvfactura.prg` en el método GetData()
+- Se obtienen del join con `mae_inventario`
+
+```xbscript
+" mi.capacidad, "+;
+" mi.grados_alcohol "+;
+```
+
+**Propósito**:
+- Mostrar volumen de la botella (ej: 750ml, 1L)
+- Mostrar porcentaje de alcohol (ej: 40% para whisky, 12% para vino)
+- Cumplir con requisitos de facturación para bebidas alcohólicas
+
 ### 1. Agregado campo "Impuesto al PVP" en el detalle de impresión de factura
 
 Se agregó el campo de impuesto al precio de venta público (PVP) en el detalle de la factura impresa.

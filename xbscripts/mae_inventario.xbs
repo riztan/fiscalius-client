@@ -24,7 +24,7 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
 
    DEFINE WINDOW oInvWnd ;
           TITLE "Fiscalius. Productos " ;
-          SIZE 700,400 ;
+          SIZE 800,400 ;
           ID "window1" RESOURCE oRes ;
           OF oWndParent
 
