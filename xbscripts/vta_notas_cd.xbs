@@ -101,9 +101,13 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    ::cFacturaNro := ""
    DEFINE ENTRY ::oEntFacturaNro VAR ::cFacturaNro ;
           ACTION ( __NC_Docs( oForm ), ::oEntFacturaNro:SetFocus() ) ; 
-          VALID  ( iif( !empty(::cFacturaNro), ::rDocumento:SetRefNumero(::cFacturaNro), NIL), ;
-                   __DelDetal( oForm, .T. ), ;
-                   ::rFactDetal := ::rDocumento:DetalFrom(), __DetalRefresh(oForm), .T. );
+           VALID  ( iif( !empty(::cFacturaNro), ::rDocumento:SetRefNumero(::cFacturaNro), NIL), ;
+                    __DelDetal( oForm, .T. ), ;
+                    ::rFactDetal := ::rDocumento:DetalFrom(), __DetalRefresh(oForm), ;
+                    iif( CTOD(::oEntFecha:GetValue()) < ::rVentas:Transacciones('F', ::cFacturaNro):fecha, ;
+                         ::oEntFecha:SetValue(DTOC(::rVentas:Transacciones('F', ::cFacturaNro):fecha)), ;
+                         NIL), ;
+                    ::oLabInfo:SetText("ATENCION: Debe guardar los cambios luego de relacionar una factura"), .T. );
           RIGHT BUTTON ::oImgDocIcon ;
           ID "ent_orden_compra" RESOURCE ::oRes
    ::oEntFacturaNro:SetEditable( .F. )
@@ -483,15 +487,18 @@ function __DocValFecha( oForm, oEnt, dValPrevio )
    local lRes := .t.
    local nValor, rQry, dFchFactura, cFactura
 
-   cFactura := ::oEntFacturaNro:GetValue()
+    cFactura := ::oEntFacturaNro:GetValue()
 
-   if !hb_isNIL( cFactura ) .and. !Empty(cFactura)
-      dFchFactura := ::rVentas:Transacciones('F', cFactura ):fecha
-      if CTOD(cFactura) > dFchFactura
-         ::oEntFecha:SetValue( DTOC(dFchFactura) )
-         ::oLabInfo:SetText( "Ajustada la fecha el documento." )
-      endif
-   endif
+    if !hb_isNIL( cFactura ) .and. !Empty(cFactura)
+       dFchFactura := ::rVentas:Transacciones('F', cFactura ):fecha
+       //-- No permitir fecha menor a la factura relacionada
+       if CTOD( oEnt:getValue() ) < dFchFactura
+          ::oEntFecha:SetValue( DTOC(dFchFactura) )
+          ::oLabInfo:SetText( "La nota no puede tener fecha anterior a la factura." )
+          oEnt:SetValue( DTOC(dFchFactura) )
+          return .F.
+       endif
+    endif
 
    if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
       //llevamos fecha de vencimiento a la misma fecha del documento.
@@ -546,7 +553,6 @@ procedure __NCChangeEstado( oForm, lConfirm )
 return
 
 
-
 procedure __DetalRefresh( oForm )
    local aLine, aData, oErr
    local cFactura, dFchFactura
@@ -564,116 +570,40 @@ procedure __DetalRefresh( oForm )
       endif
    endif
 
+   ::oModDetal:oTreeView:ClearModel(.t.)
+   aData := ::rFactDetal:GetData()
 
-   if !hb_isObject( ::oModDetal )
+   if !Empty( aData )
 
-      // Siempre usamos estructura manual con 22 columnas
-      DEFINE MODEL   ::oModDetal           ;
-             STRUCT  {{"detalle_id",     "N",10, 0},;
-                     {"documento" ,     "N",10, 0},;
-                     {"codigo_local",   "C",10, 0},;
-                     {"descripcion",    "C",100,0},;
-                     {"cantidad",       "N",10, 0},;
-                     {"precio_unitario","N",13, 2},;
-                     {"descuento",      "N",13, 2},;
-                     {"subtotal",       "N",13, 2},;
-                     {"iva_porcentaje", "N",04, 2},;
-                     {"iva_monto",      "N",04, 2},;
-                     {"total",          "N",13, 2},;
-                     {"nombre_global",  "C",100,0},;
-                     {"tipo_inventario","C",01, 0},;
-                     {"lote",           "C",10, 0},;
-                     {"fecha_vcmto",    "D",10, 0},;
-                     {"id_ubicacion",   "N",10, 0},;
-                     {"almacen_id",     "N",10, 0},;
-                     {"nombre_almacen", "C",20, 0},;
-                     {"detalles_json",  "C",100,0},;
-                     {"item",           "N",10, 0},;
-                     {"imp_pvp",        "N",13, 2},;
-                     {"imp_pvp_unit",   "N",13, 2} ;
-                    } ;
-             DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0}}
-
-      DEFINE LISTBOX ::oLBoxDetal ;
-             MODEL   ::oModDetal  ;
-             OF      ::oBoxDetalles
-
-      ::oLBoxDetal:lBar  := .f.
-      ::oLBoxDetal:bNew  := {|| __AddDetal( oForm ) }
-      ::oLBoxDetal:bEdit := {|| .T. }
-      ::oLBoxDetal:bDel  := {|| __DelDetal( oForm ) }
-
-      ::oLBoxDetal:SetColVisible( 01, .f. )     //- Ocultamos el id del detalle.
-      ::oLBoxDetal:SetColVisible( 02, .f. )     //- Ocultamos el id del documento.
-
-      ::oLBoxDetal:SetColVisible( 12, .f. )     //- Nombre Global
-      ::oLBoxDetal:SetColVisible( 13, .f. )     //- Tipo de Inventario
-      ::oLBoxDetal:SetColVisible( 14, .f. )     //- Lote
-      ::oLBoxDetal:SetColVisible( 15, .f. )     //- Vencimiento
-      ::oLBoxDetal:SetColVisible( 16, .f. )     //- Ubicación
-      ::oLBoxDetal:SetColVisible( 17, .f. )     //- Almacen Id
-      ::oLBoxDetal:SetColVisible( 18, .f. )     //- Almacen Nombre
-      ::oLBoxDetal:SetColVisible( 19, .f. )     //- Detalles (JSON)
-//      ::oLBoxDetal:SetColVisible( 20, .f. )     //- Item
-
-      ::oLBoxDetal:SetColTitle( 03, "Código" )        //-- Columna Código
-      ::oLBoxDetal:SetColTitle( 04, "Descripción" )   //-- Columna Descripción
-      ::oLBoxDetal:SetColTitle( 05, "Cantidad" )      //-- Columna Cantidad
-      ::oLBoxDetal:SetColTitle( 06, "Precio" )        //-- Columna Precio Unitario
-      ::oLBoxDetal:SetColTitle( 07, "Descuento" )     //-- Columna Descuento
-      ::oLBoxDetal:SetColTitle( 08, "SubTotal" )      //-- Columna SubTotal
-      ::oLBoxDetal:SetColTitle( 09, "IVA (%)" )       //-- Columna IVA Porcentaje
-      ::oLBoxDetal:SetColTitle( 10, "IVA (Monto)" )   //-- Columna IVA Monto
-      ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
-      ::oLBoxDetal:SetColTitle( 21, "Imp.PVP" )      //-- Columna Otros Impuestos
-      ::oLBoxDetal:SetColTitle( 22, "Imp.PVP Unit" ) //-- Columna Otros Imp Unitario
-
-      ::oLBoxDetal:Active()
-
-      if hb_isNIL( ::rFactDetal )
-         ::oModDetal:oTreeView:ClearModel(.t.)
-      endif
-   else
- 
-      ::oModDetal:oTreeView:ClearModel(.t.)
-      aData := ::rFactDetal:GetData()
-
-//View( hb_valtoexp( aData ) )
-//if LEN(aData)>=1
-//View( LEN( aData[1] ) )
-//endif
-      if !Empty( aData )
-
-         FOR EACH aLine IN aData
+      FOR EACH aLine IN aData
    
-//View( hb_valtoexp(aLine) )
-            TRY
-               APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
-                      VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
-                             aLine[4], hb_ntos(aLine[5]),;
-                             hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
-                             hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
-                             hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
-                             hb_ntos(aLine[12]), aLine[13], ;
-                             aLine[14], aLine[15], ;
-                             aLine[16], ;
-                             hb_ntos(aLine[17]), ;
-                             aLine[18], ;
-                             aLine[19], ;
-                            hb_ntos(aLine[20]), ;
-                            hb_ntos(aLine[21]), ;
-                            hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0))
-            CATCH oErr
-               View( oErr:Description )
-            END
+         TRY
+            APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
+                   VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
+                          aLine[4], hb_ntos(aLine[5]),;
+                          hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
+                          hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
+                          hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
+                          hb_ntos(aLine[12]), aLine[13], ;
+                          aLine[14], aLine[15], ;
+                          aLine[16], ;
+                          hb_ntos(aLine[17]), ;
+                          aLine[18], ;
+                          aLine[19], ;
+                          hb_ntos(aLine[20]), ;
+                          hb_ntos(aLine[21]), ;
+                          hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0)),
+                          hb_ntos(aLine[5])
+         CATCH oErr
+            View( "__DetalRefresh(): " + oErr:Description )
+         END
 
-         NEXT
+      NEXT
 
-         __NCCalcula(oForm)
-
-      endif
+      __NCCalcula(oForm)
 
    endif
+
 return
 
 
@@ -744,7 +674,6 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
 //View( ::hDocumento )
       ::rFactDetal := ::rDocumento:Detal()
 
-//View( ::rFactDetal:Data() )
       ::cFecha := DTOC( ::hDocumento["fecha"] )
       //::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol("numero")), 8) )
       ::oLabNumero:SetValue( oModel:GetCol("numero") )
@@ -827,6 +756,30 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    __DocValFecha( oForm, ::oEntFecha, @::cPFecha )
 
+//View( ::lNew )
+//View( ::rFactDetal:GetData() )
+   if !::lNew
+      aData := {}
+      FOR EACH aLine IN ::rFactDetal:GetData()
+         AADD( aData, {hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
+                       aLine[4], hb_ntos(aLine[5]),;
+                       hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
+                       hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
+                       hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
+                       hb_ntos(aLine[12]), aLine[13], ;
+                       aLine[14], aLine[15], ;
+                       aLine[16], ;
+                       hb_ntos(aLine[17]), ;
+                       aLine[18], ;
+                       aLine[19], ;
+                       hb_ntos(aLine[20]), ;
+                       hb_ntos(aLine[21]), ;
+                       hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0)),;
+                       hb_ntos(aLine[5])})
+      NEXT
+   else
+      aData := {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0,0}}
+   endif
    if !hb_isObject( ::oModDetal )
 
       // Siempre usamos estructura manual con 22 columnas
@@ -852,9 +805,10 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
                      {"detalles_json",  "C",100,0},;
                      {"item",           "N",10, 0},;
                      {"imp_pvp",        "N",13, 2},;
-                     {"imp_pvp_unit",   "N",13, 2} ;
+                     {"imp_pvp_unit",   "N",13, 2},;
+                     {"cant_maxima",    "N",10, 2} ;
                     } ;
-             DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0}}
+             DATA   aData //{{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0,0}}
 
       DEFINE LISTBOX ::oLBoxDetal ;
              MODEL   ::oModDetal  ;
@@ -898,7 +852,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    else
  
       ::oModDetal:oTreeView:ClearModel(.t.)
-      aData := ::rFactDetal:GetData()
+      //aData := ::rFactDetal:GetData()
 
 //View( hb_valtoexp( aData ) )
 //if LEN(aData)>=1
@@ -911,22 +865,13 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
 //View( hb_valtoexp(aLine) )
             TRY
                APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
-                      VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
-                             aLine[4], hb_ntos(aLine[5]),;
-                             hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
-                             hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
-                             hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
-                             hb_ntos(aLine[12]), aLine[13], ;
-                             aLine[14], aLine[15], ;
-                             aLine[16], ;
-                             hb_ntos(aLine[17]), ;
-                             aLine[18], ;
-                             aLine[19], ;
-                            hb_ntos(aLine[20]), ;
-                            hb_ntos(aLine[21]), ;
-                            hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0))
+                      VALUES aLine[ 1], aLine[ 2], aLine[ 3], aLine[ 4], aLine[ 5], ;
+                             aLine[ 6], aLine[ 7], aLine[ 8], aLine[ 9], aLine[10], ;
+                             aLine[11], aLine[12], aLine[13], aLine[14], aLine[15], ;
+                             aLine[16], aLine[17], aLine[18], aLine[19], aLine[20], ;
+                             aLine[21], aLine[22], aLine[23]
             CATCH oErr
-               View( oErr:Description )
+               View( "__vtaNotaCD: " + oErr:Description )
             END
 
          NEXT
@@ -1009,6 +954,7 @@ return
 
 procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
    local pNextCol, pPath, uPrevio
+   local nCantNueva, nCantMax
 
    //-  ignoramos la edición si el documento esta anulado o cerrado.
    if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
@@ -1021,8 +967,9 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
 
    if nCol=__CODIGO
       //__SetValue( oTreeView, oModel, aIter, nCol, uVal )
-      __Productos( oForm, uVal, oModel, nCol, oTreeView, aIter )
-      oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
+      //__Productos( oForm, uVal, oModel, nCol, oTreeView, aIter )
+      //oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
+      // -- Por ahora no se edita producto. Se usa lo que viene de la factura. (RIGC Feb 2026)
       return
    endif
 
@@ -1033,6 +980,15 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
    endif
 
    if nCol=__CANTIDAD
+      // Validar que cantidad no exceda la de factura (columna 23)
+      nCantNueva := ToNum( uVal )
+      nCantMax := ToNum( oTreeView:GetAutoValue( 23 ) )
+      
+      if nCantMax > 0 .and. nCantNueva > nCantMax
+         ::oLabInfo:SetText( "Cantidad no puede exceder la de factura (" + hb_ntos(nCantMax) + ")" )
+         return
+      endif
+      
       __SetValue( oTreeView, oModel, aIter, nCol, uVal )
       __NCCalcula( oForm )
       oTreeView:SetPosCol( aIter, __PRECIO, .f. )
@@ -1213,7 +1169,8 @@ procedure __AddDetal( oForm )
                aLine[14], aLine[15], ;
                aLine[16], hb_ntos(aLine[17]), ;
                aLine[18], aLine[19], hb_ntos(aLine[20]), hb_ntos(aLine[21]), ;
-               hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0))
+               hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0)), ;
+               hb_ntos(aLine[5])
 
    ::oModDetal:oTreeView:SetFocus()
    ::oModDetal:GoBottom()
@@ -1392,7 +1349,7 @@ Procedure __NCSave( oForm, oFormParent )
          uResp := .F.
       endif
 //View( ::hDocumento )
-//View( ::hDocumento["numero"] )
+View( ::hDocumento["numero"] )
       if VAL(::hDocumento["numero"])>0
          ::oLabNumero:SetValue( STRZERO( VAL(::hDocumento["numero"]), 8) )
       else
@@ -1454,6 +1411,7 @@ procedure __NCSaveDetal(oTView, pModel, aIter, oForm)
    hDetal["nombre_almacen"   ] := oTView:GetAutoValue( 18, aIter )
    hDetal["detalles_json"    ] := oTView:GetAutoValue( 19, aIter )
    hDetal["item"             ] := oTView:GetAutoValue( 20, aIter )
+   hDetal["imp_pvp"          ] := oTView:GetAutoValue( 21, aIter )
 //View( oTView:GetAutoValue(20, aIter) )
    
    AADD( ::aDetal, hDetal )
@@ -1602,4 +1560,4 @@ STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),;
 
 RETURN
 
-//eof
+
