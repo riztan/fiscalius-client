@@ -1349,7 +1349,7 @@ Procedure __NCSave( oForm, oFormParent )
          uResp := .F.
       endif
 //View( ::hDocumento )
-View( ::hDocumento["numero"] )
+//View( ::hDocumento["numero"] )
       if VAL(::hDocumento["numero"])>0
          ::oLabNumero:SetValue( STRZERO( VAL(::hDocumento["numero"]), 8) )
       else
