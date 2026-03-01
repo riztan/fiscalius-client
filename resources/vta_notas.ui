@@ -759,7 +759,7 @@
                                                       </packing>
                                                     </child>
                                                     <child>
-                                                      <object class="GtkHBox" id="hbox17">
+                                                      <object class="GtkHBox" id="box_ivaexe">
                                                         <property name="visible">True</property>
                                                         <property name="can_focus">False</property>
                                                         <property name="homogeneous">True</property>
@@ -800,7 +800,7 @@
                                                       </packing>
                                                     </child>
                                                     <child>
-                                                      <object class="GtkHBox" id="hbox18">
+                                                      <object class="GtkHBox" id="box_ivared">
                                                         <property name="visible">True</property>
                                                         <property name="can_focus">False</property>
                                                         <property name="homogeneous">True</property>
@@ -841,7 +841,7 @@
                                                       </packing>
                                                     </child>
                                                     <child>
-                                                      <object class="GtkHBox" id="hbox19">
+                                                      <object class="GtkHBox" id="box_ivagen">
                                                         <property name="visible">True</property>
                                                         <property name="can_focus">False</property>
                                                         <property name="homogeneous">True</property>
@@ -882,7 +882,7 @@
                                                       </packing>
                                                     </child>
                                                     <child>
-                                                      <object class="GtkHBox" id="hbox20">
+                                                      <object class="GtkHBox" id="box_otrimp">
                                                         <property name="visible">True</property>
                                                         <property name="can_focus">False</property>
                                                         <property name="homogeneous">True</property>

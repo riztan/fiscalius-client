@@ -201,21 +201,25 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
           ID "ent_monbase" RESOURCE ::oRes 
    ::oEntMonBase:Justify( GTK_JUSTIFY_RIGHT )
 
+   DEFINE BOX ::oBoxIvaExe ID "box_ivaexe" RESOURCE ::oRes 
    ::nMontoIvaE := 0
    DEFINE MONEY ENTRY ::oEntIvaE VAR ::nMontoIvaE ;
           ID "ent_exento" RESOURCE ::oRes 
    ::oEntIvaE:Justify( GTK_JUSTIFY_RIGHT )
 
+   DEFINE BOX ::oBoxIvaRed ID "box_ivared" RESOURCE ::oRes 
    ::nMontoIvaR := 0
    DEFINE MONEY ENTRY ::oEntIvaR VAR ::nMontoIvaR ;
           ID "ent_ivared" RESOURCE ::oRes 
    ::oEntIvaR:Justify( GTK_JUSTIFY_RIGHT )
 
+   DEFINE BOX ::oBoxIvaGen ID "box_ivagen" RESOURCE ::oRes 
    ::nMontoIvaG := 0
    DEFINE MONEY ENTRY ::oEntIvaG VAR ::nMontoIvaG ;
           ID "ent_ivagen" RESOURCE ::oRes 
    ::oEntIvaG:Justify( GTK_JUSTIFY_RIGHT )
 
+   DEFINE BOX ::oBoxOtrImp ID "box_otrimp" RESOURCE ::oRes 
    ::nMontoOtrImp := 0
    DEFINE MONEY ENTRY ::oEntOtrImp VAR ::nMontoOtrImp ;
           ID "ent_otrimp" RESOURCE ::oRes 
@@ -1074,7 +1078,7 @@ return
 
 
  procedure __NCCalMontos( oTView, pModel, aIter, oForm )
-     local nBase, nMonto, nTotal, cIva, nPorcentaje
+     local nBase, nMonto, nTotal, cIva, nPorcentaje, aBox
 
    
     // Calcular total otros impuestos (imp_pvp)
@@ -1145,6 +1149,18 @@ return
              ToNum( ::oEntOtrImp:GetValue() ), 2 ) 
             
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
+
+
+   FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
+                      {::oBoxIvaRed, ::oEntIvaR}, ;
+                      {::oBoxIvaGen, ::oEntIvaG}, ;
+                      {::oBoxOtrImp, ::oEntOtrImp} }
+      if ToNum( aBox[2]:GetValue() ) = 0
+         aBox[1]:Hide()
+      else
+         aBox[1]:Show()
+      endif
+   NEXT
 
 return
 

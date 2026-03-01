@@ -181,21 +181,25 @@ procedure vta_facturas( oFormParent )
           ID "ent_monbase" RESOURCE ::oRes 
    ::oEntMonBase:Justify( GTK_JUSTIFY_RIGHT )
 
+   DEFINE BOX ::oBoxIvaExe ID "box_ivaexe" RESOURCE ::oRes 
    ::nMontoIvaE := 0
    DEFINE MONEY ENTRY ::oEntIvaE VAR ::nMontoIvaE ;
           ID "ent_exento" RESOURCE ::oRes 
    ::oEntIvaE:Justify( GTK_JUSTIFY_RIGHT )
 
+   DEFINE BOX ::oBoxIvaRed ID "box_ivared" RESOURCE ::oRes 
    ::nMontoIvaR := 0
    DEFINE MONEY ENTRY ::oEntIvaR VAR ::nMontoIvaR ;
           ID "ent_ivared" RESOURCE ::oRes 
    ::oEntIvaR:Justify( GTK_JUSTIFY_RIGHT )
 
+   DEFINE BOX ::oBoxIvaGen ID "box_ivagen" RESOURCE ::oRes 
    ::nMontoIvaG := 0
    DEFINE MONEY ENTRY ::oEntIvaG VAR ::nMontoIvaG ;
           ID "ent_ivagen" RESOURCE ::oRes 
    ::oEntIvaG:Justify( GTK_JUSTIFY_RIGHT )
 
+   DEFINE BOX ::oBoxOtrImp ID "box_otrimp" RESOURCE ::oRes 
    ::nMontoOtrImp := 0
    DEFINE MONEY ENTRY ::oEntOtrImp VAR ::nMontoOtrImp ;
           ID "ent_otrimp" RESOURCE ::oRes 
@@ -927,7 +931,7 @@ return
 
 
 procedure __CalMontos( oTView, pModel, aIter, oForm )
-   local nBase:=0, nMonto:=0, nTotal:=0, cIva, nImpPvp, nOtrImp:=0
+   local nBase:=0, nMonto:=0, nTotal:=0, cIva, nImpPvp, nOtrImp:=0, aBox
 
 //   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
 //                    ToNum( oTView:GetAutoValue(__PRECIO,   aIter)), 2 )
@@ -1005,6 +1009,23 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    ::oEntTotBs:SetValue( TRANSFORM( nTotal*TONUM(SUBSTR(::cDivisa,5)), P_92 ) ) 
    ::oEntOtrImp:SetValue( TRANSFORM( nOtrImp, P_92 ) ) // Set otros_imp
 
+   FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
+                      {::oBoxIvaRed, ::oEntIvaR}, ;
+                      {::oBoxIvaGen, ::oEntIvaG}, ;
+                      {::oBoxOtrImp, ::oEntOtrImp} }
+      if ToNum( aBox[2]:GetValue() ) = 0
+         aBox[1]:Hide()
+      else
+         aBox[1]:Show()
+      endif
+   NEXT
+/*
+   if ToNum(::oEntIvaR:GetValue())=0
+      ::oBoxIvaRed:Hide()
+   else
+      ::oBoxIvaRed:Show()
+   endif
+*/
 return
 
 
