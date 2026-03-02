@@ -1,20 +1,25 @@
-/* mae_alicuotas.xbs
+/* mae_itf.xbs
  *
  */
 
 #include "tpy_xbs.ch"
 
-procedure mae_itf( oForm, oWndParent, oEntParent )
+procedure mae_itf( oParentForm, oWndParent, oEntParent )
 
    local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oBoxBotones, oBtnNewITF
    local oLabTitulo, cLabTitulo := "IGTF"
    local cTipo,dFecha,nPorcentaje:=0
-   local rVentas, rITF, oModITF, oLBoxCli
+   local rVentas, rITF, oModITF, oLBoxCli, oForm
 
-   rVentas := ::oGEmpresa:SetModulo("Ventas")
-   rITF := rVentas:ITF()
+   SET PUBLIC oForm
 
-   if hb_isNIL(rITF)
+   ::rITF        := oParentForm:oGEmpresa:ITF()  
+   ::oParentForm := oParentForm
+
+   ::hITF := hb_hash()
+
+   if hb_isNIL(::rITF)
       MsgStop("No Hay ITF registrado")
       return
    endif
@@ -43,13 +48,16 @@ procedure mae_itf( oForm, oWndParent, oEntParent )
 
    DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
 
+   DEFINE BOX oBoxBotones ID "box_botones" RESOURCE oRes
 
-   //DEFINE BUTTON ::oBtn ACTION __vtaAlicuotaIVA( oForm, oFormParent, ::oBoxData, ::oModITF, .T.  ) ;
-   //       ID "btn_add" RESOURCE ::oRes
+   DEFINE BUTTON oBtnNewITF TEXT "+ Nuevo" ;
+          ACTION __BtnNewITF( oForm, oModITF, oLBoxCli ) ;
+          OF oBoxBotones 
+
 
    DEFINE MODEL oModITF ;
-          STRUCT rITF:Struct() ;
-          DATA   rITF:GetData()
+          STRUCT ::rITF:Struct() ;
+          DATA   ::rITF:GetData()
    
    DEFINE LISTBOX oLBoxCli ;
           MODEL oModITF ;
@@ -57,20 +65,217 @@ procedure mae_itf( oForm, oWndParent, oEntParent )
 
    oLBoxCli:lBar  := .f.
 
+   oModITF:oTreeView:bRow_Activated := nil
+
 
    oLBoxCli:SetColVisible( 1, .F. )    //- Ocultamos ID
 
    oLBoxCli:SetColTitle( 2, "Fecha" )          //- Cambiamos el titulo 
-   oLBoxCli:SetColTitle( 3, "Porcentaje" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 3, "Porcentaje" )     //- Cambiamos el titulo 
 
- 
    oLBoxCli:Active() 
+
+   /* Columna ID       */
+   #define __ID       1
    
-   
+   /* Columna Fecha   */
+   #define __FECHA    2
+   oCol := oModITF:aCol[__FECHA] 
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditITF( oForm, oSender, path, uVal, oModITF:aIter,;
+                                          oModITF:oLbx, oModITF:oTreeView, __FECHA )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   /* Columna Porcentaje */
+   #define __PORCENTAJE  3
+   oCol := oModITF:aCol[__PORCENTAJE] 
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditITF( oForm, oSender, path, uVal, oModITF:aIter,;
+                                          oModITF:oLbx, oModITF:oTreeView, __PORCENTAJE )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   /* Columna Activo */
+   #define __ACTIVO   4
+   oCol := oModITF:aCol[__ACTIVO] // Activo
+   oCol:oRenderer:bAction := {|oSender, path, uVal, aIter|;
+                               __EditITF( oForm, oSender, path, uVal, oModITF:aIter,;
+                                          oModITF:oLbx, oModITF:oTreeView, __ACTIVO )  }
+   oCol:oRenderer:SetColumn( oCol )
+
    ACTIVATE WINDOW oAliWnd MODAL
 
 return
 
 
 
+procedure __EditITF( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
+   local pNextCol, pPath, uPrevio, dFecha
+
+   // Manejo de columna Activo (toggle)
+   if nCol = __ACTIVO
+      pPath := gtk_tree_path_new_from_string( cPath )
+      uVal := !( oTreeView:GetValue( nCol, "Boolean", pPath , @aIter ) )
+      __ITFSetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath )
+      oTreeView:SetPosCol( aIter, __ACTIVO, .f. )
+      return
+   endif
+
+   if empty( uVal ) ; return ; endif
+
+   uPrevio := oTreeView:GetAutoValue( nCol )
+
+   if nCol = __FECHA
+      if hb_isString( uVal )
+         dFecha := CTOD( uVal )
+         if empty(dFecha) .and. "-" $ uVal
+            dFecha := STOD( STRTRAN( uVal, "-", "" ) )
+         endif
+         if empty(dFecha) .and. "/" $ uVal
+            if Len(uVal) == 10
+               dFecha := STOD( SubStr(uVal,7,4) + SubStr(uVal,4,2) + SubStr(uVal,1,2) )
+            endif
+         endif
+         if !empty(dFecha)
+            uVal := dFecha
+         endif
+      endif
+   endif
+
+   if nCol = __PORCENTAJE
+      if hb_isString( uVal )
+         uVal := Val( uVal )
+      endif
+   endif
+
+   __ITFSetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath, uPrevio )
+   oTreeView:SetPosCol( aIter, nCol, .f. )
+
+return
+
+
+
+PROCEDURE __ITFSetValue( oForm, oTreeView, oModel, aIter, nCol, uValue, cPath, uPrevio  )
+   local pPath, hData := hb_hash(), hResult, dFecha, cFecha
+
+   if oTreeView:IsGetSelected( aIter )
+
+      // Usar uValue directamente (el nuevo valor editado)
+      hData["id"]        := oTreeView:GetAutoValue( 1 )
+      cFecha            := oTreeView:GetAutoValue( 2 )
+      hData["porcentaje"] := oTreeView:GetAutoValue( 3 )
+      hData["activo"]    := oTreeView:GetAutoValue( 4 )
+
+      // Si es edición de porcentaje, usar uValue
+      if nCol = __PORCENTAJE
+         hData["porcentaje"] := uValue
+      endif
+
+      // Si es edición de activo, usar uValue
+      if nCol = __ACTIVO
+         hData["activo"] := uValue
+      endif
+
+      // Convertir fecha
+      if hb_isString( cFecha )
+         dFecha := CTOD( cFecha )
+         if empty(dFecha) .and. "-" $ cFecha
+            dFecha := STOD( STRTRAN( cFecha, "-", "" ) )
+         endif
+         if empty(dFecha) .and. Len(cFecha) == 8 .and. !("/" $ cFecha) .and. !("-" $ cFecha)
+            dFecha := STOD( cFecha )
+         endif
+         if !empty(dFecha)
+            hData["fecha"] := dFecha
+         else
+            hData["fecha"] := cFecha
+         endif
+      else
+         hData["fecha"] := cFecha
+       endif
+
+       if Empty(hData["id"])
+          if !Empty( hData["fecha"] ) .and. ;
+             hData["porcentaje"] != nil .and. ;
+             hb_isNumeric( hData["porcentaje"] ) .and. ;
+             hData["porcentaje"] >= 0 .and. ;
+             hData["activo"] != nil
+
+             ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> ''} )
+
+              hResult := ::rITF:SetData( hData )
+              if hResult != nil .and. hResult["return"] == .F.
+                 MsgAlert( hResult["message"] )
+                 return
+              endif
+
+              if ::rITF == nil .or. ::rITF:Save() == .F.
+                 MsgAlert( "Se presenta problema para registrar los datos.", "Atención" )
+                 return
+              endif
+              hData := ::rITF:Data()
+              if hData != nil .and. !Empty( hData["id"] )
+                 oModel:Set( aIter, __ID, hb_ntos(hData["id"]) )
+                 oModel:Set( aIter, __PORCENTAJE, TRANSFORM(hData["porcentaje"],P_62) )
+              endif
+           endif
+         else
+            // Para edición, usar uValue que es el valor editado
+            if nCol = __FECHA
+               ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> uPrevio } )
+               hData["fecha"] := uValue
+            elseif nCol = __PORCENTAJE
+               ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> cFecha } )
+               hData["porcentaje"] := uValue
+            elseif nCol = __ACTIVO
+               ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> cFecha } )
+               hData["activo"] := uValue
+            else
+               ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> cFecha } )
+            endif
+
+           if !hb_isObject( ::rITF )
+              return
+           endif
+
+            ::rITF:SetData( hData )
+            if ::rITF:Save() == .F.
+               MsgAlert( "Se presenta problema para actualizar los datos.", "Atención" )
+               return
+            endif
+           
+            // Actualizar modelo despues de guardar
+            // Convertir al tipo correcto para GTK
+            if nCol = __FECHA .and. hb_isDate( uValue )
+               oModel:Set( aIter, nCol, DTOC(uValue) )
+            elseif nCol = __PORCENTAJE .and. hb_isNumeric( uValue )
+               oModel:Set( aIter, nCol, hb_ntos(uValue) )
+            elseif nCol = __ACTIVO
+               oModel:Set( aIter, nCol, uValue )
+            else
+               oModel:Set( aIter, nCol, uValue )
+            endif
+            
+         endif
+
+    endif
+RETURN
+
+
+
+Procedure __BtnNewITF( oForm, oModITF, oLBoxCli )
+   local aIter := ARRAY(4)
+   local dHoy := DATE()
+
+   oModITF:oTreeView:SetFocus()
+   oModITF:GoTop()
+
+   APPEND LIST_STORE oModITF:oLbx ITER aIter ;
+      VALUES "", DTOC(dHoy), "0", .T.
+   
+   oModITF:oTreeView:SetFocus()
+   oModITF:GoBottom()
+
+RETURN
 //eof
