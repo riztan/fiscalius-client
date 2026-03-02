@@ -193,71 +193,71 @@ PROCEDURE __ITFSetValue( oForm, oTreeView, oModel, aIter, nCol, uValue, cPath, u
          endif
       else
          hData["fecha"] := cFecha
-       endif
+      endif
 
-       if Empty(hData["id"])
-          if !Empty( hData["fecha"] ) .and. ;
-             hData["porcentaje"] != nil .and. ;
-             hb_isNumeric( hData["porcentaje"] ) .and. ;
-             hData["porcentaje"] >= 0 .and. ;
-             hData["activo"] != nil
+      if Empty(hData["id"])
+         if !Empty( hData["fecha"] ) .and. ;
+            hData["porcentaje"] != nil .and. ;
+            hb_isNumeric( hData["porcentaje"] ) .and. ;
+            hData["porcentaje"] >= 0 .and. ;
+            hData["activo"] != nil
 
-             ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> ''} )
+            ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> ''} )
 
-              hResult := ::rITF:SetData( hData )
-              if hResult != nil .and. hResult["return"] == .F.
-                 MsgAlert( hResult["message"] )
-                 return
-              endif
-
-              if ::rITF == nil .or. ::rITF:Save() == .F.
-                 MsgAlert( "Se presenta problema para registrar los datos.", "Atención" )
-                 return
-              endif
-              hData := ::rITF:Data()
-              if hData != nil .and. !Empty( hData["id"] )
-                 oModel:Set( aIter, __ID, hb_ntos(hData["id"]) )
-                 oModel:Set( aIter, __PORCENTAJE, TRANSFORM(hData["porcentaje"],P_62) )
-              endif
-           endif
-         else
-            // Para edición, usar uValue que es el valor editado
-            if nCol = __FECHA
-               ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> uPrevio } )
-               hData["fecha"] := uValue
-            elseif nCol = __PORCENTAJE
-               ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> cFecha } )
-               hData["porcentaje"] := uValue
-            elseif nCol = __ACTIVO
-               ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> cFecha } )
-               hData["activo"] := uValue
-            else
-               ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> cFecha } )
-            endif
-
-           if !hb_isObject( ::rITF )
-              return
-           endif
-
-            ::rITF:SetData( hData )
-            if ::rITF:Save() == .F.
-               MsgAlert( "Se presenta problema para actualizar los datos.", "Atención" )
+            hResult := ::rITF:SetData( hData )
+            if hResult != nil .and. hResult["return"] == .F.
+               MsgAlert( hResult["message"] )
                return
             endif
-           
-            // Actualizar modelo despues de guardar
-            // Convertir al tipo correcto para GTK
-            if nCol = __FECHA .and. hb_isDate( uValue )
-               oModel:Set( aIter, nCol, DTOC(uValue) )
-            elseif nCol = __PORCENTAJE .and. hb_isNumeric( uValue )
-               oModel:Set( aIter, nCol, hb_ntos(uValue) )
-            elseif nCol = __ACTIVO
-               oModel:Set( aIter, nCol, uValue )
-            else
-               oModel:Set( aIter, nCol, uValue )
+
+            if ::rITF == nil .or. ::rITF:Save() == .F.
+               MsgAlert( "Se presenta problema para registrar los datos.", "Atención" )
+               return
             endif
-            
+            hData := ::rITF:Data()
+            if hData != nil .and. !Empty( hData["id"] )
+               oModel:Set( aIter, __ID, hb_ntos(hData["id"]) )
+               oModel:Set( aIter, __PORCENTAJE, TRANSFORM(hData["porcentaje"],P_62) )
+            endif
          endif
+      else
+         // Para edición, usar uValue que es el valor editado
+         if nCol = __FECHA
+            ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> uPrevio } )
+            hData["fecha"] := uValue
+         elseif nCol = __PORCENTAJE
+            ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> cFecha } )
+            hData["porcentaje"] := uValue
+         elseif nCol = __ACTIVO
+            ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> cFecha } )
+            hData["activo"] := uValue
+         else
+            ::rITF := ::oParentForm:oGEmpresa:GetITF( {"fecha"=> cFecha } )
+         endif
+
+        if !hb_isObject( ::rITF )
+           return
+        endif
+
+         ::rITF:SetData( hData )
+         if ::rITF:Save() == .F.
+            MsgAlert( "Se presenta problema para actualizar los datos.", "Atención" )
+            return
+         endif
+        
+         // Actualizar modelo despues de guardar
+         // Convertir al tipo correcto para GTK
+         if nCol = __FECHA .and. hb_isDate( uValue )
+            oModel:Set( aIter, nCol, DTOC(uValue) )
+         elseif nCol = __PORCENTAJE .and. hb_isNumeric( uValue )
+            oModel:Set( aIter, nCol, hb_ntos(uValue) )
+         elseif nCol = __ACTIVO
+            oModel:Set( aIter, nCol, uValue )
+         else
+            oModel:Set( aIter, nCol, uValue )
+         endif
+            
+      endif
 
     endif
 RETURN

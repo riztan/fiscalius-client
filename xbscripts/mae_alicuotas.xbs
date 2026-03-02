@@ -4,17 +4,21 @@
 
 #include "tpy_xbs.ch"
 
-procedure mae_alicuotas( oForm, oWndParent, oEntParent )
+procedure mae_alicuotas( oParentForm, oWndParent, oEntParent )
 
    local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oBoxBotones, oBtnNewAli
    local oLabTitulo, cLabTitulo := "Alicuotas de IVA"
-   local cTipo,dFecha,nPorcentaje:=0
-   local rVentas, rAlicuotasIVA, oModAlicuotasIVA, oLBoxCli
+   local rVentas, rAlicuota, oModAlicuota, oLBoxCli, oForm
 
-   rVentas := ::oGEmpresa:SetModulo("Ventas")
-   rAlicuotasIVA := rVentas:AlicuotasIva()
+   SET PUBLIC oForm
 
-   if hb_isNIL(rAlicuotasIVA)
+   ::rAlicuota    := oParentForm:oGEmpresa:Alicuotas()  
+   ::oParentForm := oParentForm
+
+   ::hAlicuota := hb_hash()
+
+   if hb_isNIL(::rAlicuota)
       MsgStop("No Hay alicuotas de IVA registradas")
       return
    endif
@@ -43,35 +47,295 @@ procedure mae_alicuotas( oForm, oWndParent, oEntParent )
 
    DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
 
+   DEFINE BOX oBoxBotones ID "box_botones" RESOURCE oRes
 
-   //DEFINE BUTTON ::oBtn ACTION __vtaAlicuotaIVA( oForm, oFormParent, ::oBoxData, ::oModAlicuotasIVA, .T.  ) ;
-   //       ID "btn_add" RESOURCE ::oRes
+   DEFINE BUTTON oBtnNewAli TEXT "+ Nueva" ;
+          ACTION __BtnNewAlicuota( oForm, oModAlicuota, oLBoxCli ) ;
+          OF oBoxBotones 
 
-   DEFINE MODEL oModAlicuotasIVA ;
-          STRUCT rAlicuotasIva:Struct() ;
-          DATA   rAlicuotasIva:GetData()
+
+   DEFINE MODEL oModAlicuota ;
+          STRUCT ::rAlicuota:Struct() ;
+          DATA   ::rAlicuota:GetData()
    
    DEFINE LISTBOX oLBoxCli ;
-          MODEL oModAlicuotasIVA ;
+          MODEL oModAlicuota ;
           OF oBoxData
 
    oLBoxCli:lBar  := .f.
 
+   oModAlicuota:oTreeView:bRow_Activated := nil
+
 
    oLBoxCli:SetColVisible( 1, .F. )    //- Ocultamos ID
 
-   oLBoxCli:SetColTitle( 2, "Fecha" )          //- Cambiamos el titulo 
-   oLBoxCli:SetColTitle( 3, "Tipo de tasa" )          //- Cambiamos el titulo 
-   oLBoxCli:SetColTitle( 4, "Porcentaje" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 2, "Fecha Inicio" )     
+   oLBoxCli:SetColTitle( 3, "Tipo" )          
+   oLBoxCli:SetColTitle( 4, "Porcentaje" )     
+   oLBoxCli:SetColTitle( 5, "Activo" )     
+   oLBoxCli:SetColTitle( 6, "Fecha Fin" )     
 
- 
    oLBoxCli:Active() 
+
+   /* Columna ID          */
+   #define __ID          1
    
-   
+   /* Columna Fecha Inicio */
+   #define __FECHA_INICIO  2
+   oCol := oModAlicuota:aCol[__FECHA_INICIO] 
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditAlicuota( oForm, oSender, path, uVal, oModAlicuota:aIter,;
+                                          oModAlicuota:oLbx, oModAlicuota:oTreeView, __FECHA_INICIO )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   /* Columna Tipo Tasa */
+   #define __TIPO_TASA   3
+   oCol := oModAlicuota:aCol[__TIPO_TASA] 
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditAlicuota( oForm, oSender, path, uVal, oModAlicuota:aIter,;
+                                          oModAlicuota:oLbx, oModAlicuota:oTreeView, __TIPO_TASA )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   /* Columna Porcentaje */
+   #define __PORCENTAJE   4
+   oCol := oModAlicuota:aCol[__PORCENTAJE] 
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditAlicuota( oForm, oSender, path, uVal, oModAlicuota:aIter,;
+                                          oModAlicuota:oLbx, oModAlicuota:oTreeView, __PORCENTAJE )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   /* Columna Activo */
+   #define __ACTIVO   5
+   oCol := oModAlicuota:aCol[__ACTIVO] // Activo
+   oCol:oRenderer:bAction := {|oSender, path, uVal, aIter|;
+                               __EditAlicuota( oForm, oSender, path, uVal, oModAlicuota:aIter,;
+                                          oModAlicuota:oLbx, oModAlicuota:oTreeView, __ACTIVO )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   /* Columna Fecha Fin */
+   #define __FECHA_FIN   6
+   oCol := oModAlicuota:aCol[__FECHA_FIN] 
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditAlicuota( oForm, oSender, path, uVal, oModAlicuota:aIter,;
+                                          oModAlicuota:oLbx, oModAlicuota:oTreeView, __FECHA_FIN )  }
+   oCol:oRenderer:SetColumn( oCol )
+ 
+  
    ACTIVATE WINDOW oAliWnd MODAL
 
 return
 
 
 
+procedure __EditAlicuota( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
+   local pNextCol, pPath, uPrevio, dFecha
+
+   // Manejo de columna Activo (toggle)
+   if nCol = __ACTIVO
+      pPath := gtk_tree_path_new_from_string( cPath )
+      uVal := !( oTreeView:GetValue( nCol, "Boolean", pPath , @aIter ) )
+      __AlicuotaSetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath )
+      oTreeView:SetPosCol( aIter, __ACTIVO, .f. )
+      return
+   endif
+
+   if empty( uVal ) ; return ; endif
+
+   uPrevio := oTreeView:GetAutoValue( nCol )
+
+   if nCol = __FECHA_INICIO .or. nCol = __FECHA_FIN
+      if hb_isString( uVal )
+         dFecha := CTOD( uVal )
+         if empty(dFecha) .and. "-" $ uVal
+            dFecha := STOD( STRTRAN( uVal, "-", "" ) )
+         endif
+         if empty(dFecha) .and. "/" $ uVal
+            if Len(uVal) == 10
+               dFecha := STOD( SubStr(uVal,7,4) + SubStr(uVal,4,2) + SubStr(uVal,1,2) )
+            endif
+         endif
+         if !empty(dFecha)
+            uVal := dFecha
+         endif
+      endif
+   endif
+
+   if nCol = __TIPO_TASA
+      uVal := LEFT( ALLTRIM(UPPER( uVal )), 3 )
+   endif
+
+   if nCol = __PORCENTAJE
+      if hb_isString( uVal )
+         uVal := Val( uVal )
+      endif
+   endif
+
+   __AlicuotaSetValue( oForm, oTreeView, oModel, aIter, nCol, uVal, cPath, uPrevio )
+   oTreeView:SetPosCol( aIter, nCol, .f. )
+
+return
+
+
+
+PROCEDURE __AlicuotaSetValue( oForm, oTreeView, oModel, aIter, nCol, uValue, cPath, uPrevio  )
+   local pPath, hData := hb_hash(), hResult, dFecha, cFecha
+
+   if oTreeView:IsGetSelected( aIter )
+
+      // Obtener valores del TreeView
+      hData["id"]            := oTreeView:GetAutoValue( 1 )
+      cFecha                := oTreeView:GetAutoValue( 2 )
+      hData["tipo_tasa"]    := oTreeView:GetAutoValue( 3 )
+      hData["porcentaje"]   := oTreeView:GetAutoValue( 4 )
+      hData["activo"]       := oTreeView:GetAutoValue( 5 )
+      hData["fecha_fin"]    := oTreeView:GetAutoValue( 6 )
+
+      // Si es edición de porcentaje, usar uValue
+      if nCol = __PORCENTAJE
+         hData["porcentaje"] := uValue
+      endif
+
+      // Si es edición de activo, usar uValue
+      if nCol = __ACTIVO
+         hData["activo"] := uValue
+      endif
+
+      // Si es edición de tipo_tasa, usar uValue
+      if nCol = __TIPO_TASA
+         hData["tipo_tasa"] := uValue
+      endif
+
+      // Si es edición de fecha_fin, usar uValue
+      if nCol = __FECHA_FIN
+         hData["fecha_fin"] := uValue
+      endif
+
+      // Convertir fecha inicio
+      if hb_isString( cFecha )
+         dFecha := CTOD( cFecha )
+         if empty(dFecha) .and. "-" $ cFecha
+            dFecha := STOD( STRTRAN( cFecha, "-", "" ) )
+         endif
+         if empty(dFecha) .and. Len(cFecha) == 8 .and. !("/" $ cFecha) .and. !("-" $ cFecha)
+            dFecha := STOD( cFecha )
+         endif
+         if !empty(dFecha)
+            hData["fecha_inicio"] := dFecha
+         else
+            hData["fecha_inicio"] := cFecha
+         endif
+      else
+         hData["fecha_inicio"] := cFecha
+      endif
+
+      // Convertir fecha fin si es string
+      if hb_isString( hData["fecha_fin"] )
+         dFecha := CTOD( hData["fecha_fin"] )
+         if empty(dFecha) .and. "-" $ hData["fecha_fin"]
+            dFecha := STOD( STRTRAN( hData["fecha_fin"], "-", "" ) )
+         endif
+         if empty(dFecha) .and. Len(hData["fecha_fin"]) == 8 .and. !("/" $ hData["fecha_fin"]) .and. !("-" $ hData["fecha_fin"])
+            dFecha := STOD( hData["fecha_fin"] )
+         endif
+         if !empty(dFecha)
+            hData["fecha_fin"] := dFecha
+         endif
+      endif
+
+      if Empty(hData["id"])
+         // Es nuevo registro - primero actualizamos el modelo, luego intentamos guardar
+View( "col = "+hb_valtoexp(nCol)+" -> "+VALTYPE(uValue)+" -> "+hb_valtoexp( uValue ) )
+         oModel:Set( aIter, nCol, iif( VALTYPE(uValue)="N", TRANSFORM(uValue,P_62), uValue) )
+
+         if !Empty( hData["fecha_inicio"] ) .and. ;
+            !Empty( hData["tipo_tasa"] ) .and. ;
+            hData["porcentaje"] != nil .and. ;
+            hb_isNumeric( hData["porcentaje"] ) .and. ;
+            hData["porcentaje"] >= 0 .and. ;
+            hData["activo"] != nil
+
+            ::rAlicuota := ::oParentForm:oGEmpresa:GetAlicuota( {"fecha_inicio"=> ''} )
+
+            hResult := ::rAlicuota:SetData( hData )
+            if hResult != nil .and. hResult["return"] == .F.
+               MsgAlert( hResult["message"] )
+               return
+            endif
+            if ::rAlicuota == nil .or. ::rAlicuota:Save() == .F.
+               MsgAlert( "Se presenta problema para registrar los datos.", "Atención" )
+               return
+            endif
+            hData := ::rAlicuota:Data()
+            if hData != nil .and. !Empty( hData["id"] )
+               oModel:Set( aIter, __ID, hb_ntos(hData["id"]) )
+            endif
+         endif
+      else
+         // Es edición de registro existente
+         if nCol = __FECHA_INICIO
+            ::rAlicuota := ::oParentForm:oGEmpresa:GetAlicuota( {"fecha_inicio"=> uPrevio } )
+            hData["fecha_inicio"] := uValue
+         elseif nCol = __TIPO_TASA
+            ::rAlicuota := ::oParentForm:oGEmpresa:GetAlicuota( {"fecha_inicio"=> cFecha } )
+            hData["tipo_tasa"] := uValue
+         elseif nCol = __PORCENTAJE
+            ::rAlicuota := ::oParentForm:oGEmpresa:GetAlicuota( {"fecha_inicio"=> cFecha } )
+            hData["porcentaje"] := uValue
+         elseif nCol = __ACTIVO
+            ::rAlicuota := ::oParentForm:oGEmpresa:GetAlicuota( {"fecha_inicio"=> cFecha } )
+            hData["activo"] := uValue
+         elseif nCol = __FECHA_FIN
+            ::rAlicuota := ::oParentForm:oGEmpresa:GetAlicuota( {"fecha_inicio"=> cFecha } )
+            hData["fecha_fin"] := uValue
+         else
+            ::rAlicuota := ::oParentForm:oGEmpresa:GetAlicuota( {"fecha_inicio"=> cFecha } )
+         endif
+
+         if !hb_isObject( ::rAlicuota )
+            return
+         endif
+
+         ::rAlicuota:SetData( hData )
+         if ::rAlicuota:Save() == .F.
+            MsgAlert( "Se presenta problema para actualizar los datos.", "Atención" )
+            return
+         endif
+         
+         // Actualizar modelo despues de guardar
+         // Convertir al tipo correcto para GTK
+         if (nCol = __FECHA_INICIO .or. nCol = __FECHA_FIN) .and. hb_isDate( uValue )
+            oModel:Set( aIter, nCol, DTOC(uValue) )
+         elseif nCol = __PORCENTAJE .and. hb_isNumeric( uValue )
+            oModel:Set( aIter, nCol, hb_ntos(uValue) )
+         elseif nCol = __ACTIVO
+            oModel:Set( aIter, nCol, uValue )
+         else
+            oModel:Set( aIter, nCol, uValue )
+         endif
+         
+      endif
+
+   endif
+RETURN
+
+
+
+Procedure __BtnNewAlicuota( oForm, oModAlicuota, oLBoxCli )
+   local aIter := ARRAY(6)
+   local dHoy := DATE()
+
+   oModAlicuota:oTreeView:SetFocus()
+   oModAlicuota:GoTop()
+
+   APPEND LIST_STORE oModAlicuota:oLbx ITER aIter ;
+      VALUES "", DTOC(dHoy), "", 0, .T., ""
+   
+   oModAlicuota:oTreeView:SetFocus()
+   oModAlicuota:GoBottom()
+
+RETURN
 //eof
