@@ -1,0 +1,222 @@
+/* vta_ctasxcobrar.xbs
+ *
+ * Formulario para consultar Cuentas por Cobrar en Fiscalius
+ * Usa método CxCxFlujo() del servidor
+ * Archivo de recursos: vta_ctasxcobrar.ui
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure vta_ctasxcobrar( oFormParent, oWndParent, oEntParent )
+   local oForm 
+   local oCxcWnd, oRes
+   local oImgBanner, oImgLogo
+   local rFinanzas, oCxc, oModCxc, oLBoxCxc
+   local oBtnBuscar, oBtnSalir, oBtnVerDetalle
+   local cEntCliente, cEntDocumento, cEntNro, oEntCliente, oEntDocumento, oEntNro
+
+   SET PUBLIC oForm
+
+   // Obtener rFinanzas directamente de oFormParent
+   // oFormParent debería tener oGEmpresa
+   rFinanzas := oFormParent:oGEmpresa:SetModulo("Finanzas")
+
+   // Verificar que rFinanzas no sea nil
+   if hb_isNIL(rFinanzas)
+      MsgStop("No se pudo acceder al módulo Finanzas")
+      return
+   endif
+
+   // Guardar en variable pública para usar en callbacks
+   ::rFinanzas := rFinanzas
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_ctasxcobrar.ui"
+
+   DEFINE WINDOW oCxcWnd ;
+          TITLE "Fiscalius. Cuentas por Cobrar" ;
+          SIZE 1000,600 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ID "img_banner" RESOURCE oRes
+   oImgBanner:Adjust(1000)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "img_logo" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   // Campos de filtro del UI
+   DEFINE ENTRY oEntCliente VAR cEntCliente ;
+          ID "ent_cliente" RESOURCE oRes
+
+   DEFINE ENTRY oEntDocumento VAR cEntDocumento ;
+          ID "ent_documento" RESOURCE oRes
+
+   DEFINE ENTRY oEntNro VAR cEntNro ;
+          ID "ent_nro" RESOURCE oRes
+
+    // Botones del UI
+    DEFINE BUTTON oBtnBuscar ;
+           ACTION __CxcBuscar( oForm, oCxcWnd, oModCxc, oLBoxCxc, ;
+                              oEntCliente, oEntDocumento, oEntNro ) ;
+           ID "btn_buscar" RESOURCE oRes
+
+    DEFINE BUTTON oBtnVerDetalle ;
+           ACTION __CxcVerDetalle( oCxcWnd, oModCxc, oLBoxCxc ) ;
+           ID "btn_detalle" RESOURCE oRes
+           oBtnVerDetalle:Hide()
+
+   DEFINE BUTTON oBtnSalir ;
+          ACTION oCxcWnd:End() ;
+          ID "btn_salir" RESOURCE oRes
+
+   // Box para el listbox
+   DEFINE BOX oBoxData ID "box_data" RESOURCE oRes EXPAND FILL
+
+   // Cargar datos iniciales (CxC pendientes)
+   oCxc := rFinanzas:CxCxFlujo()
+
+   if hb_isNIL( oCxc )
+      MsgStop("No hay datos de Cuentas por Cobrar disponibles")
+      return
+   endif
+
+   DEFINE MODEL oModCxc ;
+          STRUCT oCxc:Struct() ;
+          DATA   oCxc:GetData()
+
+   DEFINE LISTBOX oLBoxCxc ;
+          MODEL oModCxc ;
+          OF oBoxData
+
+   oLBoxCxc:lBar := .F.
+
+   oLBoxCxc:bEdit := {||.t.}
+
+   // Ocultar columnas técnicas
+   oLBoxCxc:SetColVisible( 1, .F. )    // empresa_id
+   oLBoxCxc:SetColVisible( 2, .F. )    // cliente_id
+   oLBoxCxc:SetColVisible( 6, .F. )    // transaccion_id
+   oLBoxCxc:SetColVisible( 7, .F. )    // documento_id
+   oLBoxCxc:SetColVisible( 16, .F. )  // relacionado
+   oLBoxCxc:SetColVisible( 17, .F. )   // tasa_emision
+   oLBoxCxc:SetColVisible( 18, .F. )  // tasa_actual
+   oLBoxCxc:SetColVisible( 22, .F. )  // monto_base
+   oLBoxCxc:SetColVisible( 23, .F. )  // saldo_pendiente_efectivo
+   oLBoxCxc:SetColVisible( 24, .F. )  // comportamiento_documento
+   oLBoxCxc:SetColVisible( 28, .F. )  // derivados
+
+   // Títulos de columnas
+   oLBoxCxc:SetColTitle( 3, "Cód." )
+   oLBoxCxc:SetColTitle( 4, "Cliente" )
+   oLBoxCxc:SetColTitle( 5, "RIF" )
+   oLBoxCxc:SetColTitle( 8, "Tipo Doc." )
+   oLBoxCxc:SetColTitle( 9, "Nro. Documento" )
+   oLBoxCxc:SetColTitle( 10, "Fecha" )
+   oLBoxCxc:SetColTitle( 11, "Monto" )
+   oLBoxCxc:SetColTitle( 12, "Moneda" )
+   oLBoxCxc:SetColTitle( 13, "Aplicado" )
+   oLBoxCxc:SetColTitle( 14, "Saldo" )
+   oLBoxCxc:SetColTitle( 15, "Estado" )
+   oLBoxCxc:SetColTitle( 19, "Monto Bs." )
+   oLBoxCxc:SetColTitle( 20, "Dif. Camb." )
+   oLBoxCxc:SetColTitle( 21, "Dif. %" )
+   oLBoxCxc:SetColTitle( 25, "Conv. Bs." )
+   oLBoxCxc:SetColTitle( 26, "Saldo Conv." )
+
+   oLBoxCxc:Active()
+
+   ACTIVATE WINDOW oCxcWnd MODAL
+
+return
+
+
+
+procedure __CxcBuscar( oForm, oWnd, oModel, oList, oEntCliente, oEntDocumento, oEntNro )
+   local hParam := hb_hash()
+   local oCxc, aData
+   local cCliente, cDocumento, cNro
+   local aLine, aIter := ARRAY( 31 )  // 31 columnas según CxCxFlujo
+   local rFinanzas
+
+   // Obtener rFinanzas desde oForm
+   rFinanzas := oForm:rFinanzas
+
+   // Obtener valores de los campos de filtro
+   cCliente   := alltrim( oEntCliente:GetText() )
+   cDocumento := alltrim( oEntDocumento:GetText() )
+   cNro       := alltrim( oEntNro:GetText() )
+
+   // Construir parámetros
+   if !empty( cCliente )
+      hParam[ "cliente" ] := cCliente
+   endif
+
+   if !empty( cDocumento )
+      hParam[ "documento_id" ] := cDocumento
+   endif
+
+   if !empty( cNro )
+      hParam[ "nro_documento" ] := cNro
+   endif
+
+   // Por defecto mostrar solo pendientes
+   hParam[ "estado" ] := "P"
+
+   oCxc := rFinanzas:CxCxFlujo( hParam )
+
+   if !hb_isObject( oCxc )
+      MsgStop( "No hay información al respecto", "Lo siento.." )
+      return
+   endif
+
+   if !hb_isNIL( oCxc )
+      // Limpiar modelo existente
+      oModel:oTreeView:ClearModel(.t.)
+
+      // Agregar datos al modelo
+      aData := oCxc:GetData()
+      FOR EACH aLine IN aData
+         APPEND LIST_STORE oModel:oLbx ITER aIter ;
+                VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], aLine[4], aLine[5], ;
+                       hb_ntos(aLine[6]), hb_ntos(aLine[7]), aLine[8], aLine[9], DTOC(aLine[10]), ;
+                       TRANSFORM(aLine[11],P_92), hb_ntos(aLine[12]), TRANSFORM(aLine[13],P_92), TRANSFORM(aLine[14],P_92), aLine[15], ;
+                       aLine[16], TRANSFORM(aLine[17],P_92), TRANSFORM(aLine[18],P_92), TRANSFORM(aLine[19],P_92), TRANSFORM(aLine[20],P_92), ;
+                       TRANSFORM(aLine[21],P_92), DTOC(aLine[22]), TRANSFORM(aLine[23],P_92), TRANSFORM(aLine[24],P_92), aLine[25], ;
+                       TRANSFORM(aLine[26],P_92), TRANSFORM(aLine[27],P_92), aLine[28] 
+                       //, aLine[29], aLine[30], ;
+                       //aLine[31]
+      NEXT
+   endif
+
+return
+
+
+procedure __CxcVerDetalle( oWnd, rFinanzas, oModel, oList )
+return
+/*
+   local aSelected := oList:GetSelected()
+   local nTransId
+
+   if empty( aSelected )
+      MsgInfo("Seleccione un documento para ver el detalle")
+      return
+   endif
+
+   // Obtener ID de transacción de la fila seleccionada
+   nTransId := oList:GetAutoValue( 6, aSelected[1] )  // Columna 6 = transaccion_id
+
+   if empty( nTransId )
+      MsgStop("No se pudo obtener el ID de la transacción")
+      return
+   endif
+
+   // Aquí se podría abrir un detalle de la transacción
+   // Por ahora solo mostramos info
+   MsgInfo("Detalle de Transacción ID: " + hb_ntos(nTransId))
+
+return
+*/
+
+//eof
