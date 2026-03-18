@@ -74,7 +74,15 @@ return
 
 
 procedure medpag_edit( oForm, oAliWnd, oModel, rVentas, lNew )
-   local oRes, oUsuForm, hData
+   local oRes, oUsuForm, hData,aCajBco := {},aComporta := {}
+   
+   
+   AADD( aCajBco, "C") 
+   AADD( aCajBco, "B") 
+   
+   AADD( aComporta, "Ambos") 
+   AADD( aComporta, "Suma") 
+   AADD( aComporta, "Resta") 
 
    default lNew := .T.
 
@@ -104,7 +112,7 @@ procedure medpag_edit( oForm, oAliWnd, oModel, rVentas, lNew )
       oUsuForm:cNombre     := oModel:GetCol( 3 )
       oUsuForm:cComporta    := oModel:GetCol( 4 )
       oUsuForm:lGenITF    := oModel:GetCol( 5 )
-      oUsuForm:cAfeCajBco    := oModel:GetCol( 6 )
+      oUsuForm:cAfeCajBco    := IIF(oModel:GetCol( 6 )="B","B","C")
       oUsuForm:lActivo     := oModel:GetCol( 7 )
    endif
 
@@ -135,15 +143,20 @@ procedure medpag_edit( oForm, oAliWnd, oModel, rVentas, lNew )
 
       DEFINE ENTRY oUsuForm:oEntNombre VAR oUsuForm:cNombre ID "ent_nombre" RESOURCE oRes
 
-      DEFINE ENTRY oUsuForm:oEntComporta VAR oUsuForm:cComporta ID "ent_comporta" RESOURCE oRes
 
+	  DEFINE BOX oUsuForm:oBoxComporta ID "hbox_comporta" RESOURCE oRes
+      DEFINE COMBOBOX oUsuForm:oCBComporta VAR oUsuForm:cComporta ITEMS aComporta;
+	  OF oUsuForm:oBoxComporta  
+	  
       DEFINE CHECKBOX oUsuForm:oChkGenITF VAR oUsuForm:lGenITF ID "chk_genitf" RESOURCE oRes
       
-      DEFINE ENTRY oUsuForm:oEntAfeCajBco VAR oUsuForm:cAfeCajBco ID "ent_afecajbco" RESOURCE oRes
+     // DEFINE ENTRY oUsuForm:oEntAfeCajBco VAR oUsuForm:cAfeCajBco ID "ent_afecajbco" RESOURCE oRes
+	 
+	   DEFINE BOX oUsuForm:oBoxAfeCajBco ID "hbox_afecajbco" RESOURCE oRes
+	  DEFINE COMBOBOX oUsuForm:oCBAfeCajBco VAR oUsuForm:cAfeCajBco ITEMS aCajBco ;
+	  OF oUsuForm:oBoxAfeCajBco  
       
       DEFINE CHECKBOX oUsuForm:oChkActivo VAR oUsuForm:lActivo ID "chk_activo" RESOURCE oRes
-
-     
 
       DEFINE BUTTON oUsuForm:oBtnSave ACTION __MedPagSave( oUsuForm ) ID "btn_save" RESOURCE oRes
 
@@ -180,15 +193,18 @@ procedure __MedPagSave( oForm )
 
    // Guardar los datos del MedioPago
    hData := oForm:rMedioPago:Data()
+   
    oForm:rMedioPago:SetData( { "codigo"        => oForm:cCodigo,   ;
                              "nombre"       => oForm:cNombre,  ;
                              "comportamiento" => oForm:cComporta, ;
                              "genitf"       => oForm:lGenITF,  ;                             
                              "activo"       => oForm:lActivo,  ;
                              "afecajbco"         => oForm:cAfeCajBco     } )
+							 
+	
 
    uResp := oForm:rMedioPago:Save()
-//View( Valtype(uResp) )
+//view(hdata)
 
    if !( ValType( uResp ) = "H" .and. uResp["return"] = .T. )
       //View( hb_valtoexp(uResp) )

@@ -36,6 +36,8 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
 //View( rProducto:ClassName() )
 
    oInvForm:hData := oInvForm:rProducto:Data()
+   
+   
    //Actualizamos formatos numéricos.
 
    oInvForm:hData["imp_pvp"        ] := TRANSFORM( oInvForm:hData["imp_pvp"        ], P_92 ) 
@@ -44,7 +46,8 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
    oInvForm:hData["stock_total"    ] := TRANSFORM( oInvForm:hData["stock_total"    ], P_92 )
    oInvForm:hData["capacidad"        ] := TRANSFORM( oInvForm:hData["capacidad"        ], P_92 ) 
    oInvForm:hData["grados_alcohol"        ] := TRANSFORM( oInvForm:hData["grados_alcohol"        ], P_92 ) 
-
+   oInvForm:hData["cant_und_agru"        ] := TRANSFORM( oInvForm:hData["cant_und_agru"        ], P_92 ) 
+//
 //   oInvForm:cDescripcion := oInvForm:hData["descripcion"]
 //   oInvForm:cCodigo_barras := oInvForm:hData["codigo_barras"]
    oInvForm:lIVA := .t. //iif( oInvForm:hData["incluye_iva"]="S", .T., .F. )
@@ -65,7 +68,7 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_inventario.ui"
 
-   DEFINE WINDOW oInvForm:oWnd TITLE "Productos" SIZE 880,500 ;
+   DEFINE WINDOW oInvForm:oWnd TITLE "Productos" SIZE 1080,650 ;
           OF oInvWnd ;
           ID "window1" RESOURCE oRes
 
@@ -141,6 +144,16 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
 	 DEFINE INTEGER ENTRY oInvForm:oEntGradosAlcohol VAR oInvForm:hData["grados_alcohol"] ;
              VALID __ValidaMonto( oInvForm:oEntGradosAlcohol ) ;
              ID "ent_grados_alcohol"  RESOURCE oRes
+			 
+			 
+	 DEFINE INTEGER ENTRY oInvForm:oEntUnidadInd VAR oInvForm:hData["unidad_ind"] ;
+             ID "ent_unidad_ind"  RESOURCE oRes
+			 
+	 DEFINE INTEGER ENTRY oInvForm:oEntUnidadAgru VAR oInvForm:hData["unidad_agru"] ;
+             ID "ent_unidad_agru"  RESOURCE oRes
+			 
+	DEFINE INTEGER ENTRY oInvForm:oEntCantUndAgru VAR oInvForm:hData["cant_und_agru"] ;
+             ID "ent_cant_und_agru"  RESOURCE oRes
 
 
       DEFINE BUTTON oInvForm:oBtnSave   ACTION __MaeInvSave( oInvForm ) ID "btn_save" RESOURCE oRes
@@ -156,9 +169,9 @@ return
 
 Function __ValidaMonto( oEntry )
 
-   local cMonto := oEntry:GetText()
+   //local cMonto := oEntry:GetText()
 
-   oEntry:SetText( TRANSFORM( ToNum(cMonto), P_92) )
+  // oEntry:SetText( TRANSFORM( ToNum(cMonto), P_92) )
 
 return .t.
 
@@ -192,10 +205,12 @@ Procedure __MaeInvSave( oForm )
    if lNew
       //::hData["tipo"         ] := "P" // (P)roducto
       ::hData["unidad_medida"] := "UNIDAD"
+	 // ::hData["unidad_ind"] := "UND"
    endif
 
    /* Algunas validaciones previas */
    hData := ::hData
+   view(hdata)
 
    // Convertir incluye_iva a boolean para PostgreSQL
    if hb_hHasKey(hData, "incluye_iva")
@@ -210,7 +225,8 @@ Procedure __MaeInvSave( oForm )
 //      hData["incluye_iva"] :=  iif( ALLTRIM(Upper(::hData["incluye_iva"]))="S",.T.,.F. )
 //   endif
 
-   FOR EACH cCol IN {"precio_unitario","stock_total","stock_minimo","imp_pvp","codigo_barras","capacidad","grados_alcohol"}
+   //  FOR EACH cCol IN {"precio_unitario","stock_total","stock_minimo","imp_pvp","codigo_barras"}
+   FOR EACH cCol IN {"precio_unitario","stock_total","stock_minimo","imp_pvp","codigo_barras","capacidad","grados_alcohol","cant_und_agru"}
       if VALTYPE( hData[ cCol ] )="C"
          hData[ cCol ] := TONUM( ::hData[cCol] )
       endif
@@ -230,7 +246,7 @@ Procedure __MaeInvSave( oForm )
    //- Atualizar el modelo de datos de la ventana con la lista de productos.
 
    hData := ::rProducto:Data()
-View( hData )
+//View( hData )
    // Verificar si es un producto nuevo (no hay selección en el modelo)
    if lNew 
       // Producto nuevo: añadir una nueva fila al modelo
@@ -261,11 +277,15 @@ View( hData )
                     "",; //hData["detalles_json"            ], ; //3
                     "0",; //hData["precio_full"              ], ; //4
                     "",; //hData["incluye_iva"              ], ; //6
-					"0",; //hData["capacidad"              ], ; //
-					"0",; //hData["grados_alcohol"              ], ; //
+                    "0",; //hData["capacidad"              ], ; //
+					"0",; //hData["grados_alcohol"              ], ; //	   
+					hData["unidad_ind"              ], ; 	   
+					hData["unidad_agru"              ], ; 	   
+					hData["cant_und_agru"              ], ; 	   
                     hb_ntos(hData["imp_pvp"                  ])   //7
-                    
+       
 
+			
       // Establecer el cursor en la nueva fila
       gtk_tree_view_set_cursor( ::oModel:oTreeView:pWidget, ::oModel:oTreeView:GetPath( aIter ), NIL, .F. )
    else
