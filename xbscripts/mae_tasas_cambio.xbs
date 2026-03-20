@@ -1,68 +1,233 @@
 /* mae_tasas_cambio.xbs
  *
- * Formulario para consultar histórico de Tasas de Cambio en Fiscalius
+ * Formulario para gestionar Tasas de Cambio históricas en Fiscalius
+ * Tabla: tpy_global.mae_monedas_transacciones
  *
  */
 
 #include "tpy_xbs.ch"
 
 procedure mae_tasas_cambio( oForm, oWndParent, oEntParent )
-   local oAliWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oAliWnd, oRes, oImgBanner, oImgLogo, oBoxData
    local oLabTitulo, cLabTitulo := "Tasas de Cambio"
-   local rTasasCambio, oModTasas, oLBoxCli
+   local rTasas, oModTasas, oLBoxTasas
 
-   rTasasCambio := ::oGEmpresa:TasasDeCambio()
-
-   if hb_isNIL(rTasasCambio)
-      MsgStop("No hay tasas de cambio registradas")
+   if !oTPuy:RunXBS( "netio_check" )
+      MsgStop( "Problemas de conexión con el servidor." )
       return
    endif
 
-   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+   rTasas := ::oGEmpresa:TasasDeCambio()
+
+   if hb_isNIL( rTasas )
+      MsgStop( "No se pudo obtener el listado de tasas de cambio." )
+      return
+   endif
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_listbox.ui"
 
    DEFINE WINDOW oAliWnd ;
           TITLE "Fiscalius. Tasas de Cambio" ;
-          SIZE 700,400 ;
+          SIZE 800, 450 ;
           ID "window1" RESOURCE oRes
 
    DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
           ID "lab_title" RESOURCE oRes
 
    DEFINE IMAGE oImgBanner ;
-          FILE oTPuy:cImages+"banner_02.png"; 
+          FILE oTPuy:cImages + "banner_02.png" ;
           ID "image1" RESOURCE oRes
-          oImgBanner:Adjust(900)
+          oImgBanner:Adjust( 900 )
 
    DEFINE IMAGE oImgLogo ;
-          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          FILE oTPuy:cImages + "fiscalius_logo_02.png" ;
           ID "image2" RESOURCE oRes
-          oImgLogo:Adjust(60)
+          oImgLogo:Adjust( 60 )
 
    DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
 
    DEFINE MODEL oModTasas ;
-          STRUCT rTasasCambio:Struct() ;
-          DATA   rTasasCambio:GetData()
-   
-   DEFINE LISTBOX oLBoxCli ;
+          STRUCT rTasas:Struct() ;
+          DATA   rTasas:GetData()
+
+   DEFINE LISTBOX oLBoxTasas ;
           MODEL oModTasas ;
           OF oBoxData
 
-   oLBoxCli:lBar := .F.
-   oLBoxCli:bEdit := {|| .T. }   // Deshabilitar edición
-    
-   oLBoxCli:SetColVisible( 1, .F. )    // Ocultamos ID
-   
-   oLBoxCli:SetColTitle( 2, "Moneda" )
-   oLBoxCli:SetColTitle( 3, "Nombre Moneda" )
-   oLBoxCli:SetColTitle( 4, "Fecha" )
-   oLBoxCli:SetColTitle( 5, "Valor" )
-   oLBoxCli:SetColTitle( 6, "Moneda Base" )
-   oLBoxCli:SetColTitle( 7, "Nombre Moneda Base" )
-   
+   oLBoxTasas:lBar := .F.
+   oLBoxTasas:bNew  := {|oModel| tasacamb_edit( oForm, oAliWnd, oModTasas, .T. /*lNew*/ ) }
+   oLBoxTasas:bEdit := {|oModel| tasacamb_edit( oForm, oAliWnd, oModTasas, .F. /*lNew*/ ) }
 
-   oLBoxCli:Active()
+   // Columnas del TasasDeCambio():
+   // 1=id  2=moneda  3=nombre_moneda  4=fecha  5=valor  6=moneda_base  7=nombre_moneda_base
+   oLBoxTasas:SetColVisible( 1, .F. )
+   oLBoxTasas:SetColTitle( 2, "Moneda" )
+   oLBoxTasas:SetColTitle( 3, "Nombre" )
+   oLBoxTasas:SetColTitle( 4, "Fecha" )
+   oLBoxTasas:SetColTitle( 5, "Valor (Bs)" )
+   oLBoxTasas:SetColTitle( 6, "Moneda Base" )
+   oLBoxTasas:SetColTitle( 7, "Nombre Base" )
 
    ACTIVATE WINDOW oAliWnd MODAL
 
- return
+return
+
+
+
+procedure tasacamb_edit( oFormParent, oAliWnd, oModel, lNew )
+   local oRes, oTasForm, hData, nId
+
+   default lNew := .T.
+
+   SET PUBLIC oTasForm
+
+   oTasForm:lForce   := .F.
+   oTasForm:lClose   := .F.
+   oTasForm:lNew     := lNew
+   oTasForm:oModel   := oModel
+   oTasForm:oAliWnd  := oAliWnd
+   oTasForm:oParent  := oFormParent
+
+   if lNew
+      oTasForm:cMoneda  := ""
+      oTasForm:cFecha   := DTOC( DATE() )
+      oTasForm:nValor   := 0
+      oTasForm:cMonBase := "VES"
+      oTasForm:rTasa    := oFormParent:oGEmpresa:GetTasaCambio( {} )
+   else
+      nId := oModel:GetCol( 1 )
+      oTasForm:cMoneda  := ALLTRIM( oModel:GetCol( 2 ) )
+      oTasForm:cFecha   := ALLTRIM( oModel:GetCol( 4 ) )
+      oTasForm:nValor   := oModel:GetCol( 5 )
+      oTasForm:cMonBase := ALLTRIM( oModel:GetCol( 6 ) )
+      oTasForm:rTasa    := oFormParent:oGEmpresa:GetTasaCambio( { "id" => nId } )
+   endif
+
+   hData := oTasForm:rTasa:Data()
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources + "mae_tasas_cambio.ui"
+
+   DEFINE WINDOW oTasForm:oWnd TITLE "Tasa de Cambio" SIZE 480, 280 ;
+          OF oAliWnd ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oTasForm:oImgBanner ID "img_banner" RESOURCE oRes
+      oTasForm:oImgBanner:Adjust( 900 )
+
+      DEFINE IMAGE oTasForm:oImgLogo ID "img_logo" RESOURCE oRes
+      oTasForm:oImgLogo:Adjust( 60 )
+
+      DEFINE ENTRY oTasForm:oEntMoneda VAR oTasForm:cMoneda ;
+             ID "ent_moneda" RESOURCE oRes
+
+      DEFINE ENTRY TYPE DATE oTasForm:oEntFecha VAR oTasForm:cFecha CALENDAR ;
+             ID "ent_fecha" RESOURCE oRes
+
+      DEFINE ENTRY oTasForm:oEntValor VAR oTasForm:nValor ;
+             ID "ent_valor" RESOURCE oRes
+
+      DEFINE ENTRY oTasForm:oEntMonBase VAR oTasForm:cMonBase ;
+             ID "ent_monbase" RESOURCE oRes
+
+      DEFINE BUTTON oTasForm:oBtnSave ACTION __TasaSave( oTasForm ) ;
+             ID "btn_save" RESOURCE oRes
+
+      DEFINE BUTTON oTasForm:oBtnCancel ;
+             ACTION ( oTasForm:lClose := .T., oTasForm:oWnd:End() ) ;
+             ID "btn_cancel" RESOURCE oRes
+
+   ACTIVATE WINDOW oTasForm:oWnd MODAL VALID __TasaExit( oTasForm )
+
+return
+
+
+
+procedure __TasaSave( oForm )
+   local hData, uResp, aIter, lNew, nValor, cMsg
+
+   // Validar moneda
+   if Empty( ALLTRIM( oForm:cMoneda ) )
+      MsgAlert( "Debe indicar el código de moneda.", "Error" )
+      oForm:oEntMoneda:SetFocus()
+      return
+   endif
+
+   // Validar fecha
+   if Empty( ALLTRIM( oForm:cFecha ) )
+      MsgAlert( "Debe indicar la fecha.", "Error" )
+      oForm:oEntFecha:SetFocus()
+      return
+   endif
+
+   // Validar valor
+   nValor := ToNum( oForm:nValor )
+   if nValor <= 0
+      MsgAlert( "El valor debe ser mayor a cero.", "Error" )
+      oForm:oEntValor:SetFocus()
+      return
+   endif
+
+   lNew := oForm:rTasa:IsNew()
+
+   oForm:rTasa:SetData( { "moneda_codigo"      => ALLTRIM( oForm:cMoneda ),  ;
+                           "fecha"              => ALLTRIM( oForm:cFecha ),   ;
+                           "valor"              => nValor,                    ;
+                           "moneda_base_codigo" => ALLTRIM( oForm:cMonBase )  } )
+
+   uResp := oForm:rTasa:Save()
+
+   if ValType( uResp ) = "L" .and. uResp
+      hData := oForm:rTasa:Data()
+
+      if lNew
+         // Nueva fila en el modelo
+
+         aIter := ARRAY( 4 )
+         APPEND LIST_STORE oForm:oModel:oLbx ITER aIter ;
+                VALUES hb_ntos(hData["id"]),            ;
+                       hData["moneda_codigo"],          ;
+                       hData["moneda_nombre"],          ;
+                       DTOC(hData["fecha"]),            ;
+                       TRANSFORM(hData["valor"],P_92),  ;
+                       hData["moneda_base_codigo"],     ;
+                       hData["moneda_base_nombre"]
+
+         gtk_tree_view_set_cursor( oForm:oModel:oTreeView:pWidget, ;
+                                   oForm:oModel:oTreeView:GetPath( aIter ), NIL, .F. )
+
+      else
+         // Actualizar fila existente
+
+         oForm:oModel:SetValue( 2, hData["moneda_codigo"] )
+         oForm:oModel:SetValue( 3, hData["moneda_nombre"] )
+         oForm:oModel:SetValue( 4, DTOC(hData["fecha"]) )
+         oForm:oModel:SetValue( 5, TRANSFORM(hData["valor"],P_92) )
+         oForm:oModel:SetValue( 6, hData["moneda_base_codigo"] )
+         oForm:oModel:SetValue( 7, hData["moneda_base_nombre"] )
+
+      endif
+
+      oForm:lForce := .T.
+      oForm:oWnd:End()
+   //else
+   //   cMsg := iif( ValType(uResp)="H" .and. hb_hHasKey(uResp,"message"), ;
+   //                      uResp["message"], "Error desconocido" )
+   //   MsgAlert( "No se pudo guardar: " + cMsg, "Error" )
+   endif
+
+return
+
+
+
+function __TasaExit( oForm )
+   if oForm:lForce
+      return .T.
+   endif
+
+   if MsgNoYes( "¿Desea salir y descartar los cambios?", "Atención" )
+      return .T.
+   endif
+
+return .F.
+
+//eof
