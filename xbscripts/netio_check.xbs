@@ -77,10 +77,12 @@ Procedure __Login()
    local cScriptName := "netio_login", cScriptFile
    local aScripts, aScript, cMD5, cSource, oErr
 
-   __FilesCheck("INC")
-   __FilesCheck("RES")
-   __FilesCheck("IMG")
-   __FilesCheck("XBS")
+   if !FILE( "devel" )
+      __FilesCheck("INC")
+      __FilesCheck("RES")
+      __FilesCheck("IMG")
+      __FilesCheck("XBS")
+   endif
 
 /*
    aScripts := ~GetScripts()

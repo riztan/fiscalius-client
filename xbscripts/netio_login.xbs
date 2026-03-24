@@ -102,8 +102,8 @@ function login_Run( oForm, lNoUser )
 
    if lNoUser
       // Usuario de visita, asignamos un usuario y clave.
-      ::oEntUser:SetText("invitado")
-      ::oPasswd:SetText("invitado")
+      ::oEntUser:SetText("demo")
+      ::oPasswd:SetText("demo")
    endif
 
    if Empty( ::oPasswd:GetText() ) 
@@ -124,6 +124,13 @@ function login_Run( oForm, lNoUser )
 //         endif
       endif
 
+   endif
+
+   if !oTPuy:oUser:isDeveloper() .or. !FILE("devel")
+      __FilesCheck("INC")
+      __FilesCheck("RES")
+      __FilesCheck("IMG")
+      __FilesCheck("XBS")
    endif
 
    oTpuy:RunXBS("poslogin", oForm )

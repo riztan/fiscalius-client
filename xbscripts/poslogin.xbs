@@ -45,6 +45,7 @@ procedure poslogin( oParent )
 
    ::rSession      := oTPuy:rSession
 
+//View( oTPuy:oUser:IsDeveloper() )
    ::oEmpresas   := ::rSession:Empresas()  //-- cursor remoto de empresas.
 
    if !oTPuy:IsDef("rEmpresa")
@@ -401,7 +402,7 @@ procedure modulo_ComboBox( oForm )
 
 //return
    FOR EACH cModulo IN ::oGEmpresa:Modulos()
-      AADD( aModulos, ::oGEmpresa:setModulo(cModulo):Titulo() )
+      AADD( aModulos, cModulo) //::oGEmpresa:setModulo(cModulo):Titulo() )
    NEXT
 
    nModulos := LEN( aModulos )
