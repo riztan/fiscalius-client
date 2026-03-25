@@ -25,7 +25,7 @@ procedure auditoria( oForm, oWndParent, oEntParent )
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"auditoria.ui"
 
    DEFINE WINDOW oAudWnd ;
-          TITLE "Fiscalius. Auditor\u00eda" ;
+          TITLE "Fiscalius. Auditoría" ;
           SIZE 900,550 ;
           ID "window1" RESOURCE oRes
 
@@ -82,15 +82,15 @@ procedure auditoria( oForm, oWndParent, oEntParent )
 
    // Ocultar columnas técnicas
    oLBoxAud:SetColVisible( 1, .F. )    // ID
-   oLBoxAud:SetColVisible( 2, .F. )    // schema_nombre
+   oLBoxAud:SetColVisible( 3, .F. )    // schema_nombre
 
    // Títulos de columnas
-   oLBoxAud:SetColTitle( 3, "Tabla" )
-   oLBoxAud:SetColTitle( 4, "Registro ID" )
-   oLBoxAud:SetColTitle( 5, "Acción" )
-   oLBoxAud:SetColTitle( 6, "Descripción" )
-   oLBoxAud:SetColTitle( 7, "Usuario" )
-   oLBoxAud:SetColTitle( 8, "Fecha" )
+   oLBoxAud:SetColTitle( 2, "Fecha" )
+   oLBoxAud:SetColTitle( 4, "Tabla" )
+   oLBoxAud:SetColTitle( 5, "Registro ID" )
+   oLBoxAud:SetColTitle( 6, "Acción" )
+   oLBoxAud:SetColTitle( 7, "Descripción" )
+   oLBoxAud:SetColTitle( 8, "Usuario" )
 
    oLBoxAud:Active()
 
@@ -142,7 +142,7 @@ procedure __AuditoriaBuscar( oWnd, rEmpresa, oModel, oList, oEntFechaDesde, oEnt
       FOR EACH aLine IN aData
          APPEND LIST_STORE oModel:oLbx ITER aIter ;
                 VALUES hb_ntos(aLine[1]), ALLTRIM(aLine[2]), ALLTRIM(aLine[3]), ;
-                       hb_ntos(aLine[4]), ALLTRIM(aLine[5]), ALLTRIM(aLine[6]), ;
+                       ALLTRIM(aLine[4]), hb_ntos(aLine[5]), ALLTRIM(aLine[6]), ;
                        ALLTRIM(aLine[7]), ALLTRIM(aLine[8])
                 //VALUES aLine[1], aLine[2], aLine[3], aLine[4], aLine[5], aLine[6], aLine[7], aLine[8]
       NEXT
