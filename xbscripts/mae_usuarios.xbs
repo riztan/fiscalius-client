@@ -158,6 +158,11 @@ return
 procedure __UsuSave( oForm )
    local hData, uResp, aIter, lNew
 
+   if !oTPuy:oUser:IsAdmin()
+      MsgStop( "No tiene permisos para modificar valores de usuarios.", "Atención" )
+      return 
+   endif
+
    // Validar login antes de guardar
    if !__ValidaLogin( oForm:oEntLogin, oForm )
       MsgAlert("El login ingresado es inválido o ya está registrado.", "Error")

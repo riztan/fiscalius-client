@@ -16,7 +16,9 @@ CLASS GUSER FROM TPUBLIC
 
    METHOD IsDeveloper()  INLINE oTPuy:rSession:UserData()["devel"]
 
-   METHOD Finalize()  INLINE ~ServerLogout( ::cHandle )
+   METHOD IsAdmin()      INLINE oTPuy:rSession:UserData()["admin"]
+
+   METHOD Finalize()     INLINE ~ServerLogout( ::cHandle )
    
 ENDCLASS
 
