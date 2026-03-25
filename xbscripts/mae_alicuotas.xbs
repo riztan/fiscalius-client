@@ -248,7 +248,7 @@ PROCEDURE __AlicuotaSetValue( oForm, oTreeView, oModel, aIter, nCol, uValue, cPa
 
       if Empty(hData["id"])
          // Es nuevo registro - primero actualizamos el modelo, luego intentamos guardar
-View( "col = "+hb_valtoexp(nCol)+" -> "+VALTYPE(uValue)+" -> "+hb_valtoexp( uValue ) )
+//View( "col = "+hb_valtoexp(nCol)+" -> "+VALTYPE(uValue)+" -> "+hb_valtoexp( uValue ) )
          oModel:Set( aIter, nCol, iif( VALTYPE(uValue)="N", TRANSFORM(uValue,P_62), uValue) )
 
          if !Empty( hData["fecha_inicio"] ) .and. ;
