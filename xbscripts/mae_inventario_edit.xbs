@@ -7,6 +7,7 @@
 procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
    local oWnd, oRes, oImgBanner
    local oInvForm, hData, rProducto, oAlicuotas, aAlicuotas := {}
+   local aMonedas := {}
 
    default lNew := .T.
 
@@ -44,9 +45,10 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
    oInvForm:hData["precio_unitario"] := TRANSFORM( oInvForm:hData["precio_unitario"], P_92 )
    oInvForm:hData["stock_minimo"   ] := TRANSFORM( oInvForm:hData["stock_minimo"   ], P_92 )
    oInvForm:hData["stock_total"    ] := TRANSFORM( oInvForm:hData["stock_total"    ], P_92 )
-   oInvForm:hData["capacidad"        ] := TRANSFORM( oInvForm:hData["capacidad"        ], P_92 ) 
-   oInvForm:hData["grados_alcohol"        ] := TRANSFORM( oInvForm:hData["grados_alcohol"        ], P_92 ) 
-   oInvForm:hData["cant_und_agru"        ] := TRANSFORM( oInvForm:hData["cant_und_agru"        ], P_92 ) 
+   oInvForm:hData["capacidad"      ] := TRANSFORM( oInvForm:hData["capacidad"      ], P_92 ) 
+   oInvForm:hData["grados_alcohol" ] := TRANSFORM( oInvForm:hData["grados_alcohol" ], P_92 ) 
+   oInvForm:hData["cant_und_agru"  ] := TRANSFORM( oInvForm:hData["cant_und_agru"  ], P_92 ) 
+   oInvForm:hData["moneda_id"      ] := oInvForm:hData["moneda_id"      ]
 //
 //   oInvForm:cDescripcion := oInvForm:hData["descripcion"]
 //   oInvForm:cCodigo_barras := oInvForm:hData["codigo_barras"]
@@ -65,6 +67,23 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
       AADD( aAlicuotas, oAlicuotas:tipo_tasa ) 
       oAlicuotas:Skip()
    EndDo
+
+   oInvform:oMonedas := ::oGEmpresa:Monedas()
+   if !hb_isObject( oInvForm:oMonedas )
+      MsgStop( "Hay problema para obtener la lista de monedas" )
+      return 
+   endif 
+
+   oInvForm:cMoneda := ''
+   oInvForm:oMonedas:GoTop()
+   While !oInvForm:oMonedas:Eof()
+      if oInvForm:oMonedas:id = oInvForm:hData["moneda_id"]
+         oInvForm:cMoneda := ALLTRIM(oInvForm:oMonedas:nombre)
+      endif
+      AADD( aMonedas, oInvForm:oMonedas:nombre ) 
+      oInvForm:oMonedas:Skip()
+   EndDo
+
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_inventario.ui"
 
@@ -119,6 +138,10 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
       DEFINE CHECKBOX oInvForm:oCheck_iva VAR oInvForm:hData["incluye_iva"] ; //oInvForm:lIVA ;
              ID "check_iva" RESOURCE oRes
 
+      DEFINE BOX oInvForm:oBoxMonedas ID "box_monedas" RESOURCE oRes
+      DEFINE COMBOBOX oInvForm:oCBMoneda VAR oInvForm:cMoneda ITEMS aMonedas ;
+             OF oInvForm:oBoxMonedas
+
       DEFINE MONEY ENTRY oInvForm:oEntImpPvp VAR oInvForm:hData["imp_pvp"]  ;
              VALID __ValidaMonto( oInvForm:oEntImpPvp ) ;
              ID "ent_imppvp"  RESOURCE oRes
@@ -138,21 +161,21 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
              VALID __ValidaMonto( oInvForm:oEntEntStok ) ;
              ID "ent_stock"  RESOURCE oRes
 			 
-	  DEFINE INTEGER ENTRY oInvForm:oEntCapacidad VAR oInvForm:hData["capacidad"] ;
+      DEFINE INTEGER ENTRY oInvForm:oEntCapacidad VAR oInvForm:hData["capacidad"] ;
              ID "ent_capacidad"  RESOURCE oRes
 			 
-	 DEFINE INTEGER ENTRY oInvForm:oEntGradosAlcohol VAR oInvForm:hData["grados_alcohol"] ;
+      DEFINE INTEGER ENTRY oInvForm:oEntGradosAlcohol VAR oInvForm:hData["grados_alcohol"] ;
              VALID __ValidaMonto( oInvForm:oEntGradosAlcohol ) ;
              ID "ent_grados_alcohol"  RESOURCE oRes
 			 
 			 
-	 DEFINE INTEGER ENTRY oInvForm:oEntUnidadInd VAR oInvForm:hData["unidad_ind"] ;
+      DEFINE INTEGER ENTRY oInvForm:oEntUnidadInd VAR oInvForm:hData["unidad_ind"] ;
              ID "ent_unidad_ind"  RESOURCE oRes
 			 
-	 DEFINE INTEGER ENTRY oInvForm:oEntUnidadAgru VAR oInvForm:hData["unidad_agru"] ;
+      DEFINE INTEGER ENTRY oInvForm:oEntUnidadAgru VAR oInvForm:hData["unidad_agru"] ;
              ID "ent_unidad_agru"  RESOURCE oRes
 			 
-	DEFINE INTEGER ENTRY oInvForm:oEntCantUndAgru VAR oInvForm:hData["cant_und_agru"] ;
+      DEFINE INTEGER ENTRY oInvForm:oEntCantUndAgru VAR oInvForm:hData["cant_und_agru"] ;
              ID "ent_cant_und_agru"  RESOURCE oRes
 
 
@@ -190,16 +213,6 @@ Procedure __MaeInvSave( oForm )
     return
    endif
    
- 
-
-/*
-   if !__ValidaTipo( ::oEntTipo, oForm )
-      MsgAlert("El RIF ingresado es inválido. Debe tener el formato X-12345678-D (ej. J-12345678-9).", "Error")
-      ::oEntRif:SetFocus()
-      return
-   endif
-*/
-
    lNew := ::rProducto:isNew()
 
    if lNew
@@ -210,7 +223,6 @@ Procedure __MaeInvSave( oForm )
 
    /* Algunas validaciones previas */
    hData := ::hData
-   view(hdata)
 
    // Convertir incluye_iva a boolean para PostgreSQL
    if hb_hHasKey(hData, "incluye_iva")
@@ -231,6 +243,14 @@ Procedure __MaeInvSave( oForm )
          hData[ cCol ] := TONUM( ::hData[cCol] )
       endif
    NEXT
+
+   ::oMonedas:GoTop()
+   While !::oMonedas:Eof()
+      if ::oMonedas:nombre = ::cMoneda
+         hData["moneda_id"] := ::oMonedas:id
+      endif
+      ::oMonedas:Skip()
+   EndDo   
 
    // Guardar los datos del producto
   // hData := ::rProducto:Data()
@@ -278,11 +298,11 @@ Procedure __MaeInvSave( oForm )
                     "0",; //hData["precio_full"              ], ; //4
                     "",; //hData["incluye_iva"              ], ; //6
                     "0",; //hData["capacidad"              ], ; //
-					"0",; //hData["grados_alcohol"              ], ; //	   
-					hData["unidad_ind"              ], ; 	   
-					hData["unidad_agru"              ], ; 	   
-					hData["cant_und_agru"              ], ; 	   
-                    hb_ntos(hData["imp_pvp"                  ])   //7
+                    "0",; //hData["grados_alcohol"              ], ; //	   
+                    hData["unidad_ind"               ], ; 	   
+                    hData["unidad_agru"              ], ; 	   
+                    hData["cant_und_agru"            ], ; 	   
+                    hb_ntos(hData["imp_pvp"          ])   //7
        
 
 			
@@ -409,115 +429,6 @@ Function __ValidaTipo( oEntTipo, oForm )
    cCleanTipo := UPPER( STRTRAN( cTipo, "-", "" ) )
 
    return .T.
-
-
-
-Function __ValidaEmail( oEntMail )
-   local cMailLower, nAtPos, nDotPos
-   local cValidChars := "abcdefghijklmnopqrstuvwxyz0123456789.-_@"
-   local i, cMail
-
-   cMail := oEntMail:GetValue()
-
-   // Permitir email vacío (opcional)
-   if Empty( cMail )
-      return .T.
-   endif
-
-   // Convertir a minúsculas para simplificar validación
-   cMailLower := LOWER( cMail )
-
-   // Verificar longitud (mínimo 5, máximo 100 caracteres)
-   if LEN( cMailLower ) < 5 .OR. LEN( cMailLower ) > 100
-      MsgAlert("El correo electrónico debe tener entre 5 y 100 caracteres.", "Error")
-      oEntMail:SetFocus()
-      return .F.
-   endif
-
-   // Verificar presencia de exactamente un @
-   nAtPos := AT( "@", cMailLower )
-   if nAtPos == 0 .OR. AT( "@", SUBSTR( cMailLower, nAtPos + 1 ) ) > 0
-      MsgAlert("El correo electrónico debe contener exactamente un símbolo @.", "Error")
-      oEntMail:SetFocus()
-      return .F.
-   endif
-
-   // Verificar presencia de al menos un punto después del @
-   nDotPos := AT( ".", SUBSTR( cMailLower, nAtPos + 1 ) )
-   if nDotPos == 0
-      MsgAlert("El correo electrónico debe contener un dominio con extensión (ej. .com).", "Error")
-      oEntMail:SetFocus()
-      return .F.
-   endif
-
-   // Verificar que no haya puntos consecutivos ni al inicio/final de la parte local
-   if AT( "..", cMailLower ) > 0 .OR. LEFT( cMailLower, 1 ) == "." .OR. SUBSTR( cMailLower, nAtPos - 1, 1 ) == "."
-      MsgAlert("El correo electrónico no puede contener puntos consecutivos ni empezar/terminar con un punto antes del @.", "Error")
-      oEntMail:SetFocus()
-      return .F.
-   endif
-
-   // Verificar caracteres básicos permitidos (letras, números, puntos, guiones, guiones bajos)
-   for i := 1 TO LEN( cMailLower )
-      if ! ( SUBSTR( cMailLower, i, 1 ) $ cValidChars )
-         MsgAlert("El correo electrónico contiene caracteres no permitidos.", "Error")
-         oEntMail:SetFocus()
-         return .F.
-      endif
-   next
-
-   return .T.
-
-
-
-Function __ValidaTlf( oEntTlf )
-   local cPhone
-
-   cPhone := oEntTlf:GetValue()
-
-   // Permitir teléfono vacío (opcional)
-   if Empty( cPhone )
-      return .T.
-   endif
-
-   // Verificar que solo contenga dígitos
-   if ! IsDigit( cPhone )
-      MsgAlert("El número de teléfono debe contener solo dígitos.", "Error")
-      oEntTlf:SetFocus()
-      return .F.
-   endif
-
-   // Verificar longitud (7 a 15 dígitos)
-   if LEN( cPhone ) < 7 .OR. LEN( cPhone ) > 15
-      MsgAlert("El número de teléfono debe tener entre 7 y 15 dígitos.", "Error")
-      oEntTlf:SetFocus()
-      return .F.
-   endif
-
-   return .T.
-
-
-/*
-Function __ValidaTasa( oEntTasa )
-   local cTasa
-
-   cTasa := oEntTasa:GetValue()
-
-   // Permitir cédula vacía (opcional)
-   if Empty( cTasa )
-      return .T.
-   endif
-
-   // Verificar que solo contenga dígitos
-
-   if ! IsDigit( cTasa )
-      MsgAlert("La Tasa debe contener solo dígitos.", "Error")
-      oEntTasa:SetFocus()
-      return .F.
-   endif
-
-   return .T.
-*/
 
 
 Function __MaeInvExit( oForm )

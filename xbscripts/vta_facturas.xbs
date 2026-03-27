@@ -653,7 +653,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                          {"detalles_json",  "C",255,0},;
                          {"item",           "C",10, 0},;
                          {"imp_pvp",        "N",13, 2},; // Add imp_pvp
-                         {"imp_pvp_1",      "N",13, 2}}; // Add imp_pvp
+                         {"imp_pvp_1",      "N",13, 2},; // Add imp_pvp
+                         {"moneda_id",      "N",10, 0}};
                 DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0}}
 
       endif

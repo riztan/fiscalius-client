@@ -100,13 +100,14 @@ procedure mae_inventario( oForm, oWndParent, oEntParent, cCodProducto )
    oLBoxInv:SetColVisible( 24, .F. )    //- 
    oLBoxInv:SetColVisible( 25, .F. )    //- Ocultamos fecha creacion detalle
 
-   oLBoxInv:SetColTitle( 4, "Código" )          //- Cambiamos el titulo 
-   oLBoxInv:SetColTitle( 8, "Tipo de IVA" )          //- Cambiamos el titulo
-   oLBoxInv:SetColTitle( 9, "% de IVA" )          //- Cambiamos el titulo
-   oLBoxInv:SetColTitle( 10, "Precio" )          //- Cambiamos el titulo
-   oLBoxInv:SetColTitle( 14, "Activo" )          //- Cambiamos el titulo
-   oLBoxInv:SetColTitle( 15, "Fecha de creación" )          //- Cambiamos el titulo
-   oLBoxInv:SetColTitle( 26, "Incluye IVA" )          //- Cambiamos el titulo
+   //-- Cambiamos Titulos de Columnas
+   oLBoxInv:SetColTitle(  4, "Código" )          
+   oLBoxInv:SetColTitle(  8, "Tipo de IVA" )
+   oLBoxInv:SetColTitle(  9, "% de IVA" )
+   oLBoxInv:SetColTitle( 10, "Precio" )
+   oLBoxInv:SetColTitle( 14, "Activo" )
+   oLBoxInv:SetColTitle( 15, "Fecha de creación" )
+   oLBoxInv:SetColTitle( 26, "Incluye IVA" )  
 
 /*
    oLBoxInv:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo  
