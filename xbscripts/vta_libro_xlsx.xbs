@@ -46,6 +46,8 @@ procedure vta_libro_xlsx( oForm, rQry )
    SET DECIMAL TO 2
 
    SET PUBLIC hTotal
+   
+  // View(rQry:GetData()) 
 
    ::workbook := workbook_new( "tmp/vta_libro.xlsx" )
 
@@ -335,8 +337,16 @@ procedure vta_libro_xlsx( oForm, rQry )
    IF error > 0
       Alert( "Error in workbook_close(). " + hb_eol() + ;
          "Error " + AllTrim( Str( error ) ) + " = " + lxw_strerror( error ) )
-
+   ELSE
+      // Abrir el archivo con la aplicación predeterminada
+      #ifdef __PLATFORM__WINDOWS
+         hb_run( "start tmp\\vta_libro.xlsx" )
+      #else
+         // Para Linux/Mac (ajusta según necesites)
+         hb_run( "xdg-open tmp/vta_libro.xlsx" )
+      #endif
    ENDIF
+
 
 //   View("Generado fichero tipo excel con la información del mayor analítico.")
 return

@@ -87,7 +87,7 @@ function GetData( oForm, oFormParent )
    rQry := ::rVentas:Libro( {"sucursal"=>"1", "desde"=>dDesde, "hasta"=>dHasta} )
 
 MsgRun( "Generando fichero tipo excel", {||oTPuy:RunXBS("vta_libro_xlsx", oForm, rQry )})
-View( "aqui vamos" )
+//View( "aqui vamos" )
    return .t.
 
 //api_shellexecute( nil, "open", "crystal\dplibvta.xlsx", "Libro", ".\") 
