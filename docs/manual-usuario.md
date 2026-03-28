@@ -72,7 +72,8 @@ El sistema soporta múltiples monedas para expresar precios de productos.
 
 **Moneda de la factura:**
 - Actualmente las facturas siempre se emitiran en Bs (Bolivares)
-- La selección de moneda en la factura indica el tipo de cambio a aplicar
+- La selección de moneda en la factura es solo referencia informativa para el usuario
+- El cálculo de conversión se realiza al seleccionar el producto
 
 **Moneda del producto:**
 - Cada producto puede tener su propia moneda (USD, EUR, Bs, etc.)
