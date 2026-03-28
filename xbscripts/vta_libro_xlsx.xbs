@@ -47,7 +47,7 @@ procedure vta_libro_xlsx( oForm, rQry )
 
    SET PUBLIC hTotal
    
-  // View(rQry:GetData()) 
+   MakeDir("tmp")
 
    ::workbook := workbook_new( "tmp/vta_libro.xlsx" )
 
