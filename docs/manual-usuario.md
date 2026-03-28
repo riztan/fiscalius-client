@@ -67,10 +67,27 @@
 - Intereses y penalidades
 
 ### 🌐 Configuración
-#### Monedas y Tasas
-- Configurar monedas disponibles
-- Actualizar tasas de cambio
-- Moneda base del sistema
+#### Monedas y Tasas de Cambio
+El sistema soporta múltiples monedas para expresar precios de productos.
+
+**Moneda de la factura:**
+- Actualmente las facturas siempre se emitiran en Bs (Bolivares)
+- La selección de moneda en la factura indica el tipo de cambio a aplicar
+
+**Moneda del producto:**
+- Cada producto puede tener su propia moneda (USD, EUR, Bs, etc.)
+- Esta configuración se realiza en la ficha del producto (campo `moneda_id`)
+
+**Conversión de precios:**
+- Al seleccionar un producto en la factura, el sistema convierte su precio a Bs
+- Si el producto está en Bs y no hay tasa registrada, usa factor 1
+- Si el producto está en otra moneda, busca la tasa de cambio del día
+- La tasa se consulta automaticamente desde el servidor
+
+**Configuración:**
+- Configurar monedas disponibles en `mae_monedass` (tabla global)
+- Actualizar tasas de cambio en el módulo correspondiente
+- Moneda base del sistema (generalmente Bs)
 
 #### Usuarios y Permisos
 - Crear cuentas de usuario
