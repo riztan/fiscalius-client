@@ -1312,7 +1312,10 @@ si no, escriba a la Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 (o visite el sitio web http://www.gnu.org/).
 
 </property>
-    <property name="authors">Riztan Gutiérrez - riztan@gmail.com
+    <property name="authors">Fiscalius es desarrollado por:
+Riztan Gutiérrez - riztan@gmail.com
+Draiver Rojas - draiver33@gmail.com
+
 Agradecimiento muy especial a:
 Rafael Carmona (Rafa thefull)
 Federico D'Maussion
@@ -1320,7 +1323,8 @@ Daniel García
 Javier Parada
 Walter Negro
 y toda la comunidad de Software Libre, especialmente Harbour-Project</property>
-    <property name="documenters">Riztan Gutierrez</property>
+    <property name="documenters">Riztan Gutierrez
+Draiver Rojas</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>
