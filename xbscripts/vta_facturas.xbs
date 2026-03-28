@@ -123,9 +123,10 @@ procedure vta_facturas( oFormParent )
    ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
    __FactValFecha( oForm, ::oEntFecha, @::cPFecha )
    ::cDivisa := ""
+   ::nMonDivisa := 0
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
-          ON CHANGE .t.; //MsgInfo("divisa!") ;
+          ON CHANGE .T. ; //::nMonDivisa := VAL( hb_aTokens( ::cDivisa, " ")[2] )  ;//.t.; //MsgInfo("divisa!") ;
           OF ::oBoxDivisa
 
    DEFINE BOX ::oBoxEstado ID "box_estado" RESOURCE ::oRes
@@ -210,13 +211,13 @@ procedure vta_facturas( oFormParent )
           ID "ent_montotal" RESOURCE ::oRes 
    ::oEntTotal:Justify( GTK_JUSTIFY_RIGHT )
    ::oEntTotal:SetEditable( .F. )
-   
-      ::nMonTotBs := 0
+/*   
+   ::nMonTotBs := 0
    DEFINE MONEY ENTRY ::oEntTotBs VAR ::nMonTotBs ;
           ID "ent_montotbs" RESOURCE ::oRes 
    ::oEntTotBs:Justify( GTK_JUSTIFY_RIGHT )
    ::oEntTotBs:SetEditable( .F. )
-
+*/
 
    // -- Caja de Retenciones
    DEFINE BOX ::oBoxRet ID "box_retiva" RESOURCE ::oRes
@@ -420,6 +421,7 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
    if hb_isObject( ::oComboDivisa )
       ::oComboDivisa:RemoveAll()
       ::oComboDivisa:SetItems( ::aDivisas )
+      ::nMonDivisa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )  
    endif
 
 //View( hb_valtoexp( ::aMonedas ) )
@@ -491,7 +493,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::cPreEstado   := ::cComboEstado
    
       ::oEntTotal:SetValue( "0" )
-	  ::oEntTotBs:SetValue( "0" )
+      //::oEntTotBs:SetValue( "0" )
       ::oEntRetIva:SetValue( "" )
       ::oEntRetIvaF:SetValue( "" )
       ::oEntMonRetIva:SetValue( "" )
@@ -575,7 +577,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
       ::oEntMonBase:SetValue( TRANSFORM(::hFactura["monto_base"],P_92) ) //oModel:GetCol(::hCol["monto base"]) )
       ::oEntTotal:SetValue( TRANSFORM(::hFactura["monto_total"],P_92) )  
-	  ::oEntTotBs:SetValue( TRANSFORM(::hFactura["monto_total"]*TONUM(SUBSTR(::cDivisa,5)),P_92) )  
+      //::oEntTotBs:SetValue( TRANSFORM(::hFactura["monto_total"]*TONUM(SUBSTR(::cDivisa,5)),P_92) )  
 
       ::lConfirm := .F.
       do case
@@ -917,7 +919,7 @@ procedure __Calcula( oForm )
    local nOtrosImp := 0
 
    ::oEntTotal:SetValue("0")
-   ::oEntTotBs:SetValue("0")
+   //::oEntTotBs:SetValue("0")
    ::oEntMonBase:SetValue("0")
    ::oEntIvaE:SetValue("0")
    ::oEntIvaR:SetValue("0")
@@ -1007,7 +1009,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
                     ToNum( ::oEntIvaG:GetValue() ) +;
                     nOtrImp, 2 ) // Include otros_imp
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
-   ::oEntTotBs:SetValue( TRANSFORM( nTotal*TONUM(SUBSTR(::cDivisa,5)), P_92 ) ) 
+   //::oEntTotBs:SetValue( TRANSFORM( nTotal*TONUM(SUBSTR(::cDivisa,5)), P_92 ) ) 
    ::oEntOtrImp:SetValue( TRANSFORM( nOtrImp, P_92 ) ) // Set otros_imp
 
    FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
@@ -1324,6 +1326,26 @@ PROCEDURE __VtaImprime( oForm )
 RETURN
 
 
+FUNCTION __vtaf_CalPrecio( oForm, cPrecio, cDivisa )
+   Local cValue := '1', rQry, rValor := 1
+   Local nPrecio := ToNum( cPrecio )  //ToNum(oModel:oTreeView:GetAutoValue( 10 )) 
+   //Local cDivisa := oModel:oTreeView:GetAutoValue( 29 ) //Codigo de Moneda
+
+   rQry := ::rEmpresa:GetTasa( CTOD(::oEntFecha:getValue()) ) 
+
+   While !rQry:Eof()
+      if rQry:codigo=cDivisa 
+         rValor := iif( rQry:valor > 0, rQry:valor, 1 ) // No puede haber valor cero en divisa.
+         nPrecio := ROUND( nPrecio * rValor , 2 )
+      endif
+      rQry:Skip()
+   EndDo   
+
+   rQry:End()
+
+RETURN STR( nPrecio )
+
+
 
 PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
    local oRes, oImgBanner, oImgLogo
@@ -1351,7 +1373,9 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
       __SetValue( ::oModDetal:oTreeView, ;
  	          ::oModDetal:oLbx, ;
 	          ::oModDetal:aIter, __PRECIO, ;
-	          STR( rProductos:precio_unitario ))
+                  __vtaf_CalPrecio( oForm, rProductos:precio_unitario, rProductos:moneda_codigo))
+	          //STR( rProductos:precio_unitario ))
+
 	          //TRANSFORM( rProductos:precio_unitario, P_92 ))
 
       __SetValue( ::oModDetal:oTreeView, ;
@@ -1429,7 +1453,10 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                          __SetValue( ::oModDetal:oTreeView, ;
 				     ::oModDetal:oLbx,      ;
 				     ::oModDetal:aIter, __PRECIO ,  ;
-				     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 10 ))) ),;
+                                     __vtaf_CalPrecio( oForm, ;
+                                                       oModProductos:oTreeView:GetAutoValue( 10 ), ;
+                                                       oModProductos:oTreeView:GetAutoValue( 29 ) );
+                                     ),;
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, __IVAPORCEN, ;
