@@ -602,7 +602,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       if !hb_isNIL( ::rFactDetal )
 
          aStruct := ::rFactDetal:Struct()
-         AADD( aStruct, {"imp_pvp_1","N",1,2} )
+         AADD( aStruct, {"imp_pvp_1",      "N",1,2} )
          aData := {}
          AEVAL( ::rFactDetal:GetData(), {|a| AADD( aData, {a[ 1],;
                                                            a[ 2],;
@@ -683,8 +683,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColVisible( 19, .f. )     //- Detalles (JSON)
       ::oLBoxDetal:SetColVisible( 20, .f. )     //- Item
 //      ::oLBoxDetal:SetColVisible( 22, .f. )     //- imp_pvp
-	  ::oLBoxDetal:SetColVisible( 23, .f. )     
-	  ::oLBoxDetal:SetColVisible( 24, .f. )    
+//      ::oLBoxDetal:SetColVisible( 23, .f. )     
+//      ::oLBoxDetal:SetColVisible( 24, .f. )    
 
       ::oLBoxDetal:SetColTitle( 03, "Código" )        //-- Columna Código
       ::oLBoxDetal:SetColTitle( 04, "Descripción" )   //-- Columna Descripción
@@ -732,7 +732,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                              aLine[18], ;
                              aLine[19], ;
                              hb_ntos(aLine[20]),;
-                             hb_ntos(aLine[21]), hb_ntos(aLine[21]/aLine[5]) 
+                             hb_ntos(aLine[21]), hb_ntos(aLine[21]/aLine[5]),;
+                             aLine[23] 
             CATCH oErr
                View( oErr:Description )
             END
@@ -758,6 +759,16 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                                __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __CODIGO )  }
    oCol:oRenderer:SetColumn( oCol )
+
+   /* Columna Descripcion */
+   #define __DESCRIPCION   4
+   oCol := ::oModDetal:aCol[__DESCRIPCION] // Descripcion
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                                          ::oModDetal:oLbx, ::oModDetal:oTreeView, __DESCRIPCION )  }
+   oCol:oRenderer:SetColumn( oCol )
+
 
    /* Columna Cantidad */
    #define __CANTIDAD   5
@@ -789,7 +800,6 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    oCol:oRenderer:SetColumn( oCol )
 
    /* Columna Cantidad */
-   #define __DESCRIPCION   4
    #define __SUBTOTAL      8
    #define __IVAPORCEN     9
    #define __IVAMONTO     10
@@ -831,6 +841,18 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
    if nCol=__CODIGO
       //__SetValue( oTreeView, oModel, aIter, nCol, uVal )
       __Productos( oForm, uVal, oModel, nCol, oTreeView, aIter )
+      if oTreeView:GetAutoValue( 13 ) = "S" // Tipo de Inventario  V-Venta S-Servicio
+         oTreeView:SetPosCol( aIter, __DESCRIPCION, .f. )
+      else
+         oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
+      endif
+      return
+   endif
+
+   if nCol=__DESCRIPCION 
+//View( oTreeView:GetAutoValue(28)
+      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
+      //__Productos( oForm, uVal, oModel, nCol, oTreeView, aIter )
       oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
       return
    endif
@@ -1392,7 +1414,11 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, 22, ; // imp_pvp
                   STR( rProductos:imp_pvp )) // Set imp_pvp
-//View( rProductos:imp_pvp )
+
+      __SetValue( ::oModDetal:oTreeView, ;
+                  ::oModDetal:oLbx, ;
+                  ::oModDetal:aIter, 13, ; 
+                  rProductos:tipo_inventario ) 
 
       oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
       return
@@ -1469,6 +1495,10 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 22, ;
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+                         __SetValue( ::oModDetal:oTreeView, ;
+ 	                             ::oModDetal:oLbx, ;
+	                             ::oModDetal:aIter, 13, ;
+                                     oModProductos:oTreeView:GetAutoValue( 7 ) ),;
                          oTreeView:SetPosCol( aIter, __CANTIDAD, .f. ), ;
 			 ::oInvWnd:End() }
 
