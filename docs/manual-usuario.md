@@ -38,6 +38,22 @@
 - Control de stock
 - Categorización de artículos
 
+#### Tipos de Inventario
+El sistema soporta diferentes tipos de productos definidos en el campo `tipo_inventario`:
+
+| Código | Tipo | Descripción |
+|--------|------|-------------|
+| V | Venta | Producto físico con control de stock |
+| C | Consumo | Producto para consumo interno |
+| P | Producción | Materia prima para fabricación |
+| S | Servicio | Artículo sin stock, para facturar conceptos personalizados |
+
+**Artículo tipo 'S' (Servicio):**
+- No requiere control de stock
+- Permite descripción personalizada en cada factura
+- Ideal para facturar servicios, cargos adicionales o conceptos variables
+- Al seleccionar en factura, se puede editar la descripción directamente en el detalle
+
 #### Consultas y Reportes
 - Listado de productos
 - Reportes de stock
