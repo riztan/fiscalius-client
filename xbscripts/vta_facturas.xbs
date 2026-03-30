@@ -636,7 +636,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
          DEFINE MODEL   ::oModDetal           ;
                 STRUCT  {{"detalle_id",     "N",10, 0},;
                          {"documento" ,     "N",10, 0},;
-                         {"codigo_local",   "C",10, 0},;
+                         {"codigo_local",   "C",20, 0},;
                          {"descripcion",    "C",100,0},;
                          {"cantidad",       "N",10, 0},;
                          {"precio_unitario","N",13, 2},;
