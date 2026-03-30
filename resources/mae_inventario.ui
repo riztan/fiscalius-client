@@ -860,7 +860,6 @@
                                   <object class="GtkLabel" id="label18">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">Unidad Agrupada</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -870,7 +869,6 @@
                                 </child>
                                 <child>
                                   <object class="GtkEntry" id="ent_unidad_agru">
-                                    <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="invisible_char">●</property>
                                     <property name="primary_icon_activatable">False</property>
@@ -888,7 +886,6 @@
                                   <object class="GtkLabel" id="label19">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">Cant. Und Agrupada</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -898,7 +895,6 @@
                                 </child>
                                 <child>
                                   <object class="GtkEntry" id="ent_cant_und_agru">
-                                    <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="invisible_char">●</property>
                                     <property name="xalign">0.89999997615814209</property>
