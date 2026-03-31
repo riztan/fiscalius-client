@@ -103,7 +103,7 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
           ACTION ( __NC_Docs( oForm ), ::oEntFacturaNro:SetFocus() ) ; 
            VALID  ( iif( !empty(::cFacturaNro), ::rDocumento:SetRefNumero(::cFacturaNro), NIL), ;
                     __DelDetal( oForm, .T. ), ;
-                    ::rFactDetal := ::rDocumento:DetalFrom(), __DetalRefresh(oForm), ;
+                    ::rFactDetal := ::rDocumento:DetalFrom(), __NCDetalRefresh(oForm), ;
                     iif( CTOD(::oEntFecha:GetValue()) < ::rVentas:Transacciones('F', ::cFacturaNro):fecha, ;
                          ::oEntFecha:SetValue(DTOC(::rVentas:Transacciones('F', ::cFacturaNro):fecha)), ;
                          NIL), ;
@@ -446,7 +446,7 @@ return .t.
 
 
 
-procedure __ModDocsRefresh(oForm)
+procedure __NCModDocsRefresh(oForm)
    local aLine, aIter := ARRAY(4)
    local bDetalCode, aData
 
@@ -547,17 +547,17 @@ procedure __NCChangeEstado( oForm, lConfirm )
 
    if ::cComboEstado = "Anulada" .or. ;
       ::cComboEstado = "Cerrada"
-      __DocsRefresh( oForm, lConfirm )
+      __NCDocsRefresh( oForm, lConfirm )
       if ::cPreEstado == "B" 
          __NCSave( oForm )
       endif
    else
-      __DocsRefresh( oForm, !lConfirm )
+      __NCDocsRefresh( oForm, !lConfirm )
    endif
 return
 
 
-procedure __DetalRefresh( oForm )
+procedure __NCDetalRefresh( oForm )
    local aLine, aData, oErr
    local cFactura, dFchFactura
 
@@ -599,7 +599,7 @@ procedure __DetalRefresh( oForm )
                           hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0)),
                           hb_ntos(aLine[5])
          CATCH oErr
-            View( "__DetalRefresh(): " + oErr:Description )
+            View( "__NCDetalRefresh(): " + oErr:Description )
          END
 
       NEXT
@@ -681,7 +681,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::cFecha := DTOC( ::hDocumento["fecha"] )
       //::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol("numero")), 8) )
       ::oLabNumero:SetValue( oModel:GetCol("numero") )
-      ::oLabNroControl:SetValue( STRZERO( ::hDocumento["numero_control"], 8) )
+      ::oLabNroControl:SetValue( ::hDocumento["numero_control"] ) //STRZERO( ::hDocumento["numero_control"], 8) )
       ::oEntCli:SetValue( oModel:GetCol("Cliente") )
       ::cCodCli := oModel:GetCol("cliente_id")
       ::cCodVendedor := oModel:GetCol("vendedor_id")
@@ -819,7 +819,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
              OF      ::oBoxDetalles
 
       ::oLBoxDetal:lBar  := .f.
-      ::oLBoxDetal:bNew  := {|| __AddDetal( oForm ) }
+      ::oLBoxDetal:bNew  := {|| __NCAddDetal( oForm ) }
       ::oLBoxDetal:bEdit := {|| .T. }
       ::oLBoxDetal:bDel  := {|| __DelDetal( oForm ) }
 
@@ -895,7 +895,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    oCol := ::oModDetal:aCol[__CODIGO] // Codigo
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __NCEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __CODIGO )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -905,7 +905,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       oCol := ::oModDetal:aCol[__DESCRIPCION] // Codigo
       oCol:oRenderer:SetEditable( .T. )
       oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                                  __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                                  __NCEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                              ::oModDetal:oLbx, ::oModDetal:oTreeView, __DESCRIPCION )  }
       oCol:oRenderer:SetColumn( oCol )
    endif
@@ -915,7 +915,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    oCol := ::oModDetal:aCol[__CANTIDAD] // Cantidad
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __NCEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __CANTIDAD )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -925,7 +925,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    oCol := ::oModDetal:aCol[__PRECIO] // Cantidad
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __NCEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __PRECIO )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -935,7 +935,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    oCol := ::oModDetal:aCol[__DESCUENTO] // Cantidad
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __NCEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __DESCUENTO )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -953,7 +953,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
 
       //::oEntMonBase:SetValue( "0" )
-   __DocsRefresh( oForm, .F. )
+   __NCDocsRefresh( oForm, .F. )
    __NCCalcula(oForm)
 
 
@@ -966,7 +966,7 @@ return
 
 
 
-procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
+procedure __NCEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
    local pNextCol, pPath, uPrevio
    local nCantNueva, nCantMax
 
@@ -1184,7 +1184,7 @@ return
 
 
 
-procedure __AddDetal( oForm )
+procedure __NCAddDetal( oForm )
    local aIter := ARRAY(4)
 
    //-  ignoramos si el documento esta anulado o cerrado.
@@ -1202,7 +1202,7 @@ return
 
 
 
-procedure __DocsRefresh( oForm, lConfirm )
+procedure __NCDocsRefresh( oForm, lConfirm )
 
    default lConfirm := .F.
 
@@ -1387,7 +1387,7 @@ Procedure __NCSave( oForm, oFormParent )
          //-- Igual debemos atualizar valor de numero asignado si hubo cambio de estado a "Cerrado"
       endif
 
-      __ModDocsRefresh( oForm )
+      __NCModDocsRefresh( oForm )
       //-- Este paso es importante para que se actualicen los nros de item en la app cliente.
       //   Y asi evitar que vuelva a insertar datos. (RIGC-JUN2025)
       //::oModFacturas:oTreeView:ClearModel(.t.)
