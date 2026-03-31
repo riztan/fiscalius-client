@@ -143,29 +143,29 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
              OF oInvForm:oBoxMonedas
 
       DEFINE MONEY ENTRY oInvForm:oEntImpPvp VAR oInvForm:hData["imp_pvp"]  ;
-             VALID __ValidaMonto( oInvForm:oEntImpPvp ) ;
+             VALID __MaeInvValidaMonto( oInvForm:oEntImpPvp ) ;
              ID "ent_imppvp"  RESOURCE oRes
 
       DEFINE TEXTVIEW oInvForm:oVTDetal VAR oInvForm:hData["descripcion_detallada"] ;
              ID "tv_detal"  RESOURCE oRes
 
       DEFINE MONEY ENTRY oInvForm:oEntPrecio VAR oInvForm:hData["precio_unitario"] ;
-             VALID __ValidaMonto( oInvForm:oEntPrecio ) ;
+             VALID __MaeInvValidaMonto( oInvForm:oEntPrecio, "precio_unitario" ) ;
              ID "ent_precio"  RESOURCE oRes
 
       DEFINE INTEGER ENTRY oInvForm:oEntStockMin VAR oInvForm:hData["stock_minimo"] ;
-             VALID __ValidaMonto( oInvForm:oEntStockMin ) ;
+             VALID __MaeInvValidaMonto( oInvForm:oEntStockMin ) ;
              ID "ent_stock_minimo"  RESOURCE oRes
 
       DEFINE INTEGER ENTRY oInvForm:oEntStock VAR oInvForm:hData["stock_total"] ;
-             VALID __ValidaMonto( oInvForm:oEntEntStok ) ;
+             VALID __MaeInvValidaMonto( oInvForm:oEntStok ) ;
              ID "ent_stock"  RESOURCE oRes
 			 
       DEFINE INTEGER ENTRY oInvForm:oEntCapacidad VAR oInvForm:hData["capacidad"] ;
              ID "ent_capacidad"  RESOURCE oRes
 			 
       DEFINE INTEGER ENTRY oInvForm:oEntGradosAlcohol VAR oInvForm:hData["grados_alcohol"] ;
-             VALID __ValidaMonto( oInvForm:oEntGradosAlcohol ) ;
+             VALID __MaeInvValidaMonto( oInvForm:oEntGradosAlcohol ) ;
              ID "ent_grados_alcohol"  RESOURCE oRes
 			 
 			 
@@ -190,11 +190,16 @@ return
 
 
 
-Function __ValidaMonto( oEntry )
+Function __MaeInvValidaMonto( oEntry, cLabel )
 
-   //local cMonto := oEntry:GetText()
+   local cMonto := oEntry:GetText()
 
-  // oEntry:SetText( TRANSFORM( ToNum(cMonto), P_92) )
+   if !Empty(cMonto) .and. ToNum(cMonto) <= 0
+      if cLabel = "precio_unitario"
+         View("El valor debe ser mayor a cero")
+         return .f.
+      endif
+   endif
 
 return .t.
 
