@@ -153,6 +153,9 @@ procedure vta_libro_xlsx( oForm, rQry )
    hTotal:nVtasAliGNRed   := {"base"  => 0 ,; 
                               "debito"=> 0 }  //por ahora no contemplado
 
+   hTotal:nVtasAliGNSun   := {"base"  => 0 ,; 
+                              "debito"=> 0 }  //por ahora no contemplado
+
    hTotal:nIVARet := {"nVtasGen"    => 0, ; //rQry:RTI_MONTO ,;
                       "nVtasGenPer" => 0 }  //rQry:DOC_MTOIVA-rQry:RTI_MONTO }
 
@@ -254,8 +257,12 @@ procedure vta_libro_xlsx( oForm, rQry )
             hTotal:nIVARet["nVtasGenPer"]  += rQry:iva_monto-rQry:monto_retencion
          endif
          if rQry:tipo_tasa="RED"
-            hTotal:nVtasAliGNRe["base"]      += rQry:total-rQry:iva_monto
-            hTotal:nVtasAliGNRe["debito"]    += rQry:iva_monto
+            hTotal:nVtasAliGNRed["base"]      += rQry:total-rQry:iva_monto
+            hTotal:nVtasAliGNRed["debito"]    += rQry:iva_monto
+         endif
+         if rQry:tipo_tasa="SUN"
+            hTotal:nVtasAliGNSun["base"]      += rQry:total-rQry:iva_monto
+            hTotal:nVtasAliGNSun["debito"]    += rQry:iva_monto
          endif
 
          rQry:Skip()
