@@ -54,9 +54,10 @@ procedure mae_tasas_cambio( oForm, oWndParent, oEntParent )
           MODEL oModTasas ;
           OF oBoxData
 
-   oLBoxTasas:lBar := .F.
+   oLBoxTasas:lBar  := .F.
    oLBoxTasas:bNew  := {|oModel| tasacamb_edit( oForm, oAliWnd, oModTasas, .T. /*lNew*/ ) }
-   oLBoxTasas:bEdit := {|oModel| tasacamb_edit( oForm, oAliWnd, oModTasas, .F. /*lNew*/ ) }
+   oLBoxTasas:bEdit := {||View("Acción no permitida") }//{|oModel| tasacamb_edit( oForm, oAliWnd, oModTasas, .F. /*lNew*/ ) }
+   oLBoxTasas:bDel  := {||View("Acción no permitida")}
 
    // Columnas del TasasDeCambio():
    // 1=id  2=moneda  3=nombre_moneda  4=fecha  5=valor  6=moneda_base  7=nombre_moneda_base

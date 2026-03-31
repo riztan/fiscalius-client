@@ -49,9 +49,9 @@ procedure mae_alicuotas( oParentForm, oWndParent, oEntParent )
 
    DEFINE BOX oBoxBotones ID "box_botones" RESOURCE oRes
 
-   DEFINE BUTTON oBtnNewAli TEXT "+ Nueva" ;
-          ACTION __BtnNewAlicuota( oForm, oModAlicuota, oLBoxCli ) ;
-          OF oBoxBotones 
+//   DEFINE BUTTON oBtnNewAli TEXT "+ Nueva" ;
+//          ACTION .T.; // __BtnNewAlicuota( oForm, oModAlicuota, oLBoxCli ) ;
+//          OF oBoxBotones
 
 
    DEFINE MODEL oModAlicuota ;
