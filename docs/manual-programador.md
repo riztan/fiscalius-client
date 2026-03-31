@@ -352,6 +352,25 @@ View( rFacturas:GetData() )
 - **Tasas de cambio BCV**: Gestión via servidor (no en cliente)
 - **Reportes**: Excel con `hbxlsxwriter.ch`, sistema programático
 
+### **Requisitos SENIAT - Homologación**
+
+#### Restricciones Obligatorias
+Para cumplir con el proceso de homologación del SENIAT, los siguientes módulos tienen **todas las operaciones de modificación deshabilitadas**:
+
+| Módulo | Restricción | Justificación |
+|--------|-------------|---------------|
+| **Alicuotas** | Sin agregar/editar/eliminar | Valores establecidos por ley fiscal |
+| **Tasas de Cambio** | Sin agregar/editar/eliminar | Control cambiario oficial |
+
+#### Implementación Técnica
+```xbase
+// Ejemplo en mae_tasas_cambio.xbs
+oLBoxTasas:bEdit := {||View("Acción no permitida")}
+oLBoxTasas:bDel  := {||View("Acción no permitida")}
+```
+
+Estas restricciones aplican a nivel de interfaz. En el servidor, las validaciones adicionales asegura la integridad de los datos según las normativas vigentes.
+
 ### **API Server**
 - **Endpoint**: https://localhost:8001/tpy
 - **Documentación**: `~/git/fiscalius-server/docs/API_DOCUMENTACION.md`
