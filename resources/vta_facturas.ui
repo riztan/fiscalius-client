@@ -334,34 +334,10 @@
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="label26">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">&lt;b&gt;Control:&lt;/b&gt;</property>
-                                                <property name="use_markup">True</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">4</property>
-                                              </packing>
+                                              <placeholder/>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="lab_nro_control">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">0000001</property>
-                                                <attributes>
-                                                  <attribute name="weight" value="heavy"/>
-                                                  <attribute name="stretch" value="expanded"/>
-                                                  <attribute name="size" value="150"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">5</property>
-                                              </packing>
+                                              <placeholder/>
                                             </child>
                                           </object>
                                           <packing>
@@ -586,6 +562,39 @@
                                             <property name="fill">False</property>
                                             <property name="position">4</property>
                                           </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="label26">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="label" translatable="yes">&lt;b&gt;Control:&lt;/b&gt;</property>
+                                            <property name="use_markup">True</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">5</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="lab_nro_control">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="label" translatable="yes">0000001</property>
+                                            <attributes>
+                                              <attribute name="weight" value="heavy"/>
+                                              <attribute name="stretch" value="expanded"/>
+                                              <attribute name="size" value="150"/>
+                                            </attributes>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">False</property>
+                                            <property name="position">6</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <placeholder/>
                                         </child>
                                       </object>
                                       <packing>

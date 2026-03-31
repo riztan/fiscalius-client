@@ -74,10 +74,13 @@ procedure vta_imprimir_pdf_nota( oForm )
    oPDF:SetFont( "Helvetica-Bold", 10 )
    oPDF:CMSAY( nY, 1.0, "Código" )
    oPDF:CMSAY( nY, 3.2, "Descripcion" )
-   oPDF:CMSAY( nY, 11.2, "Cant" )
-   oPDF:CMSAY( nY, 13.6, "Precio Uni." )
-   oPDF:CMSAY( nY, 16.1, "Total" )
-   oPDF:CMSAY( nY, 19.1, "Imp. Pvp" )
+   oPDF:CMSAY( nY, 10.2, "Cant" )
+   oPDF:CMSAY( nY, 12.2, "Cap." )
+   oPDF:CMSAY( nY, 13.2, "Grados" )
+   oPDF:CMSAY( nY, 15.5, "Precio Uni." )
+   oPDF:CMSAY( nY, 18.5, "Total" )
+   oPDF:CMSAY( nY, 21, "% IVA" )
+   oPDF:CMSAY( nY, 23, "Imp. Pvp" )
 
    nY += 0.5
 
@@ -97,11 +100,14 @@ procedure vta_imprimir_pdf_nota( oForm )
       oPDF:CMSAY( nY, 1.0, LEFT(ALLTRIM(aLine[3]), 12) )
       oPDF:CMSAY( nY, 3.2, LEFT(ALLTRIM(aLine[4]), 35) )
       //oPDF:CMSAY( nY, 11.2, hb_ntos(nTotUniLi) )
-      oPDF:CMSAY( nY, 11.2, hb_ntos(nUni+nCaj) )
-      oPDF:CMSAY( nY, 13.6, TRANSFORM(aLine[6], "@E 9,999.99") )
-      oPDF:CMSAY( nY, 16.1, TRANSFORM(aLine[8], "@E 99,999.99") )
-      //oPDF:CMSAY( nY, 19.1, TRANSFORM(aLine[21], "@E 99,999.99") )
-      oPDF:CMSAY( nY, 19.1, TRANSFORM(0, "@E 99,999.99") )
+      oPDF:CMSAY( nY, 10.2, hb_ntos(nUni+nCaj) )
+	  oPDF:CMSAY( nY, 12.0, TRANSFORM(aLine[22], "@E 999,99") )
+	  oPDF:CMSAY( nY, 13.2, TRANSFORM(aLine[23], "@E 999,99") )
+      oPDF:CMSAY( nY, 15.5, TRANSFORM(aLine[6], "@E 99,999.99") )
+      oPDF:CMSAY( nY, 18.5, TRANSFORM(aLine[8], "@E 999,999.99") )
+	  oPDF:CMSAY( nY, 21, TRANSFORM(aLine[9], "@E 99") )
+      oPDF:CMSAY( nY, 23, TRANSFORM(aLine[21], "@E 99,999.99") )
+
 
       nY += 0.35
    NEXT
@@ -143,19 +149,17 @@ procedure vta_imprimir_pdf_nota( oForm )
    nY += 0.4
 
    oPDF:CMSAY( nY, 15.9, "Otros Imp:" )
- //  oPDF:CMSAY( nY, 19.1, TRANSFORM(tonum(::nMontoOtrImp),"@E 999,999.99") )
-   oPDF:CMSAY( nY, 19.1, TRANSFORM(tonum("0"),"@E 999,999.99") )
-   
+   oPDF:CMSAY( nY, 19.1, TRANSFORM(tonum(::nMontoOtrImp),"@E 999,999.99") )
    
 		oPDF:CMSAY( nY, 8.9, "Otros Imp:" )
-		oPDF:CMSAY( nY, 12.1, TRANSFORM((tonum("0")/nDivisa),"@E 999,999.99") )
+		oPDF:CMSAY( nY, 12.1, TRANSFORM((tonum(::nMontoOtrImp)/nDivisa),"@E 999,999.99") )
 
    nY += 0.5
    
    
 
    oPDF:SetFont( "Helvetica-Bold", 14 )
-   oPDF:CMSAY( nY, 15.8, "TOTAL:" )
+   oPDF:CMSAY( nY, 15.5, "TOTAL:" )
    oPDF:CMSAY( nY, 18.7,TRANSFORM(tonum(::oEntTotal:GetValue()),"@E 999,999.99")) 
    
 		oPDF:CMSAY( nY, 8.8, "TOTAL:" )
