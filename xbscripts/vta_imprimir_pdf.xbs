@@ -20,10 +20,12 @@ procedure vta_imprimir_pdf( oForm )
    local i, nCaj, nUni, nUniCaj, nTotUniLi, aLine
    local nY := 1,nTotPagBs:=0,nTotPagDi:=0
    local cFilePDF := "tmp/vta_documento_" + STRTRAN(::hFactura["numero"], "/", "_") + ".pdf"
-   local cDivisa:=LEFT(::cDivisa,3),nDivisa:=TONUM(SUBSTR(::cDivisa,5))
+   local cMoneda:="Bs",cDivisa:=LEFT(::cDivisa,3),nDivisa:=TONUM(SUBSTR(::cDivisa,5))
    local rDetCobro:=::rVentas:DetCobroFact( {"sucursal"=>"1", "tipo_id"=> ::hFactura["tipo_id"],"numero"=>::hFactura["numero"]} )
    local aDetCobro:=rDetCobro:GetData()
-   
+   local nBasGEN:=0,nBasRED:=0,nBasSUN:=0,nIVAGEN:=0,nIVARED:=0,nIVASUN:=0
+   local nBasEXE:=TONUM(::nMontoIvaE)
+   local nPosDet:=0
    
    FERASE( cFilePDF )
    
@@ -81,12 +83,17 @@ procedure vta_imprimir_pdf( oForm )
    oPDF:CMSAY( nY, 1.0, "Código" )
    oPDF:CMSAY( nY, 3.2, "Descripcion" )
    oPDF:CMSAY( nY, 10.2, "Cant" )
+   IF tonum(::nMontoOtrImp)>0
+   nPosDet+=2
    oPDF:CMSAY( nY, 12.2, "Cap." )
    oPDF:CMSAY( nY, 13.2, "Grados" )
-   oPDF:CMSAY( nY, 15.5, "Precio Uni." )
-   oPDF:CMSAY( nY, 18.5, "Total" )
-   oPDF:CMSAY( nY, 21, "% IVA" )
+   ENDIF
+   oPDF:CMSAY( nY, 13.5+nPosDet, "Precio Uni." )
+   oPDF:CMSAY( nY, 16.5+nPosDet, "Total" )
+   oPDF:CMSAY( nY, 19+nPosDet, "% IVA" )
+   IF tonum(::nMontoOtrImp)>0
    oPDF:CMSAY( nY, 23, "Imp. Pvp" )
+   ENDIF
 
    nY += 0.5
 
@@ -102,113 +109,202 @@ procedure vta_imprimir_pdf( oForm )
       nUni    := TONUM( IIF(nUniCaj > 0, 0, hb_ntos(aLine[5])) )
       nCaj    := TONUM( IIF(nUniCaj > 0, hb_ntos(aLine[5]), 0) )
       nTotUniLi := nCaj * nUniCaj + nUni
+	  IF aLine[9]==16
+	   nBasGEN:=nBasGEN+aLine[8]
+	  ENDIF
+	  
+	  IF aLine[9]==8
+	   nBasRED:=nBasRED+aLine[8]
+	  ENDIF
+	  
+	   IF aLine[9]==31
+	   nBasSUN:=nBasSUN+aLine[8]
+	  ENDIF
 
       oPDF:CMSAY( nY, 1.0, LEFT(ALLTRIM(aLine[3]), 12) )
       oPDF:CMSAY( nY, 3.2, LEFT(ALLTRIM(aLine[4]), 35) )
       //oPDF:CMSAY( nY, 11.2, hb_ntos(nTotUniLi) )
       oPDF:CMSAY( nY, 10.2, hb_ntos(nUni+nCaj) )
+	  IF tonum(::nMontoOtrImp)>0
 	  oPDF:CMSAY( nY, 12.0, TRANSFORM(aLine[22], "@E 999,99") )
 	  oPDF:CMSAY( nY, 13.2, TRANSFORM(aLine[23], "@E 999,99") )
-      oPDF:CMSAY( nY, 15.5, TRANSFORM(aLine[6], "@E 99,999.99") )
-      oPDF:CMSAY( nY, 18.5, TRANSFORM(aLine[8], "@E 999,999.99") )
-	  oPDF:CMSAY( nY, 21, TRANSFORM(aLine[9], "@E 99") )
+	  ENDIF
+      oPDF:CMSAY( nY, 13.5+nPosDet, TRANSFORM(aLine[6], "@E 99,999.99") )
+      oPDF:CMSAY( nY, 16.5+nPosDet, TRANSFORM(aLine[8], "@E 999,999.99") )
+	  oPDF:CMSAY( nY, 19+nPosDet, TRANSFORM(aLine[9], "@E 99") )
+	  IF tonum(::nMontoOtrImp)>0
       oPDF:CMSAY( nY, 23, TRANSFORM(aLine[21], "@E 99,999.99") )
+	  ENDIF
 
-
+      
       nY += 0.35
    NEXT
    
+   //VIEW(tonum(::nMontoOtrImp))
    
   FOR i:=1 TO 15-LEN(aData)
     nY += 0.35
   NEXT
 
-   nY += 0.5
+   nY += 1
+   
+   
 
-   // =====================================
+  // =====================================
+  // FORMA DE PAGO CONTADO
+  // =====================================
+   
+ IF ::hFactura["condicion_id"]=1
+	 oPDF:SetFont( "Helvetica-Bold", 8 )
+	 IF LEN( aDetCobro )>0
+		oPDF:CMSAY( nY, 2, "Formas de Pago")
+	   ENDIF
+	   nY += 0.35
+	   oPDF:SetFont( "Helvetica", 8 )
+	   nTotPagBs:=0
+	   FOR i := 1 TO LEN( aDetCobro )
+	   aLine := aDetCobro[i]
+		oPDF:CMSAY( nY, 2, ALLTRIM(aLine[1]))
+		oPDF:CMSAY( nY, 6, TRANSFORM(aLine[2], "@E 99,999.99"))
+		   nTotPagBs:=nTotPagBs+(aLine[2])
+		   nY += 0.35
+	  NEXT
+	  nY += 0.35
+	  //oPDF:SetFont( "Helvetica-Bold", 8 )
+	  // IF LEN( aDetCobro )>0
+	  //oPDF:CMSAY( nY, 6,TRANSFORM(nTotPagBs, "@E 99,999.99"))	
+	  //nY += 0.35
+	  //ENDIF
+  
+  ENDIF
+  
+  oPDF:SetFont( "Helvetica-Bold", 8 )
+   oPDF:CMSAY( nY, 1.2,"Tipo de Cambio BCV a la fecha de emisión: "+SUBSTR(::cDivisa,5))
+  
+  
+    // =====================================
    // TOTALES
    // =====================================
-   oPDF:SetFont( "Helvetica-Bold", 11 )
-   
-		oPDF:CMSAY( nY-1, 11.9,"Tasa de Cambio: "+SUBSTR(::cDivisa,5))
-  
-		//oPDF:CMSAY( nY-0.5, 11.9,"Expresado en: Bs")
-		oPDF:CMSAY( nY-0.5, 11.9,"Expresado en: "+cDivisa)
-		oPDF:CMSAY( nY, 11.9, "SubTotal:" )
-		oPDF:CMSAY( nY, 15.1, TRANSFORM((::hFactura["monto_base"]/nDivisa), "@E 999,999.99") )
-   
-   
-   //oPDF:CMSAY( nY-0.5, 18.9,"Expresado en: "+cDivisa)
-   oPDF:CMSAY( nY-0.5, 18.9,"Expresado en: Bs")
-   oPDF:CMSAY( nY, 18.9, "SubTotal:" )
-   oPDF:CMSAY( nY, 22.1, TRANSFORM(::hFactura["monto_base"], "@E 999,999.99") )
-  // oPDF:CMSAY( nY, 17.7, hb_ntos(tonum(TRANSFORM(::hFactura["monto_base"],P_92))))
-
-   nY += 0.4
-
-   oPDF:CMSAY( nY, 18.9, "IVA (16%):" )
-   oPDF:CMSAY( nY, 22.1, TRANSFORM(tonum(::nMontoIvaG), "@E 999,999.99") )
-   
-		oPDF:CMSAY( nY, 11.9, "IVA (16%):" )
-		oPDF:CMSAY( nY, 15.1, TRANSFORM((tonum(::nMontoIvaG)/nDivisa), "@E 999,999.99") )
-
-   nY += 0.4
-
-   oPDF:CMSAY( nY, 18.9, "Otros Imp:" )
-   oPDF:CMSAY( nY, 22.1, TRANSFORM(tonum(::nMontoOtrImp),"@E 999,999.99") )
-   
-		oPDF:CMSAY( nY, 11.9, "Otros Imp:" )
-		oPDF:CMSAY( nY, 15.1, TRANSFORM((tonum(::nMontoOtrImp)/nDivisa),"@E 999,999.99") )
-
-
-   nY += 0.5
-
-    //oPDF:CMSAY( nY, 7.4,"Tasa de Cambio: "+SUBSTR(::cDivisa,5))
-   oPDF:SetFont( "Helvetica-Bold", 14 )
-   oPDF:CMSAY( nY, 18.5, "TOTAL:" )
-   oPDF:CMSAY( nY, 21.7,TRANSFORM(tonum(::oEntTotal:GetValue()),"@E 999,999.99")) 
-   
-		oPDF:CMSAY( nY, 11.8, "TOTAL:" )
-		oPDF:CMSAY( nY, 15.0,TRANSFORM((tonum(::oEntTotal:GetValue())/nDivisa),"@E 999,999.99"))
-
-
- nY:=nY-2
  
- oPDF:SetFont( "Helvetica-Bold", 8 )
- IF LEN( aDetCobro )>0
-    oPDF:CMSAY( nY, 2, "Forma de Pago")
+   oPDF:SetFont( "Helvetica", 11 )
+    nY -= 0.7
+   oPDF:CMSAY( nY, 10.4, "SubTotal "+cDivisa+" :" )
+   oPDF:CMSAY( nY, 18.4, "SubTotal "+cMoneda+" :" )
+   oPDF:CMSAY( nY, 15.6, TRANSFORM(::hFactura["monto_base"]/nDivisa, "@E 9,999,999.99") )
+   oPDF:CMSAY( nY, 23.6, TRANSFORM(::hFactura["monto_base"], "@E 9,999,999.99") )
+   nY += 0.4
+   
+   
+   IF nBasEXE>0
+	oPDF:CMSAY( nY, 10.4, "Exento "+cDivisa+" :" )
+	oPDF:CMSAY( nY, 18.4, "Exento "+cMoneda+" :" )
+	oPDF:CMSAY( nY, 15.6, TRANSFORM((nBasEXE/nDivisa), "@E 9,999,999.99"))
+	oPDF:CMSAY( nY, 23.6, TRANSFORM((nBasEXE), "@E 9,999,999.99"))
+	nY += 0.4
    ENDIF
-   nY += 0.35
-   oPDF:SetFont( "Helvetica", 8 )
-   nTotPagBs:=0
-   FOR i := 1 TO LEN( aDetCobro )
-   aLine := aDetCobro[i]
-    oPDF:CMSAY( nY, 2, ALLTRIM(aLine[1]))
-	oPDF:CMSAY( nY, 6, TRANSFORM(aLine[2], "@E 99,999.99"))
-	   nTotPagBs:=nTotPagBs+(aLine[2])
-       nY += 0.35
-  NEXT
-  nY += 0.35
-  oPDF:SetFont( "Helvetica-Bold", 8 )
-   IF LEN( aDetCobro )>0
-  oPDF:CMSAY( nY, 6,TRANSFORM(nTotPagBs, "@E 99,999.99"))	
-  ENDIF
+   
+
+   IF nBasGEN>0
+	oPDF:CMSAY( nY, 10.4, "Base Imponible (G) "+cDivisa+" :" )
+	oPDF:CMSAY( nY, 18.4, "Base Imponible (G) "+cMoneda+" :" )
+	oPDF:CMSAY( nY, 15.6, TRANSFORM((nBasGEN/nDivisa), "@E 9,999,999.99"))
+	oPDF:CMSAY( nY, 23.6, TRANSFORM((nBasGEN), "@E 9,999,999.99"))
+	nY += 0.4
+   ENDIF
+   
+    IF nBasRED>0
+	oPDF:CMSAY( nY, 10.4, "Base Imponible (R) "+cDivisa+" :" )
+	oPDF:CMSAY( nY, 18.4, "Base Imponible (R) "+cMoneda+" :") 
+	oPDF:CMSAY( nY, 15.6, TRANSFORM((nBasRED/nDivisa), "@E 9,999,999.99"))
+	oPDF:CMSAY( nY, 23.6, TRANSFORM((nBasRED), "@E 9,999,999.99"))
+	nY += 0.4
+   ENDIF
+   
+   
+    IF nBasGEN>0
+    oPDF:CMSAY( nY, 10.4, "Alicuota IVA (16%) "+cDivisa+" :" )
+	oPDF:CMSAY( nY, 18.4, "Alicuota IVA (16%) "+cMoneda+" :" )
+    oPDF:CMSAY( nY, 15.6, TRANSFORM(tonum(::nMontoIvaG)/nDivisa, "@E 9,999,999.99") )
+	oPDF:CMSAY( nY, 23.6, TRANSFORM(tonum(::nMontoIvaG), "@E 9,999,999.99") )
+	nY += 0.4
+   ENDIF
+   
+   
+   
+   IF nBasRED>0
+    oPDF:CMSAY( nY, 10.4, "Alicuota IVA (8%) "+cDivisa+" :  " )
+	oPDF:CMSAY( nY, 18.4, "Alicuota IVA (8%) "+cMoneda+" :   " )
+    oPDF:CMSAY( nY, 15.6, TRANSFORM(tonum(::nMontoIvaR)/nDivisa, "@E 9,999,999.99") )
+	oPDF:CMSAY( nY, 23.6, TRANSFORM(tonum(::nMontoIvaR), "@E 9,999,999.99") )
+	nY += 0.4
+   ENDIF
+   
+   
+		//oPDF:CMSAY( nY, 11.9, "IVA (16%):" )
+		//oPDF:CMSAY( nY, 15.1, TRANSFORM((tonum(::nMontoIvaG)/nDivisa), "@E 999,999.99") )
+
+   IF tonum(::nMontoOtrImp)>0
+    oPDF:CMSAY( nY, 10.4, "Impuesto PVP "+cDivisa+" :   " )
+	oPDF:CMSAY( nY, 18.4, "Impuesto PVP "+cMoneda+" :    " )
+	oPDF:CMSAY( nY, 15.6, TRANSFORM(tonum(::nMontoOtrImp)/nDivisa,"@E 9,999,999.99") )
+    oPDF:CMSAY( nY, 23.6, TRANSFORM(tonum(::nMontoOtrImp),"@E 9,999,999.99") )
+	nY += 0.4
+   ENDIF
+	oPDF:SetFont( "Helvetica-Bold", 11 )
+	oPDF:CMSAY( nY, 10.2, "TOTAL "+cDivisa+" :" )
+	oPDF:CMSAY( nY, 18.2, "TOTAL "+cMoneda+" :" )
+	oPDF:CMSAY( nY, 15.4,TRANSFORM(tonum(::oEntTotal:GetValue())/nDivisa,"@E 99,999,999.99"))
+	oPDF:CMSAY( nY, 23.5,TRANSFORM(tonum(::oEntTotal:GetValue()),"@E 99,999,999.99"))
+	nY += 0.5	
+    
+	oPDF:SetFont( "Helvetica", 11 )
+	oPDF:CMSAY( nY, 10.2, "Base Imponible IGTF "+cDivisa+" :" )
+	oPDF:CMSAY( nY, 18.2, "Base Imponible IGTF "+cMoneda+" :" )
+	
+	oPDF:CMSAY( nY, 15.4,TRANSFORM(0/nDivisa,"@E 99,999,999.99"))
+	oPDF:CMSAY( nY, 23.5,TRANSFORM(0,"@E 99,999,999.99"))
+	nY += 0.4
+	
+	oPDF:CMSAY( nY, 10.2, "TOTAL IGTF 3% "+cDivisa+" :" )
+	oPDF:CMSAY( nY, 18.2, "TOTAL IGTF 3% "+cMoneda+" :" )
+	oPDF:CMSAY( nY, 15.4,TRANSFORM(0/nDivisa,"@E 99,999,999.99"))
+	oPDF:CMSAY( nY, 23.5,TRANSFORM(0,"@E 99,999,999.99"))
+	nY += 0.4
+	
+	oPDF:SetFont( "Helvetica-Bold", 11 )
+	oPDF:CMSAY( nY, 10.2, "TOTAL A PAGAR "+cDivisa+" :" )
+	oPDF:CMSAY( nY, 18.2, "TOTAL A PAGAR"+cMoneda+" :" )
+	oPDF:CMSAY( nY, 15.4,TRANSFORM(tonum(::oEntTotal:GetValue())/nDivisa,"@E 99,999,999.99"))
+	oPDF:CMSAY( nY, 23.5,TRANSFORM(tonum(::oEntTotal:GetValue()),"@E 99,999,999.99"))	
+
+	nY += 0.5
+ 
 
    // =====================================
    // PIE
    // =====================================
-   nY += 1.2
 
    oPDF:SetFont( "Helvetica", 8 )
    
-   IF ::hFactura["condicion_id"]>1
-   //oPDF:CMSAY( nY, 1.4, "Esta factura esta sujeta al cobro del 3% IGTF segun Providencia SNAT/2022/000013" )
-    oPDF:CMSAY( nY, 1.4, "Esta factura estará sujeta al cobro del 3% por concepto de IGTF en caso de ser pagada en una moneda distinta a la de curso")
-
-    nY += 0.5
-   oPDF:CMSAY( nY, 1.4, "legal en el país, de acuerdo a lo publicado en la Providencia Administrativa SNAT/2022/000013 de fecha 03.03.2022")
-   ENDIF
+      // =====================================
+   // COLETILLA IGTF CREDITO
+   // =====================================
    
+   IF ::hFactura["condicion_id"]>1
+    oPDF:CMSAY( nY, 1.4, "Este pago estará sujeto al cobro adicional del 3% del Impuesto a las Grandes Transacciones Financieras (IGTF), de conformidad con la Providencia Administrativa")
+	nY += 0.4
+	oPDF:CMSAY( nY, 1.4, " SNAT/2022/000013 publicada en la G.O. N° 42.339 del 17-03-2022, en caso de ser cancelado en divisas. No aplica en pago en Bs.")
+	nY += 0.4
+   ENDIF
+  
+	nY += 0.4
+   oPDF:CMSAY( nY, 1.4, "Este documento se expresa en Bolívares con su equivalente en Dólares Americanos al tipo de cambio corriente del mercado a la fecha de su emisión, según lo ")
+   nY += 0.4
+   oPDF:CMSAY( nY, 1.4, "establecido en el artículo 13 numeral 14 de la Providencia Administrativa SNAT / 2024 / 0071 (...) en concordancia con el artículo 128 de la Ley del Banco ")
+   nY += 0.4
+   oPDF:CMSAY( nY, 1.4, "Central de Venezuela (BCV); artículo 25 de la Ley que establece el Impuesto al Valor Agregado (IVA) y 38 del Reglamento General de la Ley que establece el ")
+   nY += 0.4
+   oPDF:CMSAY( nY, 1.4," Impuesto al Valor Agregado (RLIVA).")
    // Guardar
    oPDF:End( .T. )
 
