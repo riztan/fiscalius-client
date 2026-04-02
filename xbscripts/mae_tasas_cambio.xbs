@@ -19,12 +19,12 @@ procedure mae_tasas_cambio( oForm, oWndParent, oEntParent )
 
    rTasas := ::oGEmpresa:TasasDeCambio()
 
-   if hb_isNIL( rTasas )
-      MsgStop( "No se pudo obtener el listado de tasas de cambio." )
-      return
-   endif
+    if hb_isNIL( rTasas )
+       MsgStop( "No se pudo obtener el listado de tasas de cambio." )
+       return
+    endif
 
-   SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_listbox.ui"
+    SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_listbox.ui"
 
    DEFINE WINDOW oAliWnd ;
           TITLE "Fiscalius. Tasas de Cambio" ;
@@ -58,6 +58,9 @@ procedure mae_tasas_cambio( oForm, oWndParent, oEntParent )
    oLBoxTasas:bNew  := {|oModel| tasacamb_edit( oForm, oAliWnd, oModTasas, .T. /*lNew*/ ) }
    oLBoxTasas:bEdit := {||View("Acción no permitida") }//{|oModel| tasacamb_edit( oForm, oAliWnd, oModTasas, .F. /*lNew*/ ) }
    oLBoxTasas:bDel  := {||View("Acción no permitida")}
+   
+   // oLBoxTasas:bDel := {|| tasacamb_delete( oForm, oAliWnd, oModTasas ) }
+
 
    // Columnas del TasasDeCambio():
    // 1=id  2=moneda  3=nombre_moneda  4=fecha  5=valor  6=moneda_base  7=nombre_moneda_base
@@ -140,6 +143,44 @@ procedure tasacamb_edit( oFormParent, oAliWnd, oModel, lNew )
    ACTIVATE WINDOW oTasForm:oWnd MODAL VALID __TasaExit( oTasForm )
 
 return
+
+
+
+procedure tasacamb_delete( oFormParent, oAliWnd, oModel )
+   local nId, nValor, cFecha, cMoneda, rTasa
+   
+   nId     := oModel:GetCol( 1 )
+   cMoneda := oModel:GetCol( 2 )
+   cFecha  := oModel:GetCol( 4 )
+   nValor  := oModel:GetCol( 5 )
+   
+   
+  //  view(nId)
+//	Fecha: "+cFecha)
+   
+  // view(cfecha)
+
+   
+   if !MsgYesNo( "¿Está seguro de eliminar esta tasa de cambio?" + hb_eol() + ;
+                "Moneda: " + cMoneda + hb_eol() + ;
+                "Fecha: " + cFecha + hb_eol() + ;
+                "Valor: " + (nValor), ;
+                "Confirmar eliminación" )
+      return .F.
+   endif
+   
+   rTasa := oFormParent:oGEmpresa:GetTasaCambio( { "id" => nId } )
+    
+   if rTasa:Delete( nId, cMoneda,cFecha )
+      oModel:Delete()
+      MsgInfo( "Tasa de cambio eliminada correctamente.", "Éxito" )
+      return .T.
+   else
+      MsgAlert( "No se pudo eliminar la tasa de cambio.", "Error" )
+      return .F.
+   endif
+
+return .F.
 
 
 
