@@ -169,6 +169,9 @@ procedure poslogin( oParent )
       DEFINE MENUITEM ACTION oTPuy:RunXBS("auditoria", oForm );  
              ID "itm_auditoria" RESOURCE ::oRes
 
+      DEFINE MENUITEM ACTION oTPuy:RunXBS("usabilidad", oForm );  
+             ID "itm_usabilidad" RESOURCE ::oRes
+
       DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_ctasxcobrar", oForm );  
              ID "itm_ctasxcobrar" RESOURCE ::oRes
 

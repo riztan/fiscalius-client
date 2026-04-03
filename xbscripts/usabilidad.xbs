@@ -1,0 +1,154 @@
+/* usabilidad.xbs
+ *
+ * Formulario para consultar log de usabilidad en Fiscalius
+ * Muestra cómo los usuarios interactúan con el sistema
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure usabilidad( oForm, oWndParent, oEntParent )
+   local oUsbWnd, oRes
+   local rEmpresa, oUso, oModUso, oLBoxUso
+   local oBtnBuscar, oBtnSalir
+   local cEntFecha
+   local oEntFecha
+   local aData, aStruct, aLine, hItem, nCol
+
+   // Variables para ENTRY
+   cEntFecha := ""
+
+   rEmpresa := ::oGEmpresa
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"usabilidad.ui"
+
+   DEFINE WINDOW oUsbWnd ;
+          TITLE "Fiscalius. Usabilidad" ;
+          SIZE 900,550 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ID "img_banner" RESOURCE oRes
+   oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ID "img_logo" RESOURCE oRes
+   oImgLogo:Adjust(60)
+
+   // Campo de filtro de fecha
+   DEFINE ENTRY oEntFecha VAR cEntFecha CALENDAR ;
+          VALID .T. ;
+          ID "ent_fecha" RESOURCE oRes
+
+   // Botones del UI
+   DEFINE BUTTON oBtnBuscar ;
+          ACTION __UsabilidadBuscar( oUsbWnd, oModUso, oLBoxUso, oEntFecha ) ;
+          ID "btn_buscar" RESOURCE oRes
+
+   DEFINE BUTTON oBtnSalir ;
+          ACTION oUsbWnd:End() ;
+          ID "btn_salir" RESOURCE oRes
+
+   // Box para el listbox
+   DEFINE BOX oBoxData ID "box_data" RESOURCE oRes EXPAND FILL
+
+   // Cargar datos de hoy (usar ::oGEmpresa:rEmpresa que es el objeto remoto)
+   oUso := ::oGEmpresa:rEmpresa:GetUsageLog( { "fecha" => "" } )
+
+   if hb_isNIL( oUso )
+      MsgStop("No hay datos de usabilidad disponibles")
+      return
+   endif
+
+   // GetUsageLog retorna un array de hashes, no un RQuery
+   // Convertir a formato para modelo
+
+   // Obtener datos
+   aData := oUso
+
+   if len(aData) == 0 .or. !hb_isHash( aData[1] )
+      MsgStop("No hay datos de usabilidad disponibles")
+      return
+   endif
+
+   // Crear estructura basada en las claves del primer hash
+   hItem := aData[1]
+   aStruct := {}
+   for nCol := 1 to len( hb_hKeys( hItem ) )
+      aadd( aStruct, { hb_hKeys(hItem)[nCol], "C", 50, 0 } )
+   next
+
+   // Crear modelo con estructura y datos
+   DEFINE MODEL oModUso ;
+          STRUCT aStruct ;
+          DATA   aData
+
+   DEFINE LISTBOX oLBoxUso ;
+          MODEL oModUso ;
+          OF oBoxData
+
+   oLBoxUso:lBar := .F.
+
+   // Títulos de columnas
+   oLBoxUso:SetColTitle( 1, "Fecha/Hora" )
+   oLBoxUso:SetColTitle( 2, "Usuario" )
+   oLBoxUso:SetColTitle( 3, "Sesión" )
+   oLBoxUso:SetColTitle( 4, "Objeto" )
+   oLBoxUso:SetColTitle( 5, "Método" )
+   oLBoxUso:SetColTitle( 6, "Parámetros" )
+   oLBoxUso:SetColTitle( 7, "Estado" )
+   oLBoxUso:SetColTitle( 8, "Duración (ms)" )
+   oLBoxUso:SetColTitle( 9, "Error" )
+
+   oLBoxUso:Active()
+
+   ACTIVATE WINDOW oUsbWnd MODAL
+
+return
+
+
+
+procedure __UsabilidadBuscar( oWnd, oModel, oList, oEntFecha )
+   local hParam := hb_hash()
+   local oUso
+   local cFecha
+   local aData, aStruct, aLine, hItem, nCol
+
+   // Obtener valor del campo de filtro
+   cFecha := alltrim( oEntFecha:GetText() )
+
+   // Convertir fecha al formato YYYYMMDD si es necesario
+   if !empty( cFecha )
+      // Si viene como YYYY-MM-DD, convertir a YYYYMMDD
+      cFecha := strtran( cFecha, "-", "" )
+   endif
+
+   // Construir parámetros
+   if !empty( cFecha )
+      hParam[ "fecha" ] := cFecha
+   endif
+
+   oUso := ::oGEmpresa:rEmpresa:GetUsageLog( hParam )
+
+   if hb_isNIL( oUso ) .or. len(oUso) == 0
+      MsgInfo( "No hay registros para la fecha seleccionada" )
+      return
+   endif
+
+   // Convertir array de hashes a formato para modelo
+   aData := oUso
+
+   if hb_isHash( aData[1] )
+      hItem := aData[1]
+      aStruct := {}
+      for nCol := 1 to len( hb_hKeys( hItem ) )
+         aadd( aStruct, { hb_hKeys(hItem)[nCol], "C", 50, 0 } )
+      next
+   endif
+
+   // Crear nuevo modelo con los datos
+   DEFINE MODEL oModelNew ;
+          STRUCT aStruct ;
+          DATA   aData
+
+   oList:SetModel( oModelNew )
+
+return
