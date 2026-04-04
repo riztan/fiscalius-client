@@ -241,12 +241,12 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
 
    ::cRetIvaFecha := ''
    DEFINE ENTRY TYPE DATE ::oEntRetIvaF VAR ::cRetIvaFecha CALENDAR;
-          VALID __ValRetFecha(oForm); 
+          VALID __NC_ValRetFecha(oForm); 
           ID "ent_retivaf" RESOURCE ::oRes
 
    ::cPorRetIva := ''
    DEFINE ENTRY TYPE PORCENT ::oEntPorRetIva VAR ::cPorRetIva ;
-          VALID __ValRetIvaPorcen( oForm ) ;
+          VALID __NC_ValRetIvaPorcen( oForm ) ;
           ID "ent_porretiva" RESOURCE ::oRes
 
    ::cMonRetIva := ''
@@ -260,7 +260,7 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
 
    ::cIslrFecha := ''
    DEFINE ENTRY TYPE DATE ::oEntIslrFecha VAR ::cIslrFecha CALENDAR;
-          VALID __ValIslrFecha(oForm); 
+          VALID __NC_ValIslrFecha(oForm); 
           ID "ent_islr_fecha" RESOURCE ::oRes
 
    ::cIslrMonto := ""
@@ -309,23 +309,23 @@ procedure __NC_Docs( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() )
       RETURN
    endif
 
-   if rFacturas == NIL .or. !hb_isObject(rFacturas)
+   if !hb_isObject(rFacturas)
       MsgAlert( "No hay facturas disponibles para este cliente" )
       RETURN
    endif
 
    if rFacturas:RecCount() = 1
-      if hb_isNIL( rFacturas:numero )
+      if hb_isNIL( rFacturas:factura_numero )
          MsgAlert( "No hay facturas disponibles para este cliente" )
          RETURN
       endif
-      ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:numero) )
+      ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:factura_numero) )
       ::rFactDetal := ::rDocumento:DetalFrom()
       return
    endif
 
    if rFacturas:RecCount() = 1
-      ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:numero) )
+      ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:factura_numero) )
       ::rFactDetal := ::rDocumento:Detal()
 //View( ::rFactDetal:Data() )
       return
@@ -399,7 +399,7 @@ RETURN
 
 
 
-function __ValRetIvaPorcen( oForm )
+function __NC_ValRetIvaPorcen( oForm )
    local nPorcen := ToNum(::cPorRetIva)
    local nMonto 
    if !( nPorcen >=1 .and. nPorcen <=100 )
@@ -416,7 +416,7 @@ RETURN .T.
 
 
 
-function __ValIslrFecha( oForm )
+function __NC_ValIslrFecha( oForm )
    if ::rDocumento:Estado()!="C"
       MsgAlert( "El documento no está cerrado, no requiere información de retención", "Atención" )
       ::oEntIslrFecha:SetValue( "" )
@@ -431,7 +431,7 @@ return .t.
 
 
 
-function __ValRetFecha( oForm )
+function __NC_ValRetFecha( oForm )
    if ::rDocumento:Estado()!="C"
       MsgAlert( "El documento no está cerrado, no requiere información de retención", "Atención" )
       ::oEntRetIvaF:SetValue( "" )
@@ -596,7 +596,7 @@ procedure __NCDetalRefresh( oForm )
                           aLine[19], ;
                           hb_ntos(aLine[20]), ;
                           hb_ntos(aLine[21]), ;
-                          hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0)),
+                          hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0)),;
                           hb_ntos(aLine[5])
          CATCH oErr
             View( "__NCDetalRefresh(): " + oErr:Description )
@@ -675,7 +675,6 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::lSave      := .F.
       ::rDocumento := ::rVentas:Documento( ::cTipoDocumento, oModel:GetCol("numero") )
       ::hDocumento := ::rDocumento:Data()
-//View( ::hDocumento )
       ::rFactDetal := ::rDocumento:Detal()
 
       ::cFecha := DTOC( ::hDocumento["fecha"] )
@@ -847,6 +846,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
       ::oLBoxDetal:SetColTitle( 21, "Imp.PVP" )      //-- Columna Otros Impuestos
       ::oLBoxDetal:SetColTitle( 22, "Imp.PVP Unit" ) //-- Columna Otros Imp Unitario
+      ::oLBoxDetal:SetColTitle( 23, "Cant Máxima" ) //-- Columna Otros Imp Unitario
 
       ::oLBoxDetal:Active()
 
@@ -1345,8 +1345,6 @@ Procedure __NCSave( oForm, oFormParent )
    ::hDocumento["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hDocumento["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
 
-   //View( ::hDocumento ) 
-
    uResp := ::rDocumento:SetData( ::hDocumento )
 //View( uResp )
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
@@ -1359,7 +1357,6 @@ Procedure __NCSave( oForm, oFormParent )
    bSaveDetal := {|oTView, pModel, aIter| __NCSaveDetal( oTView, pModel, aIter, oForm )  }
 
    uResp := ::rDocumento:Save()
-//View( uResp )
    if hb_isLogical( uResp ) .and. uResp
 //View("atualizamos hDocumento ")
       ::hDocumento   := ::rDocumento:Data()
@@ -1398,6 +1395,8 @@ Procedure __NCSave( oForm, oFormParent )
          endif
       endif
 
+   else
+      uResp := .F.
    endif
 
 //View( uResp )
@@ -1552,7 +1551,7 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, __IVAPORCEN, ;
-STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),;
+                          STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),;
                           ::oModDetal:oTreeView:SetPosCol( ::oModDetal:aIter, __CANTIDAD, .f. ), ;
                           ::oInvWnd:End() }
 
