@@ -1060,6 +1060,16 @@
                                 <property name="use_stock">False</property>
                               </object>
                             </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_usabilidad">
+                                <property name="label" translatable="yes">_Usabilidad</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Consulta registro de usabilidad</property>
+                                <property name="use_underline">True</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
                           </object>
                         </child>
                       </object>

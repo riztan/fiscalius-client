@@ -77,7 +77,7 @@ procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente, cFiltro, cDo
                                    oCliWnd:End() ) }
    else 
       oLBoxCli:bNew  := {|oModel| vtc_edit( oForm, oCliWnd, oModClientes, rVentas, .T. /*lNew*/ ) }
-      oLBoxCli:bEdit := {|oModClientes| vtc_edit( oForm, oCliWnd, oModClientes, rVentas, .F. /*lNew*/ ) }
+      oLBoxCli:bEdit := {|oModel| vtc_edit( oForm, oCliWnd, oModClientes, rVentas, .F. /*lNew*/ ) }
    endif
    
    

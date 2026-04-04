@@ -411,11 +411,11 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
    ::aDivisas := {}
    ::aMonedas := {}
    While !rQry:Eof()
-      if rQry:codigo="USD" //-- de momento solo tomamos la tasa USD
+      //if rQry:codigo="USD" //-- de momento solo tomamos la tasa USD
          AADD( ::aDivisas, ALLTRIM(rQry:codigo)+" "+;
                            hb_ntos( rQry:valor ) )
          AADD( ::aMonedas, rQry:moneda_id )
-      endif
+      //endif
       rQry:Skip()
    EndDo
    if hb_isObject( ::oComboDivisa )
