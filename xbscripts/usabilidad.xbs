@@ -64,6 +64,11 @@ procedure usabilidad( oForm, oWndParent, oEntParent )
    // Obtener datos
    aData := oUso
 
+   if !hb_isArray( aData )
+      View( hb_valtoexp(aData) )
+      return
+   endif
+
    if len(aData) == 0 .or. !hb_isHash( aData[1] )
       MsgStop("No hay datos de usabilidad disponibles")
       return
