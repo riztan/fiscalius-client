@@ -991,15 +991,15 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    
    
    if nPorcentaje = 0  // Producto exento de IVA
-   	  nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
-      nBase := ToNum( ::oEntIvaE:GetValue() )
+      nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
+      nBase  := ToNum( ::oEntIvaE:GetValue() )
       nTotal := ROUND( nBase + nMonto, 2 )
       ::oEntIvaE:SetValue( TRANSFORM( nTotal, P_92 ) )
    endif
    
 
 
-      if nPorcentaje > 0
+   if nPorcentaje > 0
       nMonto := ToNum( oTView:GetAutoValue( __IVAMONTO, aIter ) )
       if nPorcentaje = 8  // IVA Reducido
          nBase  := ToNum( ::oEntIvaR:GetValue() )

@@ -901,7 +901,7 @@
                                                           <object class="GtkLabel" id="label27">
                                                             <property name="visible">True</property>
                                                             <property name="can_focus">False</property>
-                                                            <property name="label" translatable="yes">Iva General (31%):</property>
+                                                            <property name="label" translatable="yes">Iva 16+15 (31%):</property>
                                                           </object>
                                                           <packing>
                                                             <property name="expand">True</property>

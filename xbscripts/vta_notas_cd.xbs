@@ -223,6 +223,12 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
           ID "ent_ivagen" RESOURCE ::oRes 
    ::oEntIvaG:Justify( GTK_JUSTIFY_RIGHT )
 
+   DEFINE BOX ::oBoxIvaSun ID "box_ivasun" RESOURCE ::oRes 
+   ::nMontoIvaS := 0
+   DEFINE MONEY ENTRY ::oEntIvaS VAR ::nMontoIvaS ;
+          ID "ent_ivasun" RESOURCE ::oRes 
+   ::oEntIvaS:Justify( GTK_JUSTIFY_RIGHT )
+
    DEFINE BOX ::oBoxOtrImp ID "box_otrimp" RESOURCE ::oRes 
    ::nMontoOtrImp := 0
    DEFINE MONEY ENTRY ::oEntOtrImp VAR ::nMontoOtrImp ;
@@ -413,6 +419,7 @@ function __NC_ValRetIvaPorcen( oForm )
    
    nMonto := ToNum(::oEntIvaR:GetValue()) * (nPorcen/100) 
    nMonto += ToNum(::oEntIvaG:GetValue()) * (nPorcen/100) 
+   nMonto += ToNum(::oEntIvaS:GetValue()) * (nPorcen/100) 
 
    ::oEntMonRetIva:SetValue( TRANSFORM( nMonto, P_92 ) )
 
@@ -653,6 +660,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
+      ::oEntIvaS:SetValue( "0" )
       ::oEntOtrImp:SetValue( "0" )
       ::oEntMonBase:SetValue( "0" )
 
@@ -696,6 +704,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
+      ::oEntIvaS:SetValue( "0" )
 
       ::oEntRetIva:SetValue( "" )
       ::oEntRetIvaF:SetValue( "" )
@@ -715,6 +724,9 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
          endif
          if hIva["porcentaje"] = 16
             ::oEntIvaG:SetValue( TRANSFORM(hIva["monto"],P_92) )
+         endif
+         if hIva["porcentaje"] = 31
+            ::oEntIvaS:SetValue( TRANSFORM(hIva["monto"],P_92) )
          endif
 
          nMonRetIVA  += hIva["monto_retencion"]
@@ -1091,6 +1103,7 @@ procedure __NCCalcula( oForm )
    ::oEntIvaE:SetValue("0")
    ::oEntIvaR:SetValue("0")
    ::oEntIvaG:SetValue("0")
+   ::oEntIvaS:SetValue("0")
    ::oEntOtrImp:SetValue("0")
    ::hDocumento["iva"] := {=>}
    ::bDetalCode := {|oTView, pModel, aIter| __NCCalMontos( oTView, pModel, aIter, oForm ) }
@@ -1139,6 +1152,10 @@ return
          nBase  := ToNum( ::oEntIvaG:GetValue() )
          nTotal := ROUND( nBase + nMonto, 2 )
          ::oEntIvaG:SetValue( TRANSFORM( nTotal, P_92 ) )
+      elseif nPorcentaje = 31  // IVA Suntuario
+         nBase  := ToNum( ::oEntIvaS:GetValue() )
+         nTotal := ROUND( nBase + nMonto, 2 )
+         ::oEntIvaS:SetValue( TRANSFORM( nTotal, P_92 ) )
       endif
       
       if !hb_hHasKey( ::hDocumento, "iva" )
@@ -1168,6 +1185,7 @@ return
              ToNum( ::oEntIvaE:GetValue() ) +;
              ToNum( ::oEntIvaR:GetValue() ) +;
              ToNum( ::oEntIvaG:GetValue() ) +;
+             ToNum( ::oEntIvaS:GetValue() ) +;
              ToNum( ::oEntOtrImp:GetValue() ), 2 ) 
             
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
@@ -1176,6 +1194,7 @@ return
    FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
                       {::oBoxIvaRed, ::oEntIvaR}, ;
                       {::oBoxIvaGen, ::oEntIvaG}, ;
+                      {::oBoxIvaSun, ::oEntIvaS}, ;
                       {::oBoxOtrImp, ::oEntOtrImp} }
       if ToNum( aBox[2]:GetValue() ) = 0
          aBox[1]:Hide()
@@ -1219,6 +1238,7 @@ procedure __NCDocsRefresh( oForm, lConfirm )
    ::oEntIvaE:SetEditable( .F. )
    ::oEntIvaR:SetEditable( .F. )
    ::oEntIvaG:SetEditable( .F. )
+   ::oEntIvaS:SetEditable( .F. )
    ::oEntMonBase:SetEditable( .F. )
 
    if (::hDocumento["estado"] = "A" .or. ::hDocumento["estado"] = "C") .or. ;
