@@ -30,7 +30,7 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
 
    ::cEmpresa := oFormParent:cCBEmpresa
    ::rEmpresa := oFormParent:oGEmpresa
-   ::rVentas := oFormParent:oGEmpresa:SetModulo("Ventas")
+   ::rVentas  := oFormParent:oGEmpresa:SetModulo("Ventas")
    ::rDocumentos := ::rVentas:Transacciones( ::cTipoDocumento )
 
    if hb_isNIL( ::rDocumentos )
@@ -64,6 +64,10 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    DEFINE BUTTON ::oBtnGuardar ;
           ACTION __NCSave( oForm, oFormParent ) ;
           ID "btn_guardar" RESOURCE ::oRes
+
+   DEFINE BUTTON ::oBtnCobrar ;
+          ACTION __NCCobrar( oForm, oFormParent ) ;
+          ID "btn_cobro" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnImprime ;
           ACTION __NCImprime( oForm ) ;
@@ -1006,7 +1010,7 @@ procedure __NCEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nC
       nCantNueva := ToNum( uVal )
       nCantMax := ToNum( oTreeView:GetAutoValue( 23 ) )
       
-      if nCantMax > 0 .and. nCantNueva > nCantMax
+      if ::cTipoDocumento = "C" .and. nCantMax > 0 .and. nCantNueva > nCantMax
          ::oLabInfo:SetText( "Cantidad no puede exceder la de factura (" + hb_ntos(nCantMax) + ")" )
          return
       endif
@@ -1443,6 +1447,14 @@ procedure __NCSaveDetal(oTView, pModel, aIter, oForm)
 
 return
 
+
+PROCEDURE __NCCobrar( oForm, oFormParent)
+   if ::hDocumento["estado"] != "C"
+      ::oLabInfo:SetText( "Solo puede generar recibo en documento cerrado." )
+      RETURN
+   endif
+   oTPuy:RunXBS( "fin_recibo", oForm, oFormParent, iif( ::cTipoDocumento="C", "5", "6") /*Documento*/ )
+RETURN
 
 
 PROCEDURE __NCImprime( oForm )

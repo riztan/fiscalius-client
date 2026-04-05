@@ -200,6 +200,12 @@ procedure vta_facturas( oFormParent )
           ID "ent_ivagen" RESOURCE ::oRes 
    ::oEntIvaG:Justify( GTK_JUSTIFY_RIGHT )
 
+   DEFINE BOX ::oBoxIvaSun ID "box_ivasun" RESOURCE ::oRes 
+   ::nMontoIvaS := 0
+   DEFINE MONEY ENTRY ::oEntIvaS VAR ::nMontoIvaS ;
+          ID "ent_ivasun" RESOURCE ::oRes 
+   ::oEntIvaS:Justify( GTK_JUSTIFY_RIGHT )
+
    DEFINE BOX ::oBoxOtrImp ID "box_otrimp" RESOURCE ::oRes 
    ::nMontoOtrImp := 0
    DEFINE MONEY ENTRY ::oEntOtrImp VAR ::nMontoOtrImp ;
@@ -312,6 +318,7 @@ function __ValRetIvaPorcen( oForm )
    
    nMonto := ToNum(::oEntIvaR:GetValue()) * (nPorcen/100) 
    nMonto += ToNum(::oEntIvaG:GetValue()) * (nPorcen/100) 
+   nMonto += ToNum(::oEntIvaS:GetValue()) * (nPorcen/100) 
 
    ::oEntMonRetIva:SetValue( TRANSFORM( nMonto, P_92 ) )
 
@@ -485,6 +492,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
+      ::oEntIvaS:SetValue( "0" )
       ::oEntOtrImp:SetValue( "0" )
       ::oEntMonBase:SetValue( "0" )
 
@@ -528,6 +536,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
+      ::oEntIvaS:SetValue( "0" )
       // Usar otros_imp desde el servidor si existe, sino inicializar en 0
       if hb_hHasKey( ::hFactura, "otros_imp" )
          ::oEntOtrImp:SetValue( TRANSFORM( ::hFactura["otros_imp"], P_92 ) )
@@ -553,6 +562,9 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
          endif
          if hIva["porcentaje"] = 16
             ::oEntIvaG:SetValue( TRANSFORM(hIva["monto"],P_92) )
+         endif
+         if hIva["porcentaje"] = 31
+            ::oEntIvaS:SetValue( TRANSFORM(hIva["monto"],P_92) )
          endif
 
          nMonRetIVA  += hIva["monto_retencion"]
@@ -946,6 +958,7 @@ procedure __Calcula( oForm )
    ::oEntIvaE:SetValue("0")
    ::oEntIvaR:SetValue("0")
    ::oEntIvaG:SetValue("0")
+   ::oEntIvaS:SetValue("0")
    ::oEntOtrImp:SetValue("0") // Initialize otros_imp
    ::hFactura["iva"] := hb_hash()  // Initialize IVA hash here, once
    ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
@@ -996,6 +1009,10 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
          nBase  := ToNum( ::oEntIvaG:GetValue() )
          nTotal := ROUND( nBase+nMonto, 2 )
          ::oEntIvaG:SetValue( TRANSFORM( nTotal, P_92 ) )
+      elseif nPorcentaje = 31  // IVA Suntuario
+         nBase  := ToNum( ::oEntIvaS:GetValue() )
+         nTotal := ROUND( nBase+nMonto, 2 )
+         ::oEntIvaS:SetValue( TRANSFORM( nTotal, P_92 ) )
       endif
             //if !hb_hHasKey( ::hFactura, "iva" )
       //   ::hFactura["iva"] := hb_hash()
@@ -1029,6 +1046,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
                     ToNum( ::oEntIvaE:GetValue() ) +;
                     ToNum( ::oEntIvaR:GetValue() ) +;
                     ToNum( ::oEntIvaG:GetValue() ) +;
+                    ToNum( ::oEntIvaS:GetValue() ) +;
                     nOtrImp, 2 ) // Include otros_imp
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
    //::oEntTotBs:SetValue( TRANSFORM( nTotal*TONUM(SUBSTR(::cDivisa,5)), P_92 ) ) 
@@ -1037,6 +1055,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
                       {::oBoxIvaRed, ::oEntIvaR}, ;
                       {::oBoxIvaGen, ::oEntIvaG}, ;
+                      {::oBoxIvaSun, ::oEntIvaS}, ;
                       {::oBoxOtrImp, ::oEntOtrImp} }
       if ToNum( aBox[2]:GetValue() ) = 0
          aBox[1]:Hide()
@@ -1097,6 +1116,7 @@ procedure __FactRefresh( oForm, lConfirm )
    ::oEntIvaE:SetEditable( .F. )
    ::oEntIvaR:SetEditable( .F. )
    ::oEntIvaG:SetEditable( .F. )
+   ::oEntIvaS:SetEditable( .F. )
    ::oEntMonBase:SetEditable( .F. )
 
    if (::hFactura["estado"] = "A" .or. ::hFactura["estado"] = "C") .or. ;
