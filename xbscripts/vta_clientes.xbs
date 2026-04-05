@@ -84,12 +84,13 @@ procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente, cFiltro, cDo
    
    oLBoxCli:SetColVisible( 1, .F. )    //- Ocultamos ID
 
-   oLBoxCli:SetColTitle( 2, "Código" )          //- Cambiamos el titulo 
-   oLBoxCli:SetColTitle( 3, "Nombre" )          //- Cambiamos el titulo 
-   oLBoxCli:SetColTitle( 4, "Rif" )          //- Cambiamos el titulo 
-   oLBoxCli:SetColTitle( 5, "Direccion" )          //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 2, "Código" )            //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 3, "Nombre" )            //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 4, "Rif" )               //- Cambiamos el titulo 
+   oLBoxCli:SetColTitle( 5, "Direccion" )         //- Cambiamos el titulo 
    oLBoxCli:SetColTitle( 6, "Telefono" )          //- Cambiamos el titulo|
-   oLBoxCli:SetColTitle( 7, "E-mail" )          //- Cambiamos el titulo
+   oLBoxCli:SetColTitle( 7, "E-mail" )            //- Cambiamos el titulo
+   oLBoxCli:SetColTitle( 8, "Tipo de Entidad" )   //- Tipo de entidad
 
 
    ACTIVATE WINDOW oCliWnd MODAL //OF oWndParent
@@ -116,6 +117,14 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
    oCliForm:rVentas  := rVentas
    oCliForm:lNew     := lNew
 
+   oCliForm:aTipo    := {"V - Natural Vzla",;
+                         "J - Jurídica", ;
+                         "E - Extranjero",;
+                         "P - Pasaporte",;
+                         "G - Gubernamental ",;
+                         "C - Comunal ";
+                        }
+
    if lNew
 
       oCliForm:cCodigo  := ""
@@ -125,6 +134,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
       oCliForm:cTlf     := ""
       oCliForm:cMail    := ""
       oCliForm:cCedula  := ""
+      oCliForm:cTipo    := ""
    else
 
       oCliForm:cCodigo  := oModel:GetCol( 2 )
@@ -135,6 +145,8 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
       oCliForm:cDir     := oModel:GetCol( 5 )
       oCliForm:cTlf     := oModel:GetCol( 6 )
       oCliForm:cMail    := oModel:GetCol( 7 )
+      oCliForm:cTipo    := oModel:GetCol( 8 )
+      AEVAL( oCliForm:aTipo, {|cValue, nPos|  if( LEFT(cValue,1)=oCliForm:cTipo, oCliForm:cTipo := cValue, NIL )  } )
    endif
 
    oCliForm:rCliente := rVentas:Cliente( {"codigo"=> oCliForm:cCodigo} )
@@ -145,7 +157,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_clientes.ui"
 
-   DEFINE WINDOW oCliForm:oWnd TITLE "Cliente" SIZE 650,350 ;
+   DEFINE WINDOW oCliForm:oWnd TITLE "Cliente" SIZE 750,350 ;
           OF oCliWnd ;
           ID "window1" RESOURCE oRes
 
@@ -162,6 +174,14 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
       DEFINE ENTRY oCliForm:oEntNombre VAR oCliForm:cNombre ID "ent_nombre" RESOURCE oRes
 
       DEFINE ENTRY oCliForm:oEntNombreC VAR oCliForm:cNombreC ID "ent_nombre_corto" RESOURCE oRes
+
+      DEFINE BOX oCliForm:oBoxTipo ID "box_tipo" RESOURCE oRes
+      DEFINE COMBOBOX oCliForm:oComboTipo ;
+             VAR oCliForm:cTipo ITEMS oCliForm:aTipo ;
+             ON CHANGE ( oCliForm:oEntRif:SetValue( hb_aTokens( oCliForm:cTipo, " - " )[1] +;
+                         RIGHT(oCliForm:cRif, LEN(oCliForm:cRif)-1 )) ;
+                       ) ; //oCliForm:oEntRif:GetValue() )
+             OF oCliForm:oBoxTipo
 
       DEFINE ENTRY oCliForm:oEntCedula VAR oCliForm:cCedula ;
              VALID iif( oCliForm:lClose, .T., __ValidaCedula( oCliForm:oEntCedula ) ) ;
@@ -234,7 +254,8 @@ Procedure __VtaCliSave( oForm )
                          "email"        => ::cMail,    ;
                          "telefono"     => ::cTlf,     ;
                          "direccion"    => ::cDir,     ;
-                         "cedula"       => ::cCedula   ;
+                         "cedula"       => ::cCedula,  ;
+                         "tipo_entidad" => LEFT(::cTipo,1) ;
                        } )
 
    uResp := ::rCliente:Save()
@@ -260,7 +281,8 @@ Procedure __VtaCliSave( oForm )
                     hData["telefono"], ;
                     hData["email"], ;
                     hData["nombre_corto"], ;
-                    hData["cedula"]
+                    hData["cedula"],       ;
+                    hData["tipo_entidad"]
       // Establecer el cursor en la nueva fila
       gtk_tree_view_set_cursor( ::oModel:oTreeView:pWidget, ::oModel:oTreeView:GetPath( aIter ), NIL, .F. )
    else
@@ -271,8 +293,9 @@ Procedure __VtaCliSave( oForm )
       ::oModel:SetValue( 5, hData["direccion"] )
       ::oModel:SetValue( 6, hData["telefono"] )
       ::oModel:SetValue( 7, hData["email"] )
-      ::oModel:SetValue( 8, hData["nombre_corto"] ) // Añadir nombre_corto
-      ::oModel:SetValue( 9, hData["cedula"] )       // Añadir cedula
+      ::oModel:SetValue( 8, hData["tipo_entidad"] ) // Añadir Tipo de Entidad
+      //::oModel:SetValue( 8, hData["nombre_corto"] ) // Añadir nombre_corto
+      //::oModel:SetValue( 9, hData["cedula"] )       // Añadir cedula
    endif
 
    // Actualizar los campos del formulario
@@ -379,9 +402,13 @@ Function __ValidaRIF( oEntRif, oForm )
       return .F.
    endif
 
-   // Verificar tipo de contribuyente (V, E, J, P, G)
+   // Verificar tipo de contribuyente (V, E, J, P, G, C)
    cTipo := LEFT( cCleanRif, 1 )
-   if ! ( cTipo $ "VEJPG" )
+   if hb_aTokens( ::oComboTipo:GetValue(), " - " )[1] != cTipo
+      MsgAlert( "Tipo de Contribuyente no coincide en RIF " )
+      return .F.
+   endif
+   if ! ( cTipo $ "VEJPGC" ) 
       MsgAlert( "Tipo de contribuyente es incorrecta" )
       oEntRif:SetFocus()
       return .F.
