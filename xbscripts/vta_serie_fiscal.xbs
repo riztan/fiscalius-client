@@ -1,0 +1,225 @@
+/* vta_serie_fiscal.xbs
+ *
+ * Formulario para gestionar Series Fiscales en Fiscalius
+ * Tabla: orseit.vta_serie_fiscal
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure vta_serie_fiscal( oForm, oWndParent, oEntParent )
+   local oAliWnd, oRes, oImgBanner, oImgLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Series Fiscales"
+   local rSeries, oModSeries, oLBoxSeries, rSerie
+
+   if !oTPuy:RunXBS( "netio_check" )
+      MsgStop( "Problemas de conexión con el servidor." )
+      return
+   endif
+
+   rSeries := oForm:oGEmpresa:SeriesFiscales()
+   //view(rSeries:GetData())
+   //return
+
+   if hb_isNIL( rSeries )
+      MsgStop( "No se pudo obtener el listado de series fiscales." )
+      return
+   endif
+   
+   //rSerie := oForm:oGEmpresa:GetSerieFiscal( {} )
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_listbox.ui"
+
+   DEFINE WINDOW oAliWnd ;
+          TITLE "Fiscalius. Series Fiscales" ;
+          SIZE 800, 450 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages + "banner_02.png" ;
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust( 900 )
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages + "fiscalius_logo_02.png" ;
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust( 60 )
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+   DEFINE MODEL oModSeries ;
+          STRUCT rSeries:Struct() ;
+          DATA   rSeries:GetData()
+
+   DEFINE LISTBOX oLBoxSeries ;
+          MODEL oModSeries ;
+          OF oBoxData
+
+   oLBoxSeries:lBar  := .F.
+   oLBoxSeries:bNew  := {|oModel| serie_fiscal_edit( oForm, oAliWnd, oModSeries, .T. /*lNew*/ ) }
+   oLBoxSeries:bEdit := {|oModel| serie_fiscal_edit( oForm, oAliWnd, oModSeries, .F. /*lNew*/ ) }
+   //oLBoxSeries:bDel  := {|oModel| serie_fiscal_delete( oForm, oAliWnd, oModSeries ) }
+
+    // Columnas de SerieFiscal():
+    // 1=id  2=serie_fiscal  3=activo
+    oLBoxSeries:SetColVisible( 1, .F. )
+    oLBoxSeries:SetColTitle( 2, "Serie" )
+    oLBoxSeries:SetColTitle( 3, "Activa" )
+	
+
+   ACTIVATE WINDOW oAliWnd MODAL
+
+return
+
+
+procedure serie_fiscal_edit( oFormParent, oAliWnd, oModel, lNew )
+   local oRes, oSerForm, hData, nId
+
+   default lNew := .T.
+   
+   
+
+   SET PUBLIC oSerForm
+
+   oSerForm:lForce   := .F.
+   oSerForm:lClose   := .F.
+   oSerForm:lNew     := lNew
+   oSerForm:oModel   := oModel
+   oSerForm:oAliWnd  := oAliWnd
+   oSerForm:oParent  := oFormParent
+
+   if lNew
+      oSerForm:cSerie    := ""
+      oSerForm:lActivo   := .T.
+      oSerForm:rSerie    := oFormParent:oGEmpresa:SerieFiscal( {} )
+   else
+      nId := oModel:GetCol( 1 )
+      oSerForm:cSerie    := oModel:GetCol( 2 )
+      oSerForm:lActivo   := oModel:GetCol( 3 )
+      oSerForm:rSerie    := oFormParent:oGEmpresa:SerieFiscal( { "id" => nId } )
+   endif
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_serie_fiscal.ui"
+
+   DEFINE WINDOW oSerForm:oWnd TITLE "Serie Fiscal" SIZE 480, 320 ;
+          OF oAliWnd ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oSerForm:oImgBanner ID "img_banner" RESOURCE oRes
+      oSerForm:oImgBanner:Adjust( 900 )
+
+      DEFINE IMAGE oSerForm:oImgLogo ID "img_logo" RESOURCE oRes
+      oSerForm:oImgLogo:Adjust( 60 )
+
+      DEFINE ENTRY oSerForm:oEntSerie VAR oSerForm:cSerie ;
+             ID "ent_serie" RESOURCE oRes
+
+      DEFINE CHECKBOX oSerForm:oChkActivo VAR oSerForm:lActivo ID "chk_activo" RESOURCE oRes
+	  
+	  
+
+      DEFINE BUTTON oSerForm:oBtnSave ACTION __SerieSave( oSerForm ) ;
+             ID "btn_save" RESOURCE oRes
+
+      DEFINE BUTTON oSerForm:oBtnCancel ;
+             ACTION ( oSerForm:lClose := .T., oSerForm:oWnd:End() ) ;
+             ID "btn_cancel" RESOURCE oRes
+			 
+			 
+
+   ACTIVATE WINDOW oSerForm:oWnd MODAL VALID __SerieExit( oSerForm )
+
+return
+
+
+
+procedure __SerieSave( oForm )
+   local hData, uResp, aIter, lNew, nId
+
+   
+   if Empty( ALLTRIM( oForm:cSerie ) )
+      MsgAlert( "Debe indicar la serie fiscal.", "Error" )
+      oForm:oEntSerie:SetFocus()
+      return
+   endif
+   
+
+   lNew := oForm:rSerie:IsNew()
+   
+
+   oForm:rSerie:SetData( { "serie_fiscal" => ALLTRIM( oForm:cSerie ), ;
+                           "activo"       => oForm:lActivo } )
+
+   uResp := oForm:rSerie:Save()
+
+   if ValType( uResp ) = "L" .and. uResp
+      hData := oForm:rSerie:Data()
+
+      if lNew
+         aIter := ARRAY( 3 )
+         APPEND LIST_STORE oForm:oModel:oLbx ITER aIter ;
+                VALUES hb_ntos(hData["id"]),            ;
+                       hData["serie_fiscal"],           ;
+                       iif(hData["activo"], "Sí", "No")
+
+         gtk_tree_view_set_cursor( oForm:oModel:oTreeView:pWidget, ;
+                                   oForm:oModel:oTreeView:GetPath( aIter ), NIL, .F. )
+
+      else
+         oForm:oModel:SetValue( 2, hData["serie_fiscal"] )
+         oForm:oModel:SetValue( 3, iif(hData["activo"], "Sí", "No") )
+
+      endif
+
+      oForm:lForce := .T.
+      oForm:oWnd:End()
+   endif
+
+return
+
+
+
+function __SerieExit( oForm )
+   if oForm:lForce
+      return .T.
+   endif
+
+   if MsgNoYes( "¿Desea salir y descartar los cambios?", "Atención" )
+      return .T.
+   endif
+
+return .F.
+
+
+
+procedure serie_fiscal_delete( oFormParent, oAliWnd, oModel )
+   local nId, cSerie
+
+   nId    := oModel:GetCol( 1 )
+   cSerie := oModel:GetCol( 2 )
+
+   if !MsgYesNo( "¿Está seguro de eliminar la serie fiscal " + cSerie + "?", "Confirmar" )
+      return .F.
+   endif
+
+   MsgInfo( "Funcionalidad de eliminación en desarrollo.", "Información" )
+   return .F.
+
+//   rSerie := oFormParent:oGEmpresa:SerieFiscal( { "id" => nId } )
+//   
+//   if rSerie:Delete( nId )
+//      oModel:Delete()
+//      MsgInfo( "Serie fiscal eliminada correctamente.", "Éxito" )
+//      return .T.
+//   else
+//      MsgAlert( "No se pudo eliminar la serie fiscal.", "Error" )
+//      return .F.
+//   endif
+
+return .F.
+*/
+
+//eof

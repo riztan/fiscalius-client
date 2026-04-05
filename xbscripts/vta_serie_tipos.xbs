@@ -1,0 +1,203 @@
+/* vta_serie_tipos.xbs
+ *
+ * Formulario para gestionar Tipos de Documento por Serie
+ * Tabla: orseit.vta_serie_tipos
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure vta_serie_tipos( oForm, oWndParent, oEntParent )
+   local oAliWnd, oRes, oImgBanner, oImgLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Tipos de Documento por Serie"
+   local rSerieTipos, oModSerieTipos, oLBoxSerieTipos
+
+   if !oTPuy:RunXBS( "netio_check" )
+      MsgStop( "Problemas de conexión con el servidor." )
+      return
+   endif
+
+   rSerieTipos := oForm:oGEmpresa:SeriesTipos()
+
+   if hb_isNIL( rSerieTipos )
+      MsgStop( "No se pudo obtener el listado de series fiscales." )
+      return
+   endif
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_listbox.ui"
+
+   DEFINE WINDOW oAliWnd ;
+          TITLE "Fiscalius. Tipos de Documento por Serie" ;
+          SIZE 800, 450 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages + "banner_02.png" ;
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust( 900 )
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages + "fiscalius_logo_02.png" ;
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust( 60 )
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+
+   DEFINE MODEL oModSerieTipos ;
+          STRUCT rSerieTipos:Struct() ;
+          DATA   rSerieTipos:GetData()
+
+   DEFINE LISTBOX oLBoxSerieTipos ;
+          MODEL oModSerieTipos ;
+          OF oBoxData
+
+   // Columnas: 1=id  2=serie_id  3=serie_codigo  4=tipo_id  5=tipo_codigo  6=tipo_nombre  7=activo
+   oLBoxSerieTipos:SetColVisible( 1, .F. )
+   oLBoxSerieTipos:SetColVisible( 2, .F. )
+   oLBoxSerieTipos:SetColVisible( 4, .F. )
+   oLBoxSerieTipos:SetColTitle( 3, "Serie" )
+   oLBoxSerieTipos:SetColTitle( 5, "Tipo" )
+   oLBoxSerieTipos:SetColTitle( 6, "Nombre Tipo" )
+   oLBoxSerieTipos:SetColTitle( 7, "Activo" )
+
+   oLBoxSerieTipos:bNew  := {|oModel| serie_tipos_edit( oForm, oAliWnd, oModSerieTipos, .T. ) }
+   oLBoxSerieTipos:bEdit := {|oModel| serie_tipos_edit( oForm, oAliWnd, oModSerieTipos, .F. ) }
+
+   ACTIVATE WINDOW oAliWnd MODAL
+
+return
+
+
+
+procedure serie_tipos_edit( oFormParent, oAliWnd, oModel, lNew )
+   local oRes, oForm, hData, nId
+
+   default lNew := .T.
+
+   SET PUBLIC oForm
+
+   oForm:lForce   := .F.
+   oForm:lClose   := .F.
+   oForm:lNew     := lNew
+   oForm:oModel   := oModel
+   oForm:oAliWnd  := oAliWnd
+   oForm:oParent  := oFormParent
+
+   if lNew
+      oForm:cSerieCod := ""
+      oForm:cTipoCod  := ""
+      oForm:lActivo    := .T.
+      oForm:rSerieTipo := oFormParent:oGEmpresa:SerieTipo( {} )
+   else
+      nId := oModel:GetCol( 1 )
+      oForm:cSerieCod := oModel:GetCol( 3 )
+      oForm:cTipoCod  := oModel:GetCol( 5 )
+      oForm:lActivo    := oModel:GetCol( 7 )
+      oForm:rSerieTipo := oFormParent:oGEmpresa:SerieTipo( { "id" => nId } )
+   endif
+
+   hData := oForm:rSerieTipo:Data()
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_serie_tipos.ui"
+
+   DEFINE WINDOW oForm:oWnd TITLE "Tipo de Documento por Serie" SIZE 480, 280 ;
+          OF oAliWnd ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oForm:oImgBanner ID "img_banner" RESOURCE oRes
+      oForm:oImgBanner:Adjust( 900 )
+
+      DEFINE IMAGE oForm:oImgLogo ID "img_logo" RESOURCE oRes
+      oForm:oImgLogo:Adjust( 60 )
+
+      DEFINE ENTRY oForm:oEntSerie VAR oForm:cSerieCod ;
+             ID "ent_serie" RESOURCE oRes
+
+      DEFINE ENTRY oForm:oEntTipo VAR oForm:cTipoCod ;
+             ID "ent_tipo" RESOURCE oRes
+
+      DEFINE CHECKBOX oForm:oChkActivo VAR oForm:lActivo ID "chk_activo" RESOURCE oRes
+
+      DEFINE BUTTON oForm:oBtnSave ACTION __SerieTiposSave( oForm ) ;
+             ID "btn_save" RESOURCE oRes
+
+      DEFINE BUTTON oForm:oBtnCancel ;
+             ACTION ( oForm:lClose := .T., oForm:oWnd:End() ) ;
+             ID "btn_cancel" RESOURCE oRes
+
+   ACTIVATE WINDOW oForm:oWnd MODAL VALID __SerieTiposExit( oForm )
+
+return
+
+
+
+procedure __SerieTiposSave( oForm )
+   local hData, uResp, aIter, lNew, nId
+
+  /*
+   if Empty( ALLTRIM( oForm:cSerieCod ) )
+      MsgAlert( "Debe indicar el código de serie.", "Error" )
+      oForm:oEntSerie:SetFocus()
+      return
+   endif
+   */
+
+   if Empty( ALLTRIM( oForm:cTipoCod ) )
+      MsgAlert( "Debe indicar el código de tipo de documento.", "Error" )
+      oForm:oEntTipo:SetFocus()
+      return
+   endif
+
+   lNew := oForm:rSerieTipo:IsNew()
+
+   oForm:rSerieTipo:SetData( { "serie_codigo" => ALLTRIM( oForm:cSerieCod ), ;
+                               "tipo_codigo"  => ALLTRIM( oForm:cTipoCod ),  ;
+                               "activo"       => oForm:lActivo } )
+
+   uResp := oForm:rSerieTipo:Save()
+
+   if ValType( uResp ) = "L" .and. uResp
+      hData := oForm:rSerieTipo:Data()
+
+      if lNew
+         aIter := ARRAY( 7 )
+         APPEND LIST_STORE oForm:oModel:oLbx ITER aIter ;
+                VALUES hb_ntos(hData["id"]),           ;
+                       hb_ntos(hData["serie_id"]),     ;
+                       hData["serie_codigo"],           ;
+                       hb_ntos(hData["tipo_id"]),      ;
+                       hData["tipo_codigo"],            ;
+                       hData["tipo_nombre"],           ;
+                       iif(hData["activo"], "Sí", "No")
+
+         gtk_tree_view_set_cursor( oForm:oModel:oTreeView:pWidget, ;
+                                   oForm:oModel:oTreeView:GetPath( aIter ), NIL, .F. )
+      else
+         oForm:oModel:SetValue( 3, hData["serie_codigo"] )
+         oForm:oModel:SetValue( 5, hData["tipo_codigo"] )
+         oForm:oModel:SetValue( 6, hData["tipo_nombre"] )
+         oForm:oModel:SetValue( 7, iif(hData["activo"], "Sí", "No") )
+      endif
+
+      oForm:lForce := .T.
+      oForm:oWnd:End()
+   endif
+
+return
+
+
+
+function __SerieTiposExit( oForm )
+   if oForm:lForce
+      return .T.
+   endif
+
+   if MsgNoYes( "¿Desea salir y descartar los cambios?", "Atención" )
+      return .T.
+   endif
+
+return .F.
