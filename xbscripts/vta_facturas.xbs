@@ -115,7 +115,7 @@ procedure vta_facturas( oFormParent )
    ::cCondicion := ""
    DEFINE COMBOBOX ::oComboCondicion ;
           VAR ::cCondicion ITEMS ::aCondiciones ;
-          ON CHANGE MsgInfo("condicion") ;
+          ON CHANGE .t. ; //MsgInfo("condicion") ;
           OF ::oBoxCondicion
 
    DEFINE BOX ::oBoxDivisa ID "box_divisa" RESOURCE ::oRes
@@ -123,10 +123,10 @@ procedure vta_facturas( oFormParent )
    ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
    __FactValFecha( oForm, ::oEntFecha, @::cPFecha )
    ::cDivisa := ""
-   ::nMonDivisa := 0
+   ::nTasa   := 0
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
-          ON CHANGE .T. ; //::nMonDivisa := VAL( hb_aTokens( ::cDivisa, " ")[2] )  ;//.t.; //MsgInfo("divisa!") ;
+          ON CHANGE __Calcula( oForm )   ;
           OF ::oBoxDivisa
 
    DEFINE BOX ::oBoxEstado ID "box_estado" RESOURCE ::oRes
@@ -217,6 +217,13 @@ procedure vta_facturas( oFormParent )
           ID "ent_montotal" RESOURCE ::oRes 
    ::oEntTotal:Justify( GTK_JUSTIFY_RIGHT )
    ::oEntTotal:SetEditable( .F. )
+
+   DEFINE TOOLTIP ::oTTEntTotal WIDGET ::oEntTotal ;
+          TEXT ""
+   //::oTTEntTotal:SetTip( ::oEntTotal, "Hola")
+
+
+
 /*   
    ::nMonTotBs := 0
    DEFINE MONEY ENTRY ::oEntTotBs VAR ::nMonTotBs ;
@@ -426,9 +433,11 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
       rQry:Skip()
    EndDo
    if hb_isObject( ::oComboDivisa )
-      ::oComboDivisa:RemoveAll()
+      if VALTYPE(::oComboDivisa:aItems)="A"
+         ::oComboDivisa:RemoveAll()
+      endif
       ::oComboDivisa:SetItems( ::aDivisas )
-      ::nMonDivisa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )  
+      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )  
    endif
 
 //View( hb_valtoexp( ::aMonedas ) )
@@ -891,9 +900,22 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
    endif
 
    if nCol=__DESCUENTO
-      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
-      __Calcula( oForm )
-      oTreeView:SetPosCol( aIter, __TOTAL, .f. )
+      if RIGHT( uVal, 1 ) = "%"
+         // Si nos dan porcentaje, lo calculamos.
+         uVal := TRANSFORM( ToNum( oTreeView:GetAutoValue( __PRECIO ))  * ;
+                          ( ToNum(uVal)/100 ) * ;
+                            ToNum( oTreeView:GetAutoValue( __CANTIDAD ) ), P_92 )
+         __SetValue( oTreeView, oModel, aIter, nCol, uVal )
+      endif
+      if ToNum(uVal) < ( ToNum(oTreeView:GetAutoValue( __CANTIDAD )) * ;
+                         ToNum(oTreeView:GetAutoValue( __PRECIO   )) )
+         __SetValue( oTreeView, oModel, aIter, nCol, uVal )
+         __Calcula( oForm )
+         oTreeView:SetPosCol( aIter, __TOTAL, .f. )
+      else
+         ::oLabInfo:SetText("El descuento no puede ser mayor o igual al monto del item.")
+         __SetValue( oTreeView, oModel, aIter, nCol, '0,00' )
+      endif
       return
    endif
 return
@@ -950,7 +972,7 @@ RETURN
 
 
 procedure __Calcula( oForm )
-   local nOtrosImp := 0
+   local nOtrosImp := 0, aTasa
 
    ::oEntTotal:SetValue("0")
    //::oEntTotBs:SetValue("0")
@@ -962,8 +984,22 @@ procedure __Calcula( oForm )
    ::oEntOtrImp:SetValue("0") // Initialize otros_imp
    ::hFactura["iva"] := hb_hash()  // Initialize IVA hash here, once
    ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
+   if !hb_isObject( ::oLBoxDetal )
+      return
+   endif
    ::oLBoxDetal:ForEach( ::bDetalCode )
    //::oEntOtrImp:SetValue( TRANSFORM( nOtrosImp, P_92 ) ) // Set others_imp
+
+   // Actualizamos Tooltip (Mensaje al posicionar el cursor encima del widget)
+   aTasa := hb_aTokens( ::cDivisa, " ") 
+   if empty( aTasa ) 
+      return
+   endif
+//View( hb_valtoexp(aTasa) )
+   ::nTasa := ToNum( aTasa[2] )
+   ::oTTEntTotal:SetTip( ::oEntTotal, ;
+                         aTasa[1]+" "+;
+                         ALLTRIM( TRANSFORM( ROUND(ToNum(::oEntTotal:GetValue())*::nTasa, 2), P_92  ) ) )
 return
 
 
