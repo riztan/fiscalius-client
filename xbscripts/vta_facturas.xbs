@@ -992,7 +992,7 @@ procedure __Calcula( oForm )
 
    // Actualizamos Tooltip (Mensaje al posicionar el cursor encima del widget)
    aTasa := hb_aTokens( ::cDivisa, " ") 
-   if empty( aTasa ) 
+   if empty( aTasa ) .or. empty(aTasa[1])
       return
    endif
 //View( hb_valtoexp(aTasa) )
