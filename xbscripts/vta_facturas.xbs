@@ -106,17 +106,41 @@ procedure vta_facturas( oFormParent )
           ID "ent_vcmto" RESOURCE ::oRes
 
    DEFINE BOX ::oBoxCondicion ID "box_condicion" RESOURCE ::oRes
-
-   ::cNroControl := ""
-   DEFINE LABEL ::oLabNroControl TEXT ::cNroControl ;
-          ID "lab_nro_control" RESOURCE ::oRes
-
-   ::aCondiciones := {"Contado", "Crédito"}
+   
    ::cCondicion := ""
+   ::cCondicionID := ""
+  // ::cCondicionID := ""
+   //::aCondiciones := {"Contado", "Crédito"}
+   ::aCondiciones := {}
+   ::aCondicionesID := {}
+
    DEFINE COMBOBOX ::oComboCondicion ;
           VAR ::cCondicion ITEMS ::aCondiciones ;
           ON CHANGE .t. ; //MsgInfo("condicion") ;
           OF ::oBoxCondicion
+		  
+	__FactCargarCondiciones( oForm )
+   ::cNroControl := ""
+   DEFINE LABEL ::oLabNroControl TEXT ::cNroControl ;
+          ID "lab_nro_control" RESOURCE ::oRes
+
+
+  DEFINE BOX ::oBoxSerie ID "box_serie" RESOURCE ::oRes
+   ::cSerie := ""
+   ::cSerieID := ""
+   ::aSeries := {}
+   ::aSeriesID := {}
+  // ::aSeries :={"A", "B"}
+   
+   
+   DEFINE COMBOBOX ::oComboSerie ;
+          VAR ::cSerie ITEMS ::aSeries ;
+          ON CHANGE .T. ;
+           OF ::oBoxSerie
+		
+  
+   __FactCargarSeries( oForm )
+   
 
    DEFINE BOX ::oBoxDivisa ID "box_divisa" RESOURCE ::oRes
    ::aMonedas := {}
@@ -302,6 +326,11 @@ procedure vta_facturas( oFormParent )
    ::hCol["monto_base"]  := 6
    ::hCol["estado"]      := 7
    ::hCol["vendedor_id"] := 8
+   ::hCol["condicion_id"] := 9
+   ::hCol["condicion_nombre"] := 10
+   ::hCol["serie_id"] := 11
+   ::hCol["serie_fiscal"] := 12
+
 
    //::oLBoxFacs:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 
@@ -444,6 +473,51 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
 
 return lRes
 
+function __FactCargarCondiciones( oForm )
+   local rQryCond
+   rQryCond := ::rVentas:Condiciones()
+   ::aCondiciones := {}
+   ::aCondicionesId := {}
+   While !rQryCond:Eof()
+      AADD( ::aCondiciones, ALLTRIM(rQryCond:nombre) )
+      AADD( ::aCondicionesId, hb_ntos(rQryCond:id) )
+      rQryCond:Skip()
+   EndDo
+   
+
+      if hb_isObject( ::oComboCondicion ) .and. LEN( ::aCondiciones ) > 0
+       if VALTYPE(::oComboCondicion:aItems)="A"
+         ::oComboCondicion:RemoveAll()
+       endif
+         ::oComboCondicion:SetItems( ::aCondiciones )
+      endif
+
+   
+return .T.
+
+function __FactCargarSeries( oForm )
+   local rQrySeries
+   
+   rQrySeries := ::rEmpresa:SeriesFiscales()
+   //view(rQrySeries)
+   ::aSeries := {}
+   ::aSeriesId := {}
+   
+   While !rQrySeries:Eof()
+      AADD( ::aSeries, ALLTRIM(rQrySeries:serie_fiscal) )
+      AADD( ::aSeriesId, hb_ntos(rQrySeries:id) )
+      rQrySeries:Skip()
+   EndDo
+   
+   if hb_isObject( ::oComboSerie )
+    if VALTYPE(::oComboSerie:aItems)="A"
+      ::oComboSerie:RemoveAll()
+    endif
+      ::oComboSerie:SetItems( ::aSeries )
+   endif
+   
+return .T.
+
 
 
 procedure __VtaChangeEstado( oForm, lConfirm )
@@ -537,6 +611,23 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLabNroControl:SetValue( ::hFactura["numero_control"] )
       ::oEntCli:SetValue( oModel:GetCol(::hCol["cliente"]) )
       ::cCodCli := oModel:GetCol(::hCol["cliente_id"])
+	  ::cCondicionId := oModel:GetCol(::hCol["condicion_id"])
+      ::cCondicion :=  oModel:GetCol(::hCol["condicion_nombre"])
+      ::cSerieId := oModel:GetCol(::hCol["serie_id"])
+      ::cSerie :=  oModel:GetCol(::hCol["serie_fiscal"])
+   
+        // Actualizar el combo para mostrar la condicion seleccionada
+        if hb_isObject( ::oComboCondicion )
+            ::oComboCondicion:SetValue( ::cCondicion )
+         endif
+         
+		 
+         if hb_isObject( ::oComboSerie )
+            ::oComboSerie:SetValue( ::cSerie )
+         endif
+
+
+         
       ::cCodVendedor := oModel:GetCol(::hCol["vendedor_id"])
       ::oEntFecha:SetValue( oModel:GetCol(::hCol["fecha"]) )
       ::oEntVcmto:SetValue( oModel:GetCol(::hCol["fecha_vcmto"]) )
@@ -1244,7 +1335,7 @@ return
 
 
 Procedure __VtaSave( oForm, oFormParent )
-   local bSaveDetal, uResp, dUltimaFecha, aIter := ARRAY(4), lSuccess := .F.
+   local bSaveDetal, uResp, dUltimaFecha, aIter := ARRAY(4), lSuccess := .F., nIdx:=0
 
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
@@ -1275,10 +1366,17 @@ Procedure __VtaSave( oForm, oFormParent )
    ::hFactura["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
    ::hFactura["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
+   nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
+      ::hFactura["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
+     nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
+     ::hFactura["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
+     //::hFactura["serie_nombre"     ] := ::cSerie
 
 //   View( ::hFactura["iva"] ) 
 
 //View( ::hFactura )
+//return
+
    uResp := ::rFactura:SetData( ::hFactura )
    ::hFactura := ::rFactura:Data()
 //View( uResp )

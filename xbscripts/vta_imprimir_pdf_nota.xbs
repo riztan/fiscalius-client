@@ -21,8 +21,14 @@ procedure vta_imprimir_pdf_nota( oForm )
    local nY := 1
    local cFilePDF := "tmp/vta_documento_" + STRTRAN(::hDocumento["numero"], "/", "_") + ".pdf"
    local cDivisa:=LEFT(::cDivisa,3),nDivisa:=TONUM(SUBSTR(::cDivisa,5))
-
+   local dFchFac := ::rDocumento:DatosFactura()["fecha"]
+  
+   //local dFchFac := iif( hb_isHash(hDatFac) .and. hb_hHasKey(hDatFac,"fecha"), hDatFac["fecha"], CTOD("") )
+  
+   
    FERASE( cFilePDF )
+   
+   view(dFchFac)
 
    oPDF := TIMPRIMEPDF():New( cFilePDF )
    oPDF:PageSetSize( HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_PORTRAIT )
@@ -38,7 +44,8 @@ procedure vta_imprimir_pdf_nota( oForm )
    oPDF:SetFont( "Helvetica", 12 )
    oPDF:CMSAY( nY, 15, "Nro: " + STRZERO( VAL(::hDocumento["numero"]), 8 ) )
    oPDF:CMSAY( nY + 0.5, 15, "Fecha: " + DTOC( ::hDocumento["fecha"] ) )
-   oPDF:CMSAY( nY + 1, 15, "Fac. Afectada: "+  STRZERO( VAL(::cFacturaNro), 8 ) )
+   oPDF:CMSAY( nY + 1, 15, "Num. Fac. Afectada: "+  STRZERO( VAL(::cFacturaNro), 8 ) )
+   oPDF:CMSAY( nY + 1, 15, "Fecha Fac. Afectada: "
    
 
    nY += 1.5
@@ -89,7 +96,7 @@ procedure vta_imprimir_pdf_nota( oForm )
    // =====================================
    oPDF:SetFont( "Courier", 9 )
    
-
+/*
    FOR i := 1 TO LEN( aData )
       aLine := aData[i]
       nUniCaj := IIF( RIGHT(aLine[3], 2) == "01", 0, TONUM(RIGHT(aLine[3],2)) )
@@ -116,6 +123,8 @@ procedure vta_imprimir_pdf_nota( oForm )
   FOR i:=1 TO 15-LEN(aData)
     nY += 0.35
   NEXT
+  
+  */
 
    nY += 0.5
 
