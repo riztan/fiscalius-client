@@ -43,6 +43,7 @@ procedure vta_libro_xlsx( oForm, rQry )
    local i, nLin, nOpera:=1, cFileHeader, error, cFormula := "", cRange := ""
    local hTotal, dDesde := ::oCalDesde:GetDate()
    local nIvaAcum, nRetAcum, nTotalDoc, nTotalExento
+   local cFileName := "tmp/vta_libro.xlsx"
 
    SET DECIMAL TO 2
 
@@ -50,7 +51,7 @@ procedure vta_libro_xlsx( oForm, rQry )
    
    MakeDir("tmp")
 
-   ::workbook := workbook_new( "tmp/vta_libro.xlsx" )
+   ::workbook := workbook_new( cFileName )
 
    ::worksheet := workbook_add_worksheet( ::workbook, "Datos" )
    worksheet_gridlines( ::worksheet, 0 )
@@ -368,10 +369,12 @@ procedure vta_libro_xlsx( oForm, rQry )
    ELSE
       // Abrir el archivo con la aplicación predeterminada
       #ifdef __PLATFORM__WINDOWS
-         hb_run( "start tmp\\vta_libro.xlsx" )
+         //hb_run( "start tmp\\vta_libro.xlsx" )
+         WAPI_ShellExecute(0,"open",CurDrive()+":\"+CurDir()+"\"+cFileName,0) 
+
       #else
          // Para Linux/Mac (ajusta según necesites)
-         hb_run( "xdg-open tmp/vta_libro.xlsx" )
+         hb_run( "xdg-open "+cFileName )
       #endif
    ENDIF
 
