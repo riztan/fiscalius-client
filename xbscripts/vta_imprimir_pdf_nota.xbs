@@ -21,14 +21,14 @@ procedure vta_imprimir_pdf_nota( oForm )
    local nY := 1
    local cFilePDF := "tmp/vta_documento_" + STRTRAN(::hDocumento["numero"], "/", "_") + ".pdf"
    local cDivisa:=LEFT(::cDivisa,3),nDivisa:=TONUM(SUBSTR(::cDivisa,5))
-   local dFchFac := ::rDocumento:DatosFactura()["fecha"]
+   local dFchFac := ::rDocumento:ReferData():fecha
   
    //local dFchFac := iif( hb_isHash(hDatFac) .and. hb_hHasKey(hDatFac,"fecha"), hDatFac["fecha"], CTOD("") )
   
    
    FERASE( cFilePDF )
    
-   view(dFchFac)
+   //view(dFchFac)
 
    oPDF := TIMPRIMEPDF():New( cFilePDF )
    oPDF:PageSetSize( HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_PORTRAIT )
@@ -45,7 +45,7 @@ procedure vta_imprimir_pdf_nota( oForm )
    oPDF:CMSAY( nY, 15, "Nro: " + STRZERO( VAL(::hDocumento["numero"]), 8 ) )
    oPDF:CMSAY( nY + 0.5, 15, "Fecha: " + DTOC( ::hDocumento["fecha"] ) )
    oPDF:CMSAY( nY + 1, 15, "Num. Fac. Afectada: "+  STRZERO( VAL(::cFacturaNro), 8 ) )
-   oPDF:CMSAY( nY + 1, 15, "Fecha Fac. Afectada: "
+   oPDF:CMSAY( nY + 1.5, 15, "Fecha Fac. Afectada: " + DTOC(dFchFac) )
    
 
    nY += 1.5
@@ -96,7 +96,6 @@ procedure vta_imprimir_pdf_nota( oForm )
    // =====================================
    oPDF:SetFont( "Courier", 9 )
    
-/*
    FOR i := 1 TO LEN( aData )
       aLine := aData[i]
       nUniCaj := IIF( RIGHT(aLine[3], 2) == "01", 0, TONUM(RIGHT(aLine[3],2)) )
@@ -108,8 +107,8 @@ procedure vta_imprimir_pdf_nota( oForm )
       oPDF:CMSAY( nY, 3.2, LEFT(ALLTRIM(aLine[4]), 35) )
       //oPDF:CMSAY( nY, 11.2, hb_ntos(nTotUniLi) )
       oPDF:CMSAY( nY, 10.2, hb_ntos(nUni+nCaj) )
-	  oPDF:CMSAY( nY, 12.0, TRANSFORM(aLine[22], "@E 999,99") )
-	  oPDF:CMSAY( nY, 13.2, TRANSFORM(aLine[23], "@E 999,99") )
+//	  oPDF:CMSAY( nY, 12.0, TRANSFORM(aLine[22], "@E 999,99") )  //En nota de credito, el array llega hasta 21
+//	  oPDF:CMSAY( nY, 13.2, TRANSFORM(aLine[23], "@E 999,99") )
       oPDF:CMSAY( nY, 15.5, TRANSFORM(aLine[6], "@E 99,999.99") )
       oPDF:CMSAY( nY, 18.5, TRANSFORM(aLine[8], "@E 999,999.99") )
 	  oPDF:CMSAY( nY, 21, TRANSFORM(aLine[9], "@E 99") )
@@ -119,18 +118,12 @@ procedure vta_imprimir_pdf_nota( oForm )
       nY += 0.35
    NEXT
    
-   
-  FOR i:=1 TO 15-LEN(aData)
-    nY += 0.35
-  NEXT
-  
-  */
+    
+    nY += 0.5
 
-   nY += 0.5
-
-   // =====================================
-   // TOTALES
-   // =====================================
+    // =====================================
+    // TOTALES
+    // =====================================
    oPDF:SetFont( "Helvetica-Bold", 11 )
    
 		oPDF:CMSAY( nY-1, 8.9,"Tasa de Cambio: "+SUBSTR(::cDivisa,5))
