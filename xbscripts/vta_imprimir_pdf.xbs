@@ -310,7 +310,8 @@ procedure vta_imprimir_pdf( oForm )
 
    // Abrir
    #ifdef __PLATFORM__WINDOWS
-      hb_run( "start " + cFilePDF )
+      //hb_run( "start " + cFilePDF )
+      WAPI_ShellExecute(0,"open",CurDrive()+":\"+CurDir()+"\"+cFilePDF,0) 
    #else
       hb_run( "xdg-open " + cFilePDF )
    #endif
