@@ -969,6 +969,17 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
+                              <object class="GtkImageMenuItem" id="itm_pedidos">
+                                <property name="label" translatable="yes">_Pedido</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Crea o Edita Pedidos</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image70</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
                               <object class="GtkImageMenuItem" id="itm_factura">
                                 <property name="label" translatable="yes">_Factura</property>
                                 <property name="visible">True</property>
