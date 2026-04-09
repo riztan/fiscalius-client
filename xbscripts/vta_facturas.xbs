@@ -545,7 +545,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    local aData, aLine
    local hMontos := hb_hash()
    local oCol, hIva
-   local oErr
+   local oErr, aBox
    local nMonRetIVA := 0, nPorRetIVA := 0, nCompRetIVA := 0
    local aStruct := {}
 
@@ -928,6 +928,18 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    __FactRefresh( oForm, .F. )
    __Calcula(oForm)
 
+   FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
+                      {::oBoxIvaRed, ::oEntIvaR}, ;
+                      {::oBoxIvaGen, ::oEntIvaG}, ;
+                      {::oBoxIvaSun, ::oEntIvaS}, ;
+                      {::oBoxOtrImp, ::oEntOtrImp} }
+      if ToNum( aBox[2]:GetValue() ) = 0
+         aBox[1]:Hide()
+      else
+         aBox[1]:Show()
+      endif
+   NEXT
+
 //View( ::hFactura )
 
    oBoxFactura:Show()
@@ -984,6 +996,11 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
    endif
 
    if nCol=__PRECIO
+      if ToNum(uVal) <=0
+         ::oLabInfo:SetText("El precio no puede ser menor o igual a cero")
+         __SetValue( oTreeView, oModel, aIter, nCol, uPrevio )
+         return
+      endif
       __SetValue( oTreeView, oModel, aIter, nCol, uVal )
       __Calcula( oForm )
       oTreeView:SetPosCol( aIter, __DESCUENTO, .f. )
