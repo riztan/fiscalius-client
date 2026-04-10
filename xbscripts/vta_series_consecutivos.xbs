@@ -1,0 +1,207 @@
+/* vta_series_consecutivos.xbs
+ *
+ * Formulario para gestionar Series Consecutivas
+ * Tabla: orseit.vta_documentos_consecutivos
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure vta_series_consecutivos( oForm, oWndParent, oEntParent )
+   local oAliWnd, oRes, oImgBanner, oImgLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Series Consecutivas"
+   local rSeriesConsec, oModSeriesConsec, oLBoxSeriesConsec
+
+   if !oTPuy:RunXBS( "netio_check" )
+      MsgStop( "Problemas de conexión con el servidor." )
+      return
+   endif
+
+   rSeriesConsec := oForm:oGEmpresa:SeriesConsecutivos()
+
+   if hb_isNIL( rSeriesConsec )
+      MsgStop( "No se pudo obtener el listado de series consecutivas." )
+      return
+   endif
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_listbox.ui"
+
+   DEFINE WINDOW oAliWnd ;
+          TITLE "Fiscalius. Consecutivos de Documentos" ;
+          SIZE 900, 500 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages + "banner_02.png" ;
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust( 900 )
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages + "fiscalius_logo_02.png" ;
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust( 60 )
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+
+   DEFINE MODEL oModSeriesConsec ;
+          STRUCT rSeriesConsec:Struct() ;
+          DATA   rSeriesConsec:GetData()
+
+   DEFINE LISTBOX oLBoxSeriesConsec ;
+          MODEL oModSeriesConsec ;
+          OF oBoxData
+
+   // Columnas: 1=id  2=serie_id  3=serie_codigo  4=control_inicio  5=control_final  6=ultimo_numero_control  7=activo
+   oLBoxSeriesConsec:SetColVisible( 1, .F. )
+   oLBoxSeriesConsec:SetColVisible( 2, .F. )
+   oLBoxSeriesConsec:SetColTitle( 3, "Serie" )
+   oLBoxSeriesConsec:SetColTitle( 4, "Desde" )
+   oLBoxSeriesConsec:SetColTitle( 5, "Hasta" )
+   oLBoxSeriesConsec:SetColTitle( 6, "Último Ctrl" )
+   oLBoxSeriesConsec:SetColTitle( 7, "Activo" )
+
+   oLBoxSeriesConsec:bNew  := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .T. ) }
+   oLBoxSeriesConsec:bEdit := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .F. ) }
+
+   ACTIVATE WINDOW oAliWnd MODAL
+
+return
+
+
+
+procedure series_consec_edit( oFormParent, oAliWnd, oModel, lNew )
+   local oRes, oForm, hData, nId
+
+   default lNew := .T.
+
+   SET PUBLIC oForm
+
+   oForm:lForce   := .F.
+   oForm:lClose   := .F.
+   oForm:lNew     := lNew
+   oForm:oModel   := oModel
+   oForm:oAliWnd  := oAliWnd
+   oForm:oParent  := oFormParent
+
+   if lNew
+      oForm:nSerieId          := 0
+      oForm:cSerieCod         := ""
+      oForm:nControlInicio    := 1
+      oForm:nControlFinal     := 99999999
+      oForm:nUltimoNumControl  := 0
+      oForm:lActivo            := .T.
+      oForm:rSeriesConsec := oFormParent:oGEmpresa:SeriesConsecutivos( {} )
+   else
+      nId := oModel:GetCol( 1 )
+      oForm:nSerieId         := oModel:GetCol( 2 )
+      oForm:cSerieCod        := oModel:GetCol( 3 )
+      oForm:nControlInicio   := oModel:GetCol( 4 )
+      oForm:nControlFinal    := oModel:GetCol( 5 )
+      oForm:nUltimoNumControl := oModel:GetCol( 6 )
+      oForm:lActivo          := ( oModel:GetCol( 7 ) = "Sí" )
+      oForm:rSeriesConsec := oFormParent:oGEmpresa:SeriesConsecutivos( { "id" => nId } )
+   endif
+
+   hData := oForm:rSeriesConsec:Data()
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_series_consecutivos.ui"
+
+   DEFINE WINDOW oForm:oWnd TITLE "Serie Consecutiva" SIZE 480, 350 ;
+          OF oAliWnd ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oForm:oImgBanner ID "img_banner" RESOURCE oRes
+      oForm:oImgBanner:Adjust( 900 )
+
+      DEFINE IMAGE oForm:oImgLogo ID "img_logo" RESOURCE oRes
+      oForm:oImgLogo:Adjust( 60 )
+
+      DEFINE ENTRY oForm:oEntSerie VAR oForm:cSerieCod ;
+             ID "ent_serie" RESOURCE oRes
+      oForm:oEntSerie:Enable( .F. )
+
+      DEFINE SPINBOX oForm:oSpinInicio VAR oForm:nControlInicio ;
+             ID "spin_inicio" RESOURCE oRes
+      oForm:oSpinInicio:SetRange( 1, 99999999 )
+
+       DEFINE SPINBOX oForm:oSpinFinal VAR oForm:nControlFinal ;
+              ID "spin_final" RESOURCE oRes
+       oForm:oSpinFinal:SetRange( 1, 99999999 )
+
+       DEFINE SPINBOX oForm:oSpinUltCtrl VAR oForm:nUltimoNumControl ;
+              ID "spin_ult_ctrl" RESOURCE oRes
+       oForm:oSpinUltCtrl:SetRange( 0, 99999999 )
+
+       DEFINE CHECKBOX oForm:oChkActivo VAR oForm:lActivo ID "chk_activo" RESOURCE oRes
+
+       DEFINE BUTTON oForm:oBtnSave ACTION __SeriesConsecSave( oForm ) ;
+              ID "btn_save" RESOURCE oRes
+
+       DEFINE BUTTON oForm:oBtnCancel ;
+              ACTION ( oForm:lClose := .T., oForm:oWnd:End() ) ;
+              ID "btn_cancel" RESOURCE oRes
+
+   ACTIVATE WINDOW oForm:oWnd MODAL VALID __SeriesConsecExit( oForm )
+
+return
+
+
+
+procedure __SeriesConsecSave( oForm )
+   local hData, uResp, aIter, lNew, nId
+
+   lNew := oForm:rSeriesConsec:IsNew()
+
+   oForm:rSeriesConsec:SetData( { "serie_id"              => oForm:nSerieId, ;
+                                   "control_inicio"        => oForm:nControlInicio,  ;
+                                   "control_final"         => oForm:nControlFinal, ;
+                                   "ultimo_numero_control" => oForm:nUltimoNumControl, ;
+                                   "activo"                => oForm:lActivo } )
+
+   uResp := oForm:rSeriesConsec:Save()
+
+   if ValType( uResp ) = "L" .and. uResp
+      hData := oForm:rSeriesConsec:Data()
+
+      if lNew
+         aIter := ARRAY( 7 )
+         APPEND LIST_STORE oForm:oModel:oLbx ITER aIter ;
+                VALUES hb_ntos(hData["id"]),             ;
+                       hb_ntos(hData["serie_id"]),       ;
+                       hData["serie_codigo"],            ;
+                       hb_ntos(hData["control_inicio"]), ;
+                       hb_ntos(hData["control_final"]),  ;
+                       hb_ntos(hData["ultimo_numero_control"]), ;
+                       iif(hData["activo"], "Sí", "No")
+
+         gtk_tree_view_set_cursor( oForm:oModel:oTreeView:pWidget, ;
+                                   oForm:oModel:oTreeView:GetPath( aIter ), NIL, .F. )
+      else
+         oForm:oModel:SetValue( 4, hb_ntos(hData["control_inicio"]) )
+         oForm:oModel:SetValue( 5, hb_ntos(hData["control_final"]) )
+         oForm:oModel:SetValue( 6, hb_ntos(hData["ultimo_numero_control"]) )
+         oForm:oModel:SetValue( 7, iif(hData["activo"], "Sí", "No") )
+      endif
+
+      oForm:lForce := .T.
+      oForm:oWnd:End()
+   endif
+
+return
+
+
+
+function __SeriesConsecExit( oForm )
+   if oForm:lForce
+      return .T.
+   endif
+
+   if MsgNoYes( "¿Desea salir y descartar los cambios?", "Atención" )
+      return .T.
+   endif
+
+return .F.
