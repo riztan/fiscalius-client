@@ -1301,8 +1301,8 @@ Fotos: Alexas_Fotos en Pixabay</property>
     <property name="version">1.0</property>
     <property name="copyright" translatable="yes">Licencia bajo Software Libre GPLv3</property>
     <property name="comments" translatable="yes">Software de control de registros fiscales</property>
-    <property name="license" translatable="yes">gAdaptaPro Versión 0.1.0 
-Copyright (c) 2025 
+    <property name="license" translatable="yes">Fiscalius Versión 1.0.0 
+Copyright (c) 2026 
 
 Desarrollador Principal:
        Riztan Gutierrez.
