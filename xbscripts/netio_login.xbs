@@ -39,7 +39,7 @@ function netio_login( oWnd )
           //SIZE 350,312 ;
 
       DEFINE BOX ::oBoxLogin ID "vbox1" RESOURCE ::oResource
-      DEFINE BOX ::oBox ID "vbox4" RESOURCE ::oResource
+      //DEFINE BOX ::oBox ID "vbox4" RESOURCE ::oResource
 
       DEFINE ENTRY ::oEntUser VAR ::cUser ;
              ID "user" RESOURCE ::oResource
