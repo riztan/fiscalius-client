@@ -527,6 +527,8 @@ procedure __VtaChangeEstado( oForm, lConfirm )
    if ::cComboEstado = "Anulada" .or. ;
       ::cComboEstado = "Cerrada"
       __FactRefresh( oForm, lConfirm )
+	  __FactCargarSeries( oForm )
+	  __FactCargarCondiciones( oForm )
       if ::cPreEstado == "B" 
          __VtaSave( oForm )
       endif
@@ -1353,7 +1355,8 @@ return
 
 Procedure __VtaSave( oForm, oFormParent )
    local bSaveDetal, uResp, dUltimaFecha, aIter := ARRAY(4), lSuccess := .F., nIdx:=0
-
+   local hCorrel 
+   
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
        __Calcula( oForm )
@@ -1387,7 +1390,21 @@ Procedure __VtaSave( oForm, oFormParent )
       ::hFactura["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
      nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
      ::hFactura["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
+	 ::cSerieID:=::hFactura["serie_id"] 
      //::hFactura["serie_nombre"     ] := ::cSerie
+	 //view(::aSeriesId)
+	 //view(nidx)
+    // view(::cSerieID)
+	 hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 4 )
+	 
+	 
+	if ::cComboEstado == "Cerrada"		
+		if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
+		MsgStop( hCorrel["mensaje"] + ". No se puede cerrar el documento.", "Error" )
+		return
+		endif
+	endif
+
 
 //   View( ::hFactura["iva"] ) 
 

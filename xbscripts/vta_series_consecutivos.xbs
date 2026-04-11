@@ -56,6 +56,7 @@ procedure vta_series_consecutivos( oForm, oWndParent, oEntParent )
           OF oBoxData
 
    // Columnas: 1=id  2=serie_id  3=serie_codigo  4=control_inicio  5=control_final  6=ultimo_numero_control  7=activo
+   /*
    oLBoxSeriesConsec:SetColVisible( 1, .F. )
    oLBoxSeriesConsec:SetColVisible( 2, .F. )
    oLBoxSeriesConsec:SetColTitle( 3, "Serie" )
@@ -63,6 +64,7 @@ procedure vta_series_consecutivos( oForm, oWndParent, oEntParent )
    oLBoxSeriesConsec:SetColTitle( 5, "Hasta" )
    oLBoxSeriesConsec:SetColTitle( 6, "Último Ctrl" )
    oLBoxSeriesConsec:SetColTitle( 7, "Activo" )
+   */
 
    oLBoxSeriesConsec:bNew  := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .T. ) }
    oLBoxSeriesConsec:bEdit := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .F. ) }
@@ -91,17 +93,17 @@ procedure series_consec_edit( oFormParent, oAliWnd, oModel, lNew )
       oForm:nSerieId          := 0
       oForm:cSerieCod         := ""
       oForm:nControlInicio    := 1
-      oForm:nControlFinal     := 99999999
-      oForm:nUltimoNumControl  := 0
+     // oForm:nControlFinal     := 99999999
+     // oForm:nUltimoNumControl  := 0
       oForm:lActivo            := .T.
       oForm:rSeriesConsec := oFormParent:oGEmpresa:SeriesConsecutivos( {} )
    else
       nId := oModel:GetCol( 1 )
       oForm:nSerieId         := oModel:GetCol( 2 )
       oForm:cSerieCod        := oModel:GetCol( 3 )
-      oForm:nControlInicio   := oModel:GetCol( 4 )
-      oForm:nControlFinal    := oModel:GetCol( 5 )
-      oForm:nUltimoNumControl := oModel:GetCol( 6 )
+     // oForm:nControlInicio   := oModel:GetCol( 4 )
+     // oForm:nControlFinal    := oModel:GetCol( 5 )
+     // oForm:nUltimoNumControl := oModel:GetCol( 6 )
       oForm:lActivo          := ( oModel:GetCol( 7 ) = "Sí" )
       oForm:rSeriesConsec := oFormParent:oGEmpresa:SeriesConsecutivos( { "id" => nId } )
    endif
@@ -128,6 +130,7 @@ procedure series_consec_edit( oFormParent, oAliWnd, oModel, lNew )
              ID "spin_inicio" RESOURCE oRes
       oForm:oSpinInicio:SetRange( 1, 99999999 )
 
+/*
        DEFINE SPINBOX oForm:oSpinFinal VAR oForm:nControlFinal ;
               ID "spin_final" RESOURCE oRes
        oForm:oSpinFinal:SetRange( 1, 99999999 )
@@ -135,6 +138,8 @@ procedure series_consec_edit( oFormParent, oAliWnd, oModel, lNew )
        DEFINE SPINBOX oForm:oSpinUltCtrl VAR oForm:nUltimoNumControl ;
               ID "spin_ult_ctrl" RESOURCE oRes
        oForm:oSpinUltCtrl:SetRange( 0, 99999999 )
+	   
+	   */
 
        DEFINE CHECKBOX oForm:oChkActivo VAR oForm:lActivo ID "chk_activo" RESOURCE oRes
 
@@ -152,6 +157,8 @@ return
 
 
 procedure __SeriesConsecSave( oForm )
+
+/*
    local hData, uResp, aIter, lNew, nId
 
    lNew := oForm:rSeriesConsec:IsNew()
@@ -190,6 +197,7 @@ procedure __SeriesConsecSave( oForm )
       oForm:lForce := .T.
       oForm:oWnd:End()
    endif
+   */
 
 return
 
