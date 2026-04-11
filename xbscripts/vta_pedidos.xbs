@@ -1,11 +1,11 @@
-/* vta_factura.xbs
- *
+/* vta_pedidos.xbs
+ * Gestión de Pedidos de Venta
  */
 
 #include "tpy_xbs.ch"
 #define SEPARATOR  " "+CHR(199)+CHR(129)+" "
 
-procedure vta_facturas( oFormParent )
+procedure vta_pedidos( oFormParent )
 
    local oForm, cEntCli
 
@@ -24,19 +24,19 @@ procedure vta_facturas( oFormParent )
    ::cEmpresa  := oFormParent:cCBEmpresa
    ::rEmpresa  := oFormParent:oGEmpresa
    ::rVentas   := oFormParent:oGEmpresa:SetModulo("Ventas")
-   ::rFacturas := ::rVentas:Facturas()
-  
+   ::rPedidos := ::rVentas:Pedidos()
+   
 
-   if hb_isNIL( ::rFacturas )
-      MsgStop( "no se puede obtener información de facturas" )
+   if hb_isNIL( ::rPedidos )
+      MsgStop( "no se puede obtener información de pedidos" )
       Return 
    endif
 
 
-   SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"vta_facturas.ui"
+   SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"vta_pedidos.ui"
 
-   DEFINE WINDOW ::oFacWnd ;
-          TITLE "Fiscalius. Factura" ;
+   DEFINE WINDOW ::oPedWnd ;
+          TITLE "Fiscalius. Pedido" ;
           SIZE 800,600 ;
           ID "window1" RESOURCE ::oRes
 
@@ -55,26 +55,30 @@ procedure vta_facturas( oFormParent )
    DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnGuardar ;
-          ACTION __VtaSave( oForm, oFormParent ) ;
+          ACTION __PedSave( oForm, oFormParent ) ;
           ID "btn_guardar" RESOURCE ::oRes
 
-   DEFINE BUTTON ::oBtnCobrar ;
-          ACTION __VtaCobrar( oForm, oFormParent ) ;
-          ID "btn_cobro" RESOURCE ::oRes
+   DEFINE BUTTON ::oBtnConvertir ;
+          ACTION __PedConvertir( oForm, oFormParent ) ;
+          ID "btn_convert" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnImprime ;
-          ACTION __VtaImprime( oForm ) ;
+          ACTION __PedImprime( oForm ) ;
           ID "btn_print" RESOURCE ::oRes
 
 
    DEFINE BOX ::oBoxData ID "boxdata" RESOURCE ::oRes
 
-   DEFINE BOX ::oBoxFactura ID "vbox_factura" RESOURCE ::oRes
-          ::oBoxFactura:Hide()
+   DEFINE BOX ::oBoxPedido ID "vbox_factura" RESOURCE ::oRes
+          ::oBoxPedido:Hide()
 
-   DEFINE BUTTON ::oBtn ACTION __vtaFactura( oForm, oFormParent, ::oBoxFactura, ::oModFacturas, .T.  ) ;
-          ID "btn_add" RESOURCE ::oRes
-   //::oLBoxFacs:bEdit := {|oModel| __vtaFactura( oForm, oFormParent, ::oBoxFactura, oModel, .F. ) }
+    DEFINE BUTTON ::oBtn ACTION __vtaPedido( oForm, oFormParent, ::oBoxPedido, ::oModPedidos, .T.  ) ;
+           ID "btn_add" RESOURCE ::oRes
+
+    DEFINE BUTTON ::oBtnConvertir ;
+           ACTION __PedConvertir( oForm, oFormParent ) ;
+           ID "btn_convertir" RESOURCE ::oRes
+   //::oLBoxPedidos:bEdit := {|oModel| __vtaPedido( oForm, oFormParent, ::oBoxPedido, oModel, .F. ) }
 
    //-------------------------
    DEFINE LABEL ::oLabNumero ID "lab_numero" RESOURCE ::oRes
@@ -84,7 +88,7 @@ procedure vta_facturas( oFormParent )
    ::cEntCli := ""
    ::cCodCli := ""
    DEFINE ENTRY  ::oEntCli VAR ::cEntCli ;
-          ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oFacWnd, ::oEntCli, @::cCodCli) ;
+          ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oPedWnd, ::oEntCli, @::cCodCli) ;
           VALID  .T. ;
           ID "ent_clientes" RESOURCE ::oRes
 
@@ -96,13 +100,13 @@ procedure vta_facturas( oFormParent )
    ::cFecha := DTOC( DATE() )
    ::cPFecha := ::cFecha
    DEFINE ENTRY TYPE DATE ::oEntFecha VAR ::cFecha CALENDAR ;
-          VALID __FactValFecha( oForm, ::oEntFecha, @::cPFecha ) ;
+          VALID __PedValFecha( oForm, ::oEntFecha, @::cPFecha ) ;
           ID "ent_fecha" RESOURCE ::oRes
 
    ::cVcmto := DTOC( DATE() )
    ::cPVcmto := ::cVcmto
    DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::cVcmto CALENDAR ;
-          VALID __FactValFecha( oForm, ::oEntVcmto, @::cPVcmto ) ;
+          VALID __PedValFecha( oForm, ::oEntVcmto, @::cPVcmto ) ;
           ID "ent_vcmto" RESOURCE ::oRes
 
    DEFINE BOX ::oBoxCondicion ID "box_condicion" RESOURCE ::oRes
@@ -119,7 +123,7 @@ procedure vta_facturas( oFormParent )
           ON CHANGE .t. ; //MsgInfo("condicion") ;
           OF ::oBoxCondicion
 		  
-	__FactCargarCondiciones( oForm )
+	__PedCargarCondiciones( oForm )
    ::cNroControl := ""
    DEFINE LABEL ::oLabNroControl TEXT ::cNroControl ;
           ID "lab_nro_control" RESOURCE ::oRes
@@ -139,18 +143,18 @@ procedure vta_facturas( oFormParent )
            OF ::oBoxSerie
 		
   
-   __FactCargarSeries( oForm )
+   __PedCargarSeries( oForm )
    
 
    DEFINE BOX ::oBoxDivisa ID "box_divisa" RESOURCE ::oRes
    ::aMonedas := {}
    ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
-   __FactValFecha( oForm, ::oEntFecha, @::cPFecha )
+   __PedValFecha( oForm, ::oEntFecha, @::cPFecha )
    ::cDivisa := ""
    ::nTasa   := 0
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
-          ON CHANGE __Calcula( oForm )   ;
+          ON CHANGE __PedCalcula( oForm )   ;
           OF ::oBoxDivisa
 
    DEFINE BOX ::oBoxEstado ID "box_estado" RESOURCE ::oRes
@@ -159,7 +163,7 @@ procedure vta_facturas( oFormParent )
    ::cComboEstado := ""
    DEFINE COMBOBOX ::oComboEstado ;
           VAR ::cComboEstado ITEMS ::aComboEstado ;
-          ON CHANGE ( __VtaChangeEstado( oForm, ::lConfirm ) ) ;
+          ON CHANGE ( __PedChangeEstado( oForm, ::lConfirm ) ) ;
           OF ::oBoxEstado
 
 
@@ -265,12 +269,12 @@ procedure vta_facturas( oFormParent )
 
    ::cRetIvaFecha := ''
    DEFINE ENTRY TYPE DATE ::oEntRetIvaF VAR ::cRetIvaFecha CALENDAR;
-          VALID __ValRetFecha(oForm); 
+          VALID __PedValRetFecha(oForm); 
           ID "ent_retivaf" RESOURCE ::oRes
 
    ::cPorRetIva := ''
    DEFINE ENTRY TYPE PORCENT ::oEntPorRetIva VAR ::cPorRetIva ;
-          VALID __ValRetIvaPorcen( oForm ) ;
+          VALID __PedValRetIvaPorcen( oForm ) ;
           ID "ent_porretiva" RESOURCE ::oRes
 
    ::cMonRetIva := ''
@@ -284,7 +288,7 @@ procedure vta_facturas( oFormParent )
 
    ::cIslrFecha := ''
    DEFINE ENTRY TYPE DATE ::oEntIslrFecha VAR ::cIslrFecha CALENDAR;
-          VALID __ValIslrFecha(oForm); 
+          VALID __PedValIslrFecha(oForm); 
           ID "ent_islr_fecha" RESOURCE ::oRes
 
    ::cIslrMonto := ""
@@ -292,59 +296,58 @@ procedure vta_facturas( oFormParent )
           ID "ent_islr_monto" RESOURCE ::oRes
 
    //-------------------------
-   DEFINE MODEL  ::oModFacturas ;
-          STRUCT ::rFacturas:Struct() ;
-          DATA   ::rFacturas:GetData()
+   DEFINE MODEL  ::oModPedidos ;
+          STRUCT ::rPedidos:Struct() ;
+          DATA   ::rPedidos:GetData()
    
-   DEFINE LISTBOX ::oLBoxFacs ;
-          MODEL   ::oModFacturas ;
+   DEFINE LISTBOX ::oLBoxPedidos ;
+          MODEL   ::oModPedidos ;
           OF      ::oBoxData
 
-   ::oLBoxFacs:lBar  := .f.
-   ::oLBoxFacs:bEdit := {|oModel| __vtaFactura( oForm, oFormParent, ::oBoxFactura, oModel, .F. ) }
+   ::oLBoxPedidos:lBar  := .f.
+   ::oLBoxPedidos:bEdit := {|oModel| __vtaPedido( oForm, oFormParent, ::oBoxPedido, oModel, .F. ) }
 
-   ::oLBoxFacs:Active() 
+   ::oLBoxPedidos:Active() 
 
-   //View( oLBoxFacs:GetCol(1):ClassName() )
-   ::oLBoxFacs:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
-   ::oLBoxFacs:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
+   //View( oLBoxPedidos:GetCol(1):ClassName() )
+   ::oLBoxPedidos:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
+   ::oLBoxPedidos:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
 
-   ::oLBoxFacs:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 4, "Fecha" )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
+   ::oLBoxPedidos:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
+   ::oLBoxPedidos:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
+   ::oLBoxPedidos:SetColTitle( 4, "Fecha" )  //- Cambiamos el titulo 
+   ::oLBoxPedidos:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
+   ::oLBoxPedidos:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
+   ::oLBoxPedidos:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
+   ::oLBoxPedidos:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
 
    ::hCol := hb_hash()
-   ::hCol["numero"]      := 1
-   ::hCol["cliente_id"]  := 2
-   ::hCol["cliente"]     := 3
-   ::hCol["fecha"]       := 4
-   ::hCol["fecha_vcmto"] := 5
-   ::hCol["monto_base"]  := 6
-   ::hCol["estado"]      := 7
-   ::hCol["vendedor_id"] := 8
-   ::hCol["condicion_id"] := 9
+   ::hCol["numero"]           := 1
+   ::hCol["cliente_id"]       := 2
+   ::hCol["cliente"]          := 3
+   ::hCol["fecha"]            := 4
+   ::hCol["fecha_vcmto"]      := 5
+   ::hCol["monto_base"]       := 6
+   ::hCol["estado"]           := 7
+   ::hCol["vendedor_id"]      := 8
+   ::hCol["condicion_id"]     := 9
    ::hCol["condicion_nombre"] := 10
-   ::hCol["serie_id"] := 11
-   ::hCol["serie_fiscal"] := 12
+   ::hCol["serie_id"]         := 11
+   ::hCol["serie_fiscal"]     := 12
 
-
-   //::oLBoxFacs:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
+   //::oLBoxPedidos:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 
    //-- Botones varios.
-   DEFINE BUTTON ::oBtnSalir ACTION ::oFacWnd:End();
+   DEFINE BUTTON ::oBtnSalir ACTION ::oPedWnd:End();
           ID "btn_salir" RESOURCE ::oRes
 
-   ACTIVATE WINDOW ::oFacWnd MODAL VALID __FactExit(oForm)
+   ACTIVATE WINDOW ::oPedWnd MODAL VALID __PedExit(oForm)
 
 return
 
 
 
-function __ValRetIvaPorcen( oForm )
+function __PedValRetIvaPorcen( oForm )
    local nPorcen := ToNum(::cPorRetIva)
    local nMonto 
    if !( nPorcen >=1 .and. nPorcen <=100 )
@@ -362,8 +365,8 @@ RETURN .T.
 
 
 
-function __ValIslrFecha( oForm )
-   if ::rFactura:Estado()!="C"
+function __PedValIslrFecha( oForm )
+   if ::rPedido:Estado()!="C"
       MsgAlert( "El documento no está cerrado, no requiere información de retención", "Atención" )
       ::oEntIslrFecha:SetValue( "" )
       return .T. 
@@ -377,8 +380,8 @@ return .t.
 
 
 
-function __ValRetFecha( oForm )
-   if ::rFactura:Estado()!="C"
+function __PedValRetFecha( oForm )
+   if ::rPedido:Estado()!="C"
       MsgAlert( "El documento no está cerrado, no requiere información de retención", "Atención" )
       ::oEntRetIvaF:SetValue( "" )
       return .T. 
@@ -392,16 +395,16 @@ return .t.
 
 
 
-procedure __ModFactsRefresh(oForm)
+procedure __ModPedsRefresh(oForm)
    local aLine, aIter := ARRAY(4)
    local bDetalCode
 
-   ::rFacturas := ::rVentas:Facturas()
-   if ::isDef("oModFacturas")
-//View( ::oModFacturas:oTreeView:IsGetSelected( aIter ) )
-      ::oModFacturas:oTreeView:ClearModel(.t.)
-      FOR EACH aLine IN ::rFacturas:GetData()
-         APPEND LIST_STORE ::oModFacturas:oLbx ITER aIter ;
+   ::rPedidos := ::rVentas:Pedidos()
+   if ::isDef("oModPedidos")
+//View( ::oModPedidos:oTreeView:IsGetSelected( aIter ) )
+      ::oModPedidos:oTreeView:ClearModel(.t.)
+      FOR EACH aLine IN ::rPedidos:GetData()
+         APPEND LIST_STORE ::oModPedidos:oLbx ITER aIter ;
                 VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
                        ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
                        DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
@@ -410,17 +413,17 @@ procedure __ModFactsRefresh(oForm)
       NEXT
 
       bDetalCode := {|oTView, pModel, aIter | ;
-                     iif( oTView:GetAutoValue(1, aIter)==::hFactura["numero"], ;
+                     iif( oTView:GetAutoValue(1, aIter)==::hPedido["numero"], ;
                           gtk_tree_view_set_cursor( oTview:pWidget, oTView:getPath(aIter), NIL, .F.  ),;
                           .t. ) }
-      ::oLBoxFacs:ForEach( bDetalCode )
+      ::oLBoxPedidos:ForEach( bDetalCode )
 
    endif
 return 
 
 
 
-function __FactExit(oForm)
+function __PedExit(oForm)
    if MsgNoYes("¿Realmente desea salir?")
       ::oTimer:End()
       oForm:Release()
@@ -430,7 +433,7 @@ return .F.
 
 
 
-function __FactValFecha( oForm, oEnt, dValPrevio )
+function __PedValFecha( oForm, oEnt, dValPrevio )
    local lRes := .t.
    local nValor, rQry
 
@@ -473,7 +476,7 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
 
 return lRes
 
-function __FactCargarCondiciones( oForm )
+function __PedCargarCondiciones( oForm )
    local rQryCond
    rQryCond := ::rVentas:Condiciones()
    ::aCondiciones := {}
@@ -495,7 +498,7 @@ function __FactCargarCondiciones( oForm )
    
 return .T.
 
-function __FactCargarSeries( oForm )
+function __PedCargarSeries( oForm )
    local rQrySeries
    
    rQrySeries := ::rEmpresa:SeriesFiscales()
@@ -520,28 +523,26 @@ return .T.
 
 
 
-procedure __VtaChangeEstado( oForm, lConfirm )
+procedure __PedChangeEstado( oForm, lConfirm )
 //View( ::cPreEstado + " --> " + ::cComboEstado )
    if ::lSilence ; return ; endif
 
    if ::cComboEstado = "Anulada" .or. ;
       ::cComboEstado = "Cerrada"
-      __FactRefresh( oForm, lConfirm )
-	  __FactCargarSeries( oForm )
-	  __FactCargarCondiciones( oForm )
+      __PedRefresh( oForm, lConfirm )
       if ::cPreEstado == "B" 
-         __VtaSave( oForm )
+         __PedSave( oForm )
       endif
    else
-      __FactRefresh( oForm, !lConfirm )
+      __PedRefresh( oForm, !lConfirm )
    endif
 return
 
 
 
 //-- Este procedimiento se ejecuta al solicitar una factura nueva o seleccionar 
-//   una factura para consultar y/o editar.
-procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
+//   un pedido para consultar y/o editar.
+procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
 
    local lPreConfirm := ::lConfirm
    local aData, aLine
@@ -554,16 +555,16 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    default lNew := .T.
    ::lSilence := .t.
 
-   ::oFacWnd:Maximize()
+   ::oPedWnd:Maximize()
 
    ::lNew := lNew
 
    if ::lNew 
       ::lLoad      := .F.
       ::lSave      := .F.
-      ::rFactura   := ::rVentas:Factura('')
-      ::hFactura   := ::rFactura:Data()
-      ::rFactDetal := ::rFactura:Detal()
+      ::rPedido   := ::rVentas:Pedido('')
+      ::hPedido   := ::rPedido:Data()
+      ::rPedDetal := ::rPedido:Detal()
       ::cFecha := DTOC( DATE() )
 
       ::oLabNumero:SetValue( "00000000" )
@@ -603,45 +604,42 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    else
       ::lLoad      := .T. // Consultando el documento.
       ::lSave      := .F.
-      ::rFactura   := ::rVentas:Factura( oModel:GetCol( ::hCol["numero"] ) )
-      ::hFactura   := ::rFactura:Data()
-      ::rFactDetal := ::rFactura:Detal()
+      ::rPedido   := ::rVentas:Pedido( oModel:GetCol( ::hCol["numero"] ) )
+      ::hPedido   := ::rPedido:Data()
+      ::rFactDetal := ::rPedido:Detal()
 
-      ::cFecha := DTOC( ::hFactura["fecha"] )
+      ::cFecha := DTOC( ::hPedido["fecha"] )
       //::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol(::hCol["numero"])), 8) )
       ::oLabNumero:SetValue( oModel:GetCol(::hCol["numero"]) )
-      ::oLabNroControl:SetValue( ::hFactura["numero_control"] )
+      ::oLabNroControl:SetValue( ::hPedido["numero_control"] )
       ::oEntCli:SetValue( oModel:GetCol(::hCol["cliente"]) )
       ::cCodCli := oModel:GetCol(::hCol["cliente_id"])
-	  ::cCondicionId := oModel:GetCol(::hCol["condicion_id"])
+      ::cCondicionId := oModel:GetCol(::hCol["condicion_id"])
       ::cCondicion :=  oModel:GetCol(::hCol["condicion_nombre"])
       ::cSerieId := oModel:GetCol(::hCol["serie_id"])
       ::cSerie :=  oModel:GetCol(::hCol["serie_fiscal"])
    
-        // Actualizar el combo para mostrar la condicion seleccionada
-        if hb_isObject( ::oComboCondicion )
-            ::oComboCondicion:SetValue( ::cCondicion )
-         endif
-         
+      // Actualizar el combo para mostrar la condicion seleccionada
+      if hb_isObject( ::oComboCondicion )
+         ::oComboCondicion:SetValue( ::cCondicion )
+      endif
 		 
-         if hb_isObject( ::oComboSerie )
-            ::oComboSerie:SetValue( ::cSerie )
-         endif
+      if hb_isObject( ::oComboSerie )
+         ::oComboSerie:SetValue( ::cSerie )
+      endif
 
-
-         
       ::cCodVendedor := oModel:GetCol(::hCol["vendedor_id"])
       ::oEntFecha:SetValue( oModel:GetCol(::hCol["fecha"]) )
       ::oEntVcmto:SetValue( oModel:GetCol(::hCol["fecha_vcmto"]) )
-      ::oEntOrdCompra:SetValue( ::hFactura["orden_compra"] ) 
+      ::oEntOrdCompra:SetValue( ::hPedido["orden_compra"] ) 
 
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
       ::oEntIvaS:SetValue( "0" )
       // Usar otros_imp desde el servidor si existe, sino inicializar en 0
-      if hb_hHasKey( ::hFactura, "otros_imp" )
-         ::oEntOtrImp:SetValue( TRANSFORM( ::hFactura["otros_imp"], P_92 ) )
+      if hb_hHasKey( ::hPedido, "otros_imp" )
+         ::oEntOtrImp:SetValue( TRANSFORM( ::hPedido["otros_imp"], P_92 ) )
       else
          ::oEntOtrImp:SetValue( "0" )
       endif
@@ -655,7 +653,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIslrMonto:SetValue( "" )
       ::oEntIslrFecha:SetValue( "" )
 
-      FOR EACH hIva IN ::hFactura["iva"]
+      FOR EACH hIva IN ::hPedido["iva"]
          if hIva["porcentaje"] = 0
             ::oEntIvaE:SetValue( TRANSFORM(hIva["monto"],P_92) )
          endif
@@ -683,33 +681,33 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
          ::oEntPorRetIva:SetValue( TRANSFORM( nPorRetIVA, P_92 ) )
       endif
 
-      if !Empty( ::hFactura["islr"] )
-         ::oEntIslrNro:SetValue( hb_ntos(::hFactura["islr"]["comprobante"]) )
-         ::oEntIslrMonto:SetValue( TRANSFORM( ::hFactura["islr"]["monto"], P_92) )
-         ::oEntIslrFecha:SetValue( DTOC(::hFactura["islr"]["fecha"]) )
+      if !Empty( ::hPedido["islr"] )
+         ::oEntIslrNro:SetValue( hb_ntos(::hPedido["islr"]["comprobante"]) )
+         ::oEntIslrMonto:SetValue( TRANSFORM( ::hPedido["islr"]["monto"], P_92) )
+         ::oEntIslrFecha:SetValue( DTOC(::hPedido["islr"]["fecha"]) )
       endif
 
-      ::oEntMonBase:SetValue( TRANSFORM(::hFactura["monto_base"],P_92) ) //oModel:GetCol(::hCol["monto base"]) )
-      ::oEntTotal:SetValue( TRANSFORM(::hFactura["monto_total"],P_92) )  
-      //::oEntTotBs:SetValue( TRANSFORM(::hFactura["monto_total"]*TONUM(SUBSTR(::cDivisa,5)),P_92) )  
+      ::oEntMonBase:SetValue( TRANSFORM(::hPedido["monto_base"],P_92) ) //oModel:GetCol(::hCol["monto base"]) )
+      ::oEntTotal:SetValue( TRANSFORM(::hPedido["monto_total"],P_92) )  
+      //::oEntTotBs:SetValue( TRANSFORM(::hPedido["monto_total"]*TONUM(SUBSTR(::cDivisa,5)),P_92) )  
 
       ::lConfirm := .F.
       do case
-      case ::hFactura["estado"] = "B"
+      case ::hPedido["estado"] = "B"
          ::oComboEstado:SetValue( "Borrador" )
-      case ::hFactura["estado"] = "A"
+      case ::hPedido["estado"] = "A"
          ::oComboEstado:SetValue( "Anulada"  )
-      case ::hFactura["estado"] = "C"
+      case ::hPedido["estado"] = "C"
          ::oComboEstado:SetValue( "Cerrada"  )
       endcase
-      ::cPreEstado := ::hFactura["estado"] //::cComboEstado
+      ::cPreEstado := ::hPedido["estado"] //::cComboEstado
       ::lConfirm := lPreconfirm
 
       //::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
 
    endif
 
-   __FactValFecha( oForm, ::oEntFecha, @::cPFecha )
+   __PedValFecha( oForm, ::oEntFecha, @::cPFecha )
 
    if !hb_isObject( ::oModDetal )
 
@@ -780,9 +778,9 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
              OF      ::oBoxDetalles
 
       ::oLBoxDetal:lBar  := .f.
-      ::oLBoxDetal:bNew  := {|| __AddDetal( oForm ) }
+      ::oLBoxDetal:bNew  := {|| __PedAddDetal( oForm ) }
       ::oLBoxDetal:bEdit := {|| .T. }
-      ::oLBoxDetal:bDel  := {|| __DelDetal( oForm ) }
+      ::oLBoxDetal:bDel  := {|| __PedDelDetal( oForm ) }
 
       ::oLBoxDetal:SetColVisible( 01, .f. )     //- Ocultamos el id del detalle.
       ::oLBoxDetal:SetColVisible( 02, .f. )     //- Ocultamos el id del documento.
@@ -870,7 +868,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    oCol := ::oModDetal:aCol[__CODIGO] // Codigo
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __PedEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __CODIGO )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -879,7 +877,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    oCol := ::oModDetal:aCol[__DESCRIPCION] // Descripcion
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __PedEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __DESCRIPCION )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -889,7 +887,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    oCol := ::oModDetal:aCol[__CANTIDAD] // Cantidad
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __PedEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __CANTIDAD )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -899,7 +897,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    oCol := ::oModDetal:aCol[__PRECIO] // Cantidad
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __PedEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __PRECIO )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -909,7 +907,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    oCol := ::oModDetal:aCol[__DESCUENTO] // Cantidad
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __EditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __PedEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __DESCUENTO )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -922,13 +920,13 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    //-- Continuamos, calcular valores.
    ::oEntMonBase:SetValue("0")
-   ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm ) }
+   ::bDetalCode := {|oTView, pModel, aIter| __PedCalMontos( oTView, pModel, aIter, oForm ) }
    ::oLBoxDetal:ForEach( ::bDetalCode )
 
 
       //::oEntMonBase:SetValue( "0" )
-   __FactRefresh( oForm, .F. )
-   __Calcula(oForm)
+   __PedRefresh( oForm, .F. )
+   __PedCalcula(oForm)
 
    FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
                       {::oBoxIvaRed, ::oEntIvaR}, ;
@@ -942,9 +940,9 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       endif
    NEXT
 
-//View( ::hFactura )
+//View( ::hPedido )
 
-   oBoxFactura:Show()
+   oBoxPedido:Show()
 
    ::lSilence := .f.
 
@@ -952,7 +950,7 @@ return
 
 
 
-procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
+procedure __PedEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
    local pNextCol, pPath, uPrevio
 
    //-  ignoramos la edición si el documento esta anulado o cerrado.
@@ -965,8 +963,8 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
    uPrevio := oTreeView:GetAutoValue( nCol )
 
    if nCol=__CODIGO
-      //__SetValue( oTreeView, oModel, aIter, nCol, uVal )
-      __Productos( oForm, uVal, oModel, nCol, oTreeView, aIter )
+      //__PedSetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __PedProductos( oForm, uVal, oModel, nCol, oTreeView, aIter )
       if oTreeView:GetAutoValue( 13 ) = "S" // Tipo de Inventario  V-Venta S-Servicio
          oTreeView:SetPosCol( aIter, __DESCRIPCION, .f. )
       else
@@ -977,8 +975,8 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
 
    if nCol=__DESCRIPCION 
 //View( oTreeView:GetAutoValue(28)
-      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
-      //__Productos( oForm, uVal, oModel, nCol, oTreeView, aIter )
+      __PedSetValue( oTreeView, oModel, aIter, nCol, uVal )
+      //__PedProductos( oForm, uVal, oModel, nCol, oTreeView, aIter )
       oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
       return
    endif
@@ -990,8 +988,8 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
    endif
 
    if nCol=__CANTIDAD
-      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
-      __Calcula( oForm )
+      __PedSetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __PedCalcula( oForm )
       oTreeView:SetPosCol( aIter, __PRECIO, .f. )
       //oTreeView:GoNext()
       return
@@ -1000,11 +998,11 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
    if nCol=__PRECIO
       if ToNum(uVal) <=0
          ::oLabInfo:SetText("El precio no puede ser menor o igual a cero")
-         __SetValue( oTreeView, oModel, aIter, nCol, uPrevio )
+         __PedSetValue( oTreeView, oModel, aIter, nCol, uPrevio )
          return
       endif
-      __SetValue( oTreeView, oModel, aIter, nCol, uVal )
-      __Calcula( oForm )
+      __PedSetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __PedCalcula( oForm )
       oTreeView:SetPosCol( aIter, __DESCUENTO, .f. )
       return
    endif
@@ -1015,16 +1013,16 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
          uVal := TRANSFORM( ToNum( oTreeView:GetAutoValue( __PRECIO ))  * ;
                           ( ToNum(uVal)/100 ) * ;
                             ToNum( oTreeView:GetAutoValue( __CANTIDAD ) ), P_92 )
-         __SetValue( oTreeView, oModel, aIter, nCol, uVal )
+         __PedSetValue( oTreeView, oModel, aIter, nCol, uVal )
       endif
       if ToNum(uVal) < ( ToNum(oTreeView:GetAutoValue( __CANTIDAD )) * ;
                          ToNum(oTreeView:GetAutoValue( __PRECIO   )) )
-         __SetValue( oTreeView, oModel, aIter, nCol, uVal )
-         __Calcula( oForm )
+         __PedSetValue( oTreeView, oModel, aIter, nCol, uVal )
+         __PedCalcula( oForm )
          oTreeView:SetPosCol( aIter, __TOTAL, .f. )
       else
          ::oLabInfo:SetText("El descuento no puede ser mayor o igual al monto del item.")
-         __SetValue( oTreeView, oModel, aIter, nCol, '0,00' )
+         __PedSetValue( oTreeView, oModel, aIter, nCol, '0,00' )
       endif
       return
    endif
@@ -1032,7 +1030,7 @@ return
 
 
 
-PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue  )
+PROCEDURE __PedSetValue( oTreeView, oModel, aIter, nCol, uValue  )
    local nMonto, nDescuento, nIvaPorcen, nIvaMonto:= 0
 
    if oTreeView:IsGetSelected( aIter )
@@ -1081,7 +1079,7 @@ RETURN
 
 
 
-procedure __Calcula( oForm )
+procedure __PedCalcula( oForm )
    local nOtrosImp := 0, aTasa
 
    ::oEntTotal:SetValue("0")
@@ -1092,8 +1090,8 @@ procedure __Calcula( oForm )
    ::oEntIvaG:SetValue("0")
    ::oEntIvaS:SetValue("0")
    ::oEntOtrImp:SetValue("0") // Initialize otros_imp
-   ::hFactura["iva"] := hb_hash()  // Initialize IVA hash here, once
-   ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
+   ::hPedido["iva"] := hb_hash()  // Initialize IVA hash here, once
+   ::bDetalCode := {|oTView, pModel, aIter| __PedCalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
    if !hb_isObject( ::oLBoxDetal )
       return
    endif
@@ -1114,7 +1112,7 @@ return
 
 
 
-procedure __CalMontos( oTView, pModel, aIter, oForm )
+procedure __PedCalMontos( oTView, pModel, aIter, oForm )
    local nBase:=0, nMonto:=0, nTotal:=0, cIva, nImpPvp, nOtrImp:=0, aBox
 
 //   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
@@ -1159,16 +1157,16 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
          nTotal := ROUND( nBase+nMonto, 2 )
          ::oEntIvaS:SetValue( TRANSFORM( nTotal, P_92 ) )
       endif
-            //if !hb_hHasKey( ::hFactura, "iva" )
-      //   ::hFactura["iva"] := hb_hash()
+            //if !hb_hHasKey( ::hPedido, "iva" )
+      //   ::hPedido["iva"] := hb_hash()
       //endif
       cIva := ALLTRIM( STRTRAN(STRTRAN(oTView:GetAutoValue(__IVAPORCEN, aIter),",",""), ".","") )
-      if hb_hHasKey( ::hFactura["iva"], cIva )
-         nMonto += ::hFactura["iva"][cIva]["monto"]
+      if hb_hHasKey( ::hPedido["iva"], cIva )
+         nMonto += ::hPedido["iva"][cIva]["monto"]
       endif
-//View( hb_valtoexp( ::hFactura["iva"] ) )
+//View( hb_valtoexp( ::hPedido["iva"] ) )
 
-      hb_hSet( ::hFactura["iva"], cIva, ; //ALLTRIM(oTView:GetAutoValue(__IVAPORCEN, aIter)),;
+      hb_hSet( ::hPedido["iva"], cIva, ; //ALLTRIM(oTView:GetAutoValue(__IVAPORCEN, aIter)),;
                { "porcentaje" => ToNum(oTView:GetAutoValue(__IVAPORCEN, aIter)), ;
                  "monto"      => nMonto,;
                  "fecha_retencion"      => ::cRetIvaFecha,;
@@ -1177,14 +1175,14 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
                  "comprobante_retencion"=> ::cRetIva ;
                } )
 
-///View( "registrado iva "+cIva+hb_ntos( len(::hFactura["iva"]) ) )
-//View( ::hFactura )
+///View( "registrado iva "+cIva+hb_ntos( len(::hPedido["iva"]) ) )
+//View( ::hPedido )
    endif
 
    if !empty( ::cIslrNro ) .and. !Empty( ::cIslrMonto ) 
-      ::hFactura[ "islr" ]["comprobante"] := ToNum( ::cIslrNro )
-      ::hFactura[ "islr" ]["monto"      ] := ToNum( ::cIslrMonto )
-      ::hFactura[ "islr" ]["fecha"      ] := CTOD( ::cIslrFecha )   
+      ::hPedido[ "islr" ]["comprobante"] := ToNum( ::cIslrNro )
+      ::hPedido[ "islr" ]["monto"      ] := ToNum( ::cIslrMonto )
+      ::hPedido[ "islr" ]["fecha"      ] := CTOD( ::cIslrFecha )   
    endif
 
    nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
@@ -1218,7 +1216,7 @@ return
 
 
 
-procedure __AddDetal( oForm )
+procedure __PedAddDetal( oForm )
    local aIter := ARRAY(4)
    local aLine := {'','','','','','','','','','','','','','','','','','','','','',''}
 
@@ -1247,12 +1245,12 @@ return
 
 
 
-procedure __FactRefresh( oForm, lConfirm )
+procedure __PedRefresh( oForm, lConfirm )
 
    default lConfirm := .F.
 
    if lConfirm
-      if !MsgNoYes( "¿Confirma el cambio de estado de la factura?" )
+      if !MsgNoYes( "¿Confirma el cambio de estado del pedido?" )
          ::oComboEstado:setValue("Borrador")
       endif
    endif
@@ -1263,12 +1261,12 @@ procedure __FactRefresh( oForm, lConfirm )
    ::oEntIvaS:SetEditable( .F. )
    ::oEntMonBase:SetEditable( .F. )
 
-   if (::hFactura["estado"] = "A" .or. ::hFactura["estado"] = "C") .or. ;
+   if (::hPedido["estado"] = "A" .or. ::hPedido["estado"] = "C") .or. ;
       ( ::cComboEstado = "A" .or. ::cComboEstado = "C" )
       ::oEntCli:Disable()
       ::oEntFecha:Disable()
       ::oEntVcmto:Disable()
-      if ::hFactura["estado"]="C"
+      if ::hPedido["estado"]="C"
          ::oEntRetIva:Enable()
          ::oEntRetIvaF:Enable()
          ::oEntPorRetIva:Enable()
@@ -1280,7 +1278,7 @@ procedure __FactRefresh( oForm, lConfirm )
 
          ::oBtnImprime:Enable() 
       endif
-      if ::hFactura["estado"]="A"
+      if ::hPedido["estado"]="A"
          ::oEntRetIva:Disable()
          ::oEntRetIvaF:Disable()
          ::oEntPorRetIva:Disable()
@@ -1323,7 +1321,7 @@ return
 
 
 
-Procedure __DelDetal( oForm )
+Procedure __PedDelDetal( oForm )
    local aIter := ARRAY(4)
    local pPath
  
@@ -1337,7 +1335,7 @@ Procedure __DelDetal( oForm )
       pPath := ::oModDetal:oTreeView:GetPath( aIter )
       if !Empty( ::oModDetal:oTreeView:GetAutoValue( 20 ) )
          if MsgNoYes( "¿Realmente desea eliminar este item?" )
-            if !::rFactura:DelItem( ALLTRIM( ::oModDetal:oTreeView:GetAutoValue( 20 ) ) ) //20-> ITEM
+            if !::rPedido:DelItem( ALLTRIM( ::oModDetal:oTreeView:GetAutoValue( 20 ) ) ) //20-> ITEM
                return 
             endif
          endif
@@ -1346,26 +1344,25 @@ Procedure __DelDetal( oForm )
       gtk_tree_view_set_cursor( ::oModDetal:oTreeView:pWidget, pPath )
 
    endif
-   __Calcula( oForm )
+   __PedCalcula( oForm )
 return
 
 
 
-Procedure __VtaSave( oForm, oFormParent )
+Procedure __PedSave( oForm, oFormParent )
    local bSaveDetal, uResp, dUltimaFecha, aIter := ARRAY(4), lSuccess := .F., nIdx:=0
-   local hCorrel 
-   
+
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
-       __Calcula( oForm )
-//View( hb_valtoexp( ::hFactura ) )
-      ::rFactura:ActualizarFlujos( ::hFactura )
+       __PedCalcula( oForm )
+//View( hb_valtoexp( ::hPedido ) )
+      ::rPedido:ActualizarFlujos( ::hPedido )
       MsgAlert( "Este documento no es objeto para ser alterado y luego almacenar.", "Atención" )
       return 
    endif
 
    //-- Se verifica la fecha de la factura. No puede ser menor a la ultima registrada
-   dUltimaFecha := ::rFactura:Ultima()["fecha"]
+   dUltimaFecha := ::rPedido:Ultima()["fecha"]
    if dUltimaFecha > CTOD(::oEntFecha:GetValue())
       ::oEntFecha:SetValue( DTOC( dUltimaFecha ) )
       if dUltimaFecha > CTOD(::oEntVcmto:GetValue())
@@ -1374,43 +1371,29 @@ Procedure __VtaSave( oForm, oFormParent )
       ::oLabInfo:SetText( "Ajustado valor de fecha." )
    endif
 
-   ::hFactura["cliente_id"       ] := ::cCodCli                    // Cliente
-   ::hFactura["vendedor_id"      ] := ::cCodVendedor               // Vendedor
-   ::hFactura["orden_compra"     ] := ::cOrdenCompra               // Orden de Compra
-   ::hFactura["fecha"            ] := CTOD(::oEntFecha:GetValue()) // Fecha
-   ::hFactura["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue()) // Vencimiento
-   ::hFactura["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
-   ::hFactura["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
-   ::hFactura["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
-   ::hFactura["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
-   ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
+   ::hPedido["cliente_id"       ] := ::cCodCli                    // Cliente
+   ::hPedido["vendedor_id"      ] := ::cCodVendedor               // Vendedor
+   ::hPedido["orden_compra"     ] := ::cOrdenCompra               // Orden de Compra
+   ::hPedido["fecha"            ] := CTOD(::oEntFecha:GetValue()) // Fecha
+   ::hPedido["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue()) // Vencimiento
+   ::hPedido["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
+   ::hPedido["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
+   ::hPedido["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
+   ::hPedido["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
+   ::hPedido["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
    nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
-      ::hFactura["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
-     nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
-     ::hFactura["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
-	 ::cSerieID:=::hFactura["serie_id"] 
-     //::hFactura["serie_nombre"     ] := ::cSerie
-	 //view(::aSeriesId)
-	 //view(nidx)
-    // view(::cSerieID)
-	 hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 4 )
-	 
-	 
-	if ::cComboEstado == "Cerrada"		
-		if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
-		MsgStop( hCorrel["mensaje"] + ". No se puede cerrar el documento.", "Error" )
-		return
-		endif
-	endif
+   ::hPedido["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
+   nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
+   ::hPedido["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
+     //::hPedido["serie_nombre"     ] := ::cSerie
 
+//   View( ::hPedido["iva"] ) 
 
-//   View( ::hFactura["iva"] ) 
-
-//View( ::hFactura )
+//View( ::hPedido )
 //return
 
-   uResp := ::rFactura:SetData( ::hFactura )
-   ::hFactura := ::rFactura:Data()
+   uResp := ::rPedido:SetData( ::hPedido )
+   ::hPedido := ::rPedido:Data()
 //View( uResp )
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
       ::oLabInfo:SetText( uResp["message"] )
@@ -1419,10 +1402,10 @@ Procedure __VtaSave( oForm, oFormParent )
    endif
 
    //-- Actualizar detalles de la factura.
-   bSaveDetal := {|oTView, pModel, aIter| __VtaSaveDetal( oTView, pModel, aIter, oForm )  }
+   bSaveDetal := {|oTView, pModel, aIter| __PedSaveDetal( oTView, pModel, aIter, oForm )  }
 
-//View( ::hFactura )
-   uResp := ::rFactura:Save()
+//View( ::hPedido )
+   uResp := ::rPedido:Save()
 
    // Verificar si hubo error
    lSuccess := .F.
@@ -1437,27 +1420,27 @@ Procedure __VtaSave( oForm, oFormParent )
       if hb_isHash(uResp) .and. hb_hHasKey(uResp, "message")
          ::oLabInfo:SetText( uResp["message"] )
       endif
-//View("atualizamos hFactura ")
-      ::hFactura   := ::rFactura:Data()
-//View( ::hFactura )
-      //-- Importante invocar SetDetal después de rFactura:Save() 
+//View("atualizamos hPedido ")
+      ::hPedido   := ::rPedido:Data()
+//View( ::hPedido )
+      //-- Importante invocar SetDetal después de rPedido:Save() 
       //   para obtener primero el nro del documento
       ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
 //View( hb_valtoexp(::aDetal) )
-      if !::rFactura:SetDetal( ::aDetal )
+      if !::rPedido:SetDetal( ::aDetal )
          ::oLabInfo:SetText("No se actualizaron los detalles" )
          uResp := .F.
       endif
 
-//View( hb_valtoexp(::hFactura) )
-//View( ::hFactura["numero"] )
-      if VALTYPE(::hFactura["numero"])="C" .AND. VAL(::hFactura["numero"])>0
-         ::oLabNumero:SetValue( STRZERO( VAL(::hFactura["numero"]), 8) )
-      elseif VALTYPE(::hFactura)="N" 
-         ::oLabNumero:SetValue( ALLTRIM(STR(::hFactura["numero"])) )
-      elseif VALTYPE(::hFactura)="C"
-         ::oLabNumero:SetValue( ALLTRIM(::hFactura["numero"]) )
+//View( hb_valtoexp(::hPedido) )
+//View( ::hPedido["numero"] )
+      if VALTYPE(::hPedido["numero"])="C" .AND. VAL(::hPedido["numero"])>0
+         ::oLabNumero:SetValue( STRZERO( VAL(::hPedido["numero"]), 8) )
+      elseif VALTYPE(::hPedido)="N" 
+         ::oLabNumero:SetValue( ALLTRIM(STR(::hPedido["numero"])) )
+      elseif VALTYPE(::hPedido)="C"
+         ::oLabNumero:SetValue( ALLTRIM(::hPedido["numero"]) )
       endif
       if ::lNew
          ::lNew := .F.
@@ -1465,14 +1448,14 @@ Procedure __VtaSave( oForm, oFormParent )
          //-- Igual debemos atualizar valor de numero asignado si hubo cambio de estado a "Cerrado"
       endif
 
-      __ModFactsRefresh( oForm )
+      __ModPedsRefresh( oForm )
       //-- Este paso es importante para que se actualicen los nros de item en la app cliente.
       //   Y asi evitar que vuelva a insertar datos. (RIGC-JUN2025)
-      //::oModFacturas:oTreeView:ClearModel(.t.)
+      //::oModPedidos:oTreeView:ClearModel(.t.)
       if !hb_isNIL( oFormParent )
-         //View( ::oModFacturas:oTreeView:GetAutoValue( 1 ))
-         if ::oModFacturas:oTreeView:IsGetSelected( aIter )
-            __vtaFactura( oForm, oFormParent, ::oBoxFactura, ::oModFacturas, .F. )
+         //View( ::oModPedidos:oTreeView:GetAutoValue( 1 ))
+         if ::oModPedidos:oTreeView:IsGetSelected( aIter )
+            __vtaPedido( oForm, oFormParent, ::oBoxPedido, ::oModPedidos, .F. )
          endif
        endif
     endif
@@ -1481,7 +1464,7 @@ return
 
 
 
-procedure __VtaSaveDetal(oTView, pModel, aIter, oForm)
+procedure __PedSaveDetal(oTView, pModel, aIter, oForm)
    local hDetal := hb_hash()
 //   nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
 //   View( oTView:GetAutoValue( __CODIGO ) )
@@ -1489,7 +1472,7 @@ procedure __VtaSaveDetal(oTView, pModel, aIter, oForm)
 //   View( oTView:GetAutoValue( 3 ) )
 
     //hDetal["id"               ] := ALLTRIM(oTView:GetAutoValue( 01 ))
-   hDetal["documento_id"     ] := ::hFactura[ "id" ]
+   hDetal["documento_id"     ] := ::hPedido[ "id" ]
    hDetal["codigo_local"     ] := ALLTRIM(oTView:GetAutoValue( 03, aIter ))
    hDetal["descripcion"      ] := oTView:GetAutoValue( 04, aIter )
    hDetal["cantidad"         ] := VAL( oTView:GetAutoValue( 05, aIter ) )
@@ -1517,24 +1500,50 @@ return
 
 
 
-PROCEDURE __VtaCobrar( oForm, oFormParent)
-   if ::hFactura["estado"] != "C"
-      ::oLabInfo:SetText( "Solo puede generar recibo en documento cerrado." )
-      RETURN
-   endif
-   oTPuy:RunXBS( "fin_recibo", oForm, oFormParent, "4" /*Factura*/ )
-RETURN
-
-
-
-PROCEDURE __VtaImprime( oForm )
+PROCEDURE __PedImprime( oForm )
 
    oTPuy:RunXBS( "vta_imprimir_pdf", oForm )
- 
+  
 RETURN
 
 
-FUNCTION __vtaf_CalPrecio( oForm, cPrecio, cDivisa )
+PROCEDURE __PedConvertir( oForm, oFormParent )
+   local uResp
+
+   if ::hPedido["estado"] != "C"
+      MsgInfo( "El pedido debe estar cerrado para convertir a factura." )
+      RETURN
+   endif
+
+   if MsgYesNo( "¿Convertir este pedido a factura?", "Confirmar" )
+      uResp := ::rPedido:ConvertirFactura()
+      
+      if hb_isHash( uResp ) .and. hb_hHasKey( uResp, "ok" )
+         if uResp["ok"]
+            MsgInfo( "Pedido convertido a factura correctamente.", "Éxito" )
+            // Recargar lista de pedidos
+            ::rPedidos := ::rVentas:Pedidos()
+            if ::isDef("oModPedidos")
+               ::oModPedidos:oTreeView:ClearModel(.t.)
+               FOR EACH aLine IN ::rPedidos:GetData()
+                  APPEND LIST_STORE ::oModPedidos:oLbx ITER aIter ;
+                         VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
+                                ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
+                                DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
+                                aLine[ 7], hb_ntos(aLine[ 8])
+               NEXT
+            endif
+         else
+            MsgStop( uResp["message"] )
+         endif
+      else
+         MsgStop( "Error al convertir pedido a factura." )
+      endif
+   endif
+RETURN
+
+
+FUNCTION __Pedf_CalPrecio( oForm, cPrecio, cDivisa )
    Local cValue := '1', rQry, rValor := 1
    Local nPrecio := ToNum( cPrecio )  //ToNum(oModel:oTreeView:GetAutoValue( 10 )) 
    //Local cDivisa := oModel:oTreeView:GetAutoValue( 29 ) //Codigo de Moneda
@@ -1555,7 +1564,7 @@ RETURN STR( nPrecio )
 
 
 
-PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
+PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
    local oRes, oImgBanner, oImgLogo
    local oBoxData, oModProductos, oLBoxInv
    local uValue, cLabTitulo := "Productos o Conceptos"
@@ -1568,40 +1577,40 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
    rProductos := ::rVentas:Productos( cStr )
 
    if rProductos:RecCount() = 1
-      __SetValue( ::oModDetal:oTreeView, ;
+      __PedSetValue( ::oModDetal:oTreeView, ;
  	          ::oModDetal:oLbx, ;
 	          ::oModDetal:aIter, __CODIGO, ;
 	          rProductos:codigo_local )
 
-      __SetValue( ::oModDetal:oTreeView, ;
+      __PedSetValue( ::oModDetal:oTreeView, ;
  	          ::oModDetal:oLbx, ;
 	          ::oModDetal:aIter, __DESCRIPCION, ;
 	          rProductos:descripcion ) 
 
-      __SetValue( ::oModDetal:oTreeView, ;
+      __PedSetValue( ::oModDetal:oTreeView, ;
  	          ::oModDetal:oLbx, ;
 	          ::oModDetal:aIter, __PRECIO, ;
-                  __vtaf_CalPrecio( oForm, rProductos:precio_unitario, rProductos:moneda_codigo))
+                  __Pedf_CalPrecio( oForm, rProductos:precio_unitario, rProductos:moneda_codigo))
 	          //STR( rProductos:precio_unitario ))
 
 	          //TRANSFORM( rProductos:precio_unitario, P_92 ))
 
-      __SetValue( ::oModDetal:oTreeView, ;
+      __PedSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, __IVAPORCEN, ;
                   STR( rProductos:iva_porcentaje ))
 
-      __SetValue( ::oModDetal:oTreeView, ;
+      __PedSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, 21, ; // imp_pvp
                   STR( rProductos:imp_pvp )) // Set imp_pvp
 
-      __SetValue( ::oModDetal:oTreeView, ;
+      __PedSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, 22, ; // imp_pvp
                   STR( rProductos:imp_pvp )) // Set imp_pvp
 
-      __SetValue( ::oModDetal:oTreeView, ;
+      __PedSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, 13, ; 
                   rProductos:tipo_inventario ) 
@@ -1618,7 +1627,7 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
           TITLE "Fiscalius. Inventario " ;
           SIZE 700,400 ;
           ID "window1" RESOURCE oRes ;
-          OF ::oFacWnd
+          OF ::oPedWnd
 
    DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
           ID "lab_title" RESOURCE oRes
@@ -1650,38 +1659,38 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 
    oLBoxInv:lBar  := .f.
    oLBoxInv:bEdit := {|oModProductos|;
-                         __SetValue( ::oModDetal:oTreeView,      ;
+                         __PedSetValue( ::oModDetal:oTreeView,      ;
 				     ::oModDetal:oLbx,           ;
 				     ::oModDetal:aIter, __CODIGO,;
 				     oModProductos:oTreeView:GetAutoValue( 4 ) ),;
-                         __SetValue( ::oModDetal:oTreeView, ;
+                         __PedSetValue( ::oModDetal:oTreeView, ;
 				     ::oModDetal:oLbx,      ;
 				     ::oModDetal:aIter, __DESCRIPCION,  ;
 				     oModProductos:oTreeView:GetAutoValue( 5 ) ),;
-                         __SetValue( ::oModDetal:oTreeView, ;
+                         __PedSetValue( ::oModDetal:oTreeView, ;
 				     ::oModDetal:oLbx,      ;
 				     ::oModDetal:aIter, __CANTIDAD ,  ;
 				     "1" ),;
-                         __SetValue( ::oModDetal:oTreeView, ;
+                         __PedSetValue( ::oModDetal:oTreeView, ;
 				     ::oModDetal:oLbx,      ;
 				     ::oModDetal:aIter, __PRECIO ,  ;
-                                     __vtaf_CalPrecio( oForm, ;
+                                     __Pedf_CalPrecio( oForm, ;
                                                        oModProductos:oTreeView:GetAutoValue( 10 ), ;
                                                        oModProductos:oTreeView:GetAutoValue( 29 ) );
                                      ),;
-                         __SetValue( ::oModDetal:oTreeView, ;
+                         __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, __IVAPORCEN, ;
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),;
-                         __SetValue( ::oModDetal:oTreeView, ;
+                         __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 21, ;
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
-                         __SetValue( ::oModDetal:oTreeView, ;
+                         __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 22, ;
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
-                         __SetValue( ::oModDetal:oTreeView, ;
+                         __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 13, ;
                                      oModProductos:oTreeView:GetAutoValue( 7 ) ),;

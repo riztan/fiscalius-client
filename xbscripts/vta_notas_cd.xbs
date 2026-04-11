@@ -1136,9 +1136,9 @@ return
    // Manejar productos exentos de IVA (0%)
    if nPorcentaje = 0
       nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
-      nBase  := ToNum( ::oEntIvaE:GetValue() )
-      nTotal := ROUND( nBase + nMonto, 2 )
+      nTotal := ROUND( nMonto, 2 )
       ::oEntIvaE:SetValue( TRANSFORM( nTotal, P_92 ) )
+      ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
    endif
 
    // Calcular monto IVA y separar por porcentaje
@@ -1182,7 +1182,6 @@ return
    endif
 
    nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
-             ToNum( ::oEntIvaE:GetValue() ) +;
              ToNum( ::oEntIvaR:GetValue() ) +;
              ToNum( ::oEntIvaG:GetValue() ) +;
              ToNum( ::oEntIvaS:GetValue() ) +;
