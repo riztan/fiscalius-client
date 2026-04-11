@@ -105,7 +105,7 @@ CLASS GEMPRESA
    METHOD Alicuotas()                INLINE ::rEmpresa:Alicuotas()
    METHOD GetAlicuota(uParam)        INLINE ::rEmpresa:GetAlicuota(uParam)
    
-   METHOD SeriesFiscales()           INLINE ::rEmpresa:SeriesFiscales()
+   METHOD SeriesFiscales(nTipoId)           INLINE ::rEmpresa:SeriesFiscales(nTipoId)
    METHOD SerieFiscal( hParam )      INLINE ::rEmpresa:SerieFiscal( hParam )
    METHOD SeriesTipos(uParam)        INLINE ::rEmpresa:SeriesTipos(uParam)
    METHOD SerieTipo( hParam )        INLINE ::rEmpresa:SerieTipo( hParam )

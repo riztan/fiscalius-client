@@ -502,7 +502,7 @@ return .T.
 function __FactCargarSeries( oForm )
    local rQrySeries
    
-   rQrySeries := ::rEmpresa:SeriesFiscales()
+   rQrySeries := ::rEmpresa:SeriesFiscales(4)
    //view(rQrySeries)
    ::aSeries := {}
    ::aSeriesId := {}

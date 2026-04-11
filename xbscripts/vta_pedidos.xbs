@@ -501,14 +501,15 @@ return .T.
 function __PedCargarSeries( oForm )
    local rQrySeries
    
-   rQrySeries := ::rEmpresa:SeriesFiscales()
+   rQrySeries := ::rEmpresa:SeriesFiscales(13)
    //view(rQrySeries)
    ::aSeries := {}
    ::aSeriesId := {}
    
    While !rQrySeries:Eof()
       AADD( ::aSeries, ALLTRIM(rQrySeries:serie_fiscal) )
-      AADD( ::aSeriesId, hb_ntos(rQrySeries:id) )
+   
+   AADD( ::aSeriesId, hb_ntos(rQrySeries:id) )
       rQrySeries:Skip()
    EndDo
    
@@ -517,7 +518,17 @@ function __PedCargarSeries( oForm )
       ::oComboSerie:RemoveAll()
     endif
       ::oComboSerie:SetItems( ::aSeries )
+	  
+	  
+	// Inactivar combo si solo hay un registro
+   IF LEN(::aSeries) = 1
+      ::oComboSerie:Enable( .F. )
+      ::oComboSerie:SetValue( ::aSeries[1] )
+      ::cSerieId := ::aSeriesId[1]
+   ENDI
    endif
+   
+   
    
 return .T.
 
