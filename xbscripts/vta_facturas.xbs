@@ -308,6 +308,8 @@ procedure vta_facturas( oFormParent )
    //View( oLBoxFacs:GetCol(1):ClassName() )
    ::oLBoxFacs:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
    ::oLBoxFacs:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
+   ::oLBoxFacs:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
+   ::oLBoxFacs:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
 
    ::oLBoxFacs:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
@@ -316,6 +318,8 @@ procedure vta_facturas( oFormParent )
    ::oLBoxFacs:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 10, "Condicion" )       //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo 
 
    ::hCol := hb_hash()
    ::hCol["numero"]      := 1
