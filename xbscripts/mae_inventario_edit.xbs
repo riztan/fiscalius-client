@@ -42,6 +42,7 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
    //Actualizamos formatos numéricos.
 
    oInvForm:hData["imp_pvp"        ] := TRANSFORM( oInvForm:hData["imp_pvp"        ], P_92 ) 
+   oInvForm:hData["imp_produccion"] := TRANSFORM( oInvForm:hData["imp_produccion"], P_92 ) 
    oInvForm:hData["precio_unitario"] := TRANSFORM( oInvForm:hData["precio_unitario"], P_92 )
    oInvForm:hData["stock_minimo"   ] := TRANSFORM( oInvForm:hData["stock_minimo"   ], P_92 )
    oInvForm:hData["stock_total"    ] := TRANSFORM( oInvForm:hData["stock_total"    ], P_92 )
@@ -142,11 +143,15 @@ procedure inv_edit( oForm, oInvWnd, oModel, rInventario, lNew )
       DEFINE COMBOBOX oInvForm:oCBMoneda VAR oInvForm:cMoneda ITEMS aMonedas ;
              OF oInvForm:oBoxMonedas
 
-      DEFINE MONEY ENTRY oInvForm:oEntImpPvp VAR oInvForm:hData["imp_pvp"]  ;
-             VALID __MaeInvValidaMonto( oInvForm:oEntImpPvp ) ;
-             ID "ent_imppvp"  RESOURCE oRes
+DEFINE MONEY ENTRY oInvForm:oEntImpPvp VAR oInvForm:hData["imp_pvp"]  ;
+              VALID __MaeInvValidaMonto( oInvForm:oEntImpPvp ) ;
+              ID "ent_imppvp"  RESOURCE oRes
 
-      DEFINE TEXTVIEW oInvForm:oVTDetal VAR oInvForm:hData["descripcion_detallada"] ;
+       DEFINE MONEY ENTRY oInvForm:oEntImpProd VAR oInvForm:hData["imp_produccion"] ;
+              VALID __MaeInvValidaMonto( oInvForm:oEntImpProd ) ;
+              ID "ent_impproduccion" RESOURCE oRes
+
+       DEFINE TEXTVIEW oInvForm:oVTDetal VAR oInvForm:hData["descripcion_detallada"] ;
              ID "tv_detal"  RESOURCE oRes
 
       DEFINE MONEY ENTRY oInvForm:oEntPrecio VAR oInvForm:hData["precio_unitario"] ;
@@ -243,7 +248,7 @@ Procedure __MaeInvSave( oForm )
 //   endif
 
    //  FOR EACH cCol IN {"precio_unitario","stock_total","stock_minimo","imp_pvp","codigo_barras"}
-   FOR EACH cCol IN {"precio_unitario","stock_total","stock_minimo","imp_pvp","codigo_barras","capacidad","grados_alcohol","cant_und_agru"}
+   FOR EACH cCol IN {"precio_unitario","stock_total","stock_minimo","imp_pvp","imp_produccion","codigo_barras","capacidad","grados_alcohol","cant_und_agru"}
       if VALTYPE( hData[ cCol ] )="C"
          hData[ cCol ] := TONUM( ::hData[cCol] )
       endif
@@ -307,7 +312,8 @@ Procedure __MaeInvSave( oForm )
                     hData["unidad_ind"               ], ; 	   
                     hData["unidad_agru"              ], ; 	   
                     hData["cant_und_agru"            ], ; 	   
-                    hb_ntos(hData["imp_pvp"          ])   //7
+                    hb_ntos(hData["imp_pvp"          ]),  ; //7
+                    hb_ntos(hData["imp_produccion"])   //8
        
 
 			

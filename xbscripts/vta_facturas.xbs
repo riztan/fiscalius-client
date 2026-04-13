@@ -235,6 +235,12 @@ procedure vta_facturas( oFormParent )
    DEFINE MONEY ENTRY ::oEntOtrImp VAR ::nMontoOtrImp ;
           ID "ent_otrimp" RESOURCE ::oRes 
    ::oEntOtrImp:Justify( GTK_JUSTIFY_RIGHT )
+   
+   DEFINE BOX ::oBoxImpProd ID "box_impprod" RESOURCE ::oRes 
+   ::nMontoImpProd := 0
+   DEFINE MONEY ENTRY ::oEntImpProd VAR ::nMontoImpProd ;
+          ID "ent_otrimp" RESOURCE ::oRes 
+   ::oEntImpProd:Justify( GTK_JUSTIFY_RIGHT )
 
    ::nMontoTotal := 0
    DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ;
@@ -583,6 +589,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaG:SetValue( "0" )
       ::oEntIvaS:SetValue( "0" )
       ::oEntOtrImp:SetValue( "0" )
+      ::oEntImpProd:SetValue( "0" )
       ::oEntMonBase:SetValue( "0" )
 
       ::oComboEstado:SetValue("Borrador", .F. ) 
@@ -645,9 +652,11 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaS:SetValue( "0" )
       // Usar otros_imp desde el servidor si existe, sino inicializar en 0
       if hb_hHasKey( ::hFactura, "otros_imp" )
-         ::oEntOtrImp:SetValue( TRANSFORM( ::hFactura["otros_imp"], P_92 ) )
-      else
-         ::oEntOtrImp:SetValue( "0" )
+			::oEntOtrImp:SetValue( TRANSFORM( ::hFactura["otros_imp"], P_92 ) )        
+             ::oEntImpProd:SetValue( TRANSFORM( ::hFactura["imp_prod"], P_92 ) )
+       else
+          ::oEntOtrImp:SetValue( "0" )
+          ::oEntImpProd:SetValue( "0" )
       endif
 
       ::oEntRetIva:SetValue( "" )
@@ -721,6 +730,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
          aStruct := ::rFactDetal:Struct()
          AADD( aStruct, {"imp_pvp_1",      "N",1,2} )
+         AADD( aStruct, {"imp_produccion_1",      "N",1,2} )
          aData := {}
          AEVAL( ::rFactDetal:GetData(), {|a| AADD( aData, {a[ 1],;
                                                            a[ 2],;
@@ -774,6 +784,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                          {"item",           "C",10, 0},;
                          {"imp_pvp",        "N",13, 2},; // Add imp_pvp
                          {"imp_pvp_1",      "N",13, 2},; // Add imp_pvp
+                         {"imp_produccion",  "N",13, 2},; // Add imp_produccion
+                         {"imp_produccion_1",  "N",13, 2},; // Add imp_produccion
                          {"moneda_id",      "N",10, 0}};
                 DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0}}
 
@@ -815,6 +827,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
       ::oLBoxDetal:SetColTitle( 21, "PVP Total" )     //-- Columna PVP Total Linea
       ::oLBoxDetal:SetColTitle( 22, "PVP Total Unit" )   //-- Columna PVP Total Linea
+      ::oLBoxDetal:SetColTitle( 23, "Imp Prod. Total" )     //-- Columna Imp Prod. Total Linea
+      ::oLBoxDetal:SetColTitle( 24, "Imp Prod. Unit" )   //-- Columna Imp Prod. Total Linea
 	  //::oLBoxDetal:SetColTitle( 23, "Capacidad" )   //-- Columna 
 
       ::oLBoxDetal:Active()
@@ -851,7 +865,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                              aLine[19], ;
                              hb_ntos(aLine[20]),;
                              hb_ntos(aLine[21]), hb_ntos(aLine[21]/aLine[5]),;
-                             aLine[23] 
+                             hb_ntos(aLine[23]), hb_ntos(aLine[23]/aLine[5])
             CATCH oErr
                View( oErr:Description )
             END
@@ -938,7 +952,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                       {::oBoxIvaRed, ::oEntIvaR}, ;
                       {::oBoxIvaGen, ::oEntIvaG}, ;
                       {::oBoxIvaSun, ::oEntIvaS}, ;
-                      {::oBoxOtrImp, ::oEntOtrImp} }
+                      {::oBoxOtrImp, ::oEntOtrImp},;
+                      {::oBoxImpProd, ::oEntImpProd} }
       if ToNum( aBox[2]:GetValue() ) = 0
          aBox[1]:Hide()
       else
@@ -1051,19 +1066,23 @@ PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue  )
          endif
 
          if nCol = __CANTIDAD 
-            nMonto := (VAL(uValue) * ;
+nMonto := (VAL(uValue) * ;
                       ToNum( oTreeView:GetAutoValue(__PRECIO, aIter))) - nDescuento
-            nImpPvp := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(22, aIter) ), 2 ) // Calculate imp_pvp
+             nImpPvp := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(22, aIter) ), 2 ) // Calculate imp_pvp
+             nImpProduccion := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(24, aIter) ), 2 ) // Calculate imp_produccion
          elseif nCol = __PRECIO
             nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
                       VAL(uValue)) - nDescuento
             nImpPvp := ToNum( oTreeView:GetAutoValue(22, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_pvp
+            nImpProduccion := ToNum( oTreeView:GetAutoValue(24, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_produccion
          else
             nImpPvp := ToNum( oTreeView:GetAutoValue(22, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_pvp
+         nImpProduccion := ToNum( oTreeView:GetAutoValue(24, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_produccion
          endif
          nMonto := ROUND( nMonto, 2 )
          oModel:Set( aIter, __SUBTOTAL, STR( nMonto ) )
          oModel:Set( aIter, 21, STR( nImpPvp ) ) // Set imp_pvp
+         oModel:Set( aIter, 23, STR( nImpProduccion ) ) // Set imp_produccion
 
          nIvaPorcen := ToNum( oTreeView:GetAutoValue(__IVAPORCEN, aIter) )
          if nIvaPorcen > 0
@@ -1096,6 +1115,7 @@ procedure __Calcula( oForm )
    ::oEntIvaG:SetValue("0")
    ::oEntIvaS:SetValue("0")
    ::oEntOtrImp:SetValue("0") // Initialize otros_imp
+   ::oEntImpProd:SetValue("0") // Initialize imp_prod
    ::hFactura["iva"] := hb_hash()  // Initialize IVA hash here, once
    ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
    if !hb_isObject( ::oLBoxDetal )
@@ -1119,7 +1139,7 @@ return
 
 
 procedure __CalMontos( oTView, pModel, aIter, oForm )
-   local nBase:=0, nMonto:=0, nTotal:=0, cIva, nImpPvp, nOtrImp:=0, aBox
+   local nBase:=0, nMonto:=0, nTotal:=0, cIva, nImpPvp, nImpProduccion, nOtrImp:=0,nImpProd:=0,aBox
 
 //   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
 //                    ToNum( oTView:GetAutoValue(__PRECIO,   aIter)), 2 )
@@ -1130,14 +1150,17 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
       //view(nmonto)
       nBase  := ToNum( ::oEntMonBase:GetValue() )
       nOtrImp:= ToNum( ::oEntOtrImp:GetValue())
+      nImpProd:= ToNum( ::oEntImpProd:GetValue())
       nTotal := ROUND( nBase+nMonto, 2 )
       ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
    endif
 
     // Calculate imp_pvp
    nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 22, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
+   nImpProduccion := ROUND( ToNum( oTView:GetAutoValue( 24, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_produccion * cantidad
 //   oTView:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) )
    nOtrImp += nImpPvp
+   nImpProd += nImpProduccion
    
    
    if nPorcentaje = 0  // Producto exento de IVA
@@ -1191,20 +1214,22 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
       ::hFactura[ "islr" ]["fecha"      ] := CTOD( ::cIslrFecha )   
    endif
 
-   nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
-                    ToNum( ::oEntIvaR:GetValue() ) +;
-                    ToNum( ::oEntIvaG:GetValue() ) +;
-                    ToNum( ::oEntIvaS:GetValue() ) +;
-                    nOtrImp, 2 ) // Include otros_imp
+nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
+                     ToNum( ::oEntIvaR:GetValue() ) +;
+                     ToNum( ::oEntIvaG:GetValue() ) +;
+                     ToNum( ::oEntIvaS:GetValue() ) +;
+                     nOtrImp + nImpProd, 2 ) // Include otros_imp + imp_prod
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
    //::oEntTotBs:SetValue( TRANSFORM( nTotal*TONUM(SUBSTR(::cDivisa,5)), P_92 ) ) 
    ::oEntOtrImp:SetValue( TRANSFORM( nOtrImp, P_92 ) ) // Set otros_imp
+   ::oEntImpProd:SetValue( TRANSFORM( nImpProd, P_92 ) ) // Set imp_prod
 
    FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
                       {::oBoxIvaRed, ::oEntIvaR}, ;
                       {::oBoxIvaGen, ::oEntIvaG}, ;
                       {::oBoxIvaSun, ::oEntIvaS}, ;
-                      {::oBoxOtrImp, ::oEntOtrImp} }
+                      {::oBoxOtrImp, ::oEntOtrImp},;
+                      {::oBoxImpProd, ::oEntImpProd} }
       if ToNum( aBox[2]:GetValue() ) = 0
          aBox[1]:Hide()
       else
@@ -1386,6 +1411,7 @@ Procedure __VtaSave( oForm, oFormParent )
    ::hFactura["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
    ::hFactura["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
    ::hFactura["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
+   ::hFactura["imp_prod"        ] := ::oEntImpProd:GetValue()      // Impuesto Produccion
    ::hFactura["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
    nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
@@ -1513,7 +1539,8 @@ procedure __VtaSaveDetal(oTView, pModel, aIter, oForm)
    hDetal["detalles_json"    ] := oTView:GetAutoValue( 19, aIter )
    hDetal["item"             ] := oTView:GetAutoValue( 20, aIter )
    hDetal["imp_pvp"          ] := VAL( oTView:GetAutoValue( 21, aIter ) ) // Add imp_pvp
-//View( oTView:GetAutoValue(20, aIter) )
+   hDetal["imp_produccion"] := VAL( oTView:GetAutoValue( 23, aIter ) ) // Add imp_produccion
+    //View( oTView:GetAutoValue(20, aIter) )
    
    AADD( ::aDetal, hDetal )
 
@@ -1604,6 +1631,16 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, 22, ; // imp_pvp
                   STR( rProductos:imp_pvp )) // Set imp_pvp
+
+      __SetValue( ::oModDetal:oTreeView, ;
+                  ::oModDetal:oLbx, ;
+                  ::oModDetal:aIter, 23, ; // imp_produccion
+                  STR( rProductos:imp_produccion )) // Set imp_produccion
+  
+     __SetValue( ::oModDetal:oTreeView, ;
+                  ::oModDetal:oLbx, ;
+                  ::oModDetal:aIter, 24, ; // imp_produccion
+                  STR( rProductos:imp_produccion )) // Set imp_produccion
 
       __SetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
