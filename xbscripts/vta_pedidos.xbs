@@ -766,6 +766,7 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
                                                            a[19],;
                                                            a[20],;
                                                            a[21],;
+                                                           a[22],;
                                                            a[23],;
                                                            a[23]/a[5]} ;
                                                  ) } )
