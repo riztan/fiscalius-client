@@ -1595,7 +1595,7 @@
                                   <object class="GtkLabel" id="label3">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">&lt;i&gt;Datos de la Factura &lt;/i&gt;</property>
+                                    <property name="label" translatable="yes">&lt;i&gt;Datos del Pedido &lt;/i&gt;</property>
                                     <property name="use_markup">True</property>
                                   </object>
                                   <packing>

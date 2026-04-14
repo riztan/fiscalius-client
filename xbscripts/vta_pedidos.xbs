@@ -243,7 +243,7 @@ procedure vta_pedidos( oFormParent )
    DEFINE BOX ::oBoxImpProd ID "box_impprod" RESOURCE ::oRes 
    ::nMontoImpProd := 0
    DEFINE MONEY ENTRY ::oEntImpProd VAR ::nMontoImpProd ;
-          ID "ent_otrimp" RESOURCE ::oRes 
+          ID "ent_impprod" RESOURCE ::oRes 
    ::oEntImpProd:Justify( GTK_JUSTIFY_RIGHT )
 
    ::nMontoTotal := 0
@@ -316,10 +316,12 @@ procedure vta_pedidos( oFormParent )
    ::oLBoxPedidos:Active() 
 
    //View( oLBoxPedidos:GetCol(1):ClassName() )
+   /*
    ::oLBoxPedidos:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
    ::oLBoxPedidos:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
    ::oLBoxFacs:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
    ::oLBoxFacs:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
+   */
 
    ::oLBoxPedidos:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
    ::oLBoxPedidos:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
@@ -876,7 +878,7 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
                              aLine[19], ;
                              hb_ntos(aLine[20]),;
                              hb_ntos(aLine[21]), hb_ntos(aLine[21]/aLine[5]),;
-                             hb_ntos(aLine[23]), hb_ntos(aLine[23]/aLine[5])
+                             hb_ntos(aLine[22]), hb_ntos(aLine[22]/aLine[5])
             CATCH oErr
                View( oErr:Description )
             END
@@ -1763,11 +1765,11 @@ PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                                     __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 23, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),;
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 24, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),;
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 13, ;
