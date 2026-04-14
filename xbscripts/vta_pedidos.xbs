@@ -239,6 +239,12 @@ procedure vta_pedidos( oFormParent )
    DEFINE MONEY ENTRY ::oEntOtrImp VAR ::nMontoOtrImp ;
           ID "ent_otrimp" RESOURCE ::oRes 
    ::oEntOtrImp:Justify( GTK_JUSTIFY_RIGHT )
+   
+   DEFINE BOX ::oBoxImpProd ID "box_impprod" RESOURCE ::oRes 
+   ::nMontoImpProd := 0
+   DEFINE MONEY ENTRY ::oEntImpProd VAR ::nMontoImpProd ;
+          ID "ent_otrimp" RESOURCE ::oRes 
+   ::oEntImpProd:Justify( GTK_JUSTIFY_RIGHT )
 
    ::nMontoTotal := 0
    DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ;
@@ -312,6 +318,8 @@ procedure vta_pedidos( oFormParent )
    //View( oLBoxPedidos:GetCol(1):ClassName() )
    ::oLBoxPedidos:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
    ::oLBoxPedidos:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
+   ::oLBoxFacs:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
+   ::oLBoxFacs:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
 
    ::oLBoxPedidos:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
    ::oLBoxPedidos:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
@@ -320,6 +328,8 @@ procedure vta_pedidos( oFormParent )
    ::oLBoxPedidos:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
    ::oLBoxPedidos:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
    ::oLBoxPedidos:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 10, "Condicion" )       //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo 
 
    ::hCol := hb_hash()
    ::hCol["numero"]           := 1
@@ -541,6 +551,8 @@ procedure __PedChangeEstado( oForm, lConfirm )
    if ::cComboEstado = "Anulada" .or. ;
       ::cComboEstado = "Cerrada"
       __PedRefresh( oForm, lConfirm )
+	  __PedCargarSeries( oForm )
+	  __PedCargarCondiciones( oForm )
       if ::cPreEstado == "B" 
          __PedSave( oForm )
       endif
@@ -591,6 +603,7 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::oEntIvaG:SetValue( "0" )
       ::oEntIvaS:SetValue( "0" )
       ::oEntOtrImp:SetValue( "0" )
+      ::oEntImpProd:SetValue( "0" )
       ::oEntMonBase:SetValue( "0" )
 
       ::oComboEstado:SetValue("Borrador", .F. ) 
@@ -650,9 +663,11 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::oEntIvaS:SetValue( "0" )
       // Usar otros_imp desde el servidor si existe, sino inicializar en 0
       if hb_hHasKey( ::hPedido, "otros_imp" )
-         ::oEntOtrImp:SetValue( TRANSFORM( ::hPedido["otros_imp"], P_92 ) )
+         ::oEntOtrImp:SetValue( TRANSFORM( ::hPedido["otros_imp"], P_92 ) )        
+         ::oEntImpProd:SetValue( TRANSFORM( ::hPedido["imp_prod"], P_92 ) )
       else
          ::oEntOtrImp:SetValue( "0" )
+          ::oEntImpProd:SetValue( "0" )
       endif
 
       ::oEntRetIva:SetValue( "" )
@@ -726,6 +741,7 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
 
          aStruct := ::rFactDetal:Struct()
          AADD( aStruct, {"imp_pvp_1",      "N",1,2} )
+         AADD( aStruct, {"imp_produccion_1",      "N",1,2} )
          aData := {}
          AEVAL( ::rFactDetal:GetData(), {|a| AADD( aData, {a[ 1],;
                                                            a[ 2],;
@@ -779,8 +795,10 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
                          {"item",           "C",10, 0},;
                          {"imp_pvp",        "N",13, 2},; // Add imp_pvp
                          {"imp_pvp_1",      "N",13, 2},; // Add imp_pvp
+                         {"imp_produccion",  "N",13, 2},; // Add imp_produccion
+                         {"imp_produccion_1",  "N",13, 2},; // Add imp_produccion
                          {"moneda_id",      "N",10, 0}};
-                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0}}
+                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0,0,0}}
 
       endif
 
@@ -820,6 +838,8 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
       ::oLBoxDetal:SetColTitle( 21, "PVP Total" )     //-- Columna PVP Total Linea
       ::oLBoxDetal:SetColTitle( 22, "PVP Total Unit" )   //-- Columna PVP Total Linea
+      ::oLBoxDetal:SetColTitle( 23, "Imp Prod. Total" )     //-- Columna Imp Prod. Total Linea
+      ::oLBoxDetal:SetColTitle( 24, "Imp Prod. Unit" )   //-- Columna Imp Prod. Total Linea
 	  //::oLBoxDetal:SetColTitle( 23, "Capacidad" )   //-- Columna 
 
       ::oLBoxDetal:Active()
@@ -856,7 +876,7 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
                              aLine[19], ;
                              hb_ntos(aLine[20]),;
                              hb_ntos(aLine[21]), hb_ntos(aLine[21]/aLine[5]),;
-                             aLine[23] 
+                             hb_ntos(aLine[23]), hb_ntos(aLine[23]/aLine[5])
             CATCH oErr
                View( oErr:Description )
             END
@@ -943,7 +963,8 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
                       {::oBoxIvaRed, ::oEntIvaR}, ;
                       {::oBoxIvaGen, ::oEntIvaG}, ;
                       {::oBoxIvaSun, ::oEntIvaS}, ;
-                      {::oBoxOtrImp, ::oEntOtrImp} }
+                      {::oBoxOtrImp, ::oEntOtrImp},;
+                      {::oBoxImpProd, ::oEntImpProd} }
       if ToNum( aBox[2]:GetValue() ) = 0
          aBox[1]:Hide()
       else
@@ -1056,19 +1077,23 @@ PROCEDURE __PedSetValue( oTreeView, oModel, aIter, nCol, uValue  )
          endif
 
          if nCol = __CANTIDAD 
-            nMonto := (VAL(uValue) * ;
+nMonto := (VAL(uValue) * ;
                       ToNum( oTreeView:GetAutoValue(__PRECIO, aIter))) - nDescuento
-            nImpPvp := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(22, aIter) ), 2 ) // Calculate imp_pvp
+             nImpPvp := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(22, aIter) ), 2 ) // Calculate imp_pvp
+             nImpProduccion := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(24, aIter) ), 2 ) // Calculate imp_produccion
          elseif nCol = __PRECIO
             nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
                       VAL(uValue)) - nDescuento
             nImpPvp := ToNum( oTreeView:GetAutoValue(22, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_pvp
+            nImpProduccion := ToNum( oTreeView:GetAutoValue(24, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_produccion
          else
             nImpPvp := ToNum( oTreeView:GetAutoValue(22, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_pvp
+         nImpProduccion := ToNum( oTreeView:GetAutoValue(24, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_produccion
          endif
          nMonto := ROUND( nMonto, 2 )
          oModel:Set( aIter, __SUBTOTAL, STR( nMonto ) )
          oModel:Set( aIter, 21, STR( nImpPvp ) ) // Set imp_pvp
+         oModel:Set( aIter, 23, STR( nImpProduccion ) ) // Set imp_produccion
 
          nIvaPorcen := ToNum( oTreeView:GetAutoValue(__IVAPORCEN, aIter) )
          if nIvaPorcen > 0
@@ -1101,6 +1126,7 @@ procedure __PedCalcula( oForm )
    ::oEntIvaG:SetValue("0")
    ::oEntIvaS:SetValue("0")
    ::oEntOtrImp:SetValue("0") // Initialize otros_imp
+   ::oEntImpProd:SetValue("0") // Initialize imp_prod
    ::hPedido["iva"] := hb_hash()  // Initialize IVA hash here, once
    ::bDetalCode := {|oTView, pModel, aIter| __PedCalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
    if !hb_isObject( ::oLBoxDetal )
@@ -1124,7 +1150,7 @@ return
 
 
 procedure __PedCalMontos( oTView, pModel, aIter, oForm )
-   local nBase:=0, nMonto:=0, nTotal:=0, cIva, nImpPvp, nOtrImp:=0, aBox
+   local nBase:=0, nMonto:=0, nTotal:=0, cIva, nImpPvp, nImpProduccion, nOtrImp:=0,nImpProd:=0,aBox
 
 //   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
 //                    ToNum( oTView:GetAutoValue(__PRECIO,   aIter)), 2 )
@@ -1135,14 +1161,17 @@ procedure __PedCalMontos( oTView, pModel, aIter, oForm )
       //view(nmonto)
       nBase  := ToNum( ::oEntMonBase:GetValue() )
       nOtrImp:= ToNum( ::oEntOtrImp:GetValue())
+      nImpProd:= ToNum( ::oEntImpProd:GetValue())
       nTotal := ROUND( nBase+nMonto, 2 )
       ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
    endif
 
     // Calculate imp_pvp
    nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 22, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
+   nImpProduccion := ROUND( ToNum( oTView:GetAutoValue( 24, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_produccion * cantidad
 //   oTView:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) )
    nOtrImp += nImpPvp
+   nImpProd += nImpProduccion
    
    
    if nPorcentaje = 0  // Producto exento de IVA
@@ -1196,20 +1225,22 @@ procedure __PedCalMontos( oTView, pModel, aIter, oForm )
       ::hPedido[ "islr" ]["fecha"      ] := CTOD( ::cIslrFecha )   
    endif
 
-   nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
-                    ToNum( ::oEntIvaR:GetValue() ) +;
-                    ToNum( ::oEntIvaG:GetValue() ) +;
-                    ToNum( ::oEntIvaS:GetValue() ) +;
-                    nOtrImp, 2 ) // Include otros_imp
+nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
+                     ToNum( ::oEntIvaR:GetValue() ) +;
+                     ToNum( ::oEntIvaG:GetValue() ) +;
+                     ToNum( ::oEntIvaS:GetValue() ) +;
+                     nOtrImp + nImpProd, 2 ) // Include otros_imp + imp_prod
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
    //::oEntTotBs:SetValue( TRANSFORM( nTotal*TONUM(SUBSTR(::cDivisa,5)), P_92 ) ) 
    ::oEntOtrImp:SetValue( TRANSFORM( nOtrImp, P_92 ) ) // Set otros_imp
+   ::oEntImpProd:SetValue( TRANSFORM( nImpProd, P_92 ) ) // Set imp_prod
 
    FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
                       {::oBoxIvaRed, ::oEntIvaR}, ;
                       {::oBoxIvaGen, ::oEntIvaG}, ;
                       {::oBoxIvaSun, ::oEntIvaS}, ;
-                      {::oBoxOtrImp, ::oEntOtrImp} }
+                      {::oBoxOtrImp, ::oEntOtrImp},;
+                      {::oBoxImpProd, ::oEntImpProd} }
       if ToNum( aBox[2]:GetValue() ) = 0
          aBox[1]:Hide()
       else
@@ -1229,7 +1260,7 @@ return
 
 procedure __PedAddDetal( oForm )
    local aIter := ARRAY(4)
-   local aLine := {'','','','','','','','','','','','','','','','','','','','','',''}
+   local aLine := {'','','','','','','','','','','','','','','','','','','','','','','',''}
 
    //-  ignoramos si el documento esta anulado o cerrado.
    if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
@@ -1247,7 +1278,8 @@ procedure __PedAddDetal( oForm )
                  aLine[16], aLine[17], ;
                  aLine[18], aLine[19], ;
                  aLine[20], aLine[21], ;
-                 aLine[22]
+                 aLine[22], aLine[23], ;
+                 aLine[24]
 
    ::oModDetal:oTreeView:SetFocus()
    ::oModDetal:GoBottom()
@@ -1362,7 +1394,8 @@ return
 
 Procedure __PedSave( oForm, oFormParent )
    local bSaveDetal, uResp, dUltimaFecha, aIter := ARRAY(4), lSuccess := .F., nIdx:=0
-
+   local hCorrel 
+   
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
        __PedCalcula( oForm )
@@ -1390,13 +1423,28 @@ Procedure __PedSave( oForm, oFormParent )
    ::hPedido["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
    ::hPedido["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
    ::hPedido["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
+   ::hPedido["imp_prod"        ] := ::oEntImpProd:GetValue()      // Impuesto Produccion
    ::hPedido["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hPedido["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
    nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
    ::hPedido["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
    nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
    ::hPedido["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
-     //::hPedido["serie_nombre"     ] := ::cSerie
+	 ::cSerieID:=::hPedido["serie_id"] 
+     //::hFactura["serie_nombre"     ] := ::cSerie
+	 //view(::aSeriesId)
+	 //view(nidx)
+    // view(::cSerieID)
+	 hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 4 )
+	 
+	 
+	if ::cComboEstado == "Cerrada"		
+		if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
+		MsgStop( hCorrel["mensaje"] + ". No se puede cerrar el documento.", "Error" )
+		return
+		endif
+	endif
+
 
 //   View( ::hPedido["iva"] ) 
 
@@ -1503,7 +1551,8 @@ procedure __PedSaveDetal(oTView, pModel, aIter, oForm)
    hDetal["detalles_json"    ] := oTView:GetAutoValue( 19, aIter )
    hDetal["item"             ] := oTView:GetAutoValue( 20, aIter )
    hDetal["imp_pvp"          ] := VAL( oTView:GetAutoValue( 21, aIter ) ) // Add imp_pvp
-//View( oTView:GetAutoValue(20, aIter) )
+   hDetal["imp_produccion"] := VAL( oTView:GetAutoValue( 23, aIter ) ) // Add imp_produccion
+    //View( oTView:GetAutoValue(20, aIter) )
    
    AADD( ::aDetal, hDetal )
 
@@ -1623,6 +1672,16 @@ PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 
       __PedSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
+                  ::oModDetal:aIter, 23, ; // imp_produccion
+                  STR( rProductos:imp_produccion )) // Set imp_produccion
+  
+     __PedSetValue( ::oModDetal:oTreeView, ;
+                  ::oModDetal:oLbx, ;
+                  ::oModDetal:aIter, 24, ; // imp_produccion
+                  STR( rProductos:imp_produccion )) // Set imp_produccion
+
+      __PedSetValue( ::oModDetal:oTreeView, ;
+                  ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, 13, ; 
                   rProductos:tipo_inventario ) 
 
@@ -1700,6 +1759,14 @@ PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 22, ;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+                                    __SetValue( ::oModDetal:oTreeView, ;
+ 	                             ::oModDetal:oLbx, ;
+	                             ::oModDetal:aIter, 23, ;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+                         __PedSetValue( ::oModDetal:oTreeView, ;
+ 	                             ::oModDetal:oLbx, ;
+	                             ::oModDetal:aIter, 24, ;
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;

@@ -787,7 +787,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                          {"imp_produccion",  "N",13, 2},; // Add imp_produccion
                          {"imp_produccion_1",  "N",13, 2},; // Add imp_produccion
                          {"moneda_id",      "N",10, 0}};
-                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0}}
+                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0,0,0}}
 
       endif
 
@@ -1249,7 +1249,7 @@ return
 
 procedure __AddDetal( oForm )
    local aIter := ARRAY(4)
-   local aLine := {'','','','','','','','','','','','','','','','','','','','','',''}
+   local aLine := {'','','','','','','','','','','','','','','','','','','','','','','',''}
 
    //-  ignoramos si el documento esta anulado o cerrado.
    if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
@@ -1267,7 +1267,8 @@ procedure __AddDetal( oForm )
                  aLine[16], aLine[17], ;
                  aLine[18], aLine[19], ;
                  aLine[20], aLine[21], ;
-                 aLine[22]
+                 aLine[22], aLine[23], ;
+                 aLine[24]
 
    ::oModDetal:oTreeView:SetFocus()
    ::oModDetal:GoBottom()
@@ -1721,6 +1722,14 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 22, ;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+                                    __SetValue( ::oModDetal:oTreeView, ;
+ 	                             ::oModDetal:oLbx, ;
+	                             ::oModDetal:aIter, 23, ;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+                         __SetValue( ::oModDetal:oTreeView, ;
+ 	                             ::oModDetal:oLbx, ;
+	                             ::oModDetal:aIter, 24, ;
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
