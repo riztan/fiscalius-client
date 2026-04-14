@@ -766,9 +766,7 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
                                                            a[19],;
                                                            a[20],;
                                                            a[21],;
-                                                           a[22],;
-                                                           a[23],;
-                                                           a[23]/a[5]} ;
+                                                           a[21]/a[5]} ;
                                                  ) } )
          
 
@@ -1439,7 +1437,7 @@ Procedure __PedSave( oForm, oFormParent )
 	 //view(::aSeriesId)
 	 //view(nidx)
     // view(::cSerieID)
-	 hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 4 )
+	 hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 13 )
 	 
 	 
 	if ::cComboEstado == "Cerrada"		
