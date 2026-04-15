@@ -239,7 +239,7 @@ procedure vta_facturas( oFormParent )
    DEFINE BOX ::oBoxImpProd ID "box_impprod" RESOURCE ::oRes 
    ::nMontoImpProd := 0
    DEFINE MONEY ENTRY ::oEntImpProd VAR ::nMontoImpProd ;
-          ID "ent_otrimp" RESOURCE ::oRes 
+          ID "ent_impprod" RESOURCE ::oRes 
    ::oEntImpProd:Justify( GTK_JUSTIFY_RIGHT )
 
    ::nMontoTotal := 0
@@ -865,7 +865,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                              aLine[19], ;
                              hb_ntos(aLine[20]),;
                              hb_ntos(aLine[21]), hb_ntos(aLine[21]/aLine[5]),;
-                             hb_ntos(aLine[23]), hb_ntos(aLine[23]/aLine[5])
+                             hb_ntos(aLine[22]), hb_ntos(aLine[22]/aLine[5])
             CATCH oErr
                View( oErr:Description )
             END
@@ -1726,11 +1726,11 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                                     __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 23, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),;
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 24, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),;
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 13, ;
