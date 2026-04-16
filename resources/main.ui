@@ -579,7 +579,7 @@
   <object class="GtkImage" id="image70">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="pixbuf">../images/nota_entrega_32.png</property>
+    <property name="pixbuf">../images/pedido_32.png</property>
   </object>
   <object class="GtkImage" id="image71">
     <property name="visible">True</property>
@@ -1009,6 +1009,17 @@
                                 <property name="tooltip_text" translatable="yes">Crea o Edita una Nota de Débito</property>
                                 <property name="use_underline">True</property>
                                 <property name="image">image74</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_notaentrega">
+                                <property name="label" translatable="yes">Nota de _Entrega</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Crea o Edita una Nota de Entrega</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image73</property>
                                 <property name="use_stock">False</property>
                               </object>
                             </child>

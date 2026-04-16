@@ -319,8 +319,8 @@ procedure vta_pedidos( oFormParent )
    /*
    ::oLBoxPedidos:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
    ::oLBoxPedidos:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
-   ::oLBoxFacs:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
-   ::oLBoxFacs:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
+   ::oLBoxPedidos:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
+   ::oLBoxPedidos:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
    */
 
    ::oLBoxPedidos:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
@@ -330,8 +330,8 @@ procedure vta_pedidos( oFormParent )
    ::oLBoxPedidos:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
    ::oLBoxPedidos:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
    ::oLBoxPedidos:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 10, "Condicion" )       //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo 
+   ::oLBoxPedidos:SetColTitle( 10, "Condicion" )       //- Cambiamos el titulo 
+   ::oLBoxPedidos:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo 
 
    ::hCol := hb_hash()
    ::hCol["numero"]           := 1
@@ -500,7 +500,7 @@ function __PedCargarCondiciones( oForm )
    EndDo
    
 
-      if hb_isObject( ::oComboCondicion ) .and. LEN( ::aCondiciones ) > 0
+      if hb_isObject( ::oComboCondicion ) .and. !empty( ::aCondiciones )
        if VALTYPE(::oComboCondicion:aItems)="A"
          ::oComboCondicion:RemoveAll()
        endif
@@ -525,23 +525,22 @@ function __PedCargarSeries( oForm )
       rQrySeries:Skip()
    EndDo
    
-   if hb_isObject( ::oComboSerie )
-    if VALTYPE(::oComboSerie:aItems)="A"
-      ::oComboSerie:RemoveAll()
+    if hb_isObject( ::oComboSerie )
+     if VALTYPE(::oComboSerie:aItems)="A"
+       ::oComboSerie:RemoveAll()
+     endif
+       ::oComboSerie:SetItems( ::aSeries )
     endif
-      ::oComboSerie:SetItems( ::aSeries )
 	  
 	  
-	// Inactivar combo si solo hay un registro
-   IF LEN(::aSeries) = 1
-      ::oComboSerie:Enable( .F. )
-      ::oComboSerie:SetValue( ::aSeries[1] )
-      ::cSerieId := ::aSeriesId[1]
-   ENDI
-   endif
-   
-   
-   
+    if !empty( ::aSeries )
+    IF len(::aSeries) = 1
+       ::oComboSerie:Enable( .F. )
+       ::oComboSerie:SetValue( ::aSeries[1] )
+       ::cSerieId := ::aSeriesId[1]
+    ENDI
+    endif
+    
 return .T.
 
 
@@ -646,11 +645,11 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::cSerie :=  oModel:GetCol(::hCol["serie_fiscal"])
    
       // Actualizar el combo para mostrar la condicion seleccionada
-      if hb_isObject( ::oComboCondicion )
+      if hb_isObject( ::oComboCondicion ) .and. !empty( ::aCondiciones )
          ::oComboCondicion:SetValue( ::cCondicion )
       endif
 		 
-      if hb_isObject( ::oComboSerie )
+      if hb_isObject( ::oComboSerie ) .and. !empty( ::aSeries )
          ::oComboSerie:SetValue( ::cSerie )
       endif
 
@@ -1761,11 +1760,11 @@ PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 22, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
-                                    __SetValue( ::oModDetal:oTreeView, ;
- 	                             ::oModDetal:oLbx, ;
+STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+	                             __PedSetValue( ::oModDetal:oTreeView, ;
+	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 23, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),;
+STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),;
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 24, ;
