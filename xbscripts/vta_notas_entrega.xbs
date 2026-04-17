@@ -1,0 +1,977 @@
+/* vta_notas_entrega.xbs - Script para nota de entrega */
+
+#include "tpy_xbs.ch"
+#define SEPARATOR  " "+CHR(199)+CHR(129)+" "
+
+procedure vta_notas_entrega( oFormParent, cTipoDocumento )
+   local oForm, cEntCli
+   default cTipoDocumento := "E"
+
+   SET PUBLIC oForm
+   if !oTpuy:RunXBS("netio_check")
+      MsgStop("Problemas para continuar...")
+   endif
+
+   ::lConfirm := .T.
+   ::lNew     := .T.
+   ::lSilence := .F.
+   ::aDetal := {}
+   ::cTipoDocumento := cTipoDocumento
+   ::cFormTitle := "Nota de Entrega"
+
+   ::cEmpresa := oFormParent:cCBEmpresa
+   ::rEmpresa := oFormParent:oGEmpresa
+   ::rVentas  := oFormParent:oGEmpresa:SetModulo("Ventas")
+   ::rDocumentos := ::rVentas:Transacciones( ::cTipoDocumento )
+
+   if hb_isNIL( ::rDocumentos )
+      MsgStop( "no se puede obtener información de documentos" )
+      Return 
+   endif
+
+   SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"vta_notas_entrega.ui"
+
+   DEFINE WINDOW ::oNotaWnd ;
+          TITLE "Fiscalius. "+::cFormTitle ;
+          SIZE 800,600 ;
+          ID "window1" RESOURCE ::oRes
+
+   DEFINE IMAGE ::oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png" ;
+          ID "image1" RESOURCE ::oRes
+          ::oImgBanner:Adjust(900)
+
+   DEFINE IMAGE ::oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE ::oRes
+          ::oImgLogo:Adjust(60)
+
+   DEFINE LABEL ::oLabDocumentos TEXT ::cFormTitle ID "lab_documentos" RESOURCE ::oRes
+                 ::oLabDocumentos:SetText(::cFormTitle)
+   DEFINE LABEL ::oLabInfo    TEXT "" MARKUP ID "lab_info"    RESOURCE ::oRes
+   DEFINE LABEL ::oLabUsuario TEXT "" MARKUP ID "lab_usuario" RESOURCE ::oRes
+   DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
+
+   DEFINE BUTTON ::oBtnGuardar ;
+          ACTION __NESave( oForm, oFormParent ) ;
+          ID "btn_guardar" RESOURCE ::oRes
+   DEFINE BUTTON ::oBtnCobrar ;
+          ACTION __NECobrar( oForm, oFormParent ) ;
+          ID "btn_cobro" RESOURCE ::oRes
+   DEFINE BUTTON ::oBtnImprime ;
+          ACTION __NEImprime( oForm ) ;
+          ID "btn_print" RESOURCE ::oRes
+
+   DEFINE BOX ::oBoxData ID "boxdata" RESOURCE ::oRes
+   DEFINE BOX ::oBoxFactura ID "vbox_factura" RESOURCE ::oRes
+          ::oBoxFactura:Hide()
+
+   DEFINE BUTTON ::oBtn ACTION __vtaNotaEntrega( oForm, oFormParent, ::oBoxFactura, ::oModFacturas, .T.  ) ;
+          ID "btn_add" RESOURCE ::oRes
+
+   DEFINE LABEL ::oLabNumero ID "lab_numero" RESOURCE ::oRes
+   ::cCodVendedor := "1"
+   ::cEntCli := ""
+   ::cCodCli := ""
+   DEFINE ENTRY  ::oEntCli VAR ::cEntCli ;
+          ACTION (oTPuy:RunXBS("vta_clientes", oFormParent, ::oNotaWnd, ::oEntCli, @::cCodCli,,'4'), ;
+                 iif( !empty(::cCodCli), ::SetCliente(::cCodCli), NIL ), ;
+                 ::oEntFacturaNro:SetText(''), ;
+                 iif( hb_isObject(::oModDetal), __NEDelDetal( oForm, .T. ), NIL )) ;
+          VALID  .T.  ;
+          ID "ent_clientes" RESOURCE ::oRes
+
+   DEFINE LABEL ::oLabFacturaNro TEXT "Factura Asociada: " ;
+          ID "lab_orden_compra" RESOURCE ::oRes
+
+   DEFINE IMAGE ::oImgDocIcon FILE oTPuy:cImages+"financial_document_16.png"
+   ::cFacturaNro := ""
+DEFINE ENTRY ::oEntFacturaNro VAR ::cFacturaNro ;
+           ACTION ( __NE_Docs( oForm ), ::oEntFacturaNro:SetFocus() ) ; 
+            VALID  ( iif( !empty(::cFacturaNro), ::rDocumento:SetRefNumero(::cFacturaNro), NIL), ;
+                     __NEDelDetal( oForm, .T. ), ;
+                     ::rFactDetal := ::rDocumento:DetalFrom(), __NEDetalRefresh(oForm), ;
+                     iif( CTOD(::oEntFecha:GetValue()) < ::rVentas:Transacciones('F', ::cFacturaNro):fecha, ;
+                          ::oEntFecha:SetValue(DTOC(::rVentas:Transacciones('F', ::cFacturaNro):fecha)), ;
+                          NIL), ;
+                     ::oLabInfo:SetText("ATENCION: Debe guardar luego de relacionar una factura"), .T. );
+          RIGHT BUTTON ::oImgDocIcon ;
+          ID "ent_orden_compra" RESOURCE ::oRes
+   ::oEntFacturaNro:SetEditable( .F. )
+   ::oEntFacturaNro:SecondaryIconActivatable( .T. )
+
+   ::cFecha := DTOC( DATE() )
+   ::cPFecha := ::cFecha
+   DEFINE ENTRY TYPE DATE ::oEntFecha VAR ::cFecha CALENDAR ;
+          VALID __NEDocValFecha( oForm, ::oEntFecha, @::cPFecha ) ;
+          ID "ent_fecha" RESOURCE ::oRes
+
+   ::cVcmto := DTOC( DATE() )
+   ::cPVcmto := ::cVcmto
+   DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::cVcmto CALENDAR ;
+          VALID __NEDocValFecha( oForm, ::oEntVcmto, @::cPVcmto ) ;
+          ID "ent_vcmto" RESOURCE ::oRes
+
+   DEFINE BOX ::oBoxCondicion ID "box_condicion" RESOURCE ::oRes
+   ::cNroControl := ""
+   DEFINE LABEL ::oLabNroControl TEXT ::cNroControl ;
+          ID "lab_nro_control" RESOURCE ::oRes
+
+   ::aCondiciones := {"Contado", "Crédito"}
+   ::cCondicion := ""
+   DEFINE COMBOBOX ::oComboCondicion ;
+          VAR ::cCondicion ITEMS ::aCondiciones ;
+          ON CHANGE MsgInfo("condicion") ;
+          OF ::oBoxCondicion
+
+   DEFINE BOX ::oBoxDivisa ID "box_divisa" RESOURCE ::oRes
+   ::aMonedas := {}
+   __NEDocValFecha( oForm, ::oEntFecha, @::cPFecha )
+   ::cDivisa := ""
+   DEFINE COMBOBOX ::oComboDivisa ;
+          VAR ::cDivisa ITEMS {"USD"};
+          ON CHANGE .t.;
+          OF ::oBoxDivisa
+
+   DEFINE BOX ::oBoxEstado ID "box_estado" RESOURCE ::oRes
+   ::aComboEstado := {"Borrador","Anulada","Cerrada"}
+   ::cComboEstado := ""
+   DEFINE COMBOBOX ::oComboEstado ;
+          VAR ::cComboEstado ITEMS ::aComboEstado ;
+          ON CHANGE ( __NEChangeEstado( oForm, ::lConfirm ) ) ;
+          OF ::oBoxEstado
+
+   DEFINE STATUSBAR ::oStatusBar ;
+          TEXT "" ;
+          ID "statusbar" RESOURCE ::oRes
+   ::oStBar := TStatusBar():New( ::oStatusBar )
+   ::oStBar:Add( "empresa",{|| ::cEmpresa + SEPARATOR }  )
+   ::oStBar:Add( "username",{|| "Usuario: "+oTPuy:oUser:cNombre + " " }  )
+   ::oStBar:Refresh()
+   ::bTimer := {|| ::oStBar:Refresh(), ::oLabInfo:SetText("") }
+   DEFINE TIMER ::oTimer ;
+          INTERVAL 10000 ;
+          ACTION EVAL( ::bTimer )
+   ACTIVATE TIMER ::oTimer
+
+   DEFINE BOX ::oBoxDetalles ID "box_detalles" RESOURCE ::oRes
+   DEFINE BUTTON ::oBtnDetalAdd ;
+          ACTION EVAL( ::oLBoxDetal:bNew ) ;
+          ID "btn_detal_add" RESOURCE ::oRes
+   DEFINE BUTTON ::oBtnDetalEdit ;
+          ACTION EVAL( ::oLBoxDetal:bEdit ) ;
+          ID "btn_detal_edit" RESOURCE ::oRes
+   DEFINE BUTTON ::oBtnDetalDel ;
+          ACTION EVAL( ::oLBoxDetal:bDel ) ;
+          ID "btn_detal_cancelar" RESOURCE ::oRes
+
+   DEFINE BOX ::oBoxMontos ID "box_montos" RESOURCE ::oRes
+   DEFINE BOX ::oBoxMonBase HOMO OF ::oBoxMontos
+   ::nMontoBase := 0
+   DEFINE MONEY ENTRY ::oEntMonBase VAR ::nMontoBase ;
+          ID "ent_monbase" RESOURCE ::oRes 
+   ::oEntMonBase:Justify( GTK_JUSTIFY_RIGHT )
+
+   DEFINE BOX ::oBoxIvaExe ID "box_ivaexe" RESOURCE ::oRes 
+   ::nMontoIvaE := 0
+   DEFINE MONEY ENTRY ::oEntIvaE VAR ::nMontoIvaE ;
+          ID "ent_exento" RESOURCE ::oRes 
+   ::oEntIvaE:Justify( GTK_JUSTIFY_RIGHT )
+
+   DEFINE BOX ::oBoxIvaRed ID "box_ivared" RESOURCE ::oRes 
+   ::nMontoIvaR := 0
+   DEFINE MONEY ENTRY ::oEntIvaR VAR ::nMontoIvaR ;
+          ID "ent_ivared" RESOURCE ::oRes 
+   ::oEntIvaR:Justify( GTK_JUSTIFY_RIGHT )
+
+   DEFINE BOX ::oBoxIvaGen ID "box_ivagen" RESOURCE ::oRes 
+   ::nMontoIvaG := 0
+   DEFINE MONEY ENTRY ::oEntIvaG VAR ::nMontoIvaG ;
+          ID "ent_ivagen" RESOURCE ::oRes 
+   ::oEntIvaG:Justify( GTK_JUSTIFY_RIGHT )
+
+   ::nMontoTotal := 0
+   DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ;
+          ID "ent_montotal" RESOURCE ::oRes 
+   ::oEntTotal:Justify( GTK_JUSTIFY_RIGHT )
+   ::oEntTotal:SetEditable( .F. )
+
+   DEFINE MODEL  ::oModFacturas ;
+          STRUCT ::rDocumentos:Struct() ;
+          DATA   ::rDocumentos:GetData()
+   DEFINE LISTBOX ::oLBoxFacs ;
+          MODEL   ::oModFacturas ;
+          OF      ::oBoxData
+   ::oLBoxFacs:lBar  := .f.
+   ::oLBoxFacs:bEdit := {|oModel| __vtaNotaEntrega( oForm, oFormParent, ::oBoxFactura, oModel, .F. ) }
+   ::oLBoxFacs:Active() 
+   ::oLBoxFacs:SetColVisible( 2, .f. )
+   ::oLBoxFacs:SetColTitle( 3, "Cliente" )
+   ::oLBoxFacs:SetColTitle( 5, "fecha de vcmto." )
+   ::oLBoxFacs:SetColTitle( 6, "monto base" )
+
+   DEFINE BUTTON ::oBtnSalir ACTION ::oNotaWnd:End();
+          ID "btn_salir" RESOURCE ::oRes
+   ACTIVATE WINDOW ::oNotaWnd MODAL VALID __NEDocExit(oForm)
+ return
+
+
+
+procedure __NE_Docs( oForm )
+rFacturas := ::rDocumento:Facturas( ::cCodCli )
+
+   if ::hDocumento["estado"] = "C"
+      RETURN
+   endif
+
+   if !hb_isObject(rFacturas)
+      MsgAlert( "No hay facturas disponibles para este cliente" )
+      RETURN
+   endif
+
+   if rFacturas:RecCount() = 0
+      MsgAlert( "No hay facturas disponibles para este cliente" )
+      RETURN
+   endif
+
+   if rFacturas:RecCount() = 1
+      if hb_isNIL( rFacturas:factura_numero )
+         MsgAlert( "No hay facturas disponibles para este cliente" )
+         RETURN
+      endif
+      ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:factura_numero) )
+      ::rDocumento:SetRefNumero( ALLTRIM(rFacturas:factura_numero) )
+      ::rFactDetal := ::rDocumento:DetalFrom()
+      __NEDetalRefresh( oForm )
+      return
+   endif
+
+   if rFacturas:RecCount() = 1
+      ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:factura_numero) )
+      ::rDocumento:SetRefNumero( ALLTRIM(rFacturas:factura_numero) )
+      ::rFactDetal := ::rDocumento:Detal()
+      __NEDetalRefresh( oForm )
+      return
+   endif
+
+SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+   DEFINE WINDOW ::oFactsRelWnd ;
+          TITLE "Fiscalius. Facturas Relacionadas " ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes ;
+          OF ::oNotaWnd
+   DEFINE LABEL oLabTitulo TEXT "Facturas" ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+   oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+   oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+   DEFINE MODEL oModFactsRel ;
+          STRUCT rFacturas:Struct() ;
+          DATA   rFacturas:GetData()
+   DEFINE LISTBOX oLBoxFactsRel ;
+          MODEL oModFactsRel ;
+          OF oBoxData
+   oLBoxFactsRel:lBar  := .f.   
+   oLBoxFactsRel:bEdit := {|oModFactsRel|;
+                           ::oEntFacturaNro:SetText( oModfactsRel:oTreeView:GetAutoValue( 1 ) ), ;
+                     ::cFacturaNro := oModfactsRel:oTreeView:GetAutoValue( 1 ), ;
+                     ::oFactsRelWnd:End() }
+   oLBoxFactsRel:Active()
+   oModFactsRel:oTreeView:SetRules( .t. )
+   oModFactsRel:oTreeView:SetGridLines( GTK_TREE_VIEW_GRID_LINES_BOTH )
+
+   oLBoxFactsRel:SetColVisible(  1, .F. )
+   oLBoxFactsRel:SetColVisible(  4, .F. )
+   oLBoxFactsRel:SetColVisible(  5, .F. )
+   oLBoxFactsRel:SetColVisible(  6, .F. )
+   oLBoxFactsRel:SetColVisible(  8, .F. )
+   oLBoxFactsRel:SetColVisible(  9, .F. )
+
+   ACTIVATE WINDOW ::oFactsRelWnd MODAL
+  return
+
+
+
+function __NEDocExit(oForm)
+   if MsgNoYes("¿Realmente desea salir?")
+      ::oTimer:End()
+      oForm:Release()
+      return .T.
+   endif
+ return .F.
+
+
+
+function __NEDocValFecha( oForm, oEnt, dValPrevio )
+   local lRes := .t.
+   local rQry, dFchFactura, cFactura
+
+    cFactura := ::oEntFacturaNro:GetValue()
+    if !hb_isNIL( cFactura ) .and. !Empty(cFactura)
+       dFchFactura := ::rVentas:Transacciones('F', cFactura ):fecha
+       if CTOD( oEnt:getValue() ) < dFchFactura
+          ::oEntFecha:SetValue( DTOC(dFchFactura) )
+          ::oLabInfo:SetText( "La nota no puede tener fecha anterior a la factura." )
+          oEnt:SetValue( DTOC(dFchFactura) )
+          return .F.
+       endif
+    endif
+   if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
+      ::oEntVcmto:SetValue( ::oEntFecha:GetValue() )
+   endif
+   dValPrevio := CTOD( oEnt:getValue() )
+   rQry := ::rEmpresa:GetTasa( dValPrevio ) 
+   ::aDivisas := {}
+   ::aMonedas := {}
+   While !rQry:Eof()
+      if rQry:codigo="USD"
+         AADD( ::aDivisas, ALLTRIM(rQry:codigo)+" "+ hb_ntos( rQry:valor ) )
+         AADD( ::aMonedas, rQry:moneda_id )
+      endif
+      rQry:Skip()
+   EndDo
+   if hb_isObject( ::oComboDivisa )
+      ::oComboDivisa:RemoveAll()
+      ::oComboDivisa:SetItems( ::aDivisas )
+   endif
+ return lRes
+
+
+
+procedure __NEChangeEstado( oForm, lConfirm )
+   if ::lSilence ; return ; endif
+   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada"
+      __NEDocsRefresh( oForm, lConfirm )
+      if ::cPreEstado == "B" 
+         __NESave( oForm )
+      endif
+   else
+      __NEDocsRefresh( oForm, !lConfirm )
+   endif
+return
+
+
+
+procedure __NEDetalRefresh( oForm )
+   local aLine, aData, oErr
+   local cFactura, dFchFactura
+
+   if ::hDocumento["estado"] = "C"
+      RETURN
+   endif
+
+   cFactura := ::oEntFacturaNro:GetValue()
+   if !hb_isNIL( cFactura ) .and. !Empty(cFactura)
+      dFchFactura := ::rVentas:Transacciones('F', cFactura ):fecha
+      if CTOD(cFactura) > dFchFactura
+         ::oEntFecha:SetValue( DTOC(dFchFactura) )
+         ::oLabInfo:SetText( "Ajustada la fecha del documento." )
+      endif
+   endif
+
+   ::oModDetal:oTreeView:ClearModel(.t.)
+   aData := ::rFactDetal:GetData()
+
+   if !Empty( aData )
+      FOR EACH aLine IN aData
+         TRY
+            APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
+                   VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
+                          aLine[4], hb_ntos(aLine[5]),;
+                          hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
+                          hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
+                          hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
+                          hb_ntos(aLine[12]), aLine[13], ;
+                          aLine[14], aLine[15], ;
+                          aLine[16], ;
+                          hb_ntos(aLine[17]), ;
+                          aLine[18], ;
+                          aLine[19], ;
+                          hb_ntos(aLine[20]), ;
+                          hb_ntos(aLine[21]), ;
+                          hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0)),;
+                          hb_ntos(aLine[5])
+         CATCH oErr
+            View( "__NEDetalRefresh(): " + oErr:Description )
+         END
+      NEXT
+      __NECalcula(oForm)
+   endif
+return
+
+
+
+procedure __vtaNotaEntrega( oForm, oFormParent, oBoxFactura, oModel, lNew )
+   local lPreConfirm := ::lConfirm
+   local aData, aLine, nLen, aVal, aTemp
+   local oCol
+
+   default lNew := .T.
+   ::lSilence := .t.
+   ::oNotaWnd:Maximize()
+   ::lNew := lNew
+
+   if ::lNew 
+      ::lLoad      := .F.
+      ::lSave      := .F.
+      ::rDocumento := ::rVentas:Documento( ::cTipoDocumento ,'')
+      ::hDocumento := ::rDocumento:Data()
+      ::rFactDetal := ::rDocumento:Detal()
+      ::cFecha := DTOC( DATE() )
+      ::oLabNumero:SetValue( "00000000" )
+      ::oLabNroControl:SetValue( "00000000" )
+      ::oEntCli:SetValue( "" )
+      ::oEntFecha:SetValue( DTOC(DATE()) )
+      ::oEntVcmto:SetValue( DTOC(DATE()) )
+      ::oEntFacturaNro:SetValue("")
+      ::oEntIvaE:SetValue( "0" )
+      ::oEntIvaR:SetValue( "0" )
+      ::oEntIvaG:SetValue( "0" )
+      ::oEntMonBase:SetValue( "0" )
+      ::oComboEstado:SetValue("Borrador", .F. ) 
+      ::cComboEstado := "B"
+      ::cPreEstado   := ::cComboEstado
+      ::oEntTotal:SetValue( "0" )
+      if hb_isObject( ::oModDetal ) 
+         ::oModDetal:oTreeView:ClearModel(.t.)
+      endif
+   else
+      ::lLoad      := .T.
+      ::lSave      := .F.
+      ::rDocumento := ::rVentas:Documento( ::cTipoDocumento, oModel:GetCol("numero") )
+      ::hDocumento := ::rDocumento:Data()
+      ::rFactDetal := ::rDocumento:Detal()
+      ::cFecha := DTOC( ::hDocumento["fecha"] )
+      ::oLabNumero:SetValue( oModel:GetCol("numero") )
+      ::oLabNroControl:SetValue( ::hDocumento["numero_control"] )
+      ::oEntCli:SetValue( oModel:GetCol("Cliente") )
+      ::cCodCli := oModel:GetCol("cliente_id")
+      ::cCodVendedor := oModel:GetCol("vendedor_id")
+      ::oEntFecha:SetValue( oModel:GetCol("fecha") )
+      ::oEntVcmto:SetValue( oModel:GetCol(5) )
+      ::oEntFacturaNro:SetValue( ALLTRIM(::hDocumento["doc_referencia_id"]) )
+      ::oEntIvaE:SetValue( "0" )
+      ::oEntIvaR:SetValue( "0" )
+      ::oEntIvaG:SetValue( "0" )
+      ::oEntMonBase:SetValue( hb_ntos(::hDocumento["monto_base"]) )
+      ::oEntTotal:SetValue( hb_ntos(::hDocumento["monto_total"]) )
+      ::lConfirm := .F.
+      do case
+      case ::hDocumento["estado"] = "B"
+         ::oComboEstado:SetValue( "Borrador" )
+      case ::hDocumento["estado"] = "A"
+         ::oComboEstado:SetValue( "Anulada"  )
+      case ::hDocumento["estado"] = "C"
+         ::oComboEstado:SetValue( "Cerrada"  )
+      endcase
+      ::cPreEstado := ::hDocumento["estado"]
+      ::lConfirm := lPreconfirm
+   endif
+
+   __NEDocValFecha( oForm, ::oEntFecha, @::cPFecha )
+
+if !::lNew
+      aData := {}
+      FOR EACH aLine IN ::rFactDetal:GetData()
+         AADD( aData, {hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
+                       aLine[4], hb_ntos(aLine[5]),;
+                       hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
+                       hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
+                       hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
+                       hb_ntos(aLine[12]), aLine[13], ;
+                       aLine[14], aLine[15], ;
+                       aLine[16], ;
+                       hb_ntos(aLine[17]), ;
+                       aLine[18], ;
+                       aLine[19], ;
+hb_ntos(aLine[20]), ;
+                        hb_ntos(aLine[21]), ;
+                        hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0)),;
+                        hb_ntos(aLine[5])})
+      NEXT
+   else
+      aData := {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0}}
+   endif
+
+   if !hb_isObject( ::oModDetal )
+DEFINE MODEL   ::oModDetal           ;
+              STRUCT  {{"detalle_id",     "N",10, 0},;
+                      {"documento" ,     "N",10, 0},;
+                      {"codigo_local",   "C",20, 0},;
+                      {"descripcion",    "C",100,0},;
+                      {"cantidad",       "N",10, 0},;
+                      {"precio_unitario","N",13, 2},;
+                      {"descuento",      "N",13, 2},;
+                      {"subtotal",       "N",13, 2},;
+                      {"iva_porcentaje", "N",04, 2},;
+                      {"iva_monto",      "N",04, 2},;
+                      {"total",          "N",13, 2},;
+                      {"nombre_global",  "C",100,0},;
+                      {"tipo_inventario","C",01, 0},;
+                      {"lote",           "C",10, 0},;
+                      {"fecha_vcmto",    "D",10, 0},;
+                      {"id_ubicacion",   "N",10, 0},;
+                      {"almacen_id",     "N",10, 0},;
+                      {"nombre_almacen", "C",20, 0},;
+                      {"detalles_json",  "C",100,0},;
+                      {"item",           "N",10, 0},;
+                      {"imp_pvp",        "N",13, 2},;
+                      {"imp_pvp_unit",   "N",13, 2},;
+                      {"cant_maxima",    "N",10, 2} ;
+                     } ;
+              DATA   aData
+      DEFINE LISTBOX ::oLBoxDetal ;
+             MODEL   ::oModDetal  ;
+             OF      ::oBoxDetalles
+      ::oLBoxDetal:lBar  := .f.
+      ::oLBoxDetal:bNew  := {|| __NEAddDetal( oForm ) }
+      ::oLBoxDetal:bEdit := {|| .T. }
+      ::oLBoxDetal:bDel  := {|| __NEDelDetal( oForm ) }
+      ::oLBoxDetal:SetColVisible( 01, .f. )
+      ::oLBoxDetal:SetColVisible( 02, .f. )
+      ::oLBoxDetal:SetColTitle( 03, "Código" )
+      ::oLBoxDetal:SetColTitle( 04, "Descripción" )
+      ::oLBoxDetal:SetColTitle( 05, "Cantidad" )
+      ::oLBoxDetal:SetColTitle( 06, "Precio" )
+      ::oLBoxDetal:SetColTitle( 07, "Descuento" )
+      ::oLBoxDetal:SetColTitle( 08, "SubTotal" )
+      ::oLBoxDetal:SetColTitle( 09, "IVA (%)" )
+      ::oLBoxDetal:SetColTitle( 10, "IVA (Monto)" )
+      ::oLBoxDetal:SetColTitle( 11, "Total" )
+      ::oLBoxDetal:SetColTitle( 21, "Imp.PVP" )
+      ::oLBoxDetal:SetColTitle( 22, "Imp.PVP Unit" )
+      ::oLBoxDetal:SetColTitle( 23, "Cant Máxima" )
+      ::oLBoxDetal:Active()
+   else
+      ::oModDetal:oTreeView:ClearModel(.t.)
+if !Empty( aData )
+         FOR EACH aLine IN aData
+            TRY
+               nLen := Len( aLine )
+               aVal := {}
+               AADD( aVal, iif(nLen>=1, aLine[1], "0") )
+               AADD( aVal, iif(nLen>=2, aLine[2], "0") )
+               AADD( aVal, iif(nLen>=3, aLine[3], "") )
+               AADD( aVal, iif(nLen>=4, aLine[4], "") )
+               AADD( aVal, iif(nLen>=5, aLine[5], "0") )
+               AADD( aVal, iif(nLen>=6, aLine[6], "0") )
+               AADD( aVal, iif(nLen>=7, aLine[7], "0") )
+               AADD( aVal, iif(nLen>=8, aLine[8], "0") )
+               AADD( aVal, iif(nLen>=9, aLine[9], "0") )
+               AADD( aVal, iif(nLen>=10, aLine[10], "0") )
+               AADD( aVal, iif(nLen>=11, aLine[11], "0") )
+               AADD( aVal, iif(nLen>=12, aLine[12], "0") )
+               AADD( aVal, iif(nLen>=13, aLine[13], "") )
+               AADD( aVal, iif(nLen>=14, aLine[14], "") )
+               AADD( aVal, iif(nLen>=15, aLine[15], "") )
+               AADD( aVal, iif(nLen>=16, aLine[16], "") )
+               AADD( aVal, iif(nLen>=17, aLine[17], "0") )
+               AADD( aVal, iif(nLen>=18, aLine[18], "0") )
+               AADD( aVal, iif(nLen>=19, aLine[19], "") )
+               AADD( aVal, iif(nLen>=20, aLine[20], "0") )
+               AADD( aVal, iif(nLen>=21, aLine[21], "0") )
+               AADD( aVal, iif(nLen>=22, aLine[22], "0") )
+               AADD( aVal, iif(nLen>=23, aLine[23], "0") )
+               APPEND LIST_STORE ::oModDetal:oLbx ITER aIter VALUES aVal[1], aVal[2], aVal[3], aVal[4], aVal[5], aVal[6], aVal[7], aVal[8], aVal[9], aVal[10], aVal[11], aVal[12], aVal[13], aVal[14], aVal[15], aVal[16], aVal[17], aVal[18], aVal[19], aVal[20], aVal[21], aVal[22], aVal[23]
+            CATCH oErr
+               View( "__vtaNotaEntrega: " + oErr:Description )
+            END
+         NEXT
+      endif
+   endif
+
+   ::oModDetal:oTreeView:bRow_Activated := nil
+   #define __NECODIGO   3
+   oCol := ::oModDetal:aCol[__NECODIGO]
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __NEEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                                          ::oModDetal:oLbx, ::oModDetal:oTreeView, __NECODIGO )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   #define __NECANTIDAD   5
+   oCol := ::oModDetal:aCol[__NECANTIDAD]
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __NEEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                                          ::oModDetal:oLbx, ::oModDetal:oTreeView, __NECANTIDAD )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   #define __NEPRECIO   6
+   oCol := ::oModDetal:aCol[__NEPRECIO]
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __NEEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                                          ::oModDetal:oLbx, ::oModDetal:oTreeView, __NEPRECIO )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   #define __NEDESCUENTO   7
+   oCol := ::oModDetal:aCol[__NEDESCUENTO]
+   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
+                               __NEEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                                          ::oModDetal:oLbx, ::oModDetal:oTreeView, __NEDESCUENTO )  }
+   oCol:oRenderer:SetColumn( oCol )
+
+   #define __NESUBTOTAL      8
+   #define __NEIVAPORCEN     9
+   #define __NEIVAMONTO     10
+   #define __NETOTAL        11
+
+   ::oEntMonBase:SetValue("0")
+   ::bDetalCode := {|oTView, pModel, aIter| __NECalMontos( oTView, pModel, aIter, oForm ) }
+   ::oLBoxDetal:ForEach( ::bDetalCode )
+   __NEDocsRefresh( oForm, .F. )
+   __NECalcula(oForm)
+   oBoxFactura:Show()
+   ::lSilence := .f.
+return
+
+
+
+procedure __NEEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
+   local nCantNueva, nCantMax
+
+   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
+      return 
+   endif
+   if empty( uVal ) ; return ; endif
+
+   if nCol=__NECODIGO
+      __NESetValue( oTreeView, oModel, aIter, nCol, uVal )
+      return
+   endif
+
+   if Empty( oTreeView:GetAutoValue( __NECODIGO ) )
+      oTreeView:SetPosCol( aIter, __NECODIGO, .f. )
+      return
+   endif
+
+if nCol=__NECANTIDAD
+       nCantNueva := ToNum( uVal )
+       nCantMax := ToNum( oTreeView:GetAutoValue( 23 ) )  // columna 23 = cant_maxima
+       if nCantMax > 0 .and. nCantNueva > nCantMax
+          ::oLabInfo:SetText( "Cantidad no puede exceder la de factura (" + hb_ntos(nCantMax) + ")" )
+          return
+       endif
+      __NESetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __NECalcula( oForm )
+      oTreeView:SetPosCol( aIter, __NEPRECIO, .f. )
+      return
+   endif
+
+   if nCol=__NEPRECIO
+      __NESetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __NECalcula( oForm )
+      oTreeView:SetPosCol( aIter, __NEDESCUENTO, .f. )
+      return
+   endif
+
+   if nCol=__NEDESCUENTO
+      __NESetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __NECalcula( oForm )
+      oTreeView:SetPosCol( aIter, __NETOTAL, .f. )
+      return
+   endif
+return
+
+
+
+
+procedure __NESetValue( oTreeView, oModel, aIter, nCol, uValue  )
+   local nMonto, nDescuento, nIvaPorcen, nIvaMonto:= 0
+
+   if oTreeView:IsGetSelected( aIter )
+      if nCol= __NECANTIDAD .or. nCol= __NEPRECIO .or. nCol= __NEDESCUENTO
+         if nCol = __NEDESCUENTO
+            nDescuento := VAL(uValue)
+            nMonto := (ToNum( oTreeView:GetAutoValue(__NECANTIDAD, aIter) ) * ToNum( oTreeView:GetAutoValue(__NEPRECIO, aIter))) - nDescuento
+         else
+            nDescuento := VAL( oTreeView:GetAutoValue(__NEDESCUENTO, aIter) )
+         endif
+         if nCol = __NECANTIDAD 
+            nMonto := (VAL(uValue) * ToNum( oTreeView:GetAutoValue(__NEPRECIO, aIter))) - nDescuento
+         elseif nCol = __NEPRECIO
+            nMonto := (ToNum( oTreeView:GetAutoValue(__NECANTIDAD, aIter) ) * VAL(uValue)) - nDescuento
+         endif
+         nMonto := ROUND( nMonto, 2 )
+         oModel:Set( aIter, __NESUBTOTAL, STR( nMonto ) )
+         nIvaPorcen := ToNum( oTreeView:GetAutoValue(__NEIVAPORCEN, aIter) )
+         if nIvaPorcen > 0
+            nIvaMonto := ROUND( nMonto * (nIvaPorcen / 100), 2 )
+            oModel:Set( aIter, __NEIVAMONTO, STR(nIvaMonto) )
+         endif
+         oModel:Set( aIter, __NETOTAL, STR( ROUND( nMonto + nIvaMonto ,2 ) ) )
+         uValue := STR( VAL(uValue) )
+      endif
+      oModel:Set( aIter, nCol, uValue )
+   endif
+return
+
+
+
+
+procedure __NECalMontos( oTView, pModel, aIter, oForm )
+   local nBase, nMonto, nTotal, nPorcentaje
+
+   nPorcentaje := ToNum( oTView:GetAutoValue( __NEIVAPORCEN, aIter ) )
+   
+   if nPorcentaje > 0
+      nMonto := ToNum( oTView:GetAutoValue( __NESUBTOTAL, aIter ) )
+      nBase  := ToNum( ::oEntMonBase:GetValue() )
+      nTotal := ROUND( nBase + nMonto, 2 )
+      ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
+   endif
+
+   if nPorcentaje = 0
+      nMonto := ToNum( oTView:GetAutoValue( __NESUBTOTAL, aIter ) )
+      nTotal := ROUND( nMonto, 2 )
+      ::oEntIvaE:SetValue( TRANSFORM( nTotal, P_92 ) )
+      ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
+   endif
+
+   if nPorcentaje > 0
+      nMonto := ToNum( oTView:GetAutoValue( __NEIVAMONTO, aIter ) )
+      if nPorcentaje = 8
+         nBase  := ToNum( ::oEntIvaR:GetValue() )
+         nTotal := ROUND( nBase + nMonto, 2 )
+         ::oEntIvaR:SetValue( TRANSFORM( nTotal, P_92 ) )
+      elseif nPorcentaje = 16
+         nBase  := ToNum( ::oEntIvaG:GetValue() )
+         nTotal := ROUND( nBase + nMonto, 2 )
+         ::oEntIvaG:SetValue( TRANSFORM( nTotal, P_92 ) )
+      endif
+   endif
+
+nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) + ToNum( ::oEntIvaR:GetValue() ) + ToNum( ::oEntIvaG:GetValue() ), 2 ) 
+   ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
+
+return
+
+
+
+procedure __NECalcula( oForm )
+   local aBox
+
+   ::oEntTotal:SetValue("0")
+   ::oEntMonBase:SetValue("0")
+   ::oEntIvaE:SetValue("0")
+   ::oEntIvaR:SetValue("0")
+   ::oEntIvaG:SetValue("0")
+   ::hDocumento["iva"] := {=>}
+   ::bDetalCode := {|oTView, pModel, aIter| __NECalMontos( oTView, pModel, aIter, oForm ) }
+   ::oLBoxDetal:ForEach( ::bDetalCode )
+
+   FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
+                      {::oBoxIvaRed, ::oEntIvaR}, ;
+                      {::oBoxIvaGen, ::oEntIvaG} }
+      if ToNum( aBox[2]:GetValue() ) = 0
+         aBox[1]:Hide()
+      else
+         aBox[1]:Show()
+      endif
+   NEXT
+
+return
+
+
+
+
+procedure __NEAddDetal( oForm )
+   local aIter := ARRAY(4)
+   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
+      return 
+   endif
+   APPEND LIST_STORE ::oModDetal:oLbx ITER aIter ;
+          VALUES '','','','','','','','','','','','','','','','','','','',''
+   ::oModDetal:oTreeView:SetFocus()
+   ::oModDetal:GoBottom()
+   ::oModDetal:oTreeView:SetPosCol( aIter, __NECODIGO, .T. )
+return
+
+
+
+
+procedure __NEDocsRefresh( oForm, lConfirm )
+   default lConfirm := .F.
+   if lConfirm
+      if !MsgNoYes( "¿Confirma el cambio de estado del documento?" )
+         ::oComboEstado:setValue("Borrador")
+      endif
+   endif
+   ::oEntIvaE:SetEditable( .F. )
+   ::oEntIvaR:SetEditable( .F. )
+   ::oEntIvaG:SetEditable( .F. )
+   ::oEntMonBase:SetEditable( .F. )
+
+   if (::hDocumento["estado"] = "A" .or. ::hDocumento["estado"] = "C") .or. ( ::cComboEstado = "A" .or. ::cComboEstado = "C" )
+      ::oEntCli:Disable()
+      ::oEntFecha:Disable()
+      ::oEntVcmto:Disable()
+      if ::hDocumento["estado"]="C"
+         ::oBtnImprime:Enable() 
+      endif
+      if ::hDocumento["estado"]="A"
+         ::oBtnImprime:Disable() 
+      endif
+      if ::lSave .or. ::lLoad
+         ::oComboEstado:Disable()
+      endif
+   else
+      ::oEntCli:Enable()
+      ::oEntFecha:Enable()
+      ::oEntVcmto:Enable()
+      ::oBtnImprime:Disable() 
+      if !::lSave
+         ::oComboEstado:Enable()
+      endif
+   endif
+return
+
+
+
+
+procedure __NEDelDetal( oForm, lAll )
+   local aIter := ARRAY(4)
+   local pPath
+   default lAll := .F.
+
+   if ::hDocumento["estado"] = "C"
+      RETURN
+   endif
+   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
+      return 
+   endif
+   if lAll
+      if ::rDocumento:DelItem( ,.T. )
+         ::oModDetal:oTreeView:ClearModel(.T.)
+      endif
+   endif
+   if ::oModDetal:oTreeView:IsGetSelected( aIter ) 
+      pPath := ::oModDetal:oTreeView:GetPath( aIter )
+      if !Empty( ::oModDetal:oTreeView:GetAutoValue( 18 ) )
+         if MsgNoYes( "¿Realmente desea eliminar este item?" )
+            if !::rDocumento:DelItem( ALLTRIM( ::oModDetal:oTreeView:GetAutoValue( 18 ) ) )
+               return 
+            endif
+         endif
+      endif
+      ::oModDetal:oLbx:Remove( aIter )
+      gtk_tree_view_set_cursor( ::oModDetal:oTreeView:pWidget, pPath )
+   endif
+   __NECalcula( oForm )
+return
+
+
+
+
+Procedure __NESave( oForm, oFormParent )
+   local bSaveDetal, uResp, aIter := ARRAY( 4 )
+
+   if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. !( ::cPreEstado = "B" )
+       __NECalcula( oForm )
+       MsgAlert( "Este documento no puede ser alterado.", "Atención" )
+       return 
+   endif
+
+   ::hDocumento["cliente_id"       ] := ::cCodCli
+   ::hDocumento["vendedor_id"      ] := ::cCodVendedor
+   ::hDocumento["doc_referencia_id"] := ::cFacturaNro
+   ::hDocumento["fecha"            ] := CTOD(::oEntFecha:GetValue())
+   ::hDocumento["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue())
+   ::hDocumento["condicion_id"     ] := '1'
+   ::hDocumento["monto_base"       ] := ::oEntMonBase:GetValue()
+   ::hDocumento["monto_total"      ] := ::oEntTotal:GetValue()
+   ::hDocumento["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
+
+   uResp := ::rDocumento:SetData( ::hDocumento )
+   if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
+      ::oLabInfo:SetText( uResp["message"] )
+      return
+   endif
+
+   bSaveDetal := {|oTView, pModel, aIter| __NESaveDetal( oTView, pModel, aIter, oForm )  }
+   uResp := ::rDocumento:Save()
+   if hb_isLogical( uResp ) .and. uResp
+       ::hDocumento   := ::rDocumento:Data()
+       ::aDetal := {}
+       ::oLBoxDetal:ForEach( bSaveDetal )
+       if !::rDocumento:SetDetal( ::aDetal )
+          ::oLabInfo:SetText("No se actualizaron los detalles" )
+          uResp := .F.
+       endif
+       if VAL(::hDocumento["numero"])>0
+          ::oLabNumero:SetValue( STRZERO( VAL(::hDocumento["numero"]), 8) )
+       else
+          ::oLabNumero:SetValue( ALLTRIM(::hDocumento["numero"]) )
+       endif
+       if ::lNew
+          ::lNew := .F.
+       endif
+   else
+       uResp := .F.
+   endif
+
+   if uResp
+      ::cPreEstado := LEFT( ::oComboEstado:GetValue(), 1 )
+      ::oLabInfo:SetText( "Actualizado." )
+   endif
+return
+
+
+
+
+procedure __NESaveDetal(oTView, pModel, aIter, oForm)
+   local hDetal := hb_hash()
+
+   hDetal["numero"           ] := ::hDocumento[ "numero" ]
+   hDetal["codigo_local"     ] := ALLTRIM(oTView:GetAutoValue( 03, aIter ))
+   hDetal["descripcion"      ] := oTView:GetAutoValue( 04, aIter )
+   hDetal["cantidad"         ] := VAL( oTView:GetAutoValue( 05, aIter ) )
+   hDetal["precio_unitario"  ] := VAL( oTView:GetAutoValue( 06, aIter ) )
+   hDetal["descuento"        ] := VAL( oTView:GetAutoValue( 07, aIter ) )
+   hDetal["subtotal"         ] := VAL( oTView:GetAutoValue( 08, aIter ) )
+   hDetal["iva_porcentaje"   ] := VAL( oTView:GetAutoValue( 09, aIter ) )
+   hDetal["iva_monto"        ] := VAL( oTView:GetAutoValue( 10, aIter ) )
+   hDetal["total"            ] := VAL( oTView:GetAutoValue( 11, aIter ) )
+   hDetal["nombre_global"    ] := oTView:GetAutoValue( 12, aIter )
+   hDetal["tipo_inventario"  ] := oTView:GetAutoValue( 13, aIter )
+   hDetal["lote"             ] := ALLTRIM(oTView:GetAutoValue( 14, aIter ))
+   hDetal["fecha_vencimiento"] := oTView:GetAutoValue( 15, aIter )
+   hDetal["ubicacion"        ] := ALLTRIM(oTView:GetAutoValue( 16, aIter ))
+   hDetal["almacen_id"       ] := ALLTRIM(oTView:GetAutoValue( 17, aIter ))
+   hDetal["nombre_almacen"   ] := oTView:GetAutoValue( 18, aIter )
+   hDetal["detalles_json"    ] := oTView:GetAutoValue( 19, aIter )
+   hDetal["item"             ] := oTView:GetAutoValue( 20, aIter )
+   hDetal["imp_pvp"          ] := oTView:GetAutoValue( 21, aIter )
+
+   AADD( ::aDetal, hDetal )
+return
+
+
+
+
+PROCEDURE __NECobrar( oForm, oFormParent)
+   if ::hDocumento["estado"] != "C"
+      ::oLabInfo:SetText( "Solo puede generar recibo en documento cerrado." )
+      RETURN
+   endif
+   oTPuy:RunXBS( "fin_recibo", oForm, oFormParent, "14" )
+RETURN
+
+
+
+
+PROCEDURE __NEImprime( oForm )
+   oTPuy:RunXBS( "vta_imprimir_pdf_nota", oForm )
+RETURN
