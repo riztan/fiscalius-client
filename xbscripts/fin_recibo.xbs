@@ -19,6 +19,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    ::cDocumento := ""
    ::cNumDoc := ""
    ::nSaldo  := 0
+   ::nIGTF   := 0
 
    ::cCodCli := ""
    ::cEntCli := ""
@@ -34,6 +35,8 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
    ::aDivisas := {}
    ::aMonedas := {}
+
+   ::cIGTF    := ""
 
    if hb_isObject( oFormParent )
       ::cCodCli   := oFormParent:cCodCli
@@ -107,6 +110,9 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    ::oEntCli:SetEditable(.f.)
    ::oEntCli:SetCanFocus(.F.)
 
+   DEFINE ENTRY ::oEntIGTF VAR ::cIGTF ;
+          ID "ent_igtf" RESOURCE ::oRes
+
    DEFINE ENTRY ::oEntDocMonto VAR ::cDocMonto ;
           ID "ent_doc_monto" RESOURCE ::oRes
 
@@ -165,16 +171,17 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
    aData := {}
    FOR EACH aMedio IN ::rMediosPago:GetData()
-      AADD( aData, { aMedio[2], aMedio[3], "", "", "", aMedio[8] } )
+      AADD( aData, { aMedio[2], aMedio[3], "", "", "", aMedio[8], aMedio[5] } )
    NEXT
    
    DEFINE MODEL  ::oModMedios ;
-          STRUCT { {"Codigo",      "C", 04, 00 }, ;
-                   {"Medio",       "C", 30, 00 }, ;
-                   {"Monto",       "C", 18, 00 }, ;
-                   {"Soporte Nro", "C", 10, 00 }, ;
-                   {"Origen",      "C", 10, 00 }, ;
-                   {"Requiere Soporte", "L", 0, 0 } ;
+          STRUCT { {"Codigo",           "C", 04, 00 }, ;
+                   {"Medio",            "C", 30, 00 }, ;
+                   {"Monto",            "C", 18, 00 }, ;
+                   {"Soporte Nro",      "C", 10, 00 }, ;
+                   {"Origen",           "C", 10, 00 }, ;
+                   {"Requiere Soporte", "L",  0,  0 }, ;
+                   {"Genera IGTF",      "L",  0,  0 } ;
                  } ;
           DATA   aData 
 
@@ -200,7 +207,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
           ID "statusbar" RESOURCE ::oRes
 
    ::oStBar := TStatusBar():New( ::oStatusBar )
-   ::oStBar:Add( "empresa",{|| ::cEmpresa + SEPARATOR }  )
+   ::oStBar:Add( "empresa" ,{|| ::cEmpresa + SEPARATOR }  )
    ::oStBar:Add( "username",{|| "Usuario: "+oTPuy:oUser:cNombre + " " }  )
    ::oStBar:Refresh()
 
@@ -245,11 +252,11 @@ procedure __fr_CalMonto( oForm, nDocMonto, nDocAplicado, nDocSaldo )
       return
    endif
    aData := ::oModDocuments:oTreeView:FillArray()
-//View( aData )
+///View( aData )
    FOR EACH aLine IN aData
       if aLine[16]
          //nAplicadoAntes += ToNum(aLine[24])
-         nAplicado      += ToNum(aLine[13]) 
+         nAplicado      += ToNum(aLine[13])  * ToNum(aLine[29]) 
          //nSaldo         += ToNum(aLine[14]) - nAplicado
          //nMonto         += nAplicado //ToNum(aLine[11]) - nAplicado
       endif
@@ -331,6 +338,7 @@ return
 
 Procedure __fr_SetMedioMonto( oForm, oModel, aIter, cMonto, lIni )
    local nSaldo, nMonto, nMontoAnterior, nColumna := 3
+   local nIGTF
 
    default lIni := .F.
 
@@ -358,6 +366,10 @@ Procedure __fr_SetMedioMonto( oForm, oModel, aIter, cMonto, lIni )
          oModel:oLbx:Set( aIter, nColumna, "" ) 
       else
          oModel:oLbx:Set( aIter, nColumna, TRANSFORM( nMonto, P_92 ) ) 
+      endif
+      if oModel:oTreeView:GetAutoValue( 7 ) // IGTF
+         nIGTF := ROUND( nMonto * ( 3/100 ), 2 )
+         ::oEntIGTF:SetText( TRANSFORM( nIGTF, P_92 ) )
       endif
       ::nSaldo := nSaldo-nMonto
       ::oEntDocSaldo:SetText( TRANSFORM( ::nSaldo, P_92 ) )
@@ -450,6 +462,7 @@ return
 Procedure __fr_EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, nCol )
 
    local nVal := ToNum( uVal )
+   local nIGTF := ROUND( nVal * ( 3/100 ), 2 )
 
    default uVal := ''
 
@@ -461,6 +474,9 @@ Procedure __fr_EditMedio( oForm, oSender, path, uVal, aIter, oModel, oTreeView, 
          if empty( uVal )
             oModel:oLbx:Set( aIter, 4, '' )
             oModel:oLbx:Set( aIter, 5, '' )
+         endif
+         if oTreeView:GetAutoValue( 7 ) // IGTF
+            ::oEntIGTF:SetText( TRANSFORM( nIGTF, P_92 ) )
          endif
       else
          if !Empty( oTreeView:GetAutoValue( 3 ) )
@@ -518,6 +534,7 @@ return
    AADD( aStruct, {"aplicado_anterior", "N", 15, 2 } )
 
    aData := {}
+//View( ::oDocuments:GetData() )
 
    AEVAL( ::oDocuments:GetData(), {|a| AADD( a, a[13] ), ; // Monto aplicado anterior.
                                        a[14] := a[11] - a[13], ; //Saldo
@@ -703,6 +720,8 @@ return
        "fecha"        => ::cFecha, ;
        "caja_id"      => cCajaCod, ;
        "cliente_id"   => ::cCodCli, ;
+       "monto_total"  => nMontoDocs, ;
+       "igtf"         => ToNum( ::cIGTF ), ;
        "tasa_cambio"  => nTasa, ;
        "moneda"       => cMoneda, ;
        "aplicaciones" => aApps, ;

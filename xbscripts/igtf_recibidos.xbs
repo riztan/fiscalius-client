@@ -1,0 +1,123 @@
+/* igtf_recibidos.xbs
+ *
+ * Formulario para consultar IGTF recibidos en Fiscalius
+ * Usa archivo de recursos: igtf_recibidos.ui
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure igtf_recibidos( oForm, oWndParent, oEntParent )
+   local oIGTFWnd, oRes
+   local rEmpresa, oIGTF, oModIGTF, oLBoxIGTF
+   local oBtnBuscar, oBtnSalir
+   local cEntFechaDesde, cEntFechaHasta
+   local oEntFechaDesde, oEntFechaHasta
+
+   cEntFechaDesde := ""
+   cEntFechaHasta := ""
+
+   rEmpresa := ::oGEmpresa
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"igtf_recibidos.ui"
+
+   DEFINE WINDOW oIGTFWnd ;
+          TITLE "Fiscalius. IGTF Recibidos" ;
+          SIZE 900,500 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ID "img_banner" RESOURCE oRes
+   oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ID "img_logo" RESOURCE oRes
+   oImgLogo:Adjust(60)
+
+   DEFINE ENTRY TYPE DATE oEntFechaDesde VAR cEntFechaDesde CALENDAR ;
+          VALID .T. ;
+          ID "ent_fecha_desde" RESOURCE oRes
+
+   DEFINE ENTRY TYPE DATE oEntFechaHasta VAR cEntFechaHasta CALENDAR ;
+          ID "ent_fecha_hasta" RESOURCE oRes
+
+   DEFINE BUTTON oBtnBuscar ;
+          ACTION __IGTFBuscar( oIGTFWnd, rEmpresa, oModIGTF, oLBoxIGTF, ;
+                             oEntFechaDesde, oEntFechaHasta ) ;
+          ID "btn_buscar" RESOURCE oRes
+
+   DEFINE BUTTON oBtnSalir ;
+          ACTION oIGTFWnd:End() ;
+          ID "btn_salir" RESOURCE oRes
+
+   DEFINE BOX oBoxData ID "box_data" RESOURCE oRes EXPAND FILL
+
+   oIGTF := rEmpresa:SetModulo("Finanzas"):IGTFRecibidos( {} )
+
+   if hb_isNIL( oIGTF )
+      MsgStop("No hay datos de IGTF disponibles")
+      return
+   endif
+
+   DEFINE MODEL oModIGTF ;
+          STRUCT oIGTF:Struct() ;
+          DATA   oIGTF:GetData()
+
+   DEFINE LISTBOX oLBoxIGTF ;
+          MODEL oModIGTF ;
+          OF oBoxData
+
+   oLBoxIGTF:lBar := .F.
+
+   oLBoxIGTF:SetColTitle( 1, "Recibo" )
+   oLBoxIGTF:SetColTitle( 2, "Fecha" )
+   oLBoxIGTF:SetColTitle( 3, "Monto Recibo" )
+   oLBoxIGTF:SetColTitle( 4, "Monto IGTF" )
+   oLBoxIGTF:SetColTitle( 5, "Monto Medio" )
+   oLBoxIGTF:SetColTitle( 6, "Medio" )
+   oLBoxIGTF:SetColTitle( 7, "Cliente" )
+
+   oLBoxIGTF:Active()
+
+   ACTIVATE WINDOW oIGTFWnd MODAL
+
+return
+
+
+
+procedure __IGTFBuscar( oWnd, rEmpresa, oModel, oList, oEntFechaDesde, oEntFechaHasta )
+   local hParam := hb_hash()
+   local oIGTF, aData
+   local cFechaDesde, cFechaHasta
+   local aLine, aIter := ARRAY(7)
+
+   cFechaDesde := alltrim( oEntFechaDesde:GetText() )
+   cFechaHasta := alltrim( oEntFechaHasta:GetText() )
+
+   if !empty( cFechaDesde )
+      hParam[ "desde" ] := ctod( cFechaDesde )
+   endif
+
+   if !empty( cFechaHasta )
+      hParam[ "hasta" ] := ctod( cFechaHasta )
+   endif
+
+   hParam[ "limite" ] := 500
+
+   oIGTF := rEmpresa:SetModulo("Finanzas"):IGTFRecibidos( hParam )
+
+   if !hb_isNIL( oIGTF )
+      oModel:oTreeView:ClearModel(.t.)
+
+      aData := oIGTF:GetData()
+      FOR EACH aLine IN aData
+         APPEND LIST_STORE oModel:oLbx ITER aIter ;
+                VALUES hb_ntos(aLine[1]), ;
+                       DToC(aLine[2]), ;
+                       TRANSFORM(aLine[3], P_92), ;
+                       TRANSFORM(aLine[4], P_92), ;
+                       TRANSFORM(aLine[5], P_92), ;
+                       ALLTRIM(aLine[6]) + " - " + ALLTRIM(aLine[7]), ;
+                       ALLTRIM(aLine[8])
+      NEXT
+   endif
+
+return

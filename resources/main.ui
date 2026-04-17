@@ -99,6 +99,18 @@
     <property name="yalign">0.40000000596046448</property>
     <property name="pixbuf">../images/ctasxcobrar_32.png</property>
   </object>
+  <object class="GtkImage" id="gtk-orientation11">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/auditor_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation12">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/auditor_32.png</property>
+  </object>
   <object class="GtkImage" id="gtk-orientation2">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -1072,6 +1084,16 @@
                               </object>
                             </child>
                             <child>
+                              <object class="GtkImageMenuItem" id="itm_igtf">
+                                <property name="label" translatable="yes">IGTF Recibido</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">IGTF cobrado</property>
+                                <property name="image">gtk-orientation11</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
                               <object class="GtkImageMenuItem" id="itm_auditoria">
                                 <property name="label" translatable="yes">_Auditoria</property>
                                 <property name="visible">True</property>
@@ -1084,11 +1106,11 @@
                             </child>
                             <child>
                               <object class="GtkImageMenuItem" id="itm_usabilidad">
-                                <property name="label" translatable="yes">_Usabilidad</property>
+                                <property name="label" translatable="yes">Auditoria (Usabilidad)</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Consulta registro de usabilidad</property>
-                                <property name="use_underline">True</property>
+                                <property name="tooltip_text" translatable="yes">Consulta registros de auditoría en usabilidad del sistema</property>
+                                <property name="image">gtk-orientation12</property>
                                 <property name="use_stock">False</property>
                               </object>
                             </child>

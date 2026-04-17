@@ -175,30 +175,19 @@ DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_notas_cd", oForm, "D" );
       DEFINE MENUITEM ACTION oTPuy:RunXBS("usabilidad", oForm );  
              ID "itm_usabilidad" RESOURCE ::oRes
 
-      DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_ctasxcobrar", oForm );  
-             ID "itm_ctasxcobrar" RESOURCE ::oRes
+DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_ctasxcobrar", oForm );  
+              ID "itm_ctasxcobrar" RESOURCE ::oRes
 
-/*
-      DEFINE MENUITEM ACTION oTPuy:RunXBS( "theme", oForm ) ;
-             ID "itm_theme" RESOURCE ::oRes
+       DEFINE MENUITEM ACTION oTPuy:RunXBS("igtf_recibidos", oForm );  
+              ID "itm_igtf" RESOURCE ::oRes
 
-      DEFINE MENUITEM ACTION oTPuy:RunXBS( "test_comboshop", oForm, ::rSession, ::rEmpresa ) ;
-             ID "itm_compras" RESOURCE ::oRes
+       DEFINE MENUITEM ACTION oTPuy:RunXBS("auditoria", oForm );  
+              ID "itm_auditoria" RESOURCE ::oRes
 
-      DEFINE MENUITEM ACTION oTPuy:RunXBS( "compras", oForm ) ;
-             ID "itm_compras" RESOURCE ::oRes
+       DEFINE MENUITEM ACTION oTPuy:RunXBS("usabilidad", oForm );  
+              ID "itm_usabilidad" RESOURCE ::oRes
 
-
-
-      DEFINE TOOLBUTTON ::oTBPOS ;
-             ACTION oTPuy:RunXBS( "pos", oForm ) ;
-             ID "tb_pos" RESOURCE ::oRes
-      
-      DEFINE TOOLBUTTON ::oTBWWW ;
-             ACTION empresa_url( oForm ) ;
-             ID "tb_url" RESOURCE ::oRes
-*/
-      DEFINE TOOLBUTTON ::oTBQuit ;
+       DEFINE TOOLBUTTON ::oTBQuit ;
              ACTION tpy_exit()    ;
              ID "tb_quit" RESOURCE ::oRes
 
