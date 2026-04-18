@@ -67,13 +67,14 @@ procedure igtf_recibidos( oForm, oWndParent, oEntParent )
 
    oLBoxIGTF:lBar := .F.
 
-   oLBoxIGTF:SetColTitle( 1, "Recibo" )
-   oLBoxIGTF:SetColTitle( 2, "Fecha" )
+   oLBoxIGTF:SetColTitle( 1, "Recibo"       )
+   oLBoxIGTF:SetColTitle( 2, "Fecha"        )
    oLBoxIGTF:SetColTitle( 3, "Monto Recibo" )
-   oLBoxIGTF:SetColTitle( 4, "Monto IGTF" )
-   oLBoxIGTF:SetColTitle( 5, "Monto Medio" )
-   oLBoxIGTF:SetColTitle( 6, "Medio" )
-   oLBoxIGTF:SetColTitle( 7, "Cliente" )
+   oLBoxIGTF:SetColTitle( 4, "Monto IGTF"   )
+   oLBoxIGTF:SetColTitle( 5, "Monto Medio"  )
+   oLBoxIGTF:SetColTitle( 6, "Medio Id"     )
+   oLBoxIGTF:SetColTitle( 7, "Nombre"       )
+   oLBoxIGTF:SetColTitle( 8, "Cliente"      )
 
    oLBoxIGTF:Active()
 
