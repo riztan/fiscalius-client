@@ -266,41 +266,6 @@ procedure vta_pedidos( oFormParent )
    ::oEntTotBs:SetEditable( .F. )
 */
 
-   // -- Caja de Retenciones
-   DEFINE BOX ::oBoxRet ID "box_retiva" RESOURCE ::oRes
-
-   ::cRetIva := ""
-   DEFINE DOCUMENT ENTRY ::oEntRetIva VAR ::cRetIva ;
-          ID "ent_retivanum" RESOURCE ::oRes
-
-   ::cRetIvaFecha := ''
-   DEFINE ENTRY TYPE DATE ::oEntRetIvaF VAR ::cRetIvaFecha CALENDAR;
-          VALID __PedValRetFecha(oForm); 
-          ID "ent_retivaf" RESOURCE ::oRes
-
-   ::cPorRetIva := ''
-   DEFINE ENTRY TYPE PORCENT ::oEntPorRetIva VAR ::cPorRetIva ;
-          VALID __PedValRetIvaPorcen( oForm ) ;
-          ID "ent_porretiva" RESOURCE ::oRes
-
-   ::cMonRetIva := ''
-   DEFINE ENTRY TYPE MONEY ::oEntMonRetIva VAR ::cMonRetIva ;
-          ID "ent_monretiva" RESOURCE ::oRes
-
-   // --- Retencion ISLR
-   ::cIslrNro := ""
-   DEFINE DOCUMENT ENTRY ::oEntIslrNro VAR ::cIslrNro ;
-          ID "ent_islr_nro" RESOURCE ::oRes
-
-   ::cIslrFecha := ''
-   DEFINE ENTRY TYPE DATE ::oEntIslrFecha VAR ::cIslrFecha CALENDAR;
-          VALID __PedValIslrFecha(oForm); 
-          ID "ent_islr_fecha" RESOURCE ::oRes
-
-   ::cIslrMonto := ""
-   DEFINE ENTRY TYPE MONEY ::oEntIslrMonto VAR ::cIslrMonto ;
-          ID "ent_islr_monto" RESOURCE ::oRes
-
    //-------------------------
    DEFINE MODEL  ::oModPedidos ;
           STRUCT ::rPedidos:Struct() ;
@@ -356,54 +321,6 @@ procedure vta_pedidos( oFormParent )
    ACTIVATE WINDOW ::oPedWnd MODAL VALID __PedExit(oForm)
 
 return
-
-
-
-function __PedValRetIvaPorcen( oForm )
-   local nPorcen := ToNum(::cPorRetIva)
-   local nMonto 
-   if !( nPorcen >=1 .and. nPorcen <=100 )
-      MsgAlert( "Porcentaje inorrecto" )
-      RETURN .F.
-   endif
-   
-   nMonto := ToNum(::oEntIvaR:GetValue()) * (nPorcen/100) 
-   nMonto += ToNum(::oEntIvaG:GetValue()) * (nPorcen/100) 
-   nMonto += ToNum(::oEntIvaS:GetValue()) * (nPorcen/100) 
-
-   ::oEntMonRetIva:SetValue( TRANSFORM( nMonto, P_92 ) )
-
-RETURN .T.
-
-
-
-function __PedValIslrFecha( oForm )
-   if ::rPedido:Estado()!="C"
-      MsgAlert( "El documento no está cerrado, no requiere información de retención", "Atención" )
-      ::oEntIslrFecha:SetValue( "" )
-      return .T. 
-   endif
-   if ( CTOD(::cIslrFecha) < CTOD(::cFecha) ) .AND. !Empty(::cIslrFecha)
-      MsgAlert( "La fecha de la retención no puede ser menor a la fecha del documento", "Atención" )
-      ::oEntIslrFecha:SetValue( ::cFecha )
-      return .f.
-   endif
-return .t.
-
-
-
-function __PedValRetFecha( oForm )
-   if ::rPedido:Estado()!="C"
-      MsgAlert( "El documento no está cerrado, no requiere información de retención", "Atención" )
-      ::oEntRetIvaF:SetValue( "" )
-      return .T. 
-   endif
-   if ( CTOD(::cRetIvaFecha) < CTOD(::cFecha) ) .AND. !Empty(::cRetIvaFecha)
-      MsgAlert( "La fecha de la retención no puede ser menor a la fecha del documento", "Atención" )
-      ::oEntRetIvaF:SetValue( ::cFecha )
-      return .f.
-   endif
-return .t.
 
 
 
@@ -612,18 +529,10 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::cComboEstado := "B"
       ::cPreEstado   := ::cComboEstado
    
-      ::oEntTotal:SetValue( "0" )
-      //::oEntTotBs:SetValue( "0" )
-      ::oEntRetIva:SetValue( "" )
-      ::oEntRetIvaF:SetValue( "" )
-      ::oEntMonRetIva:SetValue( "" )
-      ::oEntPorRetIva:SetValue( "" )
+::oEntTotal:SetValue( "0" )
+       //::oEntTotBs:SetValue( "0" )
 
-      ::oEntIslrNro:SetValue( "" )
-      ::oEntIslrMonto:SetValue( "" )
-      ::oEntIslrFecha:SetValue( "" )
-
-      if hb_isObject( ::oModDetal ) 
+       if hb_isObject( ::oModDetal )
          ::oModDetal:oTreeView:ClearModel(.t.)
       endif
 
@@ -667,21 +576,12 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
       if hb_hHasKey( ::hPedido, "otros_imp" )
          ::oEntOtrImp:SetValue( TRANSFORM( ::hPedido["otros_imp"], P_92 ) )        
          ::oEntImpProd:SetValue( TRANSFORM( ::hPedido["imp_prod"], P_92 ) )
-      else
-         ::oEntOtrImp:SetValue( "0" )
-          ::oEntImpProd:SetValue( "0" )
-      endif
+else
+          ::oEntOtrImp:SetValue( "0" )
+           ::oEntImpProd:SetValue( "0" )
+       endif
 
-      ::oEntRetIva:SetValue( "" )
-      ::oEntRetIvaF:SetValue( "" )
-      ::oEntMonRetIva:SetValue( "" )
-      ::oEntPorRetIva:SetValue( "" )
-
-      ::oEntIslrNro:SetValue( "" )
-      ::oEntIslrMonto:SetValue( "" )
-      ::oEntIslrFecha:SetValue( "" )
-
-      FOR EACH hIva IN ::hPedido["iva"]
+       FOR EACH hIva IN ::hPedido["iva"]
          if hIva["porcentaje"] = 0
             ::oEntIvaE:SetValue( TRANSFORM(hIva["monto"],P_92) )
          endif
@@ -700,22 +600,9 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
          nCompRetIVA := hIva["comprobante_retencion"]
          cFechRetIVA := DTOC(hIva["fecha_retencion"])
 
-      NEXT
+NEXT
 
-      if nMonRetIVA > 0
-         ::oEntRetIva:SetValue( hb_ntos(nCompRetIVA) )
-         ::oEntRetIvaF:SetValue( cFechRetIVA )
-         ::oEntMonRetIva:SetValue( TRANSFORM( nMonRetIVA, P_92 ) )
-         ::oEntPorRetIva:SetValue( TRANSFORM( nPorRetIVA, P_92 ) )
-      endif
-
-      if !Empty( ::hPedido["islr"] )
-         ::oEntIslrNro:SetValue( hb_ntos(::hPedido["islr"]["comprobante"]) )
-         ::oEntIslrMonto:SetValue( TRANSFORM( ::hPedido["islr"]["monto"], P_92) )
-         ::oEntIslrFecha:SetValue( DTOC(::hPedido["islr"]["fecha"]) )
-      endif
-
-      ::oEntMonBase:SetValue( TRANSFORM(::hPedido["monto_base"],P_92) ) //oModel:GetCol(::hCol["monto base"]) )
+       ::oEntMonBase:SetValue( TRANSFORM(::hPedido["monto_base"],P_92) ) //oModel:GetCol(::hCol["monto base"]) )
       ::oEntTotal:SetValue( TRANSFORM(::hPedido["monto_total"],P_92) )  
       //::oEntTotBs:SetValue( TRANSFORM(::hPedido["monto_total"]*TONUM(SUBSTR(::cDivisa,5)),P_92) )  
 
@@ -1208,26 +1095,16 @@ procedure __PedCalMontos( oTView, pModel, aIter, oForm )
       endif
 //View( hb_valtoexp( ::hPedido["iva"] ) )
 
-      hb_hSet( ::hPedido["iva"], cIva, ; //ALLTRIM(oTView:GetAutoValue(__IVAPORCEN, aIter)),;
+hb_hSet( ::hPedido["iva"], cIva, ;
                { "porcentaje" => ToNum(oTView:GetAutoValue(__IVAPORCEN, aIter)), ;
-                 "monto"      => nMonto,;
-                 "fecha_retencion"      => ::cRetIvaFecha,;
-                 "porcentaje_retencion" => ToNum(::cPorRetIva),; 
-                 "monto_retencion"      => ToNum(::cMonRetIva),;
-                 "comprobante_retencion"=> ::cRetIva ;
+                 "monto"      => nMonto ;
                } )
 
 ///View( "registrado iva "+cIva+hb_ntos( len(::hPedido["iva"]) ) )
 //View( ::hPedido )
    endif
 
-   if !empty( ::cIslrNro ) .and. !Empty( ::cIslrMonto ) 
-      ::hPedido[ "islr" ]["comprobante"] := ToNum( ::cIslrNro )
-      ::hPedido[ "islr" ]["monto"      ] := ToNum( ::cIslrMonto )
-      ::hPedido[ "islr" ]["fecha"      ] := CTOD( ::cIslrFecha )   
-   endif
-
-nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
+   nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
                      ToNum( ::oEntIvaR:GetValue() ) +;
                      ToNum( ::oEntIvaG:GetValue() ) +;
                      ToNum( ::oEntIvaS:GetValue() ) +;
@@ -1311,51 +1188,27 @@ procedure __PedRefresh( oForm, lConfirm )
       ::oEntCli:Disable()
       ::oEntFecha:Disable()
       ::oEntVcmto:Disable()
-      if ::hPedido["estado"]="C"
-         ::oEntRetIva:Enable()
-         ::oEntRetIvaF:Enable()
-         ::oEntPorRetIva:Enable()
-         ::oEntMonRetIva:Enable()
+if ::hPedido["estado"]="C"
 
-         ::oEntIslrNro:Enable()
-         ::oEntIslrMonto:Enable()
-         ::oEntIslrFecha:Enable()
+          ::oBtnImprime:Enable() 
+       endif
+       if ::hPedido["estado"]="A"
 
-         ::oBtnImprime:Enable() 
-      endif
-      if ::hPedido["estado"]="A"
-         ::oEntRetIva:Disable()
-         ::oEntRetIvaF:Disable()
-         ::oEntPorRetIva:Disable()
-         ::oEntMonRetIva:Disable()
-
-         ::oEntIslrNro:Disable()
-         ::oEntIslrMonto:Disable()
-         ::oEntIslrFecha:Disable()
-
-         ::oBtnImprime:Disable() 
-      endif
+          ::oBtnImprime:Disable() 
+       endif
       if ::lSave .or. ::lLoad
          ::oComboEstado:Disable()
       //else
       //   ::oComboEstado:Disable()
       endif
-   else
-      ::oEntCli:Enable()
-      ::oEntFecha:Enable()
-      ::oEntVcmto:Enable()
-      ::oEntRetIva:Disable()
-      ::oEntRetIvaF:Disable()
-      ::oEntPorRetIva:Disable()
-      ::oEntMonRetIva:Disable()
+else
+       ::oEntCli:Enable()
+       ::oEntFecha:Enable()
+       ::oEntVcmto:Enable()
 
-      ::oEntIslrNro:Disable()
-      ::oEntIslrMonto:Disable()
-      ::oEntIslrFecha:Disable()
+       ::oBtnImprime:Disable() 
 
-      ::oBtnImprime:Disable() 
-
-      if !::lSave
+       if !::lSave
          ::oComboEstado:Enable()
       //else
       //   ::oComboEstado:Enable()
