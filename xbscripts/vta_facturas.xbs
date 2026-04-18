@@ -321,11 +321,10 @@ procedure vta_facturas( oFormParent )
    ::oLBoxFacs:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 4, "Fecha" )  //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 10, "Condicion" )       //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo
 
    ::hCol := hb_hash()
    ::hCol["numero"]      := 1
@@ -410,14 +409,16 @@ procedure __ModFactsRefresh(oForm)
    if ::isDef("oModFacturas")
 //View( ::oModFacturas:oTreeView:IsGetSelected( aIter ) )
       ::oModFacturas:oTreeView:ClearModel(.t.)
-      FOR EACH aLine IN ::rFacturas:GetData()
-         APPEND LIST_STORE ::oModFacturas:oLbx ITER aIter ;
-                VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
-                       ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
-                       DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
-                       aLine[ 7], hb_ntos(aLine[ 8])
+FOR EACH aLine IN ::rFacturas:GetData()
+          APPEND LIST_STORE ::oModFacturas:oLbx ITER aIter ;
+                 VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
+                        ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
+                        DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
+                        aLine[ 7], hb_ntos(aLine[ 8]), ;
+                        hb_ntos(aLine[ 9]), aLine[ 10], ;
+                        hb_ntos(aLine[ 11]), aLine[ 12]
 
-      NEXT
+       NEXT
 
       bDetalCode := {|oTView, pModel, aIter | ;
                      iif( oTView:GetAutoValue(1, aIter)==::hFactura["numero"], ;
@@ -504,6 +505,8 @@ function __FactCargarCondiciones( oForm )
 
    
 return .T.
+
+
 
 function __FactCargarSeries( oForm )
    local rQrySeries
@@ -626,18 +629,18 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::cCodCli := oModel:GetCol(::hCol["cliente_id"])
 	  ::cCondicionId := oModel:GetCol(::hCol["condicion_id"])
       ::cCondicion :=  oModel:GetCol(::hCol["condicion_nombre"])
-      ::cSerieId := oModel:GetCol(::hCol["serie_id"])
+::cSerieId := oModel:GetCol(::hCol["serie_id"])
       ::cSerie :=  oModel:GetCol(::hCol["serie_fiscal"])
    
-        // Actualizar el combo para mostrar la condicion seleccionada
-        if hb_isObject( ::oComboCondicion )
-            ::oComboCondicion:SetValue( ::cCondicion )
+// Actualizar el combo para mostrar la condicion seleccionada
+         if hb_isObject( ::oComboCondicion ) .and. !empty( ::aCondiciones )
+             ::oComboCondicion:SetValue( ::cCondicion )
          endif
-         
-		 
-         if hb_isObject( ::oComboSerie )
-            ::oComboSerie:SetValue( ::cSerie )
-         endif
+          
+ 		 
+          if hb_isObject( ::oComboSerie ) .and. !empty( ::aSeries )
+             ::oComboSerie:SetValue( ::cSerie )
+          endif
 
 
          
@@ -1412,37 +1415,30 @@ Procedure __VtaSave( oForm, oFormParent )
    ::hFactura["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
    ::hFactura["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
    ::hFactura["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
-   ::hFactura["imp_prod"        ] := ::oEntImpProd:GetValue()      // Impuesto Produccion
+   ::hFactura["imp_prod"         ] := ::oEntImpProd:GetValue()     // Impuesto Produccion
    ::hFactura["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
-   nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
-      ::hFactura["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
-     nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
-     ::hFactura["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
-	 ::cSerieID:=::hFactura["serie_id"] 
-     //::hFactura["serie_nombre"     ] := ::cSerie
-	 //view(::aSeriesId)
-	 //view(nidx)
-    // view(::cSerieID)
-	 hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 4 )
-	 
-	 
-	if ::cComboEstado == "Cerrada"		
-		if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
-		MsgStop( hCorrel["mensaje"] + ". No se puede cerrar el documento.", "Error" )
-		return
-		endif
-	endif
 
+nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
+   ::hFactura["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
+
+   nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
+   ::hFactura["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
+   ::cSerieID:=::hFactura["serie_id"]
+   hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 4 )	 
+	 
+   if ::cComboEstado == "Cerrada"		
+      if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
+         MsgStop( hCorrel["mensaje"] + ". No se puede cerrar el documento.", "Error" )
+         return
+      endif
+   endif
 
 //   View( ::hFactura["iva"] ) 
-
-//View( ::hFactura )
 //return
 
    uResp := ::rFactura:SetData( ::hFactura )
    ::hFactura := ::rFactura:Data()
-//View( uResp )
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
       ::oLabInfo:SetText( uResp["message"] )
       //::oLabInfo:SetText("No ha sido posible actualizar los datos.")
@@ -1469,20 +1465,16 @@ Procedure __VtaSave( oForm, oFormParent )
          ::oLabInfo:SetText( uResp["message"] )
       endif
 //View("atualizamos hFactura ")
-      ::hFactura   := ::rFactura:Data()
-//View( ::hFactura )
-      //-- Importante invocar SetDetal después de rFactura:Save() 
+::hFactura   := ::rFactura:Data()
+       //-- Importante invocar SetDetal después de rFactura:Save()
       //   para obtener primero el nro del documento
       ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
-//View( hb_valtoexp(::aDetal) )
       if !::rFactura:SetDetal( ::aDetal )
          ::oLabInfo:SetText("No se actualizaron los detalles" )
          uResp := .F.
       endif
 
-//View( hb_valtoexp(::hFactura) )
-//View( ::hFactura["numero"] )
       if VALTYPE(::hFactura["numero"])="C" .AND. VAL(::hFactura["numero"])>0
          ::oLabNumero:SetValue( STRZERO( VAL(::hFactura["numero"]), 8) )
       elseif VALTYPE(::hFactura)="N" 
@@ -1499,9 +1491,8 @@ Procedure __VtaSave( oForm, oFormParent )
       __ModFactsRefresh( oForm )
       //-- Este paso es importante para que se actualicen los nros de item en la app cliente.
       //   Y asi evitar que vuelva a insertar datos. (RIGC-JUN2025)
-      //::oModFacturas:oTreeView:ClearModel(.t.)
+//::oModFacturas:oTreeView:ClearModel(.t.)
       if !hb_isNIL( oFormParent )
-         //View( ::oModFacturas:oTreeView:GetAutoValue( 1 ))
          if ::oModFacturas:oTreeView:IsGetSelected( aIter )
             __vtaFactura( oForm, oFormParent, ::oBoxFactura, ::oModFacturas, .F. )
          endif
