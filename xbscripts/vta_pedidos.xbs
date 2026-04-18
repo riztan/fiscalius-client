@@ -415,14 +415,16 @@ procedure __ModPedsRefresh(oForm)
    if ::isDef("oModPedidos")
 //View( ::oModPedidos:oTreeView:IsGetSelected( aIter ) )
       ::oModPedidos:oTreeView:ClearModel(.t.)
-      FOR EACH aLine IN ::rPedidos:GetData()
-         APPEND LIST_STORE ::oModPedidos:oLbx ITER aIter ;
-                VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
-                       ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
-                       DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
-                       aLine[ 7], hb_ntos(aLine[ 8])
+FOR EACH aLine IN ::rPedidos:GetData()
+          APPEND LIST_STORE ::oModPedidos:oLbx ITER aIter ;
+                 VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
+                        ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
+                        DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
+                        aLine[ 7], hb_ntos(aLine[ 8]), ;
+                        hb_ntos(aLine[ 9]), aLine[ 10], ;
+                        hb_ntos(aLine[ 11]), aLine[ 12]
 
-      NEXT
+       NEXT
 
       bDetalCode := {|oTView, pModel, aIter | ;
                      iif( oTView:GetAutoValue(1, aIter)==::hPedido["numero"], ;
@@ -514,7 +516,6 @@ function __PedCargarSeries( oForm )
    local rQrySeries
    
    rQrySeries := ::rEmpresa:SeriesFiscales(13)
-   //view(rQrySeries)
    ::aSeries := {}
    ::aSeriesId := {}
    
@@ -1429,9 +1430,9 @@ Procedure __PedSave( oForm, oFormParent )
    ::hPedido["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
    nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
    ::hPedido["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
-   nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
+nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
    ::hPedido["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
-	 ::cSerieID:=::hPedido["serie_id"] 
+   ::cSerieID:=::hPedido["serie_id"]
      //::hFactura["serie_nombre"     ] := ::cSerie
 	 //view(::aSeriesId)
 	 //view(nidx)
