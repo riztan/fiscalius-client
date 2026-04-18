@@ -9,7 +9,7 @@
 
 procedure vta_series_consecutivos( oForm, oWndParent, oEntParent )
    local oAliWnd, oRes, oImgBanner, oImgLogo, oBoxData
-   local oLabTitulo, cLabTitulo := "Series Consecutivas"
+   local oLabTitulo, cLabTitulo := "Correlativos Fiscales"
    local rSeriesConsec, oModSeriesConsec, oLBoxSeriesConsec
 
    if !oTPuy:RunXBS( "netio_check" )
@@ -20,14 +20,14 @@ procedure vta_series_consecutivos( oForm, oWndParent, oEntParent )
    rSeriesConsec := oForm:oGEmpresa:SeriesConsecutivos()
 
    if hb_isNIL( rSeriesConsec )
-      MsgStop( "No se pudo obtener el listado de series consecutivas." )
+      MsgStop( "No se pudo obtener el listado de correlativos fiscalea." )
       return
    endif
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_listbox.ui"
 
    DEFINE WINDOW oAliWnd ;
-          TITLE "Fiscalius. Consecutivos de Documentos" ;
+          TITLE "Fiscalius. Correlativo Fiscal" ;
           SIZE 900, 500 ;
           ID "window1" RESOURCE oRes
 
@@ -56,7 +56,7 @@ procedure vta_series_consecutivos( oForm, oWndParent, oEntParent )
           OF oBoxData
 
    // Columnas: 1=id  2=serie_id  3=serie_codigo  4=control_inicio  5=control_final  6=ultimo_numero_control  7=activo
-   /*
+   
    oLBoxSeriesConsec:SetColVisible( 1, .F. )
    oLBoxSeriesConsec:SetColVisible( 2, .F. )
    oLBoxSeriesConsec:SetColTitle( 3, "Serie" )
@@ -64,7 +64,7 @@ procedure vta_series_consecutivos( oForm, oWndParent, oEntParent )
    oLBoxSeriesConsec:SetColTitle( 5, "Hasta" )
    oLBoxSeriesConsec:SetColTitle( 6, "Último Ctrl" )
    oLBoxSeriesConsec:SetColTitle( 7, "Activo" )
-   */
+   
 
    oLBoxSeriesConsec:bNew  := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .T. ) }
    oLBoxSeriesConsec:bEdit := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .F. ) }
@@ -76,43 +76,48 @@ return
 
 
 procedure series_consec_edit( oFormParent, oAliWnd, oModel, lNew )
-   local oRes, oForm, hData, nId
+   local oRes, oForm, hData, hNext, nId
 
    default lNew := .T.
 
    SET PUBLIC oForm
-
+   
+   
+   
+   
    oForm:lForce   := .F.
    oForm:lClose   := .F.
-   oForm:lNew     := lNew
+  oForm:lNew     := lNew
    oForm:oModel   := oModel
    oForm:oAliWnd  := oAliWnd
    oForm:oParent  := oFormParent
+   oForm:oGEmpresa := oFormParent:oGEmpresa
+  // oForm:nTipoId := 0
 
    if lNew
-      oForm:nSerieId          := 0
-      oForm:cSerieCod         := ""
-      oForm:nControlInicio    := 1
-     // oForm:nControlFinal     := 99999999
-     // oForm:nUltimoNumControl  := 0
-      oForm:lActivo            := .T.
-      oForm:rSeriesConsec := oFormParent:oGEmpresa:SeriesConsecutivos( {} )
+   	  //oForm:nTipoId:=0
+      oForm:cSerieCod := ""
+      oForm:nControlInicio := 1
+      oForm:nControlFinal := oForm:nControlInicio + 499
+      oForm:nUltimoNumControl := 1
+      oForm:lActivo := .T.
+      oForm:rSeriesConsec := oFormParent:oGEmpresa:SerieConsecutivo( {} )
    else
       nId := oModel:GetCol( 1 )
-      oForm:nSerieId         := oModel:GetCol( 2 )
-      oForm:cSerieCod        := oModel:GetCol( 3 )
-     // oForm:nControlInicio   := oModel:GetCol( 4 )
-     // oForm:nControlFinal    := oModel:GetCol( 5 )
-     // oForm:nUltimoNumControl := oModel:GetCol( 6 )
-      oForm:lActivo          := ( oModel:GetCol( 7 ) = "Sí" )
-      oForm:rSeriesConsec := oFormParent:oGEmpresa:SeriesConsecutivos( { "id" => nId } )
+     // oForm:nTipoId:=nId
+      oForm:cSerieCod := oModel:GetCol( 3 )
+      oForm:nControlInicio := oModel:GetCol( 4 )
+      oForm:nControlFinal := oModel:GetCol( 5 )
+      oForm:nUltimoNumControl := oModel:GetCol( 6 )
+      oForm:lActivo :=oModel:GetCol( 7 ) 
+      oForm:rSeriesConsec := oFormParent:oGEmpresa:SerieConsecutivo( { "id" => nId } )
    endif
 
    hData := oForm:rSeriesConsec:Data()
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_series_consecutivos.ui"
 
-   DEFINE WINDOW oForm:oWnd TITLE "Serie Consecutiva" SIZE 480, 350 ;
+   DEFINE WINDOW oForm:oWnd TITLE "Correlativos Fiscales" SIZE 480, 350 ;
           OF oAliWnd ;
           ID "window1" RESOURCE oRes
 
@@ -122,33 +127,34 @@ procedure series_consec_edit( oFormParent, oAliWnd, oModel, lNew )
       DEFINE IMAGE oForm:oImgLogo ID "img_logo" RESOURCE oRes
       oForm:oImgLogo:Adjust( 60 )
 
-      DEFINE ENTRY oForm:oEntSerie VAR oForm:cSerieCod ;
-             ID "ent_serie" RESOURCE oRes
-      oForm:oEntSerie:Enable( .F. )
+DEFINE ENTRY oForm:oEntSerie VAR oForm:cSerieCod ;
+       VALID __ValidaSerieConsec( oForm:oEntSerie, oForm ) ;
+       ID "ent_serie" RESOURCE oRes
 
-      DEFINE SPINBOX oForm:oSpinInicio VAR oForm:nControlInicio ;
-             ID "spin_inicio" RESOURCE oRes
-      oForm:oSpinInicio:SetRange( 1, 99999999 )
+//oForm:oEntSerie:Enable( .F. )
 
-/*
-       DEFINE SPINBOX oForm:oSpinFinal VAR oForm:nControlFinal ;
-              ID "spin_final" RESOURCE oRes
-       oForm:oSpinFinal:SetRange( 1, 99999999 )
+DEFINE INTEGER ENTRY oForm:oEntInicio VAR oForm:nControlInicio ;
+      VALID __SeriesConsecNum( oForm:oEntInicio,oForm,"inicio" ) ;
+       ID "ent_inicio" RESOURCE oRes
+    	
 
-       DEFINE SPINBOX oForm:oSpinUltCtrl VAR oForm:nUltimoNumControl ;
-              ID "spin_ult_ctrl" RESOURCE oRes
-       oForm:oSpinUltCtrl:SetRange( 0, 99999999 )
-	   
-	   */
+DEFINE INTEGER ENTRY oForm:oEntFinal VAR oForm:nControlFinal ;
+			VALID __SeriesConsecNum( oForm:oEntFinal,oForm,"final" ) ;
+               ID "ent_final" RESOURCE oRes
 
+       DEFINE INTEGER ENTRY oForm:oEntUltCtrl VAR oForm:nUltimoNumControl ;
+       		  VALID __SeriesConsecNum( oForm:oEntUltCtrl,oForm,"ultimo" ) ;
+               ID "ent_ult_ctrl" RESOURCE oRes
+  	   	
        DEFINE CHECKBOX oForm:oChkActivo VAR oForm:lActivo ID "chk_activo" RESOURCE oRes
 
-       DEFINE BUTTON oForm:oBtnSave ACTION __SeriesConsecSave( oForm ) ;
+      DEFINE BUTTON oForm:oBtnSave ACTION __SeriesConsecSave( oForm ) ;
               ID "btn_save" RESOURCE oRes
 
        DEFINE BUTTON oForm:oBtnCancel ;
               ACTION ( oForm:lClose := .T., oForm:oWnd:End() ) ;
               ID "btn_cancel" RESOURCE oRes
+*/              
 
    ACTIVATE WINDOW oForm:oWnd MODAL VALID __SeriesConsecExit( oForm )
 
@@ -158,17 +164,18 @@ return
 
 procedure __SeriesConsecSave( oForm )
 
-/*
    local hData, uResp, aIter, lNew, nId
 
    lNew := oForm:rSeriesConsec:IsNew()
 
-   oForm:rSeriesConsec:SetData( { "serie_id"              => oForm:nSerieId, ;
-                                   "control_inicio"        => oForm:nControlInicio,  ;
-                                   "control_final"         => oForm:nControlFinal, ;
-                                   "ultimo_numero_control" => oForm:nUltimoNumControl, ;
+   oForm:rSeriesConsec:SetData( { "serie_codigo" => ALLTRIM( oForm:cSerieCod ), ;
+                                   "control_inicio"        => VAL(oForm:nControlInicio),  ;
+                                   "control_final"         => VAL(oForm:nControlFinal), ;
+                                   "ultimo_numero_control" => VAL(oForm:nUltimoNumControl), ;
                                    "activo"                => oForm:lActivo } )
 
+
+ 
    uResp := oForm:rSeriesConsec:Save()
 
    if ValType( uResp ) = "L" .and. uResp
@@ -203,6 +210,38 @@ return
 
 
 
+function __ValidaSerieConsec( oEnt, oForm )
+/*
+   local hNext
+
+   oForm:cSerieCod := ALLTRIM( oEnt:GetValue() )
+
+   if Empty( oForm:cSerieCod )
+      MsgAlert( "Debe indicar el código de serie.", "Error" )
+      oEnt:SetFocus()
+      return .F.
+   endif
+
+ hNext := oForm:oGEmpresa:GetNextControl( {"serie_codigo" => oForm:cSerieCod } )
+ 
+ view( "hNext: " + hb_ValToStr( hNext ) )
+   
+ //hNext := oForm:oParent:oGEmpresa:GetNextControl({"serie_codigo" => oForm:cSerieCod })
+
+
+   if hb_isHash( hNext ) .and. hb_hHasKey( hNext, "next_control" )
+      oForm:nControlInicio := hNext["next_control"]
+      oForm:nUltimoNumControl := hNext["next_control"]
+     // VIEW(hNext["next_control"])
+      oForm:oEntInicio:Refresh()
+      oForm:oEntUltCtrl:Refresh()
+   endif
+   
+*/
+return .T.
+
+
+
 function __SeriesConsecExit( oForm )
    if oForm:lForce
       return .T.
@@ -213,3 +252,41 @@ function __SeriesConsecExit( oForm )
    endif
 
 return .F.
+
+
+Function __SeriesConsecNum( oEntry,oForm, cType )
+
+   local cMonto := oEntry:GetText()
+   
+   //view(cmonto)
+
+   if !Empty(cMonto) .and. ToNum(cMonto) <= 0
+      //if cLabel = "precio_unitario"
+         View("El valor debe ser mayor a cero")
+         return .f.
+      //endif
+   endif
+   
+   if cType=="inicio"
+    if ToNum(cMonto)>VAL(oForm:nControlFinal)
+    MsgAlert( "El valor debe ser menor o igual al control final.", "Atención" )
+         return .f.
+     endif
+   endif
+   
+   
+   if cType=="final"
+    if ToNum(cMonto)<VAL(oForm:nControlInicio)
+    MsgAlert( "El valor debe ser mayor o igual al control inicial.", "Atención" )
+         return .f.
+     endif
+   endif
+   
+   if cType=="ultimo"
+    if ToNum(cMonto)<VAL(oForm:nControlInicio) .or. ToNum(cMonto)>VAL(oForm:nControlFinal)    
+    MsgAlert( "El valor debe estar dentro de control inicio y control final.", "Atención" )
+         return .f.
+     endif
+   endif
+
+return .t.
