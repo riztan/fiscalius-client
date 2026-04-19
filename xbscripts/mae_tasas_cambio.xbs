@@ -145,45 +145,6 @@ procedure tasacamb_edit( oFormParent, oAliWnd, oModel, lNew )
 return
 
 
-
-procedure tasacamb_delete( oFormParent, oAliWnd, oModel )
-   local nId, nValor, cFecha, cMoneda, rTasa
-   
-   nId     := oModel:GetCol( 1 )
-   cMoneda := oModel:GetCol( 2 )
-   cFecha  := oModel:GetCol( 4 )
-   nValor  := oModel:GetCol( 5 )
-   
-   
-  //  view(nId)
-//	Fecha: "+cFecha)
-   
-  // view(cfecha)
-
-   
-   if !MsgYesNo( "¿Está seguro de eliminar esta tasa de cambio?" + hb_eol() + ;
-                "Moneda: " + cMoneda + hb_eol() + ;
-                "Fecha: " + cFecha + hb_eol() + ;
-                "Valor: " + (nValor), ;
-                "Confirmar eliminación" )
-      return .F.
-   endif
-   
-   rTasa := oFormParent:oGEmpresa:GetTasaCambio( { "id" => nId } )
-    
-   if rTasa:Delete( nId, cMoneda,cFecha )
-      oModel:Delete()
-      MsgInfo( "Tasa de cambio eliminada correctamente.", "Éxito" )
-      return .T.
-   else
-      MsgAlert( "No se pudo eliminar la tasa de cambio.", "Error" )
-      return .F.
-   endif
-
-return .F.
-
-
-
 procedure __TasaSave( oForm )
    local hData, uResp, aIter, lNew, nValor, cMsg
 

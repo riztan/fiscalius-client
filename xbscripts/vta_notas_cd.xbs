@@ -130,17 +130,42 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
           ID "ent_vcmto" RESOURCE ::oRes
 
    DEFINE BOX ::oBoxCondicion ID "box_condicion" RESOURCE ::oRes
+  ::aCondiciones := {"Contado", "Crédito"}
+   ::cCondicion := ""
+   ::cCondicionID := ""
+  // ::cCondicionID := ""
+  // ::aCondiciones := {"Contado", "Crédito"}
+   ::aCondiciones := {}
+   ::aCondicionesID := {}
 
+   DEFINE COMBOBOX ::oComboCondicion ;
+          VAR ::cCondicion ITEMS ::aCondiciones ;
+          ON CHANGE .T. ;
+          OF ::oBoxCondicion
+		  
+	__NCCargarCondiciones( oForm )
    ::cNroControl := ""
    DEFINE LABEL ::oLabNroControl TEXT ::cNroControl ;
           ID "lab_nro_control" RESOURCE ::oRes
 
-   ::aCondiciones := {"Contado", "Crédito"}
-   ::cCondicion := ""
-   DEFINE COMBOBOX ::oComboCondicion ;
-          VAR ::cCondicion ITEMS ::aCondiciones ;
-          ON CHANGE MsgInfo("condicion") ;
-          OF ::oBoxCondicion
+   
+
+   DEFINE BOX ::oBoxSerie ID "box_serie" RESOURCE ::oRes
+   ::cSerie := ""
+   ::cSerieID := ""
+   ::aSeries := {}
+   ::aSeriesID := {}
+  /// ::aSeries :={"A", "B"}
+   
+   
+   DEFINE COMBOBOX ::oComboSerie ;
+          VAR ::cSerie ITEMS ::aSeries ;
+          ON CHANGE .T. ;
+           OF ::oBoxSerie
+		
+  
+   __NCCargarSeries( oForm )
+   
 
    DEFINE BOX ::oBoxDivisa ID "box_divisa" RESOURCE ::oRes
    ::aMonedas := {}
@@ -234,6 +259,15 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    DEFINE MONEY ENTRY ::oEntOtrImp VAR ::nMontoOtrImp ;
           ID "ent_otrimp" RESOURCE ::oRes 
    ::oEntOtrImp:Justify( GTK_JUSTIFY_RIGHT )
+   ::oEntOtrImp:SetEditable( .F. )
+   
+   /*
+   DEFINE BOX ::oBoxImpProd ID "box_impprod" RESOURCE ::oRes     ::nMontoImpProd := 0
+   DEFINE MONEY ENTRY ::oEntImpProd VAR ::nMontoImpProd ;
+          ID "ent_impprod" RESOURCE ::oRes
+   ::oEntImpProd:Justify( GTK_JUSTIFY_RIGHT )
+   ::oEntImpProd:SetEditable( .F. )
+   */
 
    ::nMontoTotal := 0
    DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ;
@@ -550,6 +584,56 @@ function __DocValFecha( oForm, oEnt, dValPrevio )
 
 return lRes
 
+function __NCCargarCondiciones( oForm )
+
+   local rQryCond
+   rQryCond := ::rVentas:Condiciones()
+   ::aCondiciones := {}
+   ::aCondicionesId := {}
+   While !rQryCond:Eof()
+      AADD( ::aCondiciones, ALLTRIM(rQryCond:nombre) )
+      AADD( ::aCondicionesId, hb_ntos(rQryCond:id) )
+      rQryCond:Skip()
+   EndDo
+   
+
+      if hb_isObject( ::oComboCondicion ) .and. LEN( ::aCondiciones ) > 0
+       if VALTYPE(::oComboCondicion:aItems)="A"
+         ::oComboCondicion:RemoveAll()
+       endif
+         ::oComboCondicion:SetItems( ::aCondiciones )
+      endif
+
+
+return .T.
+
+
+
+function __NCCargarSeries( oForm )
+
+   local rQrySeries
+   
+   rQrySeries := ::rEmpresa:SeriesFiscales(5)
+   //view(rQrySeries)
+   ::aSeries := {}
+   ::aSeriesId := {}
+   
+   While !rQrySeries:Eof()
+      AADD( ::aSeries, ALLTRIM(rQrySeries:serie_fiscal) )
+      AADD( ::aSeriesId, hb_ntos(rQrySeries:id) )
+      rQrySeries:Skip()
+   EndDo
+   if hb_isObject( ::oComboSerie )
+    if VALTYPE(::oComboSerie:aItems)="A"
+      ::oComboSerie:RemoveAll()
+    endif
+      ::oComboSerie:SetItems( ::aSeries )
+   endif
+
+
+return .T.
+   
+   
 
 
 procedure __NCChangeEstado( oForm, lConfirm )
@@ -559,6 +643,8 @@ procedure __NCChangeEstado( oForm, lConfirm )
    if ::cComboEstado = "Anulada" .or. ;
       ::cComboEstado = "Cerrada"
       __NCDocsRefresh( oForm, lConfirm )
+	  //__NCCargarSeries( oForm )
+	  //__NCCargarCondiciones( oForm )
       if ::cPreEstado == "B" 
          __NCSave( oForm )
       endif
@@ -662,6 +748,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaG:SetValue( "0" )
       ::oEntIvaS:SetValue( "0" )
       ::oEntOtrImp:SetValue( "0" )
+      //::oEntImpProd:SetValue( "0" )
       ::oEntMonBase:SetValue( "0" )
 
       ::oComboEstado:SetValue("Borrador", .F. ) 
@@ -695,6 +782,24 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLabNroControl:SetValue( ::hDocumento["numero_control"] ) //STRZERO( ::hDocumento["numero_control"], 8) )
       ::oEntCli:SetValue( oModel:GetCol("Cliente") )
       ::cCodCli := oModel:GetCol("cliente_id")
+      
+      ::cCondicionId := oModel:GetCol(::hCol["condicion_id"])
+      ::cCondicion :=  oModel:GetCol(::hCol["condicion_nombre"])
+      ::cSerieId := oModel:GetCol(::hCol["serie_id"])
+      ::cSerie :=  oModel:GetCol(::hCol["serie_fiscal"])
+      
+      // Actualizar el combo para mostrar la condicion seleccionada
+      
+         if hb_isObject( ::oComboCondicion ) .and. !empty( ::aCondiciones )
+             ::oComboCondicion:SetValue( ::cCondicion )
+         endif
+          
+ 		 
+          if hb_isObject( ::oComboSerie ) .and. !empty( ::aSeries )
+             ::oComboSerie:SetValue( ::cSerie )
+          endif
+        
+      
       ::cCodVendedor := oModel:GetCol("vendedor_id")
 
       ::oEntFecha:SetValue( oModel:GetCol("fecha") )
@@ -1343,8 +1448,8 @@ return
 
 
 Procedure __NCSave( oForm, oFormParent )
-   local bSaveDetal, uResp, aIter := ARRAY( 4 )
-
+   local bSaveDetal, uResp, aIter := ARRAY( 4 ), nIdx:=0
+   local hCorrel 
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
        __NCCalcula( oForm )
@@ -1367,6 +1472,19 @@ Procedure __NCSave( oForm, oFormParent )
    //endif
    ::hDocumento["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hDocumento["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
+   nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
+   ::hFactura["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
+
+   nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
+   ::hFactura["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
+   ::cSerieID:=::hFactura["serie_id"]
+   hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 5 )	 
+   if ::cComboEstado == "Cerrada"		
+      if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
+         MsgStop( hCorrel["mensaje"] + ". No se puede cerrar el documento.", "Error" )
+         return
+      endif
+   endif
 
    uResp := ::rDocumento:SetData( ::hDocumento )
 //View( uResp )

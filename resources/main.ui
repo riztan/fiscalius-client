@@ -618,6 +618,11 @@
     <property name="can_focus">False</property>
     <property name="pixbuf">../images/nota_entrega_32.png</property>
   </object>
+  <object class="GtkImage" id="image76">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/series-fiscales.png</property>
+  </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -863,6 +868,15 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="image">image55</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_series_consecutivos">
+                                <property name="label" translatable="yes">Correlativos Fiscales</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image76</property>
                                 <property name="use_stock">False</property>
                               </object>
                             </child>

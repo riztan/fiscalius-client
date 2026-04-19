@@ -141,6 +141,9 @@ procedure vta_pedidos( oFormParent )
           VAR ::cSerie ITEMS ::aSeries ;
           ON CHANGE .T. ;
            OF ::oBoxSerie
+	//::oComboSerie:Enable( .F. )
+	//::oComboSerie:SetSensitive( .F. )
+	::oComboSerie:Disable()
 		
   
    __PedCargarSeries( oForm )
@@ -239,12 +242,14 @@ procedure vta_pedidos( oFormParent )
    DEFINE MONEY ENTRY ::oEntOtrImp VAR ::nMontoOtrImp ;
           ID "ent_otrimp" RESOURCE ::oRes 
    ::oEntOtrImp:Justify( GTK_JUSTIFY_RIGHT )
+   ::oEntOtrImp:SetEditable( .F. )
    
    DEFINE BOX ::oBoxImpProd ID "box_impprod" RESOURCE ::oRes 
    ::nMontoImpProd := 0
    DEFINE MONEY ENTRY ::oEntImpProd VAR ::nMontoImpProd ;
           ID "ent_impprod" RESOURCE ::oRes 
    ::oEntImpProd:Justify( GTK_JUSTIFY_RIGHT )
+   ::oEntImpProd:SetEditable( .F. )
 
    ::nMontoTotal := 0
    DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ;
@@ -281,12 +286,13 @@ procedure vta_pedidos( oFormParent )
    ::oLBoxPedidos:Active() 
 
    //View( oLBoxPedidos:GetCol(1):ClassName() )
-   /*
+   
    ::oLBoxPedidos:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
    ::oLBoxPedidos:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
    ::oLBoxPedidos:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
    ::oLBoxPedidos:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
-   */
+   ::oLBoxPedidos:SetColVisible( 12, .f. )          //- - Ocultamos la serie fiscal
+   
 
    ::oLBoxPedidos:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
    ::oLBoxPedidos:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
@@ -296,7 +302,7 @@ procedure vta_pedidos( oFormParent )
    ::oLBoxPedidos:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
    ::oLBoxPedidos:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
    ::oLBoxPedidos:SetColTitle( 10, "Condicion" )       //- Cambiamos el titulo 
-   ::oLBoxPedidos:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo 
+   //::oLBoxPedidos:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo 
 
    ::hCol := hb_hash()
    ::hCol["numero"]           := 1

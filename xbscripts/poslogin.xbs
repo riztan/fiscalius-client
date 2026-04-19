@@ -142,6 +142,9 @@ procedure poslogin( oParent )
     DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_alicuotas", oForm, oTPuy:oWnd ) ;
              ID "item_alicuotas" RESOURCE ::oRes
 			 
+	DEFINE MENUITEM ACTION oTPuy:RunXBS( "vta_series_consecutivos", oForm, oTPuy:oWnd ) ;
+             ID "item_series_consecutivos" RESOURCE ::oRes
+			 
       DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_inventario", oForm, oTPuy:oWnd ) ;
              ID "item_productos" RESOURCE ::oRes
 			 
