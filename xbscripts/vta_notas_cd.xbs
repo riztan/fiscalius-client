@@ -739,6 +739,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    local oCol, hIva
    local oErr, aBox
    local nMonRetIVA := 0, nPorRetIVA := 0, nCompRetIVA := 0
+   local nLen := 0
 
    default lNew := .T.
    ::lSilence := .t.
@@ -831,14 +832,14 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
       ::oEntIvaS:SetValue( "0" )
-      // Usar otros_imp desde el servidor si existe, sino inicializar en 0
-      if hb_hHasKey( ::hDocumento, "otros_imp" )
-			::oEntOtrImp:SetValue( TRANSFORM( ::hDocumento["otros_imp"], P_92 ) )        
+// Usar otros_imp e imp_prod desde el servidor si existe, sino inicializar en 0
+       if hb_hHasKey( ::hDocumento, "otros_imp" ) .and. hb_hHasKey( ::hDocumento, "imp_prod" )
+ 			::oEntOtrImp:SetValue( TRANSFORM( ::hDocumento["otros_imp"], P_92 ) )        
              ::oEntImpProd:SetValue( TRANSFORM( ::hDocumento["imp_prod"], P_92 ) )
        else
-          ::oEntOtrImp:SetValue( "0" )
-          ::oEntImpProd:SetValue( "0" )
-      endif
+           ::oEntOtrImp:SetValue( "0" )
+           ::oEntImpProd:SetValue( "0" )
+       endif
 
       ::oEntRetIva:SetValue( "" )
       ::oEntRetIvaF:SetValue( "" )
@@ -909,6 +910,8 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    if !::lNew
       aData := {}
       FOR EACH aLine IN ::rFactDetal:GetData()
+         // Verificar longitud antes de acceder
+         nLen := LEN( aLine )
          AADD( aData, {hb_ntos(aLine[1]), hb_ntos(aLine[2]), aLine[3], ;
                        aLine[4], hb_ntos(aLine[5]),;
                        hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
@@ -921,11 +924,11 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
                        aLine[18], ;
                        aLine[19], ;
                        hb_ntos(aLine[20]), ;
-                       hb_ntos(aLine[21]), ;
-                       hb_ntos(iif(aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0)),;
+                       hb_ntos(iif(nLen >= 21, aLine[21], 0)), ;
+                       hb_ntos(iif(nLen >= 21 .and. aLine[5]>0, ROUND(aLine[21]/aLine[5],2), 0)),;
                        hb_ntos(aLine[5]),;
-                       hb_ntos(aLine[22]), ;
-                       hb_ntos(iif(aLine[5]>0, ROUND(aLine[22]/aLine[5],2), 0))})
+                       hb_ntos(iif(nLen >= 22, aLine[22], 0)), ;
+                       hb_ntos(iif(nLen >= 22 .and. aLine[5]>0, ROUND(aLine[22]/aLine[5],2), 0))})
       NEXT
    else
       aData := {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0,0,0,0}}
@@ -956,10 +959,10 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
                      {"item",           "N",10, 0},;
                      {"imp_pvp",        "N",13, 2},;
                      {"imp_pvp_unit",   "N",13, 2},;
-                     {"cant_maxima",    "N",10, 2}, ;
-                     {"imp_produccion",        "N",13, 2},;
-                     {"imp_prod_unit",   "N",13, 2};
-                    } ;
+                     {"cant_maxima",    "N",10, 2},;
+                     {"imp_produccion", "N",13, 2},;
+                     {"imp_prod_unit",  "N",13, 2};
+                     } ;
              DATA   aData //{{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0,0}}
 
       DEFINE LISTBOX ::oLBoxDetal ;
@@ -1025,7 +1028,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
                              aLine[ 6], aLine[ 7], aLine[ 8], aLine[ 9], aLine[10], ;
                              aLine[11], aLine[12], aLine[13], aLine[14], aLine[15], ;
                              aLine[16], aLine[17], aLine[18], aLine[19], aLine[20], ;
-                             aLine[21], aLine[21]/aLine[5], aLine[5], aLine[22], aLine[22]/aLine[5]
+                             aLine[21], aLine[22], aLine[23], aLine[24], aLine[25]
             CATCH oErr
                View( "__vtaNotaCD: " + oErr:Description )
             END
