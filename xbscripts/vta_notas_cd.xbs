@@ -333,9 +333,23 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    ::oLBoxFacs:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo 
    ::oLBoxFacs:SetColTitle( 6, "monto base" )       //- Cambiamos el titulo 
 
-   //::oLBoxFacs:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
+//::oLBoxFacs:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 
-   //-- Botones varios.
+   ::hCol := hb_hash()
+   ::hCol["numero"]           := 1
+   ::hCol["cliente_id"]       := 2
+   ::hCol["cliente"]          := 3
+   ::hCol["fecha"]            := 4
+   ::hCol["fecha_vcmto"]      := 5
+   ::hCol["monto_base"]       := 6
+   ::hCol["estado"]           := 7
+   ::hCol["vendedor_id"]      := 8
+   ::hCol["condicion_id"]     := 9
+   ::hCol["condicion_nombre"] := 10
+   ::hCol["serie_id"]         := 11
+   ::hCol["serie_fiscal"]     := 12
+
+    //-- Botones varios.
    DEFINE BUTTON ::oBtnSalir ACTION ::oNotaWnd:End();
           ID "btn_salir" RESOURCE ::oRes
 
