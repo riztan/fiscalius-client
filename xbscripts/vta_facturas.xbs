@@ -1,3 +1,4 @@
+
 /* vta_factura.xbs
  *
  */
@@ -412,6 +413,9 @@ procedure __ModFactsRefresh(oForm)
 //View( ::oModFacturas:oTreeView:IsGetSelected( aIter ) )
       ::oModFacturas:oTreeView:ClearModel(.t.)
 FOR EACH aLine IN ::rFacturas:GetData()
+          
+          
+          
           APPEND LIST_STORE ::oModFacturas:oLbx ITER aIter ;
                  VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
                         ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
@@ -542,8 +546,8 @@ procedure __VtaChangeEstado( oForm, lConfirm )
    if ::cComboEstado = "Anulada" .or. ;
       ::cComboEstado = "Cerrada"
       __FactRefresh( oForm, lConfirm )
-	  __FactCargarSeries( oForm )
-	  __FactCargarCondiciones( oForm )
+	  //__FactCargarSeries( oForm )
+	 // __FactCargarCondiciones( oForm )
       if ::cPreEstado == "B" 
          __VtaSave( oForm )
       endif
@@ -655,6 +659,9 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
       ::oEntIvaS:SetValue( "0" )
+      
+      
+      
       // Usar otros_imp desde el servidor si existe, sino inicializar en 0
       if hb_hHasKey( ::hFactura, "otros_imp" )
 			::oEntOtrImp:SetValue( TRANSFORM( ::hFactura["otros_imp"], P_92 ) )        
@@ -953,6 +960,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
    __FactRefresh( oForm, .F. )
    __Calcula(oForm)
 
+   
    FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
                       {::oBoxIvaRed, ::oEntIvaR}, ;
                       {::oBoxIvaGen, ::oEntIvaG}, ;
@@ -1123,6 +1131,7 @@ procedure __Calcula( oForm )
    ::oEntImpProd:SetValue("0") // Initialize imp_prod
    ::hFactura["iva"] := hb_hash()  // Initialize IVA hash here, once
    ::bDetalCode := {|oTView, pModel, aIter| __CalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
+   
    if !hb_isObject( ::oLBoxDetal )
       return
    endif
@@ -1218,6 +1227,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
       ::hFactura[ "islr" ]["monto"      ] := ToNum( ::cIslrMonto )
       ::hFactura[ "islr" ]["fecha"      ] := CTOD( ::cIslrFecha )   
    endif
+
 
 nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
                      ToNum( ::oEntIvaR:GetValue() ) +;
@@ -1417,13 +1427,14 @@ Procedure __VtaSave( oForm, oFormParent )
    ::hFactura["orden_compra"     ] := ::cOrdenCompra               // Orden de Compra
    ::hFactura["fecha"            ] := CTOD(::oEntFecha:GetValue()) // Fecha
    ::hFactura["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue()) // Vencimiento
-   ::hFactura["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
+   //::hFactura["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
    ::hFactura["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
    ::hFactura["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
    ::hFactura["imp_prod"         ] := ::oEntImpProd:GetValue()     // Impuesto Produccion
    ::hFactura["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
 
+ 
  hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 4 )	 
 	 
    if ::cComboEstado == "Cerrada"		
@@ -1433,11 +1444,11 @@ Procedure __VtaSave( oForm, oFormParent )
       endif
    endif
 
-nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
+   nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
    ::hFactura["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
   ::cCondicionID:=::hFactura["condicion_id"]
 
-  //view(::hFactura["condicion_id"])
+//  view(::hFactura["condicion_id"])
  // return
    
    nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
@@ -1462,6 +1473,7 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
 //View( ::hFactura )
 //view(::hFactura["condicion_id"])
 //RETURN
+
    uResp := ::rFactura:Save()
 
    // Verificar si hubo error
@@ -1627,6 +1639,7 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                   ::oModDetal:aIter, __IVAPORCEN, ;
                   STR( rProductos:iva_porcentaje ))
 
+     
       __SetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, 21, ; // imp_pvp
