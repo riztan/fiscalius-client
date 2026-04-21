@@ -198,7 +198,7 @@ procedure vta_libro_xlsx( oForm, rQry )
       if lower(rQry:tipo_documento) = "factura"
          xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nro de Factura
       endif
-      xlsx_set_string ::worksheet cell: "I"+hb_ntos(i) value: rQry:numero_control  //Nro de Control Factura
+      xlsx_set_string ::worksheet cell: "I"+hb_ntos(i) value: PADL(hb_ntos(rQry:numero_control), 8, "0")  //Nro de Control Factura
       if lower(rQry:tipo_documento) = "nota de débito"
          xlsx_set_string ::worksheet cell: "J"+hb_ntos(i) value: PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nota de Débito
       endif
