@@ -1542,7 +1542,7 @@ return
 
 Procedure __NCSave( oForm, oFormParent )
    local bSaveDetal, uResp, aIter := ARRAY( 4 ), nIdx:=0
-   local hCorrel 
+   local hCorrel, lDetal
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
        __NCCalcula( oForm )
@@ -1568,18 +1568,12 @@ Procedure __NCSave( oForm, oFormParent )
    ::hDocumento["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hDocumento["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
   
-  
-  
-  
-   //View( uResp )
-   nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
+nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
    ::hDocumento["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
 
    nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
    ::hDocumento["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
    ::cSerieID:=::hDocumento["serie_id"]
-   
-  
    hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 5 )	 
    if ::cComboEstado == "Cerrada"		
       if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
@@ -1598,16 +1592,9 @@ Procedure __NCSave( oForm, oFormParent )
       return
    endif
    
-   
-  //View( ::hDocumento )
-   
-  // return
-
-   //-- Actualizar detalles de la nota.
+//-- Actualizar detalles de la nota.
    bSaveDetal := {|oTView, pModel, aIter| __NCSaveDetal( oTView, pModel, aIter, oForm )  }
 
-
-   
    uResp := ::rDocumento:Save()
    if hb_isLogical( uResp ) .and. uResp
 //View("atualizamos hDocumento ")
@@ -1617,9 +1604,8 @@ Procedure __NCSave( oForm, oFormParent )
       //   para obtener primero el nro del documento
       ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
-
-//View( ::rDocumento:SetDetal( ::aDetal ) )
-      if !::rDocumento:SetDetal( ::aDetal )
+      lDetal := ::rDocumento:SetDetal( ::aDetal )
+      if empty(lDetal) .or. !lDetal
          ::oLabInfo:SetText("No se actualizaron los detalles" )
          uResp := .F.
       endif

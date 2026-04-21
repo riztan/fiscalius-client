@@ -6,18 +6,145 @@
   <object class="GtkImage" id="gtk-about">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
+    <property name="pixbuf">../images/info_32.png</property>
+    <property name="icon-size">5</property>
+  </object>
+  <object class="GtkImage" id="gtk-about1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
     <property name="pixbuf">../images/about_us_32.png</property>
+    <property name="icon-size">5</property>
+  </object>
+  <object class="GtkImage" id="gtk-about2">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/about_us_32.png</property>
+    <property name="icon-size">5</property>
+  </object>
+  <object class="GtkImage" id="gtk-about3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/info_32.png</property>
+    <property name="icon-size">5</property>
+  </object>
+  <object class="GtkImage" id="gtk-about4">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/info_32.png</property>
+    <property name="icon-size">5</property>
+  </object>
+  <object class="GtkImage" id="gtk-about5">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/info_32.png</property>
+    <property name="icon-size">5</property>
+  </object>
+  <object class="GtkImage" id="gtk-about6">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/info_32.png</property>
     <property name="icon-size">5</property>
   </object>
   <object class="GtkImage" id="gtk-home">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="pixbuf">../images/cashbox02_32.png</property>
+    <property name="pixbuf">../images/clients_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-home1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/clients_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-home2">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/clients_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-home3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="xalign">0.43000000715255737</property>
+    <property name="pixbuf">../images/clients_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-home4">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/clients_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-home5">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/clients_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-home6">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="xalign">0.43000000715255737</property>
+    <property name="pixbuf">../images/clients_32.png</property>
   </object>
   <object class="GtkImage" id="gtk-orientation">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/user_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
     <property name="stock">gtk-orientation-portrait</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation10">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/ctasxcobrar_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation2">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-orientation-portrait</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/user_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation4">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/user_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation5">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/user_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation6">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/ventas_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation7">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/ventas_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation8">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/auditor_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation9">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/auditor_32.png</property>
   </object>
   <object class="GtkImage" id="gtk-page-setup">
     <property name="visible">True</property>
@@ -25,10 +152,82 @@
     <property name="pixbuf">../images/setting01_32.png</property>
     <property name="icon-size">3</property>
   </object>
+  <object class="GtkImage" id="gtk-page-setup1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/setting01_32.png</property>
+    <property name="icon-size">3</property>
+  </object>
+  <object class="GtkImage" id="gtk-page-setup2">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/setting01_32.png</property>
+    <property name="icon-size">3</property>
+  </object>
+  <object class="GtkImage" id="gtk-page-setup3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/menu_32.png</property>
+    <property name="icon-size">3</property>
+  </object>
+  <object class="GtkImage" id="gtk-page-setup4">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/gear_32.png</property>
+    <property name="icon-size">3</property>
+  </object>
+  <object class="GtkImage" id="gtk-page-setup5">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/gear_32.png</property>
+    <property name="icon-size">3</property>
+  </object>
+  <object class="GtkImage" id="gtk-page-setup6">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/transaction_32.png</property>
+    <property name="icon-size">3</property>
+  </object>
+  <object class="GtkImage" id="gtk-page-setup7">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/report_32.png</property>
+    <property name="icon-size">3</property>
+  </object>
   <object class="GtkImage" id="gtk-quit">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
+    <property name="pixbuf">../images/exit02_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-quit1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
     <property name="pixbuf">../images/exit01_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-quit2">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/exit01_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-quit3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/exit02_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-quit4">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/exit02_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-quit5">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/exit02_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-quit6">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/exit02_32.png</property>
   </object>
   <object class="GtkImage" id="gtk-select-font">
     <property name="visible">True</property>
@@ -48,7 +247,7 @@
   <object class="GtkImage" id="image11">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="pixbuf">../images/theme03_32.png</property>
+    <property name="pixbuf">../images/palette_32.png</property>
   </object>
   <object class="GtkImage" id="image12">
     <property name="visible">True</property>
@@ -70,7 +269,7 @@
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="tooltip_text" translatable="yes">Cerrar y salir del sistema.</property>
-    <property name="pixbuf">../images/exit01_32.png</property>
+    <property name="pixbuf">../images/exit02_32.png</property>
   </object>
   <object class="GtkImage" id="image16">
     <property name="visible">True</property>
@@ -111,30 +310,301 @@
     <property name="tooltip_text" translatable="yes">Abre en el navegador la página web de la tienda virtual seleccionada</property>
     <property name="pixbuf">../images/www_32.png</property>
   </object>
+  <object class="GtkImage" id="image23">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="tooltip_text" translatable="yes">Abre en el navegador la página web de la tienda virtual seleccionada</property>
+    <property name="pixbuf">../images/www_32.png</property>
+  </object>
+  <object class="GtkImage" id="image24">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/theme03_32.png</property>
+  </object>
+  <object class="GtkImage" id="image25">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/buscar01_32.png</property>
+  </object>
+  <object class="GtkImage" id="image26">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/shop01_32.png</property>
+    <property name="icon-size">5</property>
+  </object>
+  <object class="GtkImage" id="image27">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/cashbox02_32.png</property>
+  </object>
+  <object class="GtkImage" id="image28">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/help01_32.png</property>
+  </object>
+  <object class="GtkImage" id="image29">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/theme03_32.png</property>
+  </object>
   <object class="GtkImage" id="image3">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="stock">gtk-new</property>
+  </object>
+  <object class="GtkImage" id="image30">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/buscar01_32.png</property>
+  </object>
+  <object class="GtkImage" id="image31">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/shop01_32.png</property>
+    <property name="icon-size">5</property>
+  </object>
+  <object class="GtkImage" id="image32">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/cashbox02_32.png</property>
+  </object>
+  <object class="GtkImage" id="image33">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/help01_32.png</property>
+  </object>
+  <object class="GtkImage" id="image34">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/palette_32.png</property>
+  </object>
+  <object class="GtkImage" id="image35">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/knowledge_base_32.png</property>
+  </object>
+  <object class="GtkImage" id="image36">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/shop01_32.png</property>
+    <property name="icon-size">5</property>
+  </object>
+  <object class="GtkImage" id="image37">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/cashbox02_32.png</property>
+  </object>
+  <object class="GtkImage" id="image38">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/help01_32.png</property>
+  </object>
+  <object class="GtkImage" id="image39">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/help01_32.png</property>
   </object>
   <object class="GtkImage" id="image4">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="stock">gtk-new</property>
   </object>
+  <object class="GtkImage" id="image40">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/palette_32.png</property>
+  </object>
+  <object class="GtkImage" id="image41">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/knowledge_base_32.png</property>
+  </object>
+  <object class="GtkImage" id="image42">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/shop01_32.png</property>
+    <property name="icon-size">5</property>
+  </object>
+  <object class="GtkImage" id="image43">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/cashbox02_32.png</property>
+  </object>
+  <object class="GtkImage" id="image44">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/help01_32.png</property>
+  </object>
+  <object class="GtkImage" id="image45">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/palette_32.png</property>
+  </object>
+  <object class="GtkImage" id="image46">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/knowledge_base_32.png</property>
+  </object>
+  <object class="GtkImage" id="image47">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/shop01_32.png</property>
+    <property name="icon-size">5</property>
+  </object>
+  <object class="GtkImage" id="image48">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/cashbox02_32.png</property>
+  </object>
+  <object class="GtkImage" id="image49">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/pencil_32.png</property>
+  </object>
   <object class="GtkImage" id="image5">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="stock">gtk-new</property>
+  </object>
+  <object class="GtkImage" id="image50">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/factura_32.png</property>
+  </object>
+  <object class="GtkImage" id="image51">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_credito_32.png</property>
+  </object>
+  <object class="GtkImage" id="image52">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_debito_32.png</property>
+  </object>
+  <object class="GtkImage" id="image53">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_entrega_32.png</property>
+  </object>
+  <object class="GtkImage" id="image54">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/payment_32.png</property>
+  </object>
+  <object class="GtkImage" id="image55">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/dollar_32.png</property>
+  </object>
+  <object class="GtkImage" id="image56">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/money_32.png</property>
+  </object>
+  <object class="GtkImage" id="image57">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/tax_32.png</property>
+  </object>
+  <object class="GtkImage" id="image58">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/porcen_32.png</property>
+  </object>
+  <object class="GtkImage" id="image59">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/products_32.png</property>
   </object>
   <object class="GtkImage" id="image6">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="stock">gtk-new</property>
   </object>
+  <object class="GtkImage" id="image60">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/payment_32.png</property>
+  </object>
+  <object class="GtkImage" id="image61">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/money_32.png</property>
+  </object>
+  <object class="GtkImage" id="image62">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/dollar_32.png</property>
+  </object>
+  <object class="GtkImage" id="image63">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/tax_32.png</property>
+  </object>
+  <object class="GtkImage" id="image64">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/porcen_32.png</property>
+  </object>
+  <object class="GtkImage" id="image65">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/palette_32.png</property>
+  </object>
+  <object class="GtkImage" id="image66">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/products_32.png</property>
+  </object>
+  <object class="GtkImage" id="image67">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/factura_32.png</property>
+  </object>
+  <object class="GtkImage" id="image68">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_credito_32.png</property>
+  </object>
+  <object class="GtkImage" id="image69">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_debito_32.png</property>
+  </object>
   <object class="GtkImage" id="image7">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="stock">gtk-new</property>
+  </object>
+  <object class="GtkImage" id="image70">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/pedido_32.png</property>
+  </object>
+  <object class="GtkImage" id="image71">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/factura_32.png</property>
+  </object>
+  <object class="GtkImage" id="image72">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_credito_32.png</property>
+  </object>
+  <object class="GtkImage" id="image73">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_entrega_32.png</property>
+  </object>
+  <object class="GtkImage" id="image74">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_debito_32.png</property>
+  </object>
+  <object class="GtkImage" id="image75">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/nota_entrega_32.png</property>
   </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
@@ -154,157 +624,6 @@
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
-          <object class="GtkVBox" id="box_menu">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <child>
-              <object class="GtkMenuBar" id="menubar1">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <child>
-                  <object class="GtkImageMenuItem" id="mnu_config">
-                    <property name="label" translatable="yes">_Configuración</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="use_underline">True</property>
-                    <property name="image">gtk-page-setup</property>
-                    <property name="use_stock">False</property>
-                    <child type="submenu">
-                      <object class="GtkMenu" id="menu1">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <child>
-                          <object class="GtkImageMenuItem" id="itm_user">
-                            <property name="label">_Usuario</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="use_underline">True</property>
-                            <property name="image">gtk-orientation</property>
-                            <property name="use_stock">False</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkImageMenuItem" id="itm_theme">
-                            <property name="label" translatable="yes">T_ema</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="use_underline">True</property>
-                            <property name="image">image11</property>
-                            <property name="use_stock">False</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkImageMenuItem" id="itm_cashboxes">
-                            <property name="label">_Cajas</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">Gestión de las cajas de dinero</property>
-                            <property name="use_underline">True</property>
-                            <property name="image">gtk-home</property>
-                            <property name="use_stock">False</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkSeparatorMenuItem" id="separatormenuitem1">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkImageMenuItem" id="itm_quit">
-                            <property name="label">_Salir</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="related_action">salir</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">Salir del sistema	</property>
-                            <property name="use_underline">True</property>
-                            <property name="image">gtk-quit</property>
-                            <property name="use_stock">False</property>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkImageMenuItem" id="mnu_ver">
-                    <property name="label" translatable="yes">_Ver</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="use_underline">True</property>
-                    <property name="image">image12</property>
-                    <property name="use_stock">False</property>
-                    <child type="submenu">
-                      <object class="GtkMenu" id="itm_ver">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <child>
-                          <object class="GtkImageMenuItem" id="itm_www_shop">
-                            <property name="label" translatable="yes">_Tienda Virtual</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">Ir a la tienda virtual...	</property>
-                            <property name="use_underline">True</property>
-                            <property name="image">image17</property>
-                            <property name="use_stock">False</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkImageMenuItem" id="itm_cashbox">
-                            <property name="label" translatable="yes">Caja</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="image">image19</property>
-                            <property name="use_stock">False</property>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkImageMenuItem" id="menuitem4">
-                    <property name="label" translatable="yes">_Ayuda</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="use_underline">True</property>
-                    <property name="image">image14</property>
-                    <property name="use_stock">False</property>
-                    <child type="submenu">
-                      <object class="GtkMenu" id="menu3">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <child>
-                          <object class="GtkImageMenuItem" id="itm_about">
-                            <property name="label">_Acerca de...</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="use_underline">True</property>
-                            <property name="image">gtk-about</property>
-                            <property name="use_stock">False</property>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="padding">2</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
           <object class="GtkVBox" id="box_barbut">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
@@ -317,13 +636,33 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkToolButton" id="tb_pos">
+                      <object class="GtkToolItem" id="tb_modulo">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="tooltip_text" translatable="yes">Punto de Venta</property>
-                        <property name="label" translatable="yes">POS</property>
-                        <property name="use_underline">True</property>
-                        <property name="icon_widget">image13</property>
+                        <property name="border_width">4</property>
+                        <child>
+                          <object class="GtkHBox" id="box_modulo">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="border_width">4</property>
+                            <property name="spacing">4</property>
+                            <child>
+                              <object class="GtkLabel" id="lab_modulo">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Modulo: </property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                        </child>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -341,21 +680,21 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkToolItem" id="tb_shop">
+                      <object class="GtkToolItem" id="tb_empresa">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="border_width">4</property>
                         <child>
-                          <object class="GtkHBox" id="box_shops">
+                          <object class="GtkHBox" id="box_empresas">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="border_width">4</property>
                             <property name="spacing">4</property>
                             <child>
-                              <object class="GtkLabel" id="lab_shop">
+                              <object class="GtkLabel" id="lab_empresa">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">Tienda: </property>
+                                <property name="label" translatable="yes">Empresa: </property>
                               </object>
                               <packing>
                                 <property name="expand">True</property>
@@ -364,7 +703,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkHBox" id="box_shop">
+                              <object class="GtkHBox" id="box_empresa">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <child>
@@ -382,7 +721,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="use_underline">True</property>
-                                <property name="icon_widget">image22</property>
+                                <property name="icon_widget">image23</property>
                               </object>
                               <packing>
                                 <property name="expand">True</property>
@@ -402,40 +741,6 @@
                       <object class="GtkSeparatorToolItem" id="toolbutton2">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="homogeneous">True</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkToolItem" id="tb_lang">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="border_width">4</property>
-                        <child>
-                          <object class="GtkHBox" id="box_lang">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="border_width">4</property>
-                            <property name="spacing">4</property>
-                            <child>
-                              <object class="GtkLabel" id="lab_lang">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">Idioma: </property>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <placeholder/>
-                            </child>
-                          </object>
-                        </child>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -486,6 +791,377 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="hbox2">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkVBox" id="box_menu">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkMenuBar" id="menubar1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="mnu_config">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip_text" translatable="yes">Configuraciones generales</property>
+                        <property name="image">gtk-page-setup3</property>
+                        <property name="use_stock">False</property>
+                        <child type="submenu">
+                          <object class="GtkMenu" id="menu1">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_usuarios">
+                                <property name="label" translatable="yes">_Usuarios</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">gtk-orientation3</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_mediospag">
+                                <property name="label" translatable="yes">Medios de Pago</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image54</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_monedas">
+                                <property name="label" translatable="yes">Monedas</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image56</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_tasas_cambio">
+                                <property name="label" translatable="yes">Tasas de Cambio</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image55</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_alicuotas">
+                                <property name="label" translatable="yes">Alicuotas de IVA</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image57</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_ITF">
+                                <property name="label" translatable="yes">IGTF</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image58</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_theme">
+                                <property name="label" translatable="yes">_Temas</property>
+                                <property name="can_focus">False</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image34</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkSeparatorMenuItem" id="separatormenuitem2">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_clientes">
+                                <property name="label" translatable="yes">_Clientes</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">gtk-home3</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_productos">
+                                <property name="label" translatable="yes">Productos</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image59</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkSeparatorMenuItem" id="menuitem3">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkSeparatorMenuItem" id="separatormenuitem1">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_quit">
+                                <property name="label" translatable="yes">_Salir</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="related_action">salir</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Salir del sistema	</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">gtk-quit3</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="padding">2</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkHBox" id="hbox_menu">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkMenuBar" id="menubar">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="mnu_ventas">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip_text" translatable="yes">Registro de ventas</property>
+                        <property name="image">gtk-page-setup6</property>
+                        <property name="use_stock">False</property>
+                        <child type="submenu">
+                          <object class="GtkMenu" id="menu2">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_pedidos">
+                                <property name="label" translatable="yes">_Pedido</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Crea o Edita Pedidos</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image70</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_factura">
+                                <property name="label" translatable="yes">_Factura</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Crea o Edita Facturas</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image71</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_notacredito">
+                                <property name="label" translatable="yes">Nota de _Crédito</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Crea o Edita una Nota de Crédito</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image72</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_notadebito">
+                                <property name="label" translatable="yes">Nota de _Débito</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Crea o Edita una Nota de Débito</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image74</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_notaentrega">
+                                <property name="label" translatable="yes">Nota de _Entrega</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Crea o Edita una Nota de Entrega</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image73</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkMenuBar" id="menubar3">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="mnu_report">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="tooltip_text" translatable="yes">Informes </property>
+                        <property name="image">gtk-page-setup7</property>
+                        <property name="use_stock">False</property>
+                        <child type="submenu">
+                          <object class="GtkMenu" id="menu3">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_vta_libro">
+                                <property name="label" translatable="yes">Libro de Ventas</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Emite Libro de Ventas</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">gtk-orientation7</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_ctasxcobrar">
+                                <property name="label" translatable="yes">_Cuentas por Cobrar</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Permite hacer análisis de cuentas por cobrar</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">gtk-orientation10</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_igtf">
+                                <property name="label" translatable="yes">IGTF _Recibidos</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Consulta de IGTF recibidos en cobranzas</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">gtk-orientation9</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_auditoria">
+                                <property name="label" translatable="yes">_Auditoria</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Consulta registros de auditoría</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">gtk-orientation8</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_usabilidad">
+                                <property name="label" translatable="yes">_Usabilidad</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Consulta registro de usabilidad</property>
+                                <property name="use_underline">True</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkMenuBar" id="menubar2">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkImageMenuItem" id="menuitem1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="tooltip_text" translatable="yes">Ayuda</property>
+                    <property name="image">image44</property>
+                    <property name="use_stock">False</property>
+                    <child type="submenu">
+                      <object class="GtkMenu" id="menu4">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="GtkImageMenuItem" id="itm_about">
+                            <property name="label" translatable="yes">Acerca de...</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="image">gtk-about5</property>
+                            <property name="use_stock">False</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="padding">2</property>
+                <property name="pack_type">end</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
             <property name="position">1</property>
           </packing>
         </child>
@@ -514,36 +1190,30 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
+                  <object class="GtkFixed" id="fixed2">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImage" id="img_fondo">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="pixbuf">../images/prestashop-fondo-01.png</property>
+                        <property name="icon-size">0</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
                   <object class="GtkHBox" id="hbox4">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkHBox" id="box_cashbox">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="border_width">2</property>
-                        <property name="spacing">4</property>
-                        <child>
-                          <object class="GtkLabel" id="label2">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Caja:</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">False</property>
-                        <property name="position">0</property>
-                      </packing>
+                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>
@@ -555,11 +1225,8 @@
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">False</property>
-                    <property name="position">0</property>
+                    <property name="position">1</property>
                   </packing>
-                </child>
-                <child>
-                  <placeholder/>
                 </child>
                 <child>
                   <placeholder/>
@@ -591,18 +1258,7 @@
                   <placeholder/>
                 </child>
                 <child>
-                  <object class="GtkImage" id="img_fondo">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="pixbuf">../images/prestashop-fondo-01.png</property>
-                    <property name="icon-size">0</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">False</property>
-                    <property name="pack_type">end</property>
-                    <property name="position">1</property>
-                  </packing>
+                  <placeholder/>
                 </child>
               </object>
               <packing>
@@ -624,6 +1280,17 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="spacing">2</property>
+            <child>
+              <object class="GtkLabel" id="lab_msgs">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -652,15 +1319,14 @@ Fotos: Alexas_Fotos en Pixabay</property>
     <property name="type_hint">dialog</property>
     <property name="transient_for">wnd_main</property>
     <property name="opacity">0.92000000000000004</property>
-    <property name="program_name">Papaya POS</property>
-    <property name="version">1.0.0</property>
+    <property name="program_name">Fiscalius</property>
+    <property name="version">1.0</property>
     <property name="copyright" translatable="yes">Licencia bajo Software Libre GPLv3</property>
-    <property name="comments" translatable="yes">Punto de venta integrado con prestashop 1.7
-Papaya POS está desarrollado en TPuy.</property>
-    <property name="license" translatable="yes">Papaya POS Versión 1.0.0 
-Copyright (c) 2019 
+    <property name="comments" translatable="yes">Software de control de registros fiscales</property>
+    <property name="license" translatable="yes">Fiscalius Versión 1.0.0 
+Copyright (c) 2026 
 
-Desarrollador:
+Desarrollador Principal:
        Riztan Gutierrez.
 
 Licencia LGPL.
@@ -678,7 +1344,10 @@ si no, escriba a la Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 (o visite el sitio web http://www.gnu.org/).
 
 </property>
-    <property name="authors">Riztan Gutiérrez - riztan@gmail.com
+    <property name="authors">Fiscalius es desarrollado por:
+Riztan Gutiérrez - riztan@gmail.com
+Draiver Rojas - draiver33@gmail.com
+
 Agradecimiento muy especial a:
 Rafael Carmona (Rafa thefull)
 Federico D'Maussion
@@ -686,7 +1355,8 @@ Daniel García
 Javier Parada
 Walter Negro
 y toda la comunidad de Software Libre, especialmente Harbour-Project</property>
-    <property name="documenters">Riztan Gutierrez</property>
+    <property name="documenters">Riztan Gutierrez
+Draiver Rojas</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>
@@ -708,7 +1378,7 @@ y toda la comunidad de Software Libre, especialmente Harbour-Project</property>
           <object class="GtkImage" id="image20">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="pixbuf">../images/papaya2.ico</property>
+            <property name="pixbuf">../images/gadaptapro2.ico</property>
           </object>
           <packing>
             <property name="expand">True</property>
@@ -741,13 +1411,13 @@ y toda la comunidad de Software Libre, especialmente Harbour-Project</property>
                 </child>
                 <child>
                   <object class="GtkLinkButton" id="link_tpuy">
-                    <property name="label" translatable="yes">www.gtxbase.org</property>
+                    <property name="label" translatable="yes">riztan.wordpress.com</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="has_tooltip">True</property>
                     <property name="relief">none</property>
-                    <property name="uri">http://www.gtxbase.org/index.php/es/tpuy-mnu</property>
+                    <property name="uri">https://riztan.wordpress.com</property>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -763,43 +1433,7 @@ y toda la comunidad de Software Libre, especialmente Harbour-Project</property>
               </packing>
             </child>
             <child>
-              <object class="GtkHBox" id="hbox10">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <child>
-                  <object class="GtkLabel" id="label6">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Información de PrestaShop:</property>
-                  </object>
-                  <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLinkButton" id="link_prestashop">
-                    <property name="label" translatable="yes">www.prestashop.com</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="has_tooltip">True</property>
-                    <property name="relief">none</property>
-                    <property name="uri">http://www.prestashop.com</property>
-                  </object>
-                  <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">2</property>
-              </packing>
+              <placeholder/>
             </child>
             <child>
               <object class="GtkTextView" id="textview1">
@@ -836,338 +1470,6 @@ y toda la comunidad de Software Libre, especialmente Harbour-Project</property>
             <property name="expand">True</property>
             <property name="fill">True</property>
             <property name="position">3</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-  </object>
-  <object class="GtkWindow" id="wnd_cashbox">
-    <property name="can_focus">False</property>
-    <property name="border_width">4</property>
-    <child>
-      <object class="GtkVBox" id="vbox5">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <child>
-          <object class="GtkFixed" id="fixed2">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-          </object>
-          <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkHBox" id="hbox6">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="border_width">2</property>
-            <property name="spacing">2</property>
-            <child>
-              <object class="GtkVBox" id="vbox6">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <child>
-                  <object class="GtkFrame" id="frame4">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label_xalign">0</property>
-                    <child>
-                      <object class="GtkAlignment" id="alignment4">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="left_padding">12</property>
-                        <child>
-                          <object class="GtkVBox" id="vbox9">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="spacing">3</property>
-                            <child>
-                              <object class="GtkVBox" id="box_cono">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="spacing">3</property>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkHSeparator" id="hseparator1">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="padding">4</property>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkHBox" id="hbox9">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <child>
-                                  <object class="GtkLabel" id="label11">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">TOTAL: </property>
-                                    <attributes>
-                                      <attribute name="weight" value="ultrabold"/>
-                                      <attribute name="size" value="14000"/>
-                                    </attributes>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">0</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="lab_cono_total">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="xalign">0.89999997615814209</property>
-                                    <property name="label" translatable="yes">1234.56</property>
-                                    <attributes>
-                                      <attribute name="weight" value="ultrabold"/>
-                                      <attribute name="size" value="14000"/>
-                                    </attributes>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">1</property>
-                                  </packing>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">2</property>
-                              </packing>
-                            </child>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child type="label">
-                      <object class="GtkLabel" id="label10">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">&lt;b&gt;&lt;i&gt;Distribución monetaria: &lt;/i&gt;&lt;/b&gt;</property>
-                        <property name="use_markup">True</property>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkImage" id="img_cashbox">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="pixbuf">../images/cash_drawer_660.gif</property>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkFrame" id="frame1">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label_xalign">0</property>
-                <child>
-                  <object class="GtkAlignment" id="alignment1">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="left_padding">12</property>
-                    <child>
-                      <object class="GtkVBox" id="vbox7">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <child>
-                          <object class="GtkHSeparator" id="hseparator2">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkVBox" id="vbox8">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="spacing">8</property>
-                            <child>
-                              <object class="GtkHBox" id="box_caja">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <child>
-                                  <object class="GtkLabel" id="label8">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">False</property>
-                                    <property name="position">0</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkVBox" id="box_balance">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="border_width">4</property>
-                                <property name="spacing">4</property>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkHSeparator" id="hseparator3">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkHBox" id="hbox7">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <child>
-                                  <object class="GtkLabel" id="label5">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">TOTAL: </property>
-                                    <attributes>
-                                      <attribute name="weight" value="ultrabold"/>
-                                      <attribute name="size" value="14000"/>
-                                    </attributes>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">0</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="lab_balance">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="xalign">0.89999997615814209</property>
-                                    <property name="label" translatable="yes">1234.56</property>
-                                    <attributes>
-                                      <attribute name="weight" value="ultrabold"/>
-                                      <attribute name="size" value="14000"/>
-                                    </attributes>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">1</property>
-                                  </packing>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">True</property>
-                                <property name="position">3</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child type="label">
-                  <object class="GtkLabel" id="label4">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">&lt;b&gt;&lt;i&gt;Balance: &lt;/i&gt;&lt;/b&gt;</property>
-                    <property name="use_markup">True</property>
-                  </object>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">2</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkStatusbar" id="statusbar2">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="spacing">2</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">2</property>
           </packing>
         </child>
       </object>
