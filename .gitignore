@@ -1,0 +1,23 @@
+# Temporales y backups
+*~
+*.bak
+*.backup_*
+*.swp
+*.swo
+*.swn
+*.un~
+*.orig
+
+# Archivos de desarrollo
+/devel
+/work
+/tmp/
+/install/
+/salida.ppo
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
