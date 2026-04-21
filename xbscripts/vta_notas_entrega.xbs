@@ -922,9 +922,33 @@ Procedure __NESave( oForm, oFormParent )
        uResp := .F.
    endif
 
-   if uResp
-      ::cPreEstado := LEFT( ::oComboEstado:GetValue(), 1 )
-      ::oLabInfo:SetText( "Actualizado." )
+if uResp
+       ::cPreEstado := LEFT( ::oComboEstado:GetValue(), 1 )
+       ::oLabInfo:SetText( "Actualizado." )
+       __NEModDocsRefresh( oForm )
+    endif
+ return
+
+
+
+procedure __NEModDocsRefresh(oForm)
+   local aLine, aIter := ARRAY(4)
+   local bDetalCode, aData
+
+   ::rDocumentos := ::rVentas:Transacciones( ::cTipoDocumento )
+   if hb_isObject( ::oModFacturas )
+      ::oModFacturas:oTreeView:ClearModel(.t.)
+      aData := ::rDocumentos:GetData()
+      if Empty(aData) ; return ; endif
+      FOR EACH aLine IN aData
+          APPEND LIST_STORE ::oModFacturas:oLbx ITER aIter ;
+                 VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
+                        ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
+                        DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
+                        aLine[ 7], hb_ntos(aLine[ 8]), ;
+                        hb_ntos(aLine[ 9]), aLine[ 10], ;
+                        aLine[ 11], aLine[ 12]
+      NEXT
    endif
 return
 
