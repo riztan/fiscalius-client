@@ -1,0 +1,352 @@
+/* vta_rep_docvta.xbs
+ *
+ * Formulario para consultar Cuentas por Cobrar en Fiscalius
+ * Usa método CxCxFlujo() del servidor
+ * Archivo de recursos: vta_rep_docvta.ui
+ *
+ */
+
+#include "tpy_xbs.ch"
+#include "harupdf.ch"
+#include "tutilpdf.ch"
+
+procedure vta_rep_docvta( oFormParent, oWndParent, oEntParent )
+   local oForm 
+   local oCxcWnd, oRes
+   local oImgBanner, oImgLogo
+   local rVentas, oCxc, oModCxc, oLBoxCxc
+   local oBtnBuscar, oBtnSalir, oBtnVerDetalle
+   local cEntCliente, cEntDocumento, oEntCliente, oEntDocumento,lActivo:=.T.
+   local cEntFechaDesde, cEntFechaHasta
+   local oEntFechaDesde, oEntFechaHasta
+   
+   SET PUBLIC oForm
+
+   // Obtener rVentas directamente de oFormParent
+   // oFormParent debería tener oGEmpresa
+   rVentas := oFormParent:oGEmpresa:SetModulo("Ventas")
+
+   // Verificar que rVentas no sea nil
+   if hb_isNIL(rVentas)
+      MsgStop("No se pudo acceder al módulo de Ventas")
+      return
+   endif
+
+   // Guardar en variable pública para usar en callbacks
+   ::rVentas := rVentas
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_rep_docvta.ui"
+
+   DEFINE WINDOW oCxcWnd ;
+          TITLE "Fiscalius. Reporte Detallado de Ventas" ;
+          SIZE 1000,600 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ID "img_banner" RESOURCE oRes
+   oImgBanner:Adjust(1000)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "img_logo" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   // Campos de filtro del UI
+   
+  DEFINE ENTRY TYPE DATE oEntFechaDesde VAR cEntFechaDesde CALENDAR ;
+          VALID .T. ;
+          ID "ent_fecha_desde" RESOURCE oRes
+
+   DEFINE ENTRY TYPE DATE oEntFechaHasta VAR cEntFechaHasta CALENDAR ;
+          ID "ent_fecha_hasta" RESOURCE oRes
+          
+   DEFINE ENTRY oEntCliente VAR cEntCliente ;
+          ID "ent_cliente" RESOURCE oRes
+
+   DEFINE ENTRY oEntDocumento VAR cEntDocumento ;
+          ID "ent_documento" RESOURCE oRes
+
+		  
+    DEFINE CHECKBOX oChkActivo VAR lActivo ID "chk_pdf" RESOURCE oRes
+
+    // Botones del UI
+    DEFINE BUTTON oBtnBuscar ;
+           ACTION __CxcBuscar( oForm, oCxcWnd, oModCxc, oLBoxCxc, ;
+                              oEntCliente, oEntDocumento, oEntFechaDesde,oEntFechaHasta,lActivo ) ;
+           ID "btn_buscar" RESOURCE oRes
+	
+		   
+
+   DEFINE BUTTON oBtnSalir ;
+          ACTION oCxcWnd:End() ;
+          ID "btn_salir" RESOURCE oRes
+
+   // Box para el listbox
+   DEFINE BOX oBoxData ID "box_data" RESOURCE oRes EXPAND FILL
+
+   // Cargar datos iniciales (CxC pendientes)
+   oCxc := rVentas:DocumentosVenta()
+
+   if hb_isNIL( oCxc )
+      MsgStop("No hay datos de Cuentas por Cobrar disponibles")
+      return
+   endif
+
+   DEFINE MODEL oModCxc ;
+          STRUCT oCxc:Struct() ;
+          DATA   oCxc:GetData()
+
+   DEFINE LISTBOX oLBoxCxc ;
+          MODEL oModCxc ;
+          OF oBoxData
+
+   oLBoxCxc:lBar := .F.
+
+   oLBoxCxc:bEdit := {||.t.}
+   
+   
+
+   // Ocultar columnas técnicas
+  // oLBoxCxc:SetColVisible( 1, .F. )    // empresa_id
+   oLBoxCxc:SetColVisible( 3, .F. )    // cliente_id
+   oLBoxCxc:SetColVisible( 9, .F. )    // Base
+   oLBoxCxc:SetColVisible( 12, .F. )    // imp pvp
+   oLBoxCxc:SetColVisible( 13, .F. )    // imp prod
+   
+   // Títulos de columnas
+   oLBoxCxc:SetColTitle( 1, "Fecha." )
+   oLBoxCxc:SetColTitle( 2, "Hora" )
+   oLBoxCxc:SetColTitle( 4, "Cliente" )
+   oLBoxCxc:SetColTitle( 5, "Serie" )
+   oLBoxCxc:SetColTitle( 6, "Control" )
+   oLBoxCxc:SetColTitle( 7, "Numero" )
+   oLBoxCxc:SetColTitle( 8, "Tipo Doc." )
+   oLBoxCxc:SetColTitle( 10, "Total Doc." )
+   oLBoxCxc:SetColTitle( 11, "Tasa Cambio" )
+  oLBoxCxc:Active()
+
+   ACTIVATE WINDOW oCxcWnd MODAL
+
+return
+
+
+
+procedure __CxcBuscar( oForm, oWnd, oModel, oList, oEntCliente, oEntDocumento, oEntFechaDesde,oEntFechaHasta,lActivo )
+
+
+   local hParam := hb_hash()
+   local oCxc, aData
+   local cCliente, cDocumento
+   local aLine, aIter := ARRAY( 31 )  // 31 columnas según CxCxFlujo
+   local rVentas
+
+   // Obtener rVentas desde oForm
+   rVentas := oForm:rVentas
+
+   // Obtener valores de los campos de filtro
+   cCliente   := alltrim( oEntCliente:GetText() )
+   cDocumento := alltrim( oEntDocumento:GetText() )
+   cFechaDesde := alltrim( oEntFechaDesde:GetText() )
+   cFechaHasta := alltrim( oEntFechaHasta:GetText() )
+  // lActivo       :=  oChkActivo:Value() 
+  // view (lactivo)
+   
+   // Construir parámetros
+   if !empty( cCliente )
+      hParam[ "cliente" ] := cCliente
+   endif
+
+   if !empty( cDocumento )
+      hParam[ "tipo_id" ] := cDocumento
+   endif
+
+  if !empty( cFechaDesde )
+      hParam[ "fecha_desde" ] := cFechaDesde
+   endif
+
+   if !empty( cFechaHasta )
+      hParam[ "fecha_hasta" ] := cFechaHasta
+   endif
+
+  // Por defecto mostrar solo pendientes
+   hParam[ "estado" ] := "P"
+
+
+   oCxc := rVentas:DocumentosVenta( hParam )
+
+   if !hb_isObject( oCxc )
+      MsgStop( "No hay información al respecto", "Lo siento.." )
+      return
+   endif
+
+
+   if !hb_isNIL( oCxc )
+      // Limpiar modelo existente
+      oModel:oTreeView:ClearModel(.t.)
+
+      // Agregar datos al modelo
+      aData := oCxc:GetData()
+      //view(oCxc:GetData())
+      FOR EACH aLine IN aData
+         APPEND LIST_STORE oModel:oLbx ITER aIter ;
+                VALUES dtoc(aLine[1]), aLine[2], hb_ntos(aLine[3]),aLine[4], aLine[5], hb_ntos(aLine[6]),;
+                      hb_ntos(aLine[7]),aLine[8],hb_ntos(aLine[9]),TRANSFORM(aLine[10],P_92),;
+                      TRANSFORM(aLine[11],P_92),hb_ntos(aLine[12]),hb_ntos(aLine[13])
+      NEXT
+	  
+	  IF lActivo
+	  __CxcGenerarPDF(aData,cCliente,cDocumento)
+	   ENDIF
+   endif
+   
+   
+
+
+return
+
+
+procedure __CxcVerDetalle( oWnd, rVentas, oModel, oList )
+return
+/*
+   local aSelected := oList:GetSelected()
+   local nTransId
+
+   if empty( aSelected )
+      MsgInfo("Seleccione un documento para ver el detalle")
+      return
+   endif
+
+   // Obtener ID de transacción de la fila seleccionada
+   nTransId := oList:GetAutoValue( 6, aSelected[1] )  // Columna 6 = transaccion_id
+
+   if empty( nTransId )
+      MsgStop("No se pudo obtener el ID de la transacción")
+      return
+   endif
+
+   // Aquí se podría abrir un detalle de la transacción
+   // Por ahora solo mostramos info
+   MsgInfo("Detalle de Transacción ID: " + hb_ntos(nTransId))
+
+return
+*/
+
+
+procedure __CxcGenerarPDF( aData,cCliente,cDocumento )
+
+   local oPDF
+  
+   local nY := 1
+   local nTotMto := 0,nTotApli := 0,nTotSal := 0
+   local cFilePDF := "tmp/vta_ctasxcobrar.pdf"
+   //local pIter := gtk_tree_iter_new() // Iterador para recorrer las filas
+   local lValid := .F.,aLine
+   
+   
+  // Obtener datos del modelo
+ 
+   //aData := oModCxc:GetData()
+   
+//   view(aData)
+   
+
+   
+   FERASE( cFilePDF )
+
+   oPDF := TIMPRIMEPDF():New( cFilePDF )
+   oPDF:PageSetSize( HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_LANDSCAPE )
+
+   // Título
+   
+      nY += 1
+   oPDF:SetFont( "Helvetica-Bold", 10 )
+   oPDF:CMSAY( nY, 20, "Empresa de Prueba" )
+   nY += 0.4
+   oPDF:CMSAY( nY, 20, "Rif: J000000000" )
+   
+   nY += 1
+   oPDF:SetFont( "Helvetica-Bold", 14 )
+   oPDF:CMSAY( nY, 8, "DETALLADO DE VENTAS" )
+   oPDF:SetFont( "Helvetica-Bold", 9 )
+   nY += 0.4
+   /*
+   oPDF:CMSAY( nY, 3, "Cliente:" )
+   oPDF:CMSAY( nY, 10, "Tipo Doc:" )
+   oPDF:CMSAY( nY, 17, "Documento:" )
+   
+   oPDF:SetFont( "Helvetica", 9 )
+   oPDF:CMSAY( nY, 5, iif(Empty(cCliente)," Todos",cCliente) )
+   oPDF:CMSAY( nY, 12, iif(Empty(cDocumento)," Todos",cDocumento) )
+   //oPDF:CMSAY( nY, 19, iif(Empty(cNro)," Todos",cNro) )
+   */
+
+   
+   //oPDF:CMSAY( nY, 20, "Al" )
+   
+   nY += 1.5
+
+   // Encabezado
+   oPDF:SetFont( "Helvetica-Bold", 9 )
+   oPDF:CMSAY( nY, 1, "Fecha" )
+   oPDF:CMSAY( nY, 3, "Hora" )
+   oPDF:CMSAY( nY, 6, "Cliente" )
+   oPDF:CMSAY( nY, 10.5, "Serie" )
+   oPDF:CMSAY( nY, 12.8, "Control" )
+   oPDF:CMSAY( nY, 15, "Numero" )
+   oPDF:CMSAY( nY, 17, "Tipo Doc." )
+   oPDF:CMSAY( nY, 20, "Total Doc." )
+   oPDF:CMSAY( nY, 22.5, "TC" )
+   
+
+   nY += 0.5
+
+   // Detalle
+   oPDF:SetFont( "Courier", 8)
+   
+   
+   FOR EACH aLine IN aData
+      oPDF:CMSAY( nY, 1, DTOC(aLine[1]) )   // Fecha.
+      oPDF:CMSAY( nY, 3, aLine[2] )   // Hora
+	  oPDF:CMSAY( nY, 6, LEFT(aLine[4],30) )   // Cliente
+	  oPDF:CMSAY( nY, 11, LEFT(aLine[5],12) )   // Serie
+	
+	  oPDF:CMSAY( nY, 13, STRZERO(aLine[6],8) )   // Contrl
+	  oPDF:CMSAY( nY, 15,  STRZERO(VAL(aLine[7]),8)  )   // Numero
+	  oPDF:CMSAY( nY, 17,   (aLine[8]) )   // Tipo Doc.
+	  
+	    
+	  oPDF:CMSAY( nY, 18.9,   TRANSFORM(aLine[10], "@E 9,999,999.99") )   // Total Doc.
+	  oPDF:CMSAY( nY, 21,   TRANSFORM(aLine[11], "@E 999,999.99") )   // Tasa
+     // nTotMto += aLine[11]
+	 // nTotApli += aLine[13]
+	 
+	  nTotSal += aLine[10]
+      nY += 0.35
+	  
+   NEXT
+   
+
+   
+   
+   // Total
+   nY += 0.5
+   oPDF:SetFont( "Helvetica-Bold", 10 )
+   oPDF:CMSAY( nY, 10, "TOTALES:" )
+  // oPDF:CMSAY( nY, 19, TRANSFORM(nTotMto, "@E 9,999,999.99") )
+  // oPDF:CMSAY( nY, 21.7, TRANSFORM(nTotApli, "@E 9,999,999.99") )
+   oPDF:CMSAY( nY, 23.9, TRANSFORM(nTotSal, "@E 9,999,999.99") )
+
+  // oPDF:Save()
+   oPDF:End()
+
+// Abrir
+   #ifdef __PLATFORM__WINDOWS
+      //hb_run( "start " + cFilePDF )
+      WAPI_ShellExecute(0,"open",CurDrive()+":\"+CurDir()+"\"+cFilePDF,0) 
+   #else
+      hb_run( "xdg-open " + cFilePDF )
+   #endif
+   
+   
+return
+
+//eof
