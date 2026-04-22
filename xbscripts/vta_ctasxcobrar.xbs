@@ -16,7 +16,7 @@ procedure vta_ctasxcobrar( oFormParent, oWndParent, oEntParent )
    local oImgBanner, oImgLogo
    local rFinanzas, oCxc, oModCxc, oLBoxCxc
    local oBtnBuscar, oBtnSalir, oBtnVerDetalle
-   local cEntCliente, cEntDocumento, cEntNro, oEntCliente, oEntDocumento, oEntNro
+   local cEntCliente, cEntDocumento, cEntNro, oEntCliente, oEntDocumento, oEntNro,lActivo:=.T.
 
    SET PUBLIC oForm
 
@@ -57,11 +57,13 @@ procedure vta_ctasxcobrar( oFormParent, oWndParent, oEntParent )
 
    DEFINE ENTRY oEntNro VAR cEntNro ;
           ID "ent_nro" RESOURCE oRes
+		  
+    DEFINE CHECKBOX oChkActivo VAR lActivo ID "chk_pdf" RESOURCE oRes
 
     // Botones del UI
     DEFINE BUTTON oBtnBuscar ;
            ACTION __CxcBuscar( oForm, oCxcWnd, oModCxc, oLBoxCxc, ;
-                              oEntCliente, oEntDocumento, oEntNro ) ;
+                              oEntCliente, oEntDocumento, oEntNro,lActivo ) ;
            ID "btn_buscar" RESOURCE oRes
 
     DEFINE BUTTON oBtnVerDetalle ;
@@ -69,17 +71,8 @@ procedure vta_ctasxcobrar( oFormParent, oWndParent, oEntParent )
            ID "btn_detalle" RESOURCE oRes
            oBtnVerDetalle:Hide()
 		   
-	// Botones del UI
-  
-DEFINE BUTTON oBtnPdf ACTION __CxcGenerarPDF( oForm, oModCxc, oLBoxCxc ) ;
-       ID "btn_pdf" RESOURCE oRes
+	
 		   
-		   // En vta_ctasxcobrar.xbs
-/*DEFINE BUTTON oBtnPDF ;
-   ACTION ( oForm:oCxc := oCxc, oTPuy:RunXBS( "vta_ctasxcobrar_pdf", oForm ) ) ;
-   ID "btn_pdf" RESOURCE oRes
-   */
-
 
    DEFINE BUTTON oBtnSalir ;
           ACTION oCxcWnd:End() ;
@@ -147,7 +140,7 @@ return
 
 
 
-procedure __CxcBuscar( oForm, oWnd, oModel, oList, oEntCliente, oEntDocumento, oEntNro )
+procedure __CxcBuscar( oForm, oWnd, oModel, oList, oEntCliente, oEntDocumento, oEntNro,lActivo )
    local hParam := hb_hash()
    local oCxc, aData
    local cCliente, cDocumento, cNro
@@ -161,7 +154,9 @@ procedure __CxcBuscar( oForm, oWnd, oModel, oList, oEntCliente, oEntDocumento, o
    cCliente   := alltrim( oEntCliente:GetText() )
    cDocumento := alltrim( oEntDocumento:GetText() )
    cNro       := alltrim( oEntNro:GetText() )
-
+  // lActivo       :=  oChkActivo:Value() 
+  // view (lactivo)
+   
    // Construir parámetros
    if !empty( cCliente )
       hParam[ "cliente" ] := cCliente
@@ -202,6 +197,10 @@ procedure __CxcBuscar( oForm, oWnd, oModel, oList, oEntCliente, oEntDocumento, o
                        //, aLine[29], aLine[30], ;
                        //aLine[31]
       NEXT
+	  
+	  IF lActivo
+	  __CxcGenerarPDF(aData,cCliente,cDocumento,cNro)
+	   ENDIF
    endif
 
 return
@@ -234,13 +233,13 @@ return
 */
 
 
-procedure __CxcGenerarPDF( oForm,oModelo )
+procedure __CxcGenerarPDF( aData,cCliente,cDocumento,cNro )
    local oPDF
-   local aData  // Obtiene los datos del listbox
+  
    local nY := 1
-   local nTotal := 0
+   local nTotMto := 0,nTotApli := 0,nTotSal := 0
    local cFilePDF := "tmp/vta_ctasxcobrar.pdf"
-   local pIter := gtk_tree_iter_new() // Iterador para recorrer las filas
+   //local pIter := gtk_tree_iter_new() // Iterador para recorrer las filas
    local lValid := .F.,aLine
    
    
@@ -248,7 +247,7 @@ procedure __CxcGenerarPDF( oForm,oModelo )
  
    //aData := oModCxc:GetData()
    
-  // view(oModCxc:oLbx )
+//   view(aData)
    
 
    
@@ -258,59 +257,90 @@ procedure __CxcGenerarPDF( oForm,oModelo )
    oPDF:PageSetSize( HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_LANDSCAPE )
 
    // Título
+   
+      nY += 1
+   oPDF:SetFont( "Helvetica-Bold", 10 )
+   oPDF:CMSAY( nY, 20, "Empresa de Prueba" )
+   nY += 0.4
+   oPDF:CMSAY( nY, 20, "Rif: J000000000" )
+   
    nY += 1
    oPDF:SetFont( "Helvetica-Bold", 14 )
    oPDF:CMSAY( nY, 8, "C U E N T A S   P O R   C O B R A R" )
+   oPDF:SetFont( "Helvetica-Bold", 9 )
+   nY += 0.4
+   oPDF:CMSAY( nY, 3, "Cliente:" )
+   oPDF:CMSAY( nY, 10, "Tipo Doc:" )
+   oPDF:CMSAY( nY, 17, "Documento:" )
+   
+   oPDF:SetFont( "Helvetica", 9 )
+   oPDF:CMSAY( nY, 5, iif(Empty(cCliente)," Todos",cCliente) )
+   oPDF:CMSAY( nY, 12, iif(Empty(cDocumento)," Todos",cDocumento) )
+   oPDF:CMSAY( nY, 19, iif(Empty(cNro)," Todos",cNro) )
+
+   
+   //oPDF:CMSAY( nY, 20, "Al" )
+   
    nY += 1.5
 
    // Encabezado
-   oPDF:SetFont( "Helvetica-Bold", 10 )
-   oPDF:CMSAY( nY, 1, "Doc" )
-   oPDF:CMSAY( nY, 4, "Fecha" )
-   oPDF:CMSAY( nY, 8, "Monto" )
-   oPDF:CMSAY( nY, 12, "Total" )
+   oPDF:SetFont( "Helvetica-Bold", 9 )
+   oPDF:CMSAY( nY, 1, "Cód." )
+   oPDF:CMSAY( nY, 3, "Cliente" )
+   oPDF:CMSAY( nY, 8, "RIF" )
+   oPDF:CMSAY( nY, 10.5, "Tipo Doc" )
+   oPDF:CMSAY( nY, 12.8, "Documento" )
+   oPDF:CMSAY( nY, 15, "Fecha" )
+   oPDF:CMSAY( nY, 17, "Moneda" )
+   oPDF:CMSAY( nY, 20, "Monto" )
+   oPDF:CMSAY( nY, 22, "Aplicado" )
+   oPDF:CMSAY( nY, 25, "Saldo" )
    nY += 0.5
 
    // Detalle
-   oPDF:SetFont( "Courier", 10 )
+   oPDF:SetFont( "Courier", 8)
    
    
-   // Obtenemos el primer registro
-   lValid := gtk_tree_model_get_iter_first( oModel:pModel, pIter )
-
-  // while lValid
-      // Extraemos los valores de las columnas (usando los índices de tu ListStore)
-      // 3=Serie, 4=Desde, 5=Hasta, 6=Ultimo, 7=Activo
- //     oPDF:CMSAY( nY, 1,  oModel:GetIterValue( pIter, 2 ) ) 
-    //  oPDF:CMSAY( nY, 4,  oModel:GetIterValue( pIter, 3 ) )
-	  
-    //  oPDF:CMSAY( nY, 7,  oModel:GetIterValue( pIter, 5 ) )
-    //  oPDF:CMSAY( nY, 10, oModel:GetIterValue( pIter, 6 ) )
-    //  oPDF:CMSAY( nY, 14, oModel:GetIterValue( pIter, 7 ) )
-	  
-
-      nY += 0.5
-      
-
-      // Mover al siguiente registro
-     // lValid := gtk_tree_model_iter_next( oModel:pModel, pIter )
-   //enddo
-   /*
    FOR EACH aLine IN aData
-      oPDF:CMSAY( nY, 1, aLine[1] )   // Doc
-      oPDF:CMSAY( nY, 4, aLine[2] )   // Fecha
-      oPDF:CMSAY( nY, 8, TRANSFORM(aLine[3], "@E 9,999,999.99") )  // Monto
-      oPDF:CMSAY( nY, 12, TRANSFORM(aLine[4], "@E 9,999,999.99") )  // Total
-      nTotal += aLine[4]
+      oPDF:CMSAY( nY, 1, aLine[3] )   // Cod.
+      oPDF:CMSAY( nY, 3, aLine[4] )   // Cliente
+	  oPDF:CMSAY( nY, 8, aLine[5] )   // RIF
+	  oPDF:CMSAY( nY, 10.5, LEFT(aLine[8],12) )   // Tipo Doc.
+	  oPDF:CMSAY( nY, 12.8, STRZERO(VAL(aLine[9]),8) )   // Documento
+	  oPDF:CMSAY( nY, 15,  DTOC( aLine[10]) )   // Fecha
+	  oPDF:CMSAY( nY, 17,   hb_ntos(aLine[12]) )   // Moneda
+	  oPDF:CMSAY( nY, 18.5,   TRANSFORM(aLine[11], "@E 9,999,999,99") )   // Monto
+	  oPDF:CMSAY( nY, 21,   TRANSFORM(aLine[13], "@E 9,999,999,99") )   // Aplicado
+	  oPDF:CMSAY( nY, 23.5,   TRANSFORM(aLine[14], "@E 9,999,999,99") )   // Saldo
+      //oPDF:CMSAY( nY, 8, TRANSFORM(aLine[3], "@E 9,999,999.99") )  // Monto
+      //oPDF:CMSAY( nY, 12, TRANSFORM(aLine[4], "@E 9,999,999.99") )  // Total
+      nTotMto += aLine[11]
+	  nTotApli += aLine[13]
+	  nTotSal += aLine[14]
       nY += 0.35
+	  
    NEXT
+   
+   /*
+   TRANSFORM(aLine[22], "@E 999,99")
+      oPDF:CMSAY( nY, 8, "RIF" )
+   oPDF:CMSAY( nY, 11, "Tipo Doc" )
+   oPDF:CMSAY( nY, 13, "Documento" )
+   oPDF:CMSAY( nY, 16, "Fecha" )
+   oPDF:CMSAY( nY, 18, "Moneda" )
+   oPDF:CMSAY( nY, 19.5, "Monto" )
+   oPDF:CMSAY( nY, 22.5, "Aplicado" )
+   oPDF:CMSAY( nY, 25.5, "Saldo" )
+   
    */
 
    // Total
    nY += 0.5
    oPDF:SetFont( "Helvetica-Bold", 10 )
-   oPDF:CMSAY( nY, 10, "TOTAL:" )
-   oPDF:CMSAY( nY, 12, TRANSFORM(nTotal, "@E 9,999,999.99") )
+   oPDF:CMSAY( nY, 10, "TOTALES:" )
+   oPDF:CMSAY( nY, 19, TRANSFORM(nTotMto, "@E 9,999,999.99") )
+   oPDF:CMSAY( nY, 21.7, TRANSFORM(nTotApli, "@E 9,999,999.99") )
+   oPDF:CMSAY( nY, 23.9, TRANSFORM(nTotSal, "@E 9,999,999.99") )
 
   // oPDF:Save()
    oPDF:End()
