@@ -87,6 +87,14 @@ procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
    oUsuForm:oModel   := oModel
    oUsuForm:oParent  := oForm
 
+   // Inicializar hash de perfiles
+   oUsuForm:hPerf := hb_hash()
+   hb_hSet( oUsuForm:hPerf, "facturacion",   .F. )
+   hb_hSet( oUsuForm:hPerf, "cobranza",      .F. )
+   hb_hSet( oUsuForm:hPerf, "configuracion", .F. )
+   hb_hSet( oUsuForm:hPerf, "desarrollo",    .F. )
+   hb_hSet( oUsuForm:hPerf, "auditoria",     .F. )
+
    if lNew
       oUsuForm:cLogin      := ""
       oUsuForm:cNombre     := ""
@@ -94,20 +102,43 @@ procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
       oUsuForm:lActivo     := .T.
       oUsuForm:cPass       := ""
       oUsuForm:cPass1      := ""
+
    else
-      oUsuForm:cNombre     := oModel:GetCol( 2 )
-      oUsuForm:cNombreC    := oModel:GetCol( 3 )
-      oUsuForm:cLogin      := oModel:GetCol( 4 )
-      oUsuForm:cPreLogin   := oModel:GetCol( 4 )
-      oUsuForm:lActivo     := oModel:GetCol( 6 )
-      oUsuForm:cPass       := '' //oModel:GetCol( 6 ) // Password no se carga por seguridad
-      oUsuForm:cPass1      := '' //oModel:GetCol( 6 )
+       oUsuForm:cNombre     := oModel:GetCol( 2 )
+       oUsuForm:cNombreC    := oModel:GetCol( 3 )
+       oUsuForm:cLogin      := oModel:GetCol( 4 )
+       oUsuForm:cPreLogin   := oModel:GetCol( 4 )
+       oUsuForm:lActivo     := oModel:GetCol( 6 )
+       oUsuForm:cPass       := '' //oModel:GetCol( 6 ) // Password no se carga por seguridad
+       oUsuForm:cPass1      := '' //oModel:GetCol( 6 )
    endif
 
  
    oUsuForm:rUsuario := rVentas:Usuario( {"login" => oUsuForm:cLogin} )
 
    hData := oUsuForm:rUsuario:Data()
+   
+   // Cargar perfiles si existen (JSON -> Hash)
+   if hb_hHasKey(hData, "perfil") .and. !Empty(hData["perfil"])
+      hPerf := hb_JSONDecode( hData["perfil"] )
+      if hb_isHash( hPerf )
+         if hb_hHasKey( hPerf, "facturacion" )
+            oUsuForm:hPerf["facturacion"] := hPerf["facturacion"]
+         endif
+         if hb_hHasKey( hPerf, "cobranza" )
+            oUsuForm:hPerf["cobranza"] := hPerf["cobranza"]
+         endif
+         if hb_hHasKey( hPerf, "configuracion" )
+            oUsuForm:hPerf["configuracion"] := hPerf["configuracion"]
+         endif
+         if hb_hHasKey( hPerf, "desarrollo" )
+            oUsuForm:hPerf["desarrollo"] := hPerf["desarrollo"]
+         endif
+         if hb_hHasKey( hPerf, "auditoria" )
+            oUsuForm:hPerf["auditoria"] := hPerf["auditoria"]
+         endif
+      endif
+   endif
    //oUsuForm:cNombre  := hData["nombre"]
    //oUsuForm:cNombreC := hData["nombre_corto"]
    //oUsuForm:lActivo  := hData["activo"]
@@ -135,6 +166,13 @@ procedure usu_edit( oForm, oAliWnd, oModel, rVentas, lNew )
 
       DEFINE CHECKBOX oUsuForm:oChkActivo VAR oUsuForm:lActivo ID "chk_activo" RESOURCE oRes
 
+      // Perfiles de usuario
+      DEFINE CHECKBOX oUsuForm:oChkFact   VAR oUsuForm:hPerf["facturacion"]   ID "chk_fact"   RESOURCE oRes
+      DEFINE CHECKBOX oUsuForm:oChkCob    VAR oUsuForm:hPerf["cobranza"]      ID "chk_cob"    RESOURCE oRes
+      DEFINE CHECKBOX oUsuForm:oChkConfig VAR oUsuForm:hPerf["configuracion"] ID "chk_config" RESOURCE oRes
+      DEFINE CHECKBOX oUsuForm:oChkDesa   VAR oUsuForm:hPerf["desarrollo"]    ID "chk_desa"   RESOURCE oRes
+      DEFINE CHECKBOX oUsuForm:oChkAud    VAR oUsuForm:hPerf["auditoria"]     ID "chk_aud"    RESOURCE oRes
+
       DEFINE ENTRY oUsuForm:oEntPass VAR oUsuForm:cPass PASSWORD ;
              VALID iif( oUsuForm:lClose, .T., __ValidaPass( oUsuForm:oEntPass,oUsuForm:oEntPass1,oUsuForm,1 ) ) ;
              ID "ent_pass" RESOURCE oRes
@@ -156,7 +194,7 @@ return
 
 
 procedure __UsuSave( oForm )
-   local hData, uResp, aIter, lNew
+   local hData, uResp, aIter, lNew, cPerfil
 
    if !oTPuy:oUser:IsAdmin()
       MsgStop( "No tiene permisos para modificar valores de usuarios.", "Atención" )
@@ -188,13 +226,18 @@ procedure __UsuSave( oForm )
   
    lNew := oForm:rUsuario:IsNew()
 
-   // Guardar los datos del usuario
+// Guardar los datos del usuario
    hData := oForm:rUsuario:Data()
+   
+   // Encode hash de perfiles a JSON
+   cPerfil := hb_JSONEncode( oForm:hPerf )
+   
    oForm:rUsuario:SetData( { "login"        => oForm:cLogin,   ;
                              "nombre"       => oForm:cNombre,  ;
                              "nombre_corto" => oForm:cNombreC, ;
                              "activo"       => oForm:lActivo,  ;
-                             "pass"         => oForm:cPass     } )
+                             "pass"         => oForm:cPass,    ;
+                             "perfil"       => cPerfil      } )
 
    uResp := oForm:rUsuario:Save()
 //View( Valtype(uResp) )

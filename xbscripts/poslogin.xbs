@@ -127,70 +127,100 @@ procedure poslogin( oParent )
 //      DEFINE MENUITEM ACTION View( ::oGEmpresa:setModulo("VENTAS"):Titulo()) ;
 //      DEFINE MENUITEM ACTION Prueba( oForm, ::oGEmpresa:setModulo("VENTAS"):Clientes()) ;
 
-   DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_usuarios", oForm, oTPuy:oWnd ) ;
+  
+      DEFINE MENUITEM ::oMnuUser ACTION oTPuy:RunXBS( "mae_usuarios", oForm, oTPuy:oWnd ) ;
              ID "item_usuarios" RESOURCE ::oRes
 			 
-    DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_medios_pago", oForm, oTPuy:oWnd ) ;
+      DEFINE MENUITEM ::oMnuPagos ACTION oTPuy:RunXBS( "mae_medios_pago", oForm, oTPuy:oWnd ) ;
              ID "item_mediospag" RESOURCE ::oRes
 			 
-	DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_monedas", oForm, oTPuy:oWnd ) ;
+      DEFINE MENUITEM ::oMnuMonedas ACTION oTPuy:RunXBS( "mae_monedas", oForm, oTPuy:oWnd ) ;
              ID "item_monedas" RESOURCE ::oRes
 			 
-	DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_tasas_cambio", oForm, oTPuy:oWnd ) ;
+      DEFINE MENUITEM ::oMnuTasas ACTION oTPuy:RunXBS( "mae_tasas_cambio", oForm, oTPuy:oWnd ) ;
              ID "item_tasas_cambio" RESOURCE ::oRes
 
-    DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_alicuotas", oForm, oTPuy:oWnd ) ;
+      DEFINE MENUITEM ::oMnuAlicuotas ACTION oTPuy:RunXBS( "mae_alicuotas", oForm, oTPuy:oWnd ) ;
              ID "item_alicuotas" RESOURCE ::oRes
 			 
-	DEFINE MENUITEM ACTION oTPuy:RunXBS( "vta_series_consecutivos", oForm, oTPuy:oWnd ) ;
+      DEFINE MENUITEM ::oMnuSeries ACTION oTPuy:RunXBS( "vta_series_consecutivos", oForm, oTPuy:oWnd ) ;
              ID "item_series_consecutivos" RESOURCE ::oRes
 			 
-      DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_inventario", oForm, oTPuy:oWnd ) ;
+      DEFINE MENUITEM ::oMnuInventario ACTION oTPuy:RunXBS( "mae_inventario", oForm, oTPuy:oWnd ) ;
              ID "item_productos" RESOURCE ::oRes
 			 
-	DEFINE MENUITEM ACTION oTPuy:RunXBS( "mae_itf", oForm, oTPuy:oWnd ) ;
+      DEFINE MENUITEM ::oMnuIGTF ACTION oTPuy:RunXBS( "mae_itf", oForm, oTPuy:oWnd ) ;
              ID "item_ITF" RESOURCE ::oRes
 
-      DEFINE MENUITEM ACTION oTPuy:RunXBS( "vta_clientes", oForm, oTPuy:oWnd ) ;
+      DEFINE MENUITEM ::oMnuClientes ACTION oTPuy:RunXBS( "vta_clientes", oForm, oTPuy:oWnd ) ;
              ID "itm_clientes" RESOURCE ::oRes
 
-       DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_pedidos", oForm );  
+      DEFINE MENUITEM ::oMnuPedidos ACTION oTPuy:RunXBS("vta_pedidos", oForm );  
               ID "itm_pedidos" RESOURCE ::oRes
 
-       DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_facturas", oForm );  
+      DEFINE MENUITEM ::oMnuFacturas ACTION oTPuy:RunXBS("vta_facturas", oForm );  
               ID "itm_factura" RESOURCE ::oRes
 
-       DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_notas_cd", oForm, "C" );
+      DEFINE MENUITEM ::oMnuNotaCre ACTION oTPuy:RunXBS("vta_notas_cd", oForm, "C" );
              ID "itm_notacredito" RESOURCE ::oRes
 
-DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_notas_cd", oForm, "D" );  
+      DEFINE MENUITEM ::oMnuNotaDeb ACTION oTPuy:RunXBS("vta_notas_cd", oForm, "D" );  
              ID "itm_notadebito" RESOURCE ::oRes
 
-      DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_notas_entrega", oForm, "E" );  
+      DEFINE MENUITEM ::oMnuNotaEnt ACTION oTPuy:RunXBS("vta_notas_entrega", oForm, "E" );  
              ID "itm_notaentrega" RESOURCE ::oRes
 
-      DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_libro", oForm );  
+      DEFINE MENUITEM ::oMnuVtaLibro ACTION oTPuy:RunXBS("vta_libro", oForm );  
              ID "itm_vta_libro" RESOURCE ::oRes
 
-      DEFINE MENUITEM ACTION oTPuy:RunXBS("auditoria", oForm );  
+      DEFINE MENUITEM ::oMnuAuditoria ACTION oTPuy:RunXBS("auditoria", oForm );  
              ID "itm_auditoria" RESOURCE ::oRes
 
-      DEFINE MENUITEM ACTION oTPuy:RunXBS("usabilidad", oForm );  
+      DEFINE MENUITEM ::oMnuAuditUs ACTION oTPuy:RunXBS("usabilidad", oForm );  
              ID "itm_usabilidad" RESOURCE ::oRes
 
-DEFINE MENUITEM ACTION oTPuy:RunXBS("vta_ctasxcobrar", oForm );  
+      DEFINE MENUITEM ::oMnuCtasCobrar ACTION oTPuy:RunXBS("vta_ctasxcobrar", oForm );  
               ID "itm_ctasxcobrar" RESOURCE ::oRes
 
-       DEFINE MENUITEM ACTION oTPuy:RunXBS("igtf_recibidos", oForm );  
+      DEFINE MENUITEM ::oMnuIGTFRep ACTION oTPuy:RunXBS("igtf_recibidos", oForm );  
               ID "itm_igtf" RESOURCE ::oRes
-
+/*
        DEFINE MENUITEM ACTION oTPuy:RunXBS("auditoria", oForm );  
               ID "itm_auditoria" RESOURCE ::oRes
 
        DEFINE MENUITEM ACTION oTPuy:RunXBS("usabilidad", oForm );  
               ID "itm_usabilidad" RESOURCE ::oRes
+*/
 
-       DEFINE TOOLBUTTON ::oTBQuit ;
+      if !(oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:IsDevel() .or. oTPuy:oUser:IsAuditoria() )
+         ::oMnuUser:Hide() 
+         ::oMnuPagos:Hide()
+         ::oMnuMonedas:Hide()
+         ::oMnuTasas:Hide()
+         ::oMnuAlicuotas:Hide()
+         ::oMnuSeries:Hide()
+         ::oMnuInventario:Hide()
+         ::oMnuIGTF:Hide()
+         ::oMnuClientes:Hide()
+         ::oMnuPedidos:Hide()
+         ::oMnuFacturas:Hide()
+         ::oMnuNotaCre:Hide()
+         ::oMnuNotaDeb:Hide()
+         ::oMnuNotaEnt:Hide()
+         ::oMnuVtaLibro:Hide()
+         ::oMnuAuditoria:Hide()
+         ::oMnuAuditUs:Hide()
+         ::oMnuCtasCobrar:Hide()
+         ::oMnuIGTFRep:Hide()
+      endif 
+      if oTPuy:oUser:IsFacturacion()
+         ::oMnuPedidos:Show()
+         ::oMnuFacturas:Show()
+         ::oMnuNotaCre:Show()
+      endif
+
+
+      DEFINE TOOLBUTTON ::oTBQuit ;
              ACTION tpy_exit()    ;
              ID "tb_quit" RESOURCE ::oRes
 

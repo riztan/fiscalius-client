@@ -14,9 +14,16 @@ CLASS GUSER FROM TPUBLIC
 
    METHOD New( cHandle, cLogin, cNombre, cCargo )
 
-   METHOD IsDeveloper()  INLINE oTPuy:rSession:UserData()["devel"]
+   METHOD IsDeveloper()  INLINE oTPuy:rSession:UserData()["perfil"]["desarrollo"] //oTPuy:rSession:UserData()["devel"]
+   METHOD IsDevel()      INLINE ::IsDeveloper()
 
-   METHOD IsAdmin()      INLINE oTPuy:rSession:UserData()["admin"]
+   METHOD IsAdmin()      INLINE oTPuy:rSession:UserData()["perfil"]["configuracion"] //oTPuy:rSession:UserData()["admin"]
+
+   METHOD IsFacturacion  INLINE oTPuy:rSession:UserData()["perfil"]["facturacion"] 
+
+   METHOD IsCobranza     INLINE oTPuy:rSession:UserData()["perfil"]["cobranza"] 
+
+   METHOD IsAuditoria    INLINE oTPuy:rSession:UserData()["perfil"]["auditoria"] 
 
    METHOD Finalize()     INLINE ~ServerLogout( ::cHandle )
    
