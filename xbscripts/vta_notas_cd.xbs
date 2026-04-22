@@ -1611,6 +1611,7 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
       endif
 //View( ::hDocumento )
 //View( ::hDocumento["numero"] )
+     
       if VAL(::hDocumento["numero"])>0
          ::oLabNumero:SetValue( STRZERO( VAL(::hDocumento["numero"]), 8) )
       else
@@ -1688,6 +1689,7 @@ PROCEDURE __NCCobrar( oForm, oFormParent)
       ::oLabInfo:SetText( "Solo puede generar recibo en documento cerrado." )
       RETURN
    endif
+   
    oTPuy:RunXBS( "fin_recibo", oForm, oFormParent, iif( ::cTipoDocumento="C", "5", "6") /*Documento*/ )
 RETURN
 

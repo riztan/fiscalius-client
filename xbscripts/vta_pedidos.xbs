@@ -1296,6 +1296,8 @@ nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
 	 //view(::aSeriesId)
 	 //view(nidx)
     // view(::cSerieID)
+	
+	
 	 hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 13 )
 	 
 	 
@@ -1305,6 +1307,7 @@ nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
 		return
 		endif
 	endif
+	
 
 
 //   View( ::hPedido["iva"] ) 

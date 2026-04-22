@@ -1,37 +1,49 @@
-/* vta_ctasxcobrar.xbs
+/* adm_expvtas.xbs
  *
- * Formulario para consultar Cuentas por Cobrar en Fiscalius
- * Usa método CxCxFlujo() del servidor
- * Archivo de recursos: vta_ctasxcobrar.ui
+
  *
  */
 
 #include "tpy_xbs.ch"
-#include "harupdf.ch"
-#include "tutilpdf.ch"
 
-procedure vta_ctasxcobrar( oFormParent, oWndParent, oEntParent )
-   local oForm 
+procedure adm_expvtas( oFormParent, oWndParent, oEntParent,cFiltro,cDocumento )
+   local oForm ,hParam
    local oCxcWnd, oRes
    local oImgBanner, oImgLogo
-   local rFinanzas, oCxc, oModCxc, oLBoxCxc
+   local rVentas,rClientes,oCxc, oModCxc, oLBoxCxc
    local oBtnBuscar, oBtnSalir, oBtnVerDetalle
    local cEntCliente, cEntDocumento, cEntNro, oEntCliente, oEntDocumento, oEntNro
+   
+   default cFiltro     to ""
+   default cDocumento  to ""
 
-   SET PUBLIC oForm
 
-   // Obtener rFinanzas directamente de oFormParent
-   // oFormParent debería tener oGEmpresa
-   rFinanzas := oFormParent:oGEmpresa:SetModulo("Finanzas")
+SET PUBLIC oForm
 
-   // Verificar que rFinanzas no sea nil
-   if hb_isNIL(rFinanzas)
+   if !Empty(cDocumento) .or. !Empty(cFiltro)
+      hParam := hb_hash()
+   endif
+
+   if !Empty( cDocumento )
+      hParam["documento"] := cDocumento
+   endif
+   if !Empty( cFiltro )
+      hParam[ "filtro" ] := cFiltro
+   endif
+
+   rVentas := oFormParent:oGEmpresa:SetModulo("Ventas")
+   rClientes := rVentas:Clientes( hParam )
+
+   
+   //view(rclientes)
+    // Verificar que rFinanzas no sea nil
+   if hb_isNIL(rVentas)
       MsgStop("No se pudo acceder al módulo Finanzas")
       return
    endif
 
    // Guardar en variable pública para usar en callbacks
-   ::rFinanzas := rFinanzas
+   ::rVentas := rVentas
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_ctasxcobrar.ui"
 
@@ -68,18 +80,6 @@ procedure vta_ctasxcobrar( oFormParent, oWndParent, oEntParent )
            ACTION __CxcVerDetalle( oCxcWnd, oModCxc, oLBoxCxc ) ;
            ID "btn_detalle" RESOURCE oRes
            oBtnVerDetalle:Hide()
-		   
-	// Botones del UI
-  
-DEFINE BUTTON oBtnPdf ACTION __CxcGenerarPDF( oForm, oModCxc, oLBoxCxc ) ;
-       ID "btn_pdf" RESOURCE oRes
-		   
-		   // En vta_ctasxcobrar.xbs
-/*DEFINE BUTTON oBtnPDF ;
-   ACTION ( oForm:oCxc := oCxc, oTPuy:RunXBS( "vta_ctasxcobrar_pdf", oForm ) ) ;
-   ID "btn_pdf" RESOURCE oRes
-   */
-
 
    DEFINE BUTTON oBtnSalir ;
           ACTION oCxcWnd:End() ;
@@ -89,12 +89,15 @@ DEFINE BUTTON oBtnPdf ACTION __CxcGenerarPDF( oForm, oModCxc, oLBoxCxc ) ;
    DEFINE BOX oBoxData ID "box_data" RESOURCE oRes EXPAND FILL
 
    // Cargar datos iniciales (CxC pendientes)
-   oCxc := rFinanzas:CxCxFlujo()
+  // oCxc := rFinanzas:CxCxFlujo()
 
+ /*
    if hb_isNIL( oCxc )
       MsgStop("No hay datos de Cuentas por Cobrar disponibles")
       return
    endif
+   
+   */
 
    DEFINE MODEL oModCxc ;
           STRUCT oCxc:Struct() ;
@@ -107,6 +110,8 @@ DEFINE BUTTON oBtnPdf ACTION __CxcGenerarPDF( oForm, oModCxc, oLBoxCxc ) ;
    oLBoxCxc:lBar := .F.
 
    oLBoxCxc:bEdit := {||.t.}
+   
+   /*
 
    // Ocultar columnas técnicas
    oLBoxCxc:SetColVisible( 1, .F. )    // empresa_id
@@ -138,6 +143,7 @@ DEFINE BUTTON oBtnPdf ACTION __CxcGenerarPDF( oForm, oModCxc, oLBoxCxc ) ;
    oLBoxCxc:SetColTitle( 21, "Dif. %" )
    oLBoxCxc:SetColTitle( 25, "Conv. Bs." )
    oLBoxCxc:SetColTitle( 26, "Saldo Conv." )
+   */
 
    oLBoxCxc:Active()
 
@@ -148,6 +154,7 @@ return
 
 
 procedure __CxcBuscar( oForm, oWnd, oModel, oList, oEntCliente, oEntDocumento, oEntNro )
+/*
    local hParam := hb_hash()
    local oCxc, aData
    local cCliente, cDocumento, cNro
@@ -155,7 +162,7 @@ procedure __CxcBuscar( oForm, oWnd, oModel, oList, oEntCliente, oEntDocumento, o
    local rFinanzas
 
    // Obtener rFinanzas desde oForm
-   rFinanzas := oForm:rFinanzas
+   rVentas := oForm:rVentas
 
    // Obtener valores de los campos de filtro
    cCliente   := alltrim( oEntCliente:GetText() )
@@ -203,6 +210,8 @@ procedure __CxcBuscar( oForm, oWnd, oModel, oList, oEntCliente, oEntDocumento, o
                        //aLine[31]
       NEXT
    endif
+   
+   */
 
 return
 
@@ -232,96 +241,5 @@ return
 
 return
 */
-
-
-procedure __CxcGenerarPDF( oForm,oModelo )
-   local oPDF
-   local aData  // Obtiene los datos del listbox
-   local nY := 1
-   local nTotal := 0
-   local cFilePDF := "tmp/vta_ctasxcobrar.pdf"
-   local pIter := gtk_tree_iter_new() // Iterador para recorrer las filas
-   local lValid := .F.,aLine
-   
-   
-  // Obtener datos del modelo
- 
-   //aData := oModCxc:GetData()
-   
-  // view(oModCxc:oLbx )
-   
-
-   
-   FERASE( cFilePDF )
-
-   oPDF := TIMPRIMEPDF():New( cFilePDF )
-   oPDF:PageSetSize( HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_LANDSCAPE )
-
-   // Título
-   nY += 1
-   oPDF:SetFont( "Helvetica-Bold", 14 )
-   oPDF:CMSAY( nY, 8, "C U E N T A S   P O R   C O B R A R" )
-   nY += 1.5
-
-   // Encabezado
-   oPDF:SetFont( "Helvetica-Bold", 10 )
-   oPDF:CMSAY( nY, 1, "Doc" )
-   oPDF:CMSAY( nY, 4, "Fecha" )
-   oPDF:CMSAY( nY, 8, "Monto" )
-   oPDF:CMSAY( nY, 12, "Total" )
-   nY += 0.5
-
-   // Detalle
-   oPDF:SetFont( "Courier", 10 )
-   
-   
-   // Obtenemos el primer registro
-   lValid := gtk_tree_model_get_iter_first( oModel:pModel, pIter )
-
-  // while lValid
-      // Extraemos los valores de las columnas (usando los índices de tu ListStore)
-      // 3=Serie, 4=Desde, 5=Hasta, 6=Ultimo, 7=Activo
- //     oPDF:CMSAY( nY, 1,  oModel:GetIterValue( pIter, 2 ) ) 
-    //  oPDF:CMSAY( nY, 4,  oModel:GetIterValue( pIter, 3 ) )
-	  
-    //  oPDF:CMSAY( nY, 7,  oModel:GetIterValue( pIter, 5 ) )
-    //  oPDF:CMSAY( nY, 10, oModel:GetIterValue( pIter, 6 ) )
-    //  oPDF:CMSAY( nY, 14, oModel:GetIterValue( pIter, 7 ) )
-	  
-
-      nY += 0.5
-      
-
-      // Mover al siguiente registro
-     // lValid := gtk_tree_model_iter_next( oModel:pModel, pIter )
-   //enddo
-   /*
-   FOR EACH aLine IN aData
-      oPDF:CMSAY( nY, 1, aLine[1] )   // Doc
-      oPDF:CMSAY( nY, 4, aLine[2] )   // Fecha
-      oPDF:CMSAY( nY, 8, TRANSFORM(aLine[3], "@E 9,999,999.99") )  // Monto
-      oPDF:CMSAY( nY, 12, TRANSFORM(aLine[4], "@E 9,999,999.99") )  // Total
-      nTotal += aLine[4]
-      nY += 0.35
-   NEXT
-   */
-
-   // Total
-   nY += 0.5
-   oPDF:SetFont( "Helvetica-Bold", 10 )
-   oPDF:CMSAY( nY, 10, "TOTAL:" )
-   oPDF:CMSAY( nY, 12, TRANSFORM(nTotal, "@E 9,999,999.99") )
-
-  // oPDF:Save()
-   oPDF:End()
-
-// Abrir
-   #ifdef __PLATFORM__WINDOWS
-      //hb_run( "start " + cFilePDF )
-      WAPI_ShellExecute(0,"open",CurDrive()+":\"+CurDir()+"\"+cFilePDF,0) 
-   #else
-      hb_run( "xdg-open " + cFilePDF )
-   #endif
-return
 
 //eof
