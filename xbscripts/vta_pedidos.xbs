@@ -507,13 +507,13 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
 
    ::lNew := lNew
 
-   if ::lNew 
-      ::lLoad      := .F.
-      ::lSave      := .F.
-      ::rPedido   := ::rVentas:Pedido('')
-      ::hPedido   := ::rPedido:Data()
-      ::rPedDetal := ::rPedido:Detal()
-      ::cFecha := DTOC( DATE() )
+if ::lNew 
+       ::lLoad      := .F.
+       ::lSave      := .F.
+       ::rPedido   := ::rVentas:Pedido('')
+       ::hPedido   := ::rPedido:Data()
+       ::rFactDetal := nil  // No cargar detalles para nuevo documento
+       ::cFecha := DTOC( DATE() )
 
       ::oLabNumero:SetValue( "00000000" )
       ::oLabNroControl:SetValue( "00000000" )
@@ -535,12 +535,14 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::cComboEstado := "B"
       ::cPreEstado   := ::cComboEstado
    
-::oEntTotal:SetValue( "0" )
+      ::oEntTotal:SetValue( "0" )
        //::oEntTotBs:SetValue( "0" )
 
-       if hb_isObject( ::oModDetal )
-         ::oModDetal:oTreeView:ClearModel(.t.)
-      endif
+if hb_isObject( ::oModDetal )
+          ::oModDetal:oTreeView:ClearModel(.t.)
+          // Forzar array vacío para nuevo documento
+          ::aDetal := {}
+       endif
 
    else
       ::lLoad      := .T. // Consultando el documento.
@@ -632,7 +634,7 @@ NEXT
 
    if !hb_isObject( ::oModDetal )
 
-      if !hb_isNIL( ::rFactDetal )
+      if !hb_isNIL( ::rFactDetal ) .and. !::lNew
 
          aStruct := ::rFactDetal:Struct()
          AADD( aStruct, {"imp_pvp_1",      "N",1,2} )
@@ -665,8 +667,38 @@ NEXT
 
          DEFINE MODEL   ::oModDetal           ;
                 STRUCT  aStruct ; //::rFactDetal:Struct() ;
-                DATA    aData     //::rFactDetal:GetData()
+                DATA    iif( ::lNew, {}, aData )     //::rFactDetal:GetData()
       else
+         // Para nuevo documento o cuando no hay datos, usar estructura vacía
+         if ::lNew
+            aData := {}
+            aStruct := {{"detalle_id",     "N",10, 0},;
+                        {"documento" ,     "N",10, 0},;
+                        {"codigo_local",   "C",20, 0},;
+                        {"descripcion",    "C",100,0},;
+                        {"cantidad",       "N",10, 0},;
+                        {"precio_unitario","N",13, 2},;
+                        {"descuento",      "N",13, 2},;
+                        {"subtotal",       "N",13, 2},;
+                        {"iva_porcentaje", "N",04, 2},;
+                        {"iva_monto",      "N",13, 2},;
+                        {"total",          "N",13, 2},;
+                        {"nombre_global",  "C",100,0},;
+                        {"tipo_inventario","C",01, 0},;
+                        {"lote",           "C",10, 0},;
+                        {"fecha_vcmto",    "D",10, 0},;
+                        {"id_ubicacion",   "N",10, 0},;
+                        {"almacen_id",     "N",10, 0},;
+                        {"nombre_almacen", "C",100,0},;
+                        {"detalles_json",  "C",255,0},;
+                        {"item",           "C",10, 0},;
+                        {"imp_pvp",        "N",13, 2},;
+                        {"imp_pvp_1",      "N",13, 2},;
+                        {"imp_produccion",  "N",13, 2},;
+                        {"imp_produccion_1",  "N",13, 2},;
+                        {"moneda_id",      "N",10, 0}}
+         endif
+         
          DEFINE MODEL   ::oModDetal           ;
                 STRUCT  {{"detalle_id",     "N",10, 0},;
                          {"documento" ,     "N",10, 0},;
@@ -742,10 +774,14 @@ NEXT
       if hb_isNIL( ::rFactDetal )
          ::oModDetal:oTreeView:ClearModel(.t.)
       endif
-   else
- 
+else
+  
       ::oModDetal:oTreeView:ClearModel(.t.)
-      aData := ::rFactDetal:GetData()
+      if !hb_isNIL( ::rFactDetal )
+         aData := ::rFactDetal:GetData()
+      else
+         aData := {}
+      endif
 
 //View( hb_valtoexp( aData ) )
 //if LEN(aData)>=1
@@ -1432,7 +1468,7 @@ RETURN
 
 
 PROCEDURE __PedConvertir( oForm, oFormParent )
-   local uResp
+   local uResp, i, aLine
 
    if ::hPedido["estado"] != "C"
       MsgInfo( "El pedido debe estar cerrado para convertir a factura." )
@@ -1459,6 +1495,25 @@ PROCEDURE __PedConvertir( oForm, oFormParent )
             endif
          else
             MsgStop( uResp["message"] )
+         endif
+      elseif hb_isLogical( uResp )
+         if uResp
+            MsgInfo( "Pedido convertido a factura correctamente.", "Éxito" )
+            ::rPedidos := ::rVentas:Pedidos()
+            if ::isDef("oModPedidos")
+               ::oModPedidos:oTreeView:ClearModel(.t.)
+               ::aPedidos := ::rPedidos:GetData()
+               FOR i := 1 TO Len( ::aPedidos )
+                  aLine := ::aPedidos[ i ]
+                  APPEND LIST_STORE ::oModPedidos:oLbx ITER aIter ;
+                         VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
+                                ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
+                                DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
+                                aLine[ 7], hb_ntos(aLine[ 8])
+               NEXT
+            endif
+         else
+            MsgStop( "Error al convertir pedido a factura." )
          endif
       else
          MsgStop( "Error al convertir pedido a factura." )
