@@ -512,7 +512,7 @@ if ::lNew
        ::lSave      := .F.
        ::rPedido   := ::rVentas:Pedido('')
        ::hPedido   := ::rPedido:Data()
-       ::rFactDetal := nil  // No cargar detalles para nuevo documento
+       ::rPedDetal := nil  // No cargar detalles para nuevo documento
        ::cFecha := DTOC( DATE() )
 
       ::oLabNumero:SetValue( "00000000" )
@@ -549,7 +549,7 @@ if hb_isObject( ::oModDetal )
       ::lSave      := .F.
       ::rPedido   := ::rVentas:Pedido( oModel:GetCol( ::hCol["numero"] ) )
       ::hPedido   := ::rPedido:Data()
-      ::rFactDetal := ::rPedido:Detal()
+      ::rPedDetal := ::rPedido:Detal()
 
       ::cFecha := DTOC( ::hPedido["fecha"] )
       //::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol(::hCol["numero"])), 8) )
@@ -634,13 +634,13 @@ NEXT
 
    if !hb_isObject( ::oModDetal )
 
-      if !hb_isNIL( ::rFactDetal ) .and. !::lNew
+      if !hb_isNIL( ::rPedDetal ) .and. !::lNew
 
-         aStruct := ::rFactDetal:Struct()
+         aStruct := ::rPedDetal:Struct()
          AADD( aStruct, {"imp_pvp_1",      "N",1,2} )
          AADD( aStruct, {"imp_produccion_1",      "N",1,2} )
          aData := {}
-         AEVAL( ::rFactDetal:GetData(), {|a| AADD( aData, {a[ 1],;
+         AEVAL( ::rPedDetal:GetData(), {|a| AADD( aData, {a[ 1],;
                                                            a[ 2],;
                                                            a[ 3],;
                                                            a[ 4],;
@@ -666,8 +666,8 @@ NEXT
          
 
          DEFINE MODEL   ::oModDetal           ;
-                STRUCT  aStruct ; //::rFactDetal:Struct() ;
-                DATA    iif( ::lNew, {}, aData )     //::rFactDetal:GetData()
+                STRUCT  aStruct ; //::rPedDetal:Struct() ;
+                DATA    iif( ::lNew, {}, aData )     //::rPedDetal:GetData()
       else
          // Para nuevo documento o cuando no hay datos, usar estructura vacía
          if ::lNew
@@ -771,14 +771,14 @@ NEXT
 
       ::oLBoxDetal:Active()
 
-      if hb_isNIL( ::rFactDetal )
+      if hb_isNIL( ::rPedDetal )
          ::oModDetal:oTreeView:ClearModel(.t.)
       endif
 else
   
       ::oModDetal:oTreeView:ClearModel(.t.)
-      if !hb_isNIL( ::rFactDetal )
-         aData := ::rFactDetal:GetData()
+      if !hb_isNIL( ::rPedDetal )
+         aData := ::rPedDetal:GetData()
       else
          aData := {}
       endif
