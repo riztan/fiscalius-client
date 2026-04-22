@@ -67,7 +67,10 @@ procedure vta_series_consecutivos( oForm, oWndParent, oEntParent )
    
 
    oLBoxSeriesConsec:bNew  := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .T. ) }
-   oLBoxSeriesConsec:bEdit := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .F. ) }
+   //oLBoxSeriesConsec:bEdit := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .F. ) }
+   oLBoxSeriesConsec:bEdit := {||View("Acción no permitida") }//{|oModel| tasacamb_edit( oForm, oAliWnd, oModTasas, .F. /*lNew*/ ) }
+   oLBoxSeriesConsec:bDel  := {||View("Acción no permitida")}
+   
 
    ACTIVATE WINDOW oAliWnd MODAL
 

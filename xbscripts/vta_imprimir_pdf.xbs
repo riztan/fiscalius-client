@@ -25,7 +25,7 @@ procedure vta_imprimir_pdf( oForm )
    local aDetCobro:=rDetCobro:GetData()
    local nBasGEN:=0,nBasRED:=0,nBasSUN:=0,nIVAGEN:=0,nIVARED:=0,nIVASUN:=0
    local nBasEXE:=TONUM(::nMontoIvaE)
-   local nPosDet:=0
+   local nPosDet:=0,nBasITF:=0,nPorITF:=3,nMtoITF:=0
    
    FERASE( cFilePDF )
    
@@ -164,9 +164,16 @@ procedure vta_imprimir_pdf( oForm )
 	   nTotPagBs:=0
 	   FOR i := 1 TO LEN( aDetCobro )
 	   aLine := aDetCobro[i]
+	    IF I=1
+	     nMtoITF:=aLine[3]
+		 nPorITF:=IIF(nMtoITF=0,0,3)
+		ENDIF
 		oPDF:CMSAY( nY, 2, ALLTRIM(aLine[1]))
 		oPDF:CMSAY( nY, 6, TRANSFORM(aLine[2], "@E 99,999.99"))
 		   nTotPagBs:=nTotPagBs+(aLine[2])
+		   IF aLine[4]
+		    nBasITF += aLine[2]
+		   ENDIF
 		   nY += 0.35
 	  NEXT
 	  nY += 0.35
@@ -261,14 +268,14 @@ procedure vta_imprimir_pdf( oForm )
 	oPDF:CMSAY( nY, 10.2, "Base Imponible IGTF "+cDivisa+" :" )
 	oPDF:CMSAY( nY, 18.2, "Base Imponible IGTF "+cMoneda+" :" )
 	
-	oPDF:CMSAY( nY, 15.4,TRANSFORM(0/nDivisa,"@E 99,999,999.99"))
-	oPDF:CMSAY( nY, 23.5,TRANSFORM(0,"@E 99,999,999.99"))
+	oPDF:CMSAY( nY, 15.4,TRANSFORM(nBasITF/nDivisa,"@E 99,999,999.99"))
+	oPDF:CMSAY( nY, 23.5,TRANSFORM(nBasITF,"@E 99,999,999.99"))
 	nY += 0.4
 	
-	oPDF:CMSAY( nY, 10.2, "TOTAL IGTF 3% "+cDivisa+" :" )
-	oPDF:CMSAY( nY, 18.2, "TOTAL IGTF 3% "+cMoneda+" :" )
-	oPDF:CMSAY( nY, 15.4,TRANSFORM(0/nDivisa,"@E 99,999,999.99"))
-	oPDF:CMSAY( nY, 23.5,TRANSFORM(0,"@E 99,999,999.99"))
+	oPDF:CMSAY( nY, 10.2, "TOTAL IGTF "+hb_ntos(nPorITF)+ "% "+cDivisa+" :" )
+	oPDF:CMSAY( nY, 18.2, "TOTAL IGTF "+hb_ntos(nPorITF) +"% "+cMoneda+" :" )
+	oPDF:CMSAY( nY, 15.4,TRANSFORM(nMtoITF/nDivisa,"@E 99,999,999.99"))
+	oPDF:CMSAY( nY, 23.5,TRANSFORM(nMtoITF,"@E 99,999,999.99"))
 	nY += 0.4
 	
 	oPDF:SetFont( "Helvetica-Bold", 11 )

@@ -181,6 +181,9 @@ procedure poslogin( oParent )
 
       DEFINE MENUITEM ::oMnuCtasCobrar ACTION oTPuy:RunXBS("vta_ctasxcobrar", oForm );  
               ID "itm_ctasxcobrar" RESOURCE ::oRes
+			  
+	  DEFINE MENUITEM ::oMnuVtaRep ACTION oTPuy:RunXBS("vta_rep_docvta", oForm );  
+              ID "itm_rep_docvta" RESOURCE ::oRes
 
       DEFINE MENUITEM ::oMnuIGTFRep ACTION oTPuy:RunXBS("igtf_recibidos", oForm );  
               ID "itm_igtf" RESOURCE ::oRes
@@ -211,6 +214,7 @@ procedure poslogin( oParent )
          ::oMnuAuditoria:Hide()
          ::oMnuAuditUs:Hide()
          ::oMnuCtasCobrar:Hide()
+         ::oMnuVtaRep:Hide()
          ::oMnuIGTFRep:Hide()
       endif 
       if oTPuy:oUser:IsFacturacion()
