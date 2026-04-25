@@ -333,7 +333,7 @@ procedure __CxcGenerarPDF( aData,cCliente,cDocumento )
    oPDF:CMSAY( nY, 10, "TOTALES:" )
   // oPDF:CMSAY( nY, 19, TRANSFORM(nTotMto, "@E 9,999,999.99") )
   // oPDF:CMSAY( nY, 21.7, TRANSFORM(nTotApli, "@E 9,999,999.99") )
-   oPDF:CMSAY( nY, 23.9, TRANSFORM(nTotSal, "@E 9,999,999.99") )
+   oPDF:CMSAY( nY, 19.1, TRANSFORM(nTotSal, "@E 9,999,999.99") )
 
   // oPDF:Save()
    oPDF:End()

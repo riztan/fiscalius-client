@@ -19,13 +19,15 @@ procedure vta_imprimir_pdf( oForm )
    local aClientes := rClientes:Data()
    local i, nCaj, nUni, nUniCaj, nTotUniLi, aLine
    local nY := 1,nTotPagBs:=0,nTotPagDi:=0
-   local cFilePDF := "tmp/vta_documento_" + STRTRAN(::hFactura["numero"], "/", "_") + ".pdf"
+   local cFilePDF := "tmp/vta_factura_" + STRTRAN(::hFactura["numero"], "/", "_") + ".pdf"
    local cMoneda:="Bs",cDivisa:=LEFT(::cDivisa,3),nDivisa:=TONUM(SUBSTR(::cDivisa,5))
    local rDetCobro:=::rVentas:DetCobroFact( {"sucursal"=>"1", "tipo_id"=> ::hFactura["tipo_id"],"numero"=>::hFactura["numero"]} )
    local aDetCobro:=rDetCobro:GetData()
    local nBasGEN:=0,nBasRED:=0,nBasSUN:=0,nIVAGEN:=0,nIVARED:=0,nIVASUN:=0
    local nBasEXE:=TONUM(::nMontoIvaE)
    local nPosDet:=0,nBasITF:=0,nPorITF:=3,nMtoITF:=0
+   
+ //view(aDetCobro))
    
    FERASE( cFilePDF )
    
@@ -45,11 +47,12 @@ procedure vta_imprimir_pdf( oForm )
    oPDF:SetFont( "Helvetica-Bold", 12 )
    oPDF:CMSAY( nY, 14, "F A C T U R A" )
 
-   oPDF:SetFont( "Helvetica", 12 )
+   oPDF:SetFont( "Helvetica-Bold", 12 )
    oPDF:CMSAY( nY, 17, "Nro: " + STRZERO( VAL(::hFactura["numero"]), 8 ) )
    oPDF:CMSAY( nY + 0.5, 17, "Fecha: " + DTOC( ::hFactura["fecha"] ) )
+   oPDF:CMSAY( nY+1.0,17, "Vence: " + DTOC( ::hFactura["fecha_vencimiento"] ) )
 
-   nY += 1.5
+   nY += 2.5
 
    // =====================================
    // DATOS CLIENTE
@@ -67,11 +70,10 @@ procedure vta_imprimir_pdf( oForm )
 
    oPDF:CMSAY( nY, 6, "Telf: " + aClientes[1,6] )
 
-   oPDF:CMSAY( nY, 12, "Vence: " + DTOC( ::hFactura["fecha_vencimiento"] ) )
 
    nY += 0.5
 
-   oPDF:SetFont( "Helvetica", 9 )
+   oPDF:SetFont( "Helvetica", 10 )
    oPDF:CMSAY( nY, 1.4, "Dir: " + LEFT(aClientes[1,5], 60) )
 
    nY += 0.8
@@ -82,17 +84,22 @@ procedure vta_imprimir_pdf( oForm )
    oPDF:SetFont( "Helvetica-Bold", 10 )
    oPDF:CMSAY( nY, 1.0, "Código" )
    oPDF:CMSAY( nY, 3.2, "Descripcion" )
-   oPDF:CMSAY( nY, 10.2, "Cant" )
+   oPDF:CMSAY( nY, 10.5, "Cant" )
    IF tonum(::nMontoOtrImp)>0
-   nPosDet+=2
+   nPosDet+=3
    oPDF:CMSAY( nY, 12.2, "Cap." )
    oPDF:CMSAY( nY, 13.2, "Grados" )
    ENDIF
-   oPDF:CMSAY( nY, 13.5+nPosDet, "Precio Uni." )
-   oPDF:CMSAY( nY, 16.5+nPosDet, "Total" )
-   oPDF:CMSAY( nY, 19+nPosDet, "% IVA" )
+   oPDF:CMSAY( nY, 12.5+nPosDet, "Precio Uni." )
+   oPDF:CMSAY( nY, 15.5+nPosDet, "% IVA" )
+   oPDF:CMSAY( nY, 17.2+nPosDet, "Total" )
+   
    IF tonum(::nMontoOtrImp)>0
-   oPDF:CMSAY( nY, 23, "Imp. Pvp" )
+   oPDF:CMSAY( nY, 21.5, "Imp. Pvp" )
+   ENDIF
+   IF tonum(::nMontoImpProd)>0
+   oPDF:CMSAY( nY, 23.3, "Imp. Prod." )
+   
    ENDIF
 
    nY += 0.5
@@ -124,17 +131,22 @@ procedure vta_imprimir_pdf( oForm )
       oPDF:CMSAY( nY, 1.0, LEFT(ALLTRIM(aLine[3]), 12) )
       oPDF:CMSAY( nY, 3.2, LEFT(ALLTRIM(aLine[4]), 35) )
       //oPDF:CMSAY( nY, 11.2, hb_ntos(nTotUniLi) )
-      oPDF:CMSAY( nY, 10.2, hb_ntos(nUni+nCaj) )
+      oPDF:CMSAY( nY, 10, hb_ntos(nUni+nCaj) )
 	  IF tonum(::nMontoOtrImp)>0
-	  oPDF:CMSAY( nY, 12.0, TRANSFORM(aLine[22], "@E 999,99") )
-	  oPDF:CMSAY( nY, 13.2, TRANSFORM(aLine[23], "@E 999,99") )
+	  oPDF:CMSAY( nY, 12.2, TRANSFORM(aLine[22], "@E 999.99") )
+	  oPDF:CMSAY( nY, 13.2, TRANSFORM(aLine[23], "@E 999.99") )
 	  ENDIF
-      oPDF:CMSAY( nY, 13.5+nPosDet, TRANSFORM(aLine[6], "@E 99,999.99") )
+      oPDF:CMSAY( nY, 12.5+nPosDet, TRANSFORM(aLine[6], "@E 99,999.99") )
+      oPDF:CMSAY( nY, 15.5+nPosDet, TRANSFORM(aLine[9], "@E 99") )
       oPDF:CMSAY( nY, 16.5+nPosDet, TRANSFORM(aLine[8], "@E 999,999.99") )
-	  oPDF:CMSAY( nY, 19+nPosDet, TRANSFORM(aLine[9], "@E 99") )
 	  IF tonum(::nMontoOtrImp)>0
-      oPDF:CMSAY( nY, 23, TRANSFORM(aLine[21], "@E 99,999.99") )
+      oPDF:CMSAY( nY, 21.2, TRANSFORM(aLine[21], "@E 99,999.99") )
 	  ENDIF
+	  
+	  IF tonum(::nMontoImpProd)>0
+      oPDF:CMSAY( nY, 23.1, TRANSFORM(aLine[22], "@E 99,999.99") )
+	  ENDIF
+
 
       
       nY += 0.35
@@ -153,7 +165,7 @@ procedure vta_imprimir_pdf( oForm )
   // =====================================
   // FORMA DE PAGO CONTADO
   // =====================================
-   
+ /*  
  IF ::hFactura["condicion_id"]=1
 	 oPDF:SetFont( "Helvetica-Bold", 8 )
 	 IF LEN( aDetCobro )>0
@@ -184,6 +196,7 @@ procedure vta_imprimir_pdf( oForm )
 	  //ENDIF
   
   ENDIF
+  */
   
   oPDF:SetFont( "Helvetica-Bold", 8 )
    oPDF:CMSAY( nY, 1.2,"Tipo de Cambio BCV a la fecha de emisión: "+SUBSTR(::cDivisa,5))
