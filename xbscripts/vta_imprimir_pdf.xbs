@@ -27,7 +27,7 @@ procedure vta_imprimir_pdf( oForm )
    local nBasEXE:=TONUM(::nMontoIvaE)
    local nPosDet:=0,nBasITF:=0,nPorITF:=3,nMtoITF:=0
    
- //view(aDetCobro))
+  // view(aDetCobro)
    
    FERASE( cFilePDF )
    
@@ -165,7 +165,7 @@ procedure vta_imprimir_pdf( oForm )
   // =====================================
   // FORMA DE PAGO CONTADO
   // =====================================
- /*  
+ 
  IF ::hFactura["condicion_id"]=1
 	 oPDF:SetFont( "Helvetica-Bold", 8 )
 	 IF LEN( aDetCobro )>0
@@ -196,7 +196,7 @@ procedure vta_imprimir_pdf( oForm )
 	  //ENDIF
   
   ENDIF
-  */
+  
   
   oPDF:SetFont( "Helvetica-Bold", 8 )
    oPDF:CMSAY( nY, 1.2,"Tipo de Cambio BCV a la fecha de emisión: "+SUBSTR(::cDivisa,5))
