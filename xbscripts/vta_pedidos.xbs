@@ -127,7 +127,7 @@ procedure vta_pedidos( oFormParent )
    ::cNroControl := ""
    DEFINE LABEL ::oLabNroControl TEXT ::cNroControl ;
           ID "lab_nro_control" RESOURCE ::oRes
-
+/*
 
   DEFINE BOX ::oBoxSerie ID "box_serie" RESOURCE ::oRes
    ::cSerie := ""
@@ -148,6 +148,7 @@ procedure vta_pedidos( oFormParent )
   
    __PedCargarSeries( oForm )
    
+   */
 
    DEFINE BOX ::oBoxDivisa ID "box_divisa" RESOURCE ::oRes
    ::aMonedas := {}
@@ -476,8 +477,8 @@ procedure __PedChangeEstado( oForm, lConfirm )
    if ::cComboEstado = "Anulada" .or. ;
       ::cComboEstado = "Cerrada"
       __PedRefresh( oForm, lConfirm )
-	  __PedCargarSeries( oForm )
-	  __PedCargarCondiciones( oForm )
+	  //__PedCargarSeries( oForm )
+	 // __PedCargarCondiciones( oForm )
       if ::cPreEstado == "B" 
          __PedSave( oForm )
       endif
@@ -566,10 +567,12 @@ if hb_isObject( ::oModDetal )
       if hb_isObject( ::oComboCondicion ) .and. !empty( ::aCondiciones )
          ::oComboCondicion:SetValue( ::cCondicion )
       endif
-		 
+	/*	 
       if hb_isObject( ::oComboSerie ) .and. !empty( ::aSeries )
          ::oComboSerie:SetValue( ::cSerie )
       endif
+      
+      */
 
       ::cCodVendedor := oModel:GetCol(::hCol["vendedor_id"])
       ::oEntFecha:SetValue( oModel:GetCol(::hCol["fecha"]) )
@@ -1325,8 +1328,9 @@ Procedure __PedSave( oForm, oFormParent )
    ::hPedido["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
    nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
    ::hPedido["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
-nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
-   ::hPedido["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
+   //nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
+   //::hPedido["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
+   ::hPedido["serie_id"]        := ""
    ::cSerieID:=::hPedido["serie_id"]
      //::hFactura["serie_nombre"     ] := ::cSerie
 	 //view(::aSeriesId)
@@ -1334,7 +1338,7 @@ nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
     // view(::cSerieID)
 	
 	
-	 hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 13 )
+	// hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 13 )
 	 
 	 
 	if ::cComboEstado == "Cerrada"		

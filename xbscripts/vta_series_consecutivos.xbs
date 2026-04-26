@@ -262,6 +262,7 @@ Function __SeriesConsecNum( oEntry,oForm, cType )
    local cMonto := oEntry:GetText()
    
    //view(cmonto)
+   
 
    if !Empty(cMonto) .and. ToNum(cMonto) <= 0
       //if cLabel = "precio_unitario"
@@ -269,6 +270,8 @@ Function __SeriesConsecNum( oEntry,oForm, cType )
          return .f.
       //endif
    endif
+   
+   /*
    
    if cType=="inicio"
     if ToNum(cMonto)>VAL(oForm:nControlFinal)
@@ -287,9 +290,10 @@ Function __SeriesConsecNum( oEntry,oForm, cType )
    
    if cType=="ultimo"
     if ToNum(cMonto)<VAL(oForm:nControlInicio) .or. ToNum(cMonto)>VAL(oForm:nControlFinal)    
-    MsgAlert( "El valor debe estar dentro de control inicio y control final.", "Atención" )
+    MsgAlert( "El valor "+cMonto+" debe estar dentro de control inicio "+ (oForm:nControlInicio)+ " y control final "+oForm:nControlFinal, "Atención" )
          return .f.
      endif
    endif
+   */
 
 return .t.

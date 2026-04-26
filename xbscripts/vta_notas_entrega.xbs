@@ -17,6 +17,7 @@ procedure vta_notas_entrega( oFormParent, cTipoDocumento )
    ::lSilence := .F.
    ::aDetal := {}
    ::cTipoDocumento := cTipoDocumento
+   
    ::cFormTitle := "Nota de Entrega"
 
    ::cEmpresa := oFormParent:cCBEmpresa
@@ -1157,7 +1158,7 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
    nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
    ::hDocumento["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
    ::cSerieID:=::hDocumento["serie_id"]
-   hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 5 )	 
+   hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 14 )	 
    if ::cComboEstado == "Cerrada"		
       if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
          MsgStop( hCorrel["mensaje"] + ". No se puede cerrar el documento.", "Error" )
@@ -1172,7 +1173,7 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
       return
    endif
    
-   view(::hDocumento)
+   //view(::hDocumento)
    //return
 
    bSaveDetal := {|oTView, pModel, aIter| __NESaveDetal( oTView, pModel, aIter, oForm )  }
