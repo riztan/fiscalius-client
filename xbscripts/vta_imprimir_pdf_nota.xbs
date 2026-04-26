@@ -315,8 +315,8 @@ procedure vta_imprimir_pdf_nota( oForm )
 	oPDF:SetFont( "Helvetica-Bold", 11 )
 	oPDF:CMSAY( nY, 10.2, "TOTAL A PAGAR "+cDivisa+" :" )
 	oPDF:CMSAY( nY, 18.2, "TOTAL A PAGAR"+cMoneda+" :" )
-	oPDF:CMSAY( nY, 15.4,TRANSFORM(tonum(::oEntTotal:GetValue())/nDivisa,"@E 99,999,999.99"))
-	oPDF:CMSAY( nY, 23.5,TRANSFORM(tonum(::oEntTotal:GetValue()),"@E 99,999,999.99"))	
+	oPDF:CMSAY( nY, 15.4,TRANSFORM((tonum(::oEntTotal:GetValue())+nMtoITF)/nDivisa,"@E 99,999,999.99"))
+	oPDF:CMSAY( nY, 23.5,TRANSFORM((tonum(::oEntTotal:GetValue())+nMtoITF),"@E 99,999,999.99"))	
 
 	nY += 0.5
  

@@ -1279,5 +1279,5 @@ RETURN
 
 
 PROCEDURE __NEImprime( oForm )
-   oTPuy:RunXBS( "vta_imprimir_pdf_nota", oForm )
+   oTPuy:RunXBS( "vta_imprimir_pdf_entrega", oForm )
 RETURN
