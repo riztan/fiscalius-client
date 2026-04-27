@@ -1220,13 +1220,14 @@ procedure __NEModDocsRefresh(oForm)
       aData := ::rDocumentos:GetData()
       if Empty(aData) ; return ; endif
       FOR EACH aLine IN aData
-          APPEND LIST_STORE ::oModFacturas:oLbx ITER aIter ;
-                 VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
-                        ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
-                        DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
-                        aLine[ 7], hb_ntos(aLine[ 8]), ;
-                        hb_ntos(aLine[ 9]), aLine[ 10], ;
-                        aLine[ 11], aLine[ 12]
+           APPEND LIST_STORE ::oModFacturas:oLbx ITER aIter ;
+                  VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
+                         ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
+                         DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
+                         aLine[ 7], hb_ntos(aLine[ 8]), ;
+                         hb_ntos(aLine[ 9]), aLine[ 10], ;
+                         hb_ntos(aLine[ 11]), ;
+                         iif(hb_isNIL(aLine[12]), "", aLine[ 12])
       NEXT
    endif
 return
@@ -1257,7 +1258,7 @@ procedure __NESaveDetal(oTView, pModel, aIter, oForm)
    hDetal["detalles_json"    ] := oTView:GetAutoValue( 19, aIter )
    hDetal["item"             ] := oTView:GetAutoValue( 20, aIter )
    hDetal["imp_pvp"          ] := oTView:GetAutoValue( 21, aIter )
-    hDetal["imp_produccion"] := VAL( oTView:GetAutoValue( 24, aIter ) ) // Add imp_produccion
+   hDetal["imp_produccion"] := VAL( oTView:GetAutoValue( 24, aIter ) ) // Add imp_produccion
 //View( oTView:GetAutoValue(20, aIter) )
 
    AADD( ::aDetal, hDetal )
