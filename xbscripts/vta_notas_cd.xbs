@@ -1612,8 +1612,9 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
 //View( ::hDocumento )
 //View( ::hDocumento["numero"] )
      
-      if VAL(::hDocumento["numero"])>0
-         ::oLabNumero:SetValue( STRZERO( VAL(::hDocumento["numero"]), 8) )
+      nNumero := VALTYPE(::hDocumento["numero"]) == "N" .and. !hb_isNIL(::hDocumento["numero"]) ? VAL(::hDocumento["numero"]) : 0
+      if nNumero > 0
+         ::oLabNumero:SetValue( STRZERO( nNumero, 8) )
       else
          ::oLabNumero:SetValue( ALLTRIM(::hDocumento["numero"]) )
       endif
