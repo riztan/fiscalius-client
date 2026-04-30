@@ -136,16 +136,16 @@ DEFINE ENTRY oForm:oEntSerie VAR oForm:cSerieCod ;
 
 //oForm:oEntSerie:Enable( .F. )
 
-DEFINE INTEGER ENTRY oForm:oEntInicio VAR oForm:nControlInicio ;
+DEFINE DOCUMENT ENTRY oForm:oEntInicio VAR oForm:nControlInicio ;
       VALID __SeriesConsecNum( oForm:oEntInicio,oForm,"inicio" ) ;
        ID "ent_inicio" RESOURCE oRes
     	
 
-DEFINE INTEGER ENTRY oForm:oEntFinal VAR oForm:nControlFinal ;
+DEFINE DOCUMENT ENTRY oForm:oEntFinal VAR oForm:nControlFinal ;
 			VALID __SeriesConsecNum( oForm:oEntFinal,oForm,"final" ) ;
                ID "ent_final" RESOURCE oRes
 
-       DEFINE INTEGER ENTRY oForm:oEntUltCtrl VAR oForm:nUltimoNumControl ;
+DEFINE DOCUMENT ENTRY oForm:oEntUltCtrl VAR oForm:nUltimoNumControl ;
        		  VALID __SeriesConsecNum( oForm:oEntUltCtrl,oForm,"ultimo" ) ;
                ID "ent_ult_ctrl" RESOURCE oRes
   	   	

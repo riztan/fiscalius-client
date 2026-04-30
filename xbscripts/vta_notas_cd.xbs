@@ -327,12 +327,20 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
 
    //View( oLBoxFacs:GetCol(1):ClassName() )
    ::oLBoxFacs:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
+   /*
+   ::oLBoxFacs:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
+   ::oLBoxFacs:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
+   ::oLBoxFacs:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
 
-   ::oLBoxFacs:SetColTitle( 3, "Cliente" )          //- Cambiamos el titulo 
-
-   ::oLBoxFacs:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 6, "monto base" )       //- Cambiamos el titulo 
-
+   ::oLBoxFacs:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 4, "Fecha" )  //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTite( 10, "Condicion" )       //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo
+  */
 //::oLBoxFacs:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 
    ::hCol := hb_hash()

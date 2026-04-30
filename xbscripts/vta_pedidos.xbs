@@ -1340,13 +1340,14 @@ Procedure __PedSave( oForm, oFormParent )
 	
 	// hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 13 )
 	 
-	 
+	 /*
 	if ::cComboEstado == "Cerrada"		
 		if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
 		MsgStop( hCorrel["mensaje"] + ". No se puede cerrar el documento.", "Error" )
 		return
 		endif
 	endif
+	*/
 	
 
 

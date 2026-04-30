@@ -198,10 +198,11 @@ return
 Function __MaeInvValidaMonto( oEntry, cLabel )
 
    local cMonto := oEntry:GetText()
+   local nMonto := ToNum(cMonto)
 
-   if !Empty(cMonto) .and. ToNum(cMonto) <= 0
-      if cLabel = "precio_unitario"
-         View("El valor debe ser mayor a cero")
+   if cLabel == "precio_unitario"
+      if nMonto <= 0
+         MsgStop("El precio debe ser mayor a cero", "Error")
          return .f.
       endif
    endif

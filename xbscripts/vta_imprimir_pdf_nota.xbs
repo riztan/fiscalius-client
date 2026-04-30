@@ -339,7 +339,7 @@ procedure vta_imprimir_pdf_nota( oForm )
    ENDIF
   
 	nY += 0.4
-   oPDF:CMSAY( nY, 1.4, "Este documento se expresa en Bolívares con su equivalente en Dólares Americanos al tipo de cambio corriente del mercado a la fecha de su emisión, según lo ")
+   oPDF:CMSAY( nY, 1.4, "Este documento se expresa en Bolívares con su equivalente en divisas al tipo de cambio corriente del mercado a la fecha de su emisión, según lo ")
    nY += 0.4
    oPDF:CMSAY( nY, 1.4, "establecido en el artículo 13 numeral 14 de la Providencia Administrativa SNAT / 2024 / 0071 (...) en concordancia con el artículo 128 de la Ley del Banco ")
    nY += 0.4

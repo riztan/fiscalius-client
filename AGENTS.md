@@ -169,6 +169,51 @@ fiscalius-client/
 
 ---
 
+## Errores Comunes - Cliente
+
+### Error "condicional: nil" (BASE/1123)
+Ocurre cuando se accede a propiedades de objetos nulos:
+```xbase
+// ✅ Verificar siempre antes de acceder
+if !hb_isNIL(oObj) .and. hb_isObject(oObj)
+   cValor := oObj:campo
+endif
+```
+
+### Error al acceder array con NIL (BASE/1068)
+```xbase
+// ❌ Incorrecto
+cValor := oQry:fecha
+
+// ✅ Correcto
+if !oQry:Eof() .and. !hb_isNIL(oQry:fecha)
+   cValor := oQry:fecha
+endif
+```
+
+### Error tracelog con números
+```xbase
+// ❌ Incorrecto
+tracelog "valor = " + nValor
+
+// ✅ Correcto
+tracelog "valor = " + hb_ntos(nValor)
+```
+
+### Tablas clave (servidor)
+- `vta_serie_fiscal`: maestro de series (A, B, C, '')
+- `vta_serie_tipos`: vincula series a tipos de documentos
+- `vta_serie_consecutivos`: correlativos de control por serie_id
+- `vta_documentos_consecutivos`: correlativos de numero por tipo_id
+
+### Tipos de documentos fiscales
+- tipo_id = 4: Factura (serie A)
+- tipo_id = 5: Pedido (serie B)
+- tipo_id = 6: Nota Crédito (serie B)
+- tipo_id = 14: Nota Entrega (serie C)
+
+---
+
 ## Aprendidos - Módulo vta_notas_entrega
 
 ### Problemas comunes y soluciones
@@ -253,3 +298,20 @@ ORDER BY t.numero
 - Pendiente actualizar cliente para usar el nuevo método
 
 > **NOTA**: Esta sección "Pendiente: Facturas con saldo" es TEMPORAL - debe eliminarse una vez resuelto el tema.
+
+---
+
+## Pendientes Actuales (2026-04-29)
+
+Tienes varios pasos pendientes documentados:
+
+1. **Login**: Corregir `netio_login.xbs` para usar `hb_md5` (servidor usa `hb_md5`, cliente usa `hb_crypt`)
+2. **Migración 030**: Ejecutar el SQL de integridad referencial en la base de datos
+3. **Commits pendientes**: 4 en servidor, 3 en cliente (pendiente push)
+
+¿Quieres que:
+- Corrija el login del cliente (`netio_login.xbs`)?
+- Ejecute la migración 030 en el servidor?
+- Haga commit + push de los cambios pendientes?
+
+O hay otra tarea prioritaria?
