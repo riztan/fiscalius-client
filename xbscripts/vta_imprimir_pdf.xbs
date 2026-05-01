@@ -270,6 +270,14 @@ procedure vta_imprimir_pdf( oForm )
     oPDF:CMSAY( nY, 23.6, TRANSFORM(tonum(::nMontoOtrImp),"@E 9,999,999.99") )
 	nY += 0.4
    ENDIF
+   
+   IF tonum(::nMontoImpProd)>0
+    oPDF:CMSAY( nY, 10.4, "Impuesto Produccion "+cDivisa+" :   " )
+	oPDF:CMSAY( nY, 18.4, "Impuesto Produccion "+cMoneda+" :    " )
+	oPDF:CMSAY( nY, 15.6, TRANSFORM(tonum(::nMontoImpProd)/nDivisa,"@E 9,999,999.99") )
+    oPDF:CMSAY( nY, 23.6, TRANSFORM(tonum(::nMontoImpProd),"@E 9,999,999.99") )
+	nY += 0.4
+   ENDIF
 	oPDF:SetFont( "Helvetica-Bold", 11 )
 	oPDF:CMSAY( nY, 10.2, "TOTAL "+cDivisa+" :" )
 	oPDF:CMSAY( nY, 18.2, "TOTAL "+cMoneda+" :" )
@@ -325,6 +333,8 @@ procedure vta_imprimir_pdf( oForm )
    oPDF:CMSAY( nY, 1.4, "Central de Venezuela (BCV); artículo 25 de la Ley que establece el Impuesto al Valor Agregado (IVA) y 38 del Reglamento General de la Ley que establece el ")
    nY += 0.4
    oPDF:CMSAY( nY, 1.4," Impuesto al Valor Agregado (RLIVA).")
+   
+   
    // Guardar
    oPDF:End( .T. )
 

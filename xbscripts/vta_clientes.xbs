@@ -257,6 +257,10 @@ Procedure __VtaCliSave( oForm )
                          "cedula"       => ::cCedula,  ;
                          "tipo_entidad" => LEFT(::cTipo,1) ;
                        } )
+					   
+		//view(::rCliente:Data())	
+        // view(LEFT(::cTipo,1))		
+		//return 
 
    uResp := ::rCliente:Save()
 

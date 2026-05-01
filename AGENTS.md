@@ -1,7 +1,7 @@
 # AGENTS.md - Fiscalius Client
 
 **Proyecto**: Cliente de escritorio TPuy para el ERP fiscal venezolano Fiscalius  
-**Directorio**: `/home/riztan/git/fiscalius-client`
+**Directorio**: `C:\fiscalius\fiscalius-client`
 
 ---
 
@@ -19,7 +19,6 @@
 ### Regla Crítica - LOCAL en Harbour
 - **LOCAL debe declararse AL INICIO del procedimiento**, antes de cualquier código ejecutable
 - **NUNCA** dentro de FOR EACH, IF, WHILE, TRY, etc.
-- Si necesitas variables dentro de un bucle, decláralas al inicio del procedimiento
 
 ```harbour
 // ✅ Correcto
@@ -298,20 +297,3 @@ ORDER BY t.numero
 - Pendiente actualizar cliente para usar el nuevo método
 
 > **NOTA**: Esta sección "Pendiente: Facturas con saldo" es TEMPORAL - debe eliminarse una vez resuelto el tema.
-
----
-
-## Pendientes Actuales (2026-04-29)
-
-Tienes varios pasos pendientes documentados:
-
-1. **Login**: Corregir `netio_login.xbs` para usar `hb_md5` (servidor usa `hb_md5`, cliente usa `hb_crypt`)
-2. **Migración 030**: Ejecutar el SQL de integridad referencial en la base de datos
-3. **Commits pendientes**: 4 en servidor, 3 en cliente (pendiente push)
-
-¿Quieres que:
-- Corrija el login del cliente (`netio_login.xbs`)?
-- Ejecute la migración 030 en el servidor?
-- Haga commit + push de los cambios pendientes?
-
-O hay otra tarea prioritaria?

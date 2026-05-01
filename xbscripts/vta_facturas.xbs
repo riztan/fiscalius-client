@@ -1458,6 +1458,7 @@ Procedure __VtaSave( oForm, oFormParent )
          return
       endif
    endif
+   
 
   
 //   View( ::hFactura["iva"] ) 
@@ -1594,6 +1595,8 @@ FUNCTION __vtaf_CalPrecio( oForm, cPrecio, cDivisa )
    rQry := ::rEmpresa:GetTasa( CTOD(::oEntFecha:getValue()) ) 
 
    While !rQry:Eof()
+      //view("codigo "+rQry:codigo) 
+	 // view("cdivisa "+ cDivisa)
       if rQry:codigo=cDivisa 
          rValor := iif( rQry:valor > 0, rQry:valor, 1 ) // No puede haber valor cero en divisa.
          nPrecio := ROUND( nPrecio * rValor , 2 )
@@ -1636,6 +1639,7 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                   __vtaf_CalPrecio( oForm, rProductos:precio_unitario, rProductos:moneda_codigo))
 	          //STR( rProductos:precio_unitario ))
 
+     // view(rProductos:moneda_codigo)
 	          //TRANSFORM( rProductos:precio_unitario, P_92 ))
 
       __SetValue( ::oModDetal:oTreeView, ;
@@ -1648,6 +1652,13 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, 21, ; // imp_pvp
                   STR( rProductos:imp_pvp )) // Set imp_pvp
+				  
+	/*
+	__SetValue( ::oModDetal:oTreeView, ;
+ 	          ::oModDetal:oLbx, ;
+	          ::oModDetal:aIter, 22, ;
+                  __vtaf_CalPrecio( oForm, rProductos:imp_pvp, rProductos:moneda_codigo))
+		*/		  
 
       __SetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;

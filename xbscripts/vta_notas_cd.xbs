@@ -327,20 +327,12 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
 
    //View( oLBoxFacs:GetCol(1):ClassName() )
    ::oLBoxFacs:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
-   /*
-   ::oLBoxFacs:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
-   ::oLBoxFacs:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
-   ::oLBoxFacs:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
 
-   ::oLBoxFacs:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 4, "Fecha" )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTite( 10, "Condicion" )       //- Cambiamos el titulo 
-   ::oLBoxFacs:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo
-  */
+   ::oLBoxFacs:SetColTitle( 3, "Cliente" )          //- Cambiamos el titulo 
+
+   ::oLBoxFacs:SetColTitle( 5, "fecha de vcmto." )  //- Cambiamos el titulo 
+   ::oLBoxFacs:SetColTitle( 6, "monto base" )       //- Cambiamos el titulo 
+
 //::oLBoxFacs:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 
    ::hCol := hb_hash()
@@ -1582,6 +1574,7 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
    nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
    ::hDocumento["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
    ::cSerieID:=::hDocumento["serie_id"]
+   
    hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 5 )	 
    if ::cComboEstado == "Cerrada"		
       if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
@@ -1590,9 +1583,12 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
       endif
    endif
    
+   
 
    uResp := ::rDocumento:SetData( ::hDocumento )
 
+   //view(::hDocumento)
+   //return
 
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
       ::oLabInfo:SetText( uResp["message"] )
@@ -1620,9 +1616,13 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
 //View( ::hDocumento )
 //View( ::hDocumento["numero"] )
      
-      nNumero := VALTYPE(::hDocumento["numero"]) == "N" .and. !hb_isNIL(::hDocumento["numero"]) ? VAL(::hDocumento["numero"]) : 0
-      if nNumero > 0
-         ::oLabNumero:SetValue( STRZERO( nNumero, 8) )
+     // nNumero := VALTYPE(::hDocumento["numero"]) == "N" .and. !hb_isNIL(::hDocumento["numero"]) ? VAL(::hDocumento["numero"]) : 0
+     // if nNumero > 0
+     //    ::oLabNumero:SetValue( STRZERO( nNumero, 8) )
+     
+      if VAL(::hDocumento["numero"])>0
+         ::oLabNumero:SetValue( STRZERO( VAL(::hDocumento["numero"]), 8) )
+
       else
          ::oLabNumero:SetValue( ALLTRIM(::hDocumento["numero"]) )
       endif
