@@ -275,6 +275,9 @@ procedure vta_notas_cd( oFormParent, cTipoDocumento )
    ::oEntTotal:Justify( GTK_JUSTIFY_RIGHT )
    ::oEntTotal:SetEditable( .F. )
 
+   DEFINE TOOLTIP ::oTTEntTotal WIDGET ::oEntTotal ;
+          TEXT ""
+
 
    // -- Caja de Retenciones
    DEFINE BOX ::oBoxRet ID "box_retiva" RESOURCE ::oRes
@@ -1280,7 +1283,7 @@ return
 
 
  procedure __NCCalMontos( oTView, pModel, aIter, oForm )
-     local nBase, nMonto, nTotal, cIva, nPorcentaje , nImpPvp:=0, nImpProduccion:=0, nOtrImp:=0,nImpProd:=0,aBox
+     local nBase, nMonto, nTotal, cIva, nPorcentaje , nImpPvp:=0, nImpProduccion:=0, nOtrImp:=0,nImpProd:=0,aBox, aTasa
 
    
   
@@ -1385,8 +1388,16 @@ nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
          aBox[1]:Show()
       endif
    NEXT
-   
-   
+
+   // Actualizamos Tooltip con monto en divisa
+   if !Empty( ::cDivisa )
+      aTasa := hb_aTokens( ::cDivisa, " ")
+      if !Empty( aTasa ) .and. !Empty(aTasa[1]) .and. !Empty(aTasa[2])
+         ::oTTEntTotal:SetTip( ::oEntTotal, ;
+                               aTasa[1]+" "+;
+                               ALLTRIM( TRANSFORM( ROUND(ToNum(::oEntTotal:GetValue())*ToNum(aTasa[2]), 2), P_92 ) ) )
+      endif
+   endif
 
 return
 
