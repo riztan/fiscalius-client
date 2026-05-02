@@ -1660,15 +1660,15 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                   __vtaf_CalPrecio( oForm, rProductos:imp_pvp, rProductos:moneda_codigo))
 		*/		  
 
-      __SetValue( ::oModDetal:oTreeView, ;
-                  ::oModDetal:oLbx, ;
-                  ::oModDetal:aIter, 22, ; // imp_pvp
-                  STR( rProductos:imp_pvp )) // Set imp_pvp
+       __SetValue( ::oModDetal:oTreeView, ;
+                   ::oModDetal:oLbx, ;
+                   ::oModDetal:aIter, 22, ; // imp_pvp
+                   __vtaf_CalPrecio( oForm, rProductos:imp_pvp, rProductos:moneda_codigo )) // Multiplicar por tasa
 
-      __SetValue( ::oModDetal:oTreeView, ;
-                  ::oModDetal:oLbx, ;
-                  ::oModDetal:aIter, 23, ; // imp_produccion
-                  STR( rProductos:imp_produccion )) // Set imp_produccion
+       __SetValue( ::oModDetal:oTreeView, ;
+                   ::oModDetal:oLbx, ;
+                   ::oModDetal:aIter, 23, ; // imp_produccion
+                   __vtaf_CalPrecio( oForm, rProductos:imp_produccion, rProductos:moneda_codigo )) // Multiplicar por tasa
   
      __SetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
@@ -1741,7 +1741,7 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 				     ::oModDetal:aIter, __PRECIO ,  ;
                                      __vtaf_CalPrecio( oForm, ;
                                                        oModProductos:oTreeView:GetAutoValue( 10 ), ;
-                                                       oModProductos:oTreeView:GetAutoValue( 29 ) );
+                                                       oModProductos:oTreeView:GetAutoValue( 30 ) );
                                      ),;
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
@@ -1750,19 +1750,27 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 21, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+                                __vtaf_CalPrecio( oForm, ;
+                                                       oModProductos:oTreeView:GetAutoValue( 27 ), ;
+                                                       oModProductos:oTreeView:GetAutoValue( 30 ) ) ), ;
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 22, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
-                                    __SetValue( ::oModDetal:oTreeView, ;
+                                __vtaf_CalPrecio( oForm, ;
+                                                       oModProductos:oTreeView:GetAutoValue( 27 ), ;
+                                                       oModProductos:oTreeView:GetAutoValue( 30 ) ) ), ;
+                        __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 23, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),;
+                          __vtaf_CalPrecio( oForm, ;
+                                                       oModProductos:oTreeView:GetAutoValue( 28 ), ;
+                                                       oModProductos:oTreeView:GetAutoValue( 30 ) ) ), ;
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 24, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),;
+                          __vtaf_CalPrecio( oForm, ;
+                                                       oModProductos:oTreeView:GetAutoValue( 28 ), ;
+                                                       oModProductos:oTreeView:GetAutoValue( 30 ) ) ), ;
                          __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 13, ;

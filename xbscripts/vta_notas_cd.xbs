@@ -1089,7 +1089,7 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
    /* Columna Cantidad */
    #define __DESCUENTO   7
    oCol := ::oModDetal:aCol[__DESCUENTO] // Cantidad
-   oCol:oRenderer:SetEditable( .T. )
+   oCol:oRenderer:SetEditable( .F. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
                                __NCEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __DESCUENTO )  }
