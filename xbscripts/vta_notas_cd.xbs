@@ -1515,10 +1515,16 @@ Procedure __DelDetal( oForm, lAll )
 
    if lAll
       //if MsgNoYes( "¿Realmente desea eliminar los detalles? ", "Atención" )
-         if ::rDocumento:DelItem( ,.T. )
-            ::oModDetal:oTreeView:ClearModel(.T.)
+         if hb_isObject( ::rDocumento )
+            if ::rDocumento:DelItem( ,.T. )
+               ::oModDetal:oTreeView:ClearModel(.T.)
+            endif
          endif
       //endif
+   endif
+
+   if !hb_isObject( ::rDocumento )
+      RETURN
    endif
 
    if ::oModDetal:oTreeView:IsGetSelected( aIter ) 
@@ -1569,10 +1575,12 @@ Procedure __NCSave( oForm, oFormParent )
    ::hDocumento["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
   
 nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
-   ::hDocumento["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
+   ::hDocumento["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 1)
 
    nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
-   ::hDocumento["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
+   if nIdx > 0
+      ::hDocumento["serie_id"] := ::aSeriesId[nIdx]
+   endif
    ::cSerieID:=::hDocumento["serie_id"]
    
    hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 5 )	 
