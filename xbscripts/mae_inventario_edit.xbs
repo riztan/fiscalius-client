@@ -308,8 +308,8 @@ Procedure __MaeInvSave( oForm )
                     "",; //hData["detalles_json"            ], ; //3
                     "0",; //hData["precio_full"              ], ; //4
                     "",; //hData["incluye_iva"              ], ; //6
-                    "0",; //hData["capacidad"              ], ; //
-                    "0",; //hData["grados_alcohol"              ], ; //	   
+                     hb_ntos(hData["capacidad"]),       ; //
+                     hb_ntos(hData["grados_alcohol"]),    ; //	   
                     hData["unidad_ind"               ], ; 	   
                     hData["unidad_agru"              ], ; 	   
                     hData["cant_und_agru"            ], ; 	   

@@ -95,10 +95,10 @@ procedure vta_imprimir_pdf( oForm )
    oPDF:CMSAY( nY, 17.2+nPosDet, "Total" )
    
    IF tonum(::nMontoOtrImp)>0
-   oPDF:CMSAY( nY, 21.5, "Imp. Pvp" )
+   oPDF:CMSAY( nY, 21.6, "Imp. Pvp" )
    ENDIF
    IF tonum(::nMontoImpProd)>0
-   oPDF:CMSAY( nY, 23.3, "Imp. Prod." )
+   oPDF:CMSAY( nY, 23.4, "Imp. Prod." )
    
    ENDIF
 
@@ -109,7 +109,7 @@ procedure vta_imprimir_pdf( oForm )
    // =====================================
    oPDF:SetFont( "Courier", 9 )
 
-   
+   //view(adata)
    FOR i := 1 TO LEN( aData )
       aLine := aData[i]
       nUniCaj := IIF( RIGHT(aLine[3], 2) == "01", 0, TONUM(RIGHT(aLine[3],2)) )
@@ -133,18 +133,18 @@ procedure vta_imprimir_pdf( oForm )
       //oPDF:CMSAY( nY, 11.2, hb_ntos(nTotUniLi) )
       oPDF:CMSAY( nY, 10, hb_ntos(nUni+nCaj) )
 	  IF tonum(::nMontoOtrImp)>0
-	  oPDF:CMSAY( nY, 12.2, TRANSFORM(aLine[22], "@E 999.99") )
+	  oPDF:CMSAY( nY, 12.2, TRANSFORM(aLine[24], "@E 999.99") )
 	  oPDF:CMSAY( nY, 13.2, TRANSFORM(aLine[23], "@E 999.99") )
 	  ENDIF
       oPDF:CMSAY( nY, 12.5+nPosDet, TRANSFORM(aLine[6], "@E 99,999.99") )
       oPDF:CMSAY( nY, 15.5+nPosDet, TRANSFORM(aLine[9], "@E 99") )
       oPDF:CMSAY( nY, 16.5+nPosDet, TRANSFORM(aLine[8], "@E 999,999.99") )
 	  IF tonum(::nMontoOtrImp)>0
-      oPDF:CMSAY( nY, 21.2, TRANSFORM(aLine[21], "@E 99,999.99") )
+      oPDF:CMSAY( nY, 21.4, TRANSFORM(aLine[21], "@E 99,999.99") )
 	  ENDIF
 	  
 	  IF tonum(::nMontoImpProd)>0
-      oPDF:CMSAY( nY, 23.1, TRANSFORM(aLine[22], "@E 99,999.99") )
+      oPDF:CMSAY( nY, 23.3, TRANSFORM(aLine[22], "@E 99,999.99") )
 	  ENDIF
 
 
