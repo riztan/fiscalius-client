@@ -75,17 +75,30 @@ return
 
 procedure serie_tipos_edit( oFormParent, oAliWnd, oModel, lNew )
    local oRes, oForm, hData, nId
+   local rSeries, aSeries := {}
 
    default lNew := .T.
 
    SET PUBLIC oForm
-
+   
    oForm:lForce   := .F.
    oForm:lClose   := .F.
    oForm:lNew     := lNew
    oForm:oModel   := oModel
    oForm:oAliWnd  := oAliWnd
    oForm:oParent  := oFormParent
+   
+   rSeries := oFormParent:oGEmpresa:SeriesFiscales()
+   if !hb_isObject( rSeries )
+      MsgStop( "No se pudo obtener el listado de series fiscales." )
+      return 
+   endif 
+   
+   rSeries:GoTop()
+   While !rSeries:Eof()
+      AADD( aSeries, rSeries:serie_fiscal ) 
+      rSeries:Skip()
+   EndDo
 
    if lNew
       oForm:cSerieCod := ""
@@ -102,17 +115,24 @@ procedure serie_tipos_edit( oFormParent, oAliWnd, oModel, lNew )
 
    hData := oForm:rSerieTipo:Data()
 
-   SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_serie_tipos.ui"
+    SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_serie_tipos.ui"
 
    DEFINE WINDOW oForm:oWnd TITLE "Tipo de Documento por Serie" SIZE 480, 280 ;
           OF oAliWnd ;
           ID "window1" RESOURCE oRes
 
-      DEFINE IMAGE oForm:oImgBanner ID "img_banner" RESOURCE oRes
-      oForm:oImgBanner:Adjust( 900 )
+   DEFINE IMAGE oForm:oImgBanner ID "img_banner" RESOURCE oRes
+   oForm:oImgBanner:Adjust( 900 )
 
-      DEFINE IMAGE oForm:oImgLogo ID "img_logo" RESOURCE oRes
-      oForm:oImgLogo:Adjust( 60 )
+   DEFINE IMAGE oForm:oImgLogo ID "img_logo" RESOURCE oRes
+   oForm:oImgLogo:Adjust( 60 )
+
+   DEFINE COMBOBOX oForm:oCBSerie VAR oForm:cSerieCod ITEMS aSeries ;
+          ID "cb_serie" RESOURCE oRes
+
+   DEFINE ENTRY oForm:oEntSerie VAR oForm:cSerieCod ;
+          ID "ent_serie" RESOURCE oRes
+   oForm:oEntSerie:SetEditable( .F. )
 
       DEFINE ENTRY oForm:oEntSerie VAR oForm:cSerieCod ;
              ID "ent_serie" RESOURCE oRes
