@@ -67,8 +67,8 @@ procedure vta_series_consecutivos( oForm, oWndParent, oEntParent )
    
 
    oLBoxSeriesConsec:bNew  := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .T. ) }
-   //oLBoxSeriesConsec:bEdit := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .F. ) }
-   oLBoxSeriesConsec:bEdit := {||View("Acción no permitida") }//{|oModel| tasacamb_edit( oForm, oAliWnd, oModTasas, .F. /*lNew*/ ) }
+   oLBoxSeriesConsec:bEdit := {|oModel| series_consec_edit( oForm, oAliWnd, oModSeriesConsec, .F. ) }
+  // oLBoxSeriesConsec:bEdit := {||View("Acción no permitida") }//{|oModel| tasacamb_edit( oForm, oAliWnd, oModTasas, .F. /*lNew*/ ) }
    oLBoxSeriesConsec:bDel  := {||View("Acción no permitida")}
    
 
@@ -157,9 +157,13 @@ DEFINE DOCUMENT ENTRY oForm:oEntUltCtrl VAR oForm:nUltimoNumControl ;
        DEFINE BUTTON oForm:oBtnCancel ;
               ACTION ( oForm:lClose := .T., oForm:oWnd:End() ) ;
               ID "btn_cancel" RESOURCE oRes
-*/              
+              
+   oForm:oEntSerie:SetEditable( lNew )
+   oForm:oEntInicio:SetEditable( lNew)
+   oForm:oEntFinal:SetEditable( lNew )
 
    ACTIVATE WINDOW oForm:oWnd MODAL VALID __SeriesConsecExit( oForm )
+
 
 return
 
