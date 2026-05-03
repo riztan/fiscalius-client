@@ -67,6 +67,8 @@ procedure vta_serie_tipos( oForm, oWndParent, oEntParent )
    oLBoxSerieTipos:bNew  := {|oModel| serie_tipos_edit( oForm, oAliWnd, oModSerieTipos, .T. ) }
    oLBoxSerieTipos:bEdit := {|oModel| serie_tipos_edit( oForm, oAliWnd, oModSerieTipos, .F. ) }
 
+
+
    ACTIVATE WINDOW oAliWnd MODAL
 
 return
@@ -126,17 +128,15 @@ procedure serie_tipos_edit( oFormParent, oAliWnd, oModel, lNew )
 
    DEFINE IMAGE oForm:oImgLogo ID "img_logo" RESOURCE oRes
    oForm:oImgLogo:Adjust( 60 )
+    DEFINE BOX oForm:oBoxSerie ID "hbox_serie" RESOURCE oRes
+      DEFINE COMBOBOX oForm:oCBSerie VAR oForm:cSerieCod ITEMS aSeries ;
+             OF oForm:oBoxSerie
 
-   DEFINE COMBOBOX oForm:oCBSerie VAR oForm:cSerieCod ITEMS aSeries ;
-          ID "cb_serie" RESOURCE oRes
-
+/*
    DEFINE ENTRY oForm:oEntSerie VAR oForm:cSerieCod ;
           ID "ent_serie" RESOURCE oRes
    oForm:oEntSerie:SetEditable( .F. )
-
-      DEFINE ENTRY oForm:oEntSerie VAR oForm:cSerieCod ;
-             ID "ent_serie" RESOURCE oRes
-
+   */
       DEFINE ENTRY oForm:oEntTipo VAR oForm:cTipoCod ;
              ID "ent_tipo" RESOURCE oRes
 
@@ -148,7 +148,12 @@ procedure serie_tipos_edit( oFormParent, oAliWnd, oModel, lNew )
       DEFINE BUTTON oForm:oBtnCancel ;
              ACTION ( oForm:lClose := .T., oForm:oWnd:End() ) ;
              ID "btn_cancel" RESOURCE oRes
-
+			 
+	
+   if !lNew	 
+    oForm:oCBSerie:Disable()
+   endif
+   oForm:oEntTipo:SetEditable( lNew )
    ACTIVATE WINDOW oForm:oWnd MODAL VALID __SerieTiposExit( oForm )
 
 return

@@ -1594,7 +1594,8 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
    endif
    ::cSerieID:=::hDocumento["serie_id"]
    
-   hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 5 )	 
+   hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 5 )	
+   //return
    if ::cComboEstado == "Cerrada"		
       if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
          MsgStop( hCorrel["mensaje"] + ". No se puede cerrar el documento.", "Error" )
@@ -1607,7 +1608,7 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
    uResp := ::rDocumento:SetData( ::hDocumento )
 
    //view(::hDocumento)
-   //return
+   
 
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
       ::oLabInfo:SetText( uResp["message"] )

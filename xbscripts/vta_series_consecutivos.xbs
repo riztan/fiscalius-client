@@ -12,18 +12,24 @@ procedure vta_series_consecutivos( oForm, oWndParent, oEntParent )
    local oLabTitulo, cLabTitulo := "Correlativos Fiscales"
    local rSeriesConsec, oModSeriesConsec, oLBoxSeriesConsec
 
+
    if !oTPuy:RunXBS( "netio_check" )
       MsgStop( "Problemas de conexión con el servidor." )
       return
    endif
 
    rSeriesConsec := oForm:oGEmpresa:SeriesConsecutivos()
+   
 
    if hb_isNIL( rSeriesConsec )
       MsgStop( "No se pudo obtener el listado de correlativos fiscalea." )
       return
    endif
+   
+   //rSerie := oForm:oGEmpresa:GetSerieFiscal( {} )
 
+
+ 
    SET RESOURCES oRes FROM FILE oTPuy:cResources + "vta_listbox.ui"
 
    DEFINE WINDOW oAliWnd ;
@@ -80,12 +86,23 @@ return
 
 procedure series_consec_edit( oFormParent, oAliWnd, oModel, lNew )
    local oRes, oForm, hData, hNext, nId
-
+   local rSeries, aSeries := {}
    default lNew := .T.
 
    SET PUBLIC oForm
    
+   rSeries := oFormParent:oGEmpresa:SeriesFiscales()
+   if !hb_isObject( rSeries )
+      MsgStop( "Hay problema para obtener la lista de Series Fiscales" )
+      return 
+   endif 
    
+   rSeries:GoTop()
+   While !rSeries:Eof()
+
+      AADD( aSeries, rSeries:serie_fiscal ) 
+      rSeries:Skip()
+   EndDo
    
    
    oForm:lForce   := .F.
@@ -129,10 +146,14 @@ procedure series_consec_edit( oFormParent, oAliWnd, oModel, lNew )
 
       DEFINE IMAGE oForm:oImgLogo ID "img_logo" RESOURCE oRes
       oForm:oImgLogo:Adjust( 60 )
-
+      DEFINE BOX oForm:oBoxSerie ID "hbox_serie" RESOURCE oRes
+      DEFINE COMBOBOX oForm:oCBSerie VAR oForm:cSerieCod ITEMS aSeries ;
+             OF oForm:oBoxSerie
+/*
 DEFINE ENTRY oForm:oEntSerie VAR oForm:cSerieCod ;
        VALID __ValidaSerieConsec( oForm:oEntSerie, oForm ) ;
        ID "ent_serie" RESOURCE oRes
+ */
 
 //oForm:oEntSerie:Enable( .F. )
 
@@ -157,8 +178,10 @@ DEFINE DOCUMENT ENTRY oForm:oEntUltCtrl VAR oForm:nUltimoNumControl ;
        DEFINE BUTTON oForm:oBtnCancel ;
               ACTION ( oForm:lClose := .T., oForm:oWnd:End() ) ;
               ID "btn_cancel" RESOURCE oRes
-              
-   oForm:oEntSerie:SetEditable( lNew )
+     
+   if !lNew	 
+    oForm:oCBSerie:Disable()
+   endif
    oForm:oEntInicio:SetEditable( lNew)
    oForm:oEntFinal:SetEditable( lNew )
 
@@ -171,18 +194,36 @@ return
 
 procedure __SeriesConsecSave( oForm )
 
-   local hData, uResp, aIter, lNew, nId
+   local hData, uResp, aIter, lNew, nId, nInicio, nFinal, nUltimo
 
    lNew := oForm:rSeriesConsec:IsNew()
 
+   nInicio := VAL(oForm:nControlInicio)
+   nFinal  := VAL(oForm:nControlFinal)
+   nUltimo := VAL(oForm:nUltimoNumControl)
+
+   // Validar control_inicio <= control_final
+   if nInicio > nFinal
+      MsgAlert( "El Control Inicio no puede ser mayor al Control Final", "Error" )
+      oForm:oEntInicio:SetFocus()
+      return
+   endif
+
+   // Validar ultimo_numero_control esté dentro del rango
+   if nUltimo < nInicio .or. nUltimo > nFinal
+      MsgAlert( "El Último Número de Control debe estar entre Control Inicio y Control Final", "Error" )
+      oForm:oEntUltCtrl:SetFocus()
+      return
+   endif
+
    oForm:rSeriesConsec:SetData( { "serie_codigo" => ALLTRIM( oForm:cSerieCod ), ;
-                                   "control_inicio"        => VAL(oForm:nControlInicio),  ;
-                                   "control_final"         => VAL(oForm:nControlFinal), ;
-                                   "ultimo_numero_control" => VAL(oForm:nUltimoNumControl), ;
+                                   "control_inicio"        => nInicio,  ;
+                                   "control_final"         => nFinal, ;
+                                   "ultimo_numero_control" => nUltimo, ;
                                    "activo"                => oForm:lActivo } )
 
 
- 
+  
    uResp := oForm:rSeriesConsec:Save()
 
    if ValType( uResp ) = "L" .and. uResp
@@ -208,11 +249,10 @@ procedure __SeriesConsecSave( oForm )
          oForm:oModel:SetValue( 7, iif(hData["activo"], "Sí", "No") )
       endif
 
-      oForm:lForce := .T.
-      oForm:oWnd:End()
-   endif
-   */
-
+       oForm:lForce := .T.
+       oForm:oWnd:End()
+    endif
+ 
 return
 
 
