@@ -61,7 +61,7 @@ procedure vta_serie_fiscal( oForm, oWndParent, oEntParent )
    oLBoxSeries:lBar  := .F.
    oLBoxSeries:bNew  := {|oModel| serie_fiscal_edit( oForm, oAliWnd, oModSeries, .T. /*lNew*/ ) }
    oLBoxSeries:bEdit := {|oModel| serie_fiscal_edit( oForm, oAliWnd, oModSeries, .F. /*lNew*/ ) }
-   //oLBoxSeries:bDel  := {|oModel| serie_fiscal_delete( oForm, oAliWnd, oModSeries ) }
+  // oLBoxSeries:bDel  := {|oModel| serie_fiscal_delete( oForm, oAliWnd, oModSeries ) }
 
     // Columnas de SerieFiscal():
     // 1=id  2=serie_fiscal  3=activo
@@ -129,6 +129,7 @@ procedure serie_fiscal_edit( oFormParent, oAliWnd, oModel, lNew )
              ID "btn_cancel" RESOURCE oRes
 			 
 			 
+   oSerForm:oEntSerie:SetEditable( lNew )
 
    ACTIVATE WINDOW oSerForm:oWnd MODAL VALID __SerieExit( oSerForm )
 
@@ -205,19 +206,17 @@ procedure serie_fiscal_delete( oFormParent, oAliWnd, oModel )
       return .F.
    endif
 
-   MsgInfo( "Funcionalidad de eliminación en desarrollo.", "Información" )
-   return .F.
-
-//   rSerie := oFormParent:oGEmpresa:SerieFiscal( { "id" => nId } )
-//   
-//   if rSerie:Delete( nId )
-//      oModel:Delete()
-//      MsgInfo( "Serie fiscal eliminada correctamente.", "Éxito" )
-//      return .T.
-//   else
-//      MsgAlert( "No se pudo eliminar la serie fiscal.", "Error" )
-//      return .F.
-//   endif
+  
+   rSerie := oFormParent:oGEmpresa:SerieFiscal( { "id" => nId } )
+  
+  if rSerie:Delete( nId )
+     oModel:Delete()
+     MsgInfo( "Serie fiscal eliminada correctamente.", "Éxito" )
+      return .T.
+   else
+      MsgAlert( "No se pudo eliminar la serie fiscal.", "Error" )
+      return .F.
+   endif
 
 return .F.
 */

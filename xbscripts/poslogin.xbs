@@ -143,8 +143,14 @@ procedure poslogin( oParent )
       DEFINE MENUITEM ::oMnuAlicuotas ACTION oTPuy:RunXBS( "mae_alicuotas", oForm, oTPuy:oWnd ) ;
              ID "item_alicuotas" RESOURCE ::oRes
 			 
-      DEFINE MENUITEM ::oMnuSeries ACTION oTPuy:RunXBS( "vta_series_consecutivos", oForm, oTPuy:oWnd ) ;
+	   DEFINE MENUITEM ::oMnuSeriesFis ACTION oTPuy:RunXBS( "vta_serie_fiscal", oForm, oTPuy:oWnd ) ;
+             ID "item_serie_fiscal" RESOURCE ::oRes			 
+			 
+      DEFINE MENUITEM ::oMnuSeriesCon ACTION oTPuy:RunXBS( "vta_series_consecutivos", oForm, oTPuy:oWnd ) ;
              ID "item_series_consecutivos" RESOURCE ::oRes
+	   
+	  DEFINE MENUITEM ::oMnuSeriesTip ACTION oTPuy:RunXBS( "vta_serie_tipos", oForm, oTPuy:oWnd ) ;
+             ID "item_serie_tipos" RESOURCE ::oRes
 			 
       DEFINE MENUITEM ::oMnuInventario ACTION oTPuy:RunXBS( "mae_inventario", oForm, oTPuy:oWnd ) ;
              ID "item_productos" RESOURCE ::oRes
@@ -201,7 +207,9 @@ procedure poslogin( oParent )
          ::oMnuMonedas:Hide()
          ::oMnuTasas:Hide()
          ::oMnuAlicuotas:Hide()
-         ::oMnuSeries:Hide()
+         ::oMnuSeriesFis:Hide()
+		 ::oMnuSeriesCon:Hide()
+		 ::oMnuSeriesTip:Hide()
          ::oMnuInventario:Hide()
          ::oMnuIGTF:Hide()
          ::oMnuClientes:Hide()
