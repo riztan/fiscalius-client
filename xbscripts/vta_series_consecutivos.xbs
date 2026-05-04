@@ -201,6 +201,8 @@ procedure __SeriesConsecSave( oForm )
    nInicio := VAL(oForm:nControlInicio)
    nFinal  := VAL(oForm:nControlFinal)
    nUltimo := VAL(oForm:nUltimoNumControl)
+   
+
 
    // Validar control_inicio <= control_final
    if nInicio > nFinal
@@ -223,7 +225,8 @@ procedure __SeriesConsecSave( oForm )
                                    "activo"                => oForm:lActivo } )
 
 
-  
+  // view(oForm:rSeriesConsec)
+  // return
    uResp := oForm:rSeriesConsec:Save()
 
    if ValType( uResp ) = "L" .and. uResp
