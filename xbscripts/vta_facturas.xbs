@@ -1048,9 +1048,12 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
    if nCol=__DESCUENTO
       if RIGHT( uVal, 1 ) = "%"
          // Si nos dan porcentaje, lo calculamos.
+		 
          uVal := TRANSFORM( ToNum( oTreeView:GetAutoValue( __PRECIO ))  * ;
                           ( ToNum(uVal)/100 ) * ;
                             ToNum( oTreeView:GetAutoValue( __CANTIDAD ) ), P_92 )
+		
+
          __SetValue( oTreeView, oModel, aIter, nCol, uVal )
       endif
       if ToNum(uVal) < ( ToNum(oTreeView:GetAutoValue( __CANTIDAD )) * ;
@@ -1074,12 +1077,12 @@ PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue  )
    if oTreeView:IsGetSelected( aIter )
       if nCol= __CANTIDAD .or. nCol= __PRECIO .or. nCol= __DESCUENTO
 
-         if nCol = __DESCUENTO
-            nDescuento := VAL(uValue)
+         if nCol = __DESCUENTO		    
+            nDescuento := TONUM(uValue)
             nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
                       ToNum( oTreeView:GetAutoValue(__PRECIO,   aIter))) - nDescuento
          else
-            nDescuento := VAL( oTreeView:GetAutoValue(__DESCUENTO, aIter) )
+            nDescuento := TONUM( oTreeView:GetAutoValue(__DESCUENTO, aIter) )
          endif
 
          if nCol = __CANTIDAD 
