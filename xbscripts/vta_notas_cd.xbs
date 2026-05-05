@@ -364,6 +364,11 @@ return
 
 procedure __NC_Docs( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() ) 
 
+   if Empty( ::cCodCli )
+      MsgAlert( "Debe seleccionar un cliente primero", "Atención" )
+      RETURN
+   endif
+
    rFacturas := ::rDocumento:Facturas( ::cCodCli )
 
    if ::hDocumento["estado"] = "C"
@@ -762,6 +767,8 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oLabNumero:SetValue( "00000000" )
       ::oLabNroControl:SetValue( "00000000" )
       ::oEntCli:SetValue( "" )
+      ::cCodCli := ""
+      ::cCodVendedor := "1"
       ::oEntFecha:SetValue( DTOC(DATE()) )
       ::oEntVcmto:SetValue( DTOC(DATE()) )
 
@@ -1395,7 +1402,7 @@ nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
       if !Empty( aTasa ) .and. !Empty(aTasa[1]) .and. !Empty(aTasa[2])
          ::oTTEntTotal:SetTip( ::oEntTotal, ;
                                aTasa[1]+" "+;
-                               ALLTRIM( TRANSFORM( ROUND(ToNum(::oEntTotal:GetValue())*ToNum(aTasa[2]), 2), P_92 ) ) )
+                               ALLTRIM( TRANSFORM( ROUND(ToNum(::oEntTotal:GetValue())/ToNum(aTasa[2]), 2), P_92 ) ) )
       endif
    endif
 

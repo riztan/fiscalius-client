@@ -414,7 +414,7 @@ procedure __ModFactsRefresh(oForm)
    if ::isDef("oModFacturas")
 //View( ::oModFacturas:oTreeView:IsGetSelected( aIter ) )
       ::oModFacturas:oTreeView:ClearModel(.t.)
-FOR EACH aLine IN ::rFacturas:GetData()
+      FOR EACH aLine IN ::rFacturas:GetData()
           
           
           
@@ -426,7 +426,7 @@ FOR EACH aLine IN ::rFacturas:GetData()
                         hb_ntos(aLine[ 9]), aLine[ 10], ;
                         hb_ntos(aLine[ 11]), aLine[ 12]
 
-       NEXT
+      NEXT
 
       bDetalCode := {|oTView, pModel, aIter | ;
                      iif( oTView:GetAutoValue(1, aIter)==::hFactura["numero"], ;
@@ -451,7 +451,7 @@ return .F.
 
 function __FactValFecha( oForm, oEnt, dValPrevio )
    local lRes := .t.
-   local nValor, rQry
+   local nValor, rQry, uRet
 
    if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
       //llevamos fecha de vencimiento a la misma fecha del documento.
@@ -463,6 +463,15 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
       
       oEnt:setValue( DTOC(dValPrevio) )
 */
+   endif
+
+   if hb_isObject( ::rFactura )
+      uRet := ::rFactura:SetFecha( CTOD(::oEntFecha:GetValue()) )
+      if !VALTYPE(uRet)="L" //.and. !empty( cRet )
+         ::oEntFecha:SetText( DTOC(dValPrevio) )
+         ::oEntFecha:SetFocus()
+         return .F.
+      endif
    endif
    
    dValPrevio := CTOD( oEnt:getValue() )
@@ -491,6 +500,7 @@ function __FactValFecha( oForm, oEnt, dValPrevio )
 //View( hb_valtoexp( ::aMonedas ) )
 
 return lRes
+
 
 function __FactCargarCondiciones( oForm )
    local rQryCond
@@ -641,17 +651,15 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::cSerie :=  oModel:GetCol(::hCol["serie_fiscal"])
    
 // Actualizar el combo para mostrar la condicion seleccionada
-         if hb_isObject( ::oComboCondicion ) .and. !empty( ::aCondiciones )
-             ::oComboCondicion:SetValue( ::cCondicion )
-         endif
+      if hb_isObject( ::oComboCondicion ) .and. !empty( ::aCondiciones )
+         ::oComboCondicion:SetValue( ::cCondicion )
+      endif
           
  		 
-          if hb_isObject( ::oComboSerie ) .and. !empty( ::aSeries )
-             ::oComboSerie:SetValue( ::cSerie )
-          endif
+      if hb_isObject( ::oComboSerie ) .and. !empty( ::aSeries )
+         ::oComboSerie:SetValue( ::cSerie )
+      endif
 
-
-         
       ::cCodVendedor := oModel:GetCol(::hCol["vendedor_id"])
       ::oEntFecha:SetValue( oModel:GetCol(::hCol["fecha"]) )
       ::oEntVcmto:SetValue( oModel:GetCol(::hCol["fecha_vcmto"]) )
@@ -661,8 +669,6 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
       ::oEntIvaS:SetValue( "0" )
-      
-      
       
       // Usar otros_imp desde el servidor si existe, sino inicializar en 0
       if hb_hHasKey( ::hFactura, "otros_imp" )
@@ -1169,7 +1175,7 @@ procedure __Calcula( oForm )
    ::nTasa := ToNum( aTasa[2] )
    ::oTTEntTotal:SetTip( ::oEntTotal, ;
                          aTasa[1]+" "+;
-                         ALLTRIM( TRANSFORM( ROUND(ToNum(::oEntTotal:GetValue())*::nTasa, 2), P_92  ) ) )
+                          ALLTRIM( TRANSFORM( ROUND(ToNum(::oEntTotal:GetValue())/::nTasa, 2), P_92  ) ) )
 return
 
 
@@ -1441,9 +1447,6 @@ Procedure __VtaSave( oForm, oFormParent )
       ::oLabInfo:SetText( "Ajustado valor de fecha." )
    endif
    
-   
-   
-
    ::hFactura["cliente_id"       ] := ::cCodCli                    // Cliente
    ::hFactura["vendedor_id"      ] := ::cCodVendedor               // Vendedor
    ::hFactura["orden_compra"     ] := ::cOrdenCompra               // Orden de Compra

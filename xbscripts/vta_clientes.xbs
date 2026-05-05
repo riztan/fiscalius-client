@@ -2,6 +2,7 @@
  *
  */
 
+#include "xbscripts/tpy_combobox.xbs"
 #include "tpy_xbs.ch"
 
 procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente, cFiltro, cDocumento )
@@ -80,8 +81,6 @@ procedure vta_clientes( oForm, oWndParent, oEntParent, cCodCliente, cFiltro, cDo
       oLBoxCli:bEdit := {|oModel| vtc_edit( oForm, oCliWnd, oModClientes, rVentas, .F. /*lNew*/ ) }
    endif
    
-   
-   
    oLBoxCli:SetColVisible( 1, .F. )    //- Ocultamos ID
 
    oLBoxCli:SetColTitle( 2, "Código" )            //- Cambiamos el titulo 
@@ -104,7 +103,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
 //   local oImgLogo, oEntCodigo, cCodigo, oEntNombre, cNombre
 //   local oEntRif, cRif, oEntMail, cMail, oEntTlf, cTlf
 //   local oVtDir, cDir, oBtnSave, oBtnCancel
-   local oCliForm, hData
+   local oCliForm, hData, rQry
 
    default lNew := .T.
 
@@ -117,7 +116,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
    oCliForm:rVentas  := rVentas
    oCliForm:lNew     := lNew
 
-   oCliForm:aTipo    := {"V - Venezolano",;
+   oCliForm:aTipo    := {"V - Natural",;
                          "J - Jurídica", ;
                          "E - Extranjero",;
                          "P - Pasaporte",;
@@ -157,7 +156,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_clientes.ui"
 
-   DEFINE WINDOW oCliForm:oWnd TITLE "Cliente" SIZE 750,350 ;
+   DEFINE WINDOW oCliForm:oWnd TITLE "Cliente" SIZE 800,450 ;
           OF oCliWnd ;
           ID "window1" RESOURCE oRes
 
@@ -180,7 +179,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
              VAR oCliForm:cTipo ITEMS oCliForm:aTipo ;
              ON CHANGE ( oCliForm:oEntRif:SetValue( hb_aTokens( oCliForm:cTipo, " - " )[1] +;
                          RIGHT(oCliForm:cRif, LEN(oCliForm:cRif)-1 )) ;
-                       ) ; //oCliForm:oEntRif:GetValue() )
+                       ) ; //oCliForm:oEntRif:GetValue()
              OF oCliForm:oBoxTipo
 
       DEFINE ENTRY oCliForm:oEntCedula VAR oCliForm:cCedula ;
@@ -199,7 +198,99 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
              VALID iif( oCliForm:lClose, .T., __ValidaTlf( oCliForm:oEntTlf ) ) ;
              ID "ent_tlf"    RESOURCE oRes
 
-      DEFINE TEXTVIEW oCliForm:oVTDir  VAR oCliForm:cDir    ID "tv_dir"     RESOURCE oRes
+      //-- Sección de Direcciones de Entrega
+      oCliForm:cEstado := ""
+      oCliForm:cMunicipio := ""
+      oCliForm:cParroquia := ""
+      oCliForm:cDirAdic := ""
+      oCliForm:lPrincipal := .F.
+      oCliForm:aDirecciones := {}
+      oCliForm:aEstados := {}
+      oCliForm:aEstadosId := {}
+      oCliForm:aMunicipios := {}
+      oCliForm:aMunicipiosId := {}
+      oCliForm:aParroquias := {}
+      oCliForm:aParroquiasId := {}
+
+      //-- Cargar Estados
+      rQry := rVentas:GetEstados()
+      if hb_isObject(rQry)
+         While !rQry:Eof()
+            AADD( oCliForm:aEstados, ALLTRIM(rQry:nombre) )
+            AADD( oCliForm:aEstadosId, rQry:id )
+            rQry:Skip()
+         EndDo
+      endif
+
+      DEFINE BOX oCliForm:oBoxCbEstados    ID "cb_estado" RESOURCE oRes
+      DEFINE BOX oCliForm:oBoxCbMunicipios ID "cb_mun"    RESOURCE oRes
+      DEFINE BOX oCliForm:oBoxCbParroquias ID "cb_parr"   RESOURCE oRes
+
+      DEFINE TPY_COMBOBOX oCliForm:oComboEstado ;
+             VAR oCliForm:cEstado ITEMS oCliForm:aEstados ;
+             ON CHANGE {||.T.}; //View("Estado cambiado") ;
+             OF oCliForm:oBoxCbEstados
+
+         oCliForm:oComboEstado:SetRoot()
+
+      DEFINE TPY_COMBOBOX oCliForm:oComboMunicipio ;
+             VAR oCliForm:cMunicipio ITEMS oCliForm:aMunicipios ;
+             ON CHANGE {||.T.} ; //View("Municipio cambiado") ;
+             OF oCliForm:oBoxCbMunicipios
+
+         oCliForm:oComboEstado:SetChild( oCliForm:oComboMunicipio )
+         oCliForm:oComboMunicipio:bRefresh := {|oCombo| __RefreshMunicipios( oCombo, oCliForm ) }
+
+      DEFINE TPY_COMBOBOX oCliForm:oComboParroquia ;
+             VAR oCliForm:cParroquia ITEMS oCliForm:aParroquias ;
+             ON CHANGE {||.T.} ;  //View("Parroquia cambiada") ;
+             OF oCliForm:oBoxCbParroquias
+
+         oCliForm:oComboMunicipio:SetChild( oCliForm:oComboParroquia )
+         oCliForm:oComboParroquia:bRefresh := {|oCombo| __RefreshParroquias( oCombo, oCliForm ) }
+
+      DEFINE ENTRY oCliForm:oEntDirAdic VAR oCliForm:cDirAdic ;
+             ID "ent_direccion_adicional" RESOURCE oRes
+
+      DEFINE CHECKBOX oCliForm:oChkPrincipal VAR oCliForm:lPrincipal ;
+             ID "chk_principal" RESOURCE oRes
+
+      //-- Botón Agregar Dirección
+      DEFINE BUTTON oCliForm:oBtnAddDir ;
+             ACTION __AddDireccion( oCliForm ) ;
+             ID "btn_add_direccion" RESOURCE oRes
+
+      //-- Botón Eliminar Dirección
+      DEFINE BUTTON oCliForm:oBtnDelDir ;
+             ACTION __DelDireccion( oCliForm ) ;
+             ID "btn_del_direccion" RESOURCE oRes
+
+      //-- Grid de Direcciones
+      oCliForm:aDirStruct := {{"estado","C",50,0}, {"municipio","C",50,0},;
+                              {"parroquia","C",50,0}, {"direccion","C",100,0},;
+                              {"principal","C",10,0}, {"dir_id","N",10,0}}
+
+      DEFINE BOX oCliForm:oBoxDirecciones ID "box_direcciones" RESOURCE oRes
+
+      DEFINE MODEL oCliForm:oModDirecciones ;
+             STRUCT oCliForm:aDirStruct ;
+             DATA oCliForm:aDirecciones
+
+      DEFINE LISTBOX oCliForm:oLBoxDirecciones ;
+             MODEL oCliForm:oModDirecciones ;
+             OF oCliForm:oBoxDirecciones
+
+      oCliForm:oLBoxDirecciones:bEdit := {||.T.}
+
+      oCliForm:oLBoxDirecciones:lBar := .f.
+      oCliForm:oLBoxDirecciones:SetColVisible(6, .f.) // Ocultar dir_id
+
+      oCliForm:oLBoxDirecciones:Active()
+
+      //-- Cargar direcciones existentes del cliente
+      if !lNew .and. hb_isObject( oCliForm:rCliente )
+         __CargarDirecciones( oCliForm )
+      endif
 
       DEFINE BUTTON oCliForm:oBtnSave   ACTION __VtaCliSave( oCliForm ) ID "btn_save" RESOURCE oRes
 
@@ -311,7 +402,7 @@ Procedure __VtaCliSave( oForm )
    ::oEntRif:SetValue( hData["rif"] )
    ::oEntMail:SetValue( hData["email"] )
    ::oEntTlf:SetValue( hData["telefono"] )
-   ::oVTDir:SetValue( hData["direccion"] )
+    //::oVTDir:SetValue( hData["direccion"] )
 */
    ::lForce := .T.
    ::oWnd:End()
@@ -339,47 +430,6 @@ Function __ValidaCodigo( oEntCodigo, oForm )
    endif
 
    rCliente := ::rVentas:Clientes( {"codigo" => cCodigo } )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
    if rCliente:RecCount()>0 .and. ( ::lNew .or. cCodigo!=::cPreCodigo )
       MsgAlert( "El código ingresado ya está registrado", "Atención" )
@@ -448,7 +498,7 @@ Function __ValidaRIF( oEntRif, oForm )
       if rEntidad:RecCount = 1
          ::oEntNombre:SetText( rEntidad:nombre )
          ::oEntNombreC:SetText( rEntidad:nombre_corto )
-         ::oVTDir:setText( rEntidad:direccion ) 
+         //::oVTDir:setText( rEntidad:direccion ) 
          ::oEntTlf:SetText( rEntidad:telefono )
          ::oEntMail:SetText( rEntidad:email )
          ::oEntCedula:SetText( rEntidad:cedula )
@@ -591,4 +641,157 @@ Function __VtaCliExit( oForm )
 
 return .F.
 
-//eof
+
+
+procedure __RefreshMunicipios( oCombo, oForm )
+   local rQry, nIdx, aItems := {}, aIds := {}
+
+   nIdx := ASCAN( oForm:aEstados, {|x| ALLTRIM(x) == ALLTRIM(oForm:cEstado)} )
+   if nIdx > 0
+      rQry := oForm:rVentas:GetMunicipios( oForm:aEstadosId[nIdx] )
+      if hb_isObject(rQry)
+         While !rQry:Eof()
+            AADD( aItems, ALLTRIM(rQry:nombre) )
+            AADD( aIds, rQry:id )
+            rQry:Skip()
+         EndDo
+      endif
+   endif
+
+   oForm:aMunicipios := aItems
+   oForm:aMunicipiosId := aIds
+   oCombo:Rebuild( aItems, iif( LEN(aItems) > 0, aItems[1], "" ) )
+   if LEN(aItems) > 0
+      oForm:cMunicipio := aItems[1]
+   endif
+   if hb_isObject( oForm:oComboParroquia ) .and. LEN(aItems) > 0
+      __RefreshParroquias( oForm:oComboParroquia, oForm )
+   endif
+return
+
+
+
+procedure __RefreshParroquias( oCombo, oForm )
+   local rQry, nIdx, aItems := {}, aIds := {}
+
+   nIdx := ASCAN( oForm:aMunicipios, {|x| ALLTRIM(x) == ALLTRIM(oForm:cMunicipio)} )
+   if nIdx > 0
+      rQry := oForm:rVentas:GetParroquias( oForm:aMunicipiosId[nIdx] )
+      if hb_isObject(rQry)
+         While !rQry:Eof()
+            AADD( aItems, ALLTRIM(rQry:nombre) )
+            AADD( aIds, rQry:id )
+            rQry:Skip()
+         EndDo
+      endif
+   endif
+
+   oForm:aParroquias := aItems
+   oForm:aParroquiasId := aIds
+   oCombo:Rebuild( aItems, iif( LEN(aItems) > 0, aItems[1], "" ) )
+   if LEN(aItems) > 0
+      oForm:cParroquia := aItems[1]
+   endif
+return
+
+
+
+procedure __CargarDirecciones( oForm )
+   local rQry, aLine, aIter
+   rQry := oForm:rCliente:GetDirecciones()
+   if hb_isObject(rQry)
+      While !rQry:Eof()
+         AADD( oForm:aDirecciones, { ALLTRIM(rQry:estado), ALLTRIM(rQry:municipio),;
+                                ALLTRIM(rQry:parroquia), ALLTRIM(rQry:direccion),;
+                                iif(rQry:es_principal, "Si", "No"), rQry:id } )
+         rQry:Skip()
+      EndDo
+
+      aIter := ARRAY(4)
+      FOR EACH aLine IN oForm:aDirecciones
+         APPEND LIST_STORE oForm:oModDirecciones:oLbx ITER aIter ;
+                VALUES aLine[1], aLine[2], aLine[3], aLine[4], aLine[5], hb_ntos(aLine[6])
+      NEXT
+   endif
+return
+
+
+
+procedure __AddDireccion( oForm )
+   local nIdxEdo, nIdxMun, nIdxPar, aIter, hDir, uResp, cEdo, cMun, cPar
+
+   cEdo := oForm:oComboEstado:GetValue()
+   cMun := oForm:oComboMunicipio:GetValue()
+   cPar := oForm:oComboParroquia:GetValue()
+
+   if Empty( cEdo ) .or. Empty( cMun ) .or. Empty( cPar )
+      MsgAlert( "Debe seleccionar Estado, Municipio y Parroquia", "Atención" )
+      RETURN
+   endif
+
+   nIdxEdo := ASCAN( oForm:aEstados, {|x| ALLTRIM(x) == ALLTRIM(cEdo)} )
+   nIdxMun := ASCAN( oForm:aMunicipios, {|x| ALLTRIM(x) == ALLTRIM(cMun)} )
+   nIdxPar := ASCAN( oForm:aParroquias, {|x| ALLTRIM(x) == ALLTRIM(cPar)} )
+
+   if nIdxEdo = 0 .or. nIdxMun = 0 .or. nIdxPar = 0
+      MsgAlert( "Debe seleccionar Estado, Municipio y Parroquia", "Atención" )
+      RETURN
+   endif
+
+   if LEN( oForm:aParroquiasId ) < nIdxPar
+      MsgAlert( "Error al obtener la parroquia seleccionada", "Atención" )
+      RETURN
+   endif
+
+   hDir := hb_hash()
+   hDir["parroquia_id"] := oForm:aParroquiasId[nIdxPar]
+   hDir["direccion"] := oForm:cDirAdic
+   hDir["es_principal"] := oForm:lPrincipal
+
+   uResp := oForm:rCliente:AddDireccion( hDir )
+   if hb_isHash(uResp) .and. hb_hHasKey(uResp, "ok") .and. !uResp["ok"]
+      MsgAlert( uResp["message"], "Error" )
+      RETURN
+   endif
+
+   // Recargar direcciones
+   oForm:aDirecciones := {}
+   oForm:oModDirecciones:oTreeView:ClearModel(.t.)
+   __CargarDirecciones( oForm )
+
+   // Limpiar campos
+   oForm:cEstado := ""
+   oForm:cMunicipio := ""
+   oForm:cParroquia := ""
+   oForm:cDirAdic := ""
+   oForm:lPrincipal := .F.
+return
+
+
+
+procedure __DelDireccion( oForm )
+   local aIter := ARRAY(4), nDirId, uResp
+
+   if !::oModDirecciones:oTreeView:IsGetSelected( aIter )
+      MsgAlert( "Seleccione una dirección para eliminar", "Atención" )
+      RETURN
+   endif
+
+   if !MsgNoYes( "¿Realmente desea eliminar esta dirección?", "Confirmar" )
+      RETURN
+   endif
+
+   nDirId := ::oModDirecciones:GetCol( 6, aIter )
+View( nDirId )
+   if nDirId = 0
+      RETURN
+   endif
+
+   uResp := ::rCliente:DelDireccion( nDirId )
+   if hb_isHash(uResp) .and. hb_hHasKey(uResp, "ok") .and. !uResp["ok"]
+      MsgAlert( uResp["message"], "Error" )
+      RETURN
+   endif
+
+   ::oModDirecciones:oLbx:Remove( aIter )
+return
