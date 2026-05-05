@@ -142,7 +142,7 @@ procedure vta_imprimir_pdf( oForm )
 	  oPDF:CMSAY( nY, 13.2, TRANSFORM(aLine[23], "@E 999.99") )
 	  ENDIF
       oPDF:CMSAY( nY, 12.3+nPosDet, TRANSFORM(aLine[6], "@E 99,999.99") )
-	  oPDF:CMSAY( nY, 14.5+nPosDet, TRANSFORM(aLine[7], "@E 999.99") )
+	  oPDF:CMSAY( nY, 14.6+nPosDet, TRANSFORM(aLine[7], "@E 9,999.99") )
       oPDF:CMSAY( nY, 16.6+nPosDet, TRANSFORM(aLine[9], "@E 99") )
       oPDF:CMSAY( nY, 16.9+nPosDet, TRANSFORM(aLine[8], "@E 999,999.99") )
 	  IF tonum(::nMontoOtrImp)>0

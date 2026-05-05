@@ -1049,11 +1049,19 @@ procedure __EditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol
       if RIGHT( uVal, 1 ) = "%"
          // Si nos dan porcentaje, lo calculamos.
 		 
-         uVal := TRANSFORM( ToNum( oTreeView:GetAutoValue( __PRECIO ))  * ;
+        
+		uVal := TRANSFORM(ToNum( oTreeView:GetAutoValue( __PRECIO ))  * ;
                           ( ToNum(uVal)/100 ) * ;
-                            ToNum( oTreeView:GetAutoValue( __CANTIDAD ) ), P_92 )
+                            ToNum( oTreeView:GetAutoValue( __CANTIDAD ) ), P_92 )					
 		
-
+          // msginfo(valtype(uVal))
+		   //msginfo((uVal))
+		   //msginfo(('0,00'))
+		  /*
+		  msginfo((ToNum( oTreeView:GetAutoValue( __PRECIO ))  * ;
+                          ( ToNum(uVal)/100 ) * ;
+                            ToNum( oTreeView:GetAutoValue( __CANTIDAD ) )))
+							*/
          __SetValue( oTreeView, oModel, aIter, nCol, uVal )
       endif
       if ToNum(uVal) < ( ToNum(oTreeView:GetAutoValue( __CANTIDAD )) * ;
@@ -1077,8 +1085,13 @@ PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue  )
    if oTreeView:IsGetSelected( aIter )
       if nCol= __CANTIDAD .or. nCol= __PRECIO .or. nCol= __DESCUENTO
 
-         if nCol = __DESCUENTO		    
-            nDescuento := TONUM(uValue)
+         if nCol = __DESCUENTO	
+			nDescuento := TONUM(uValue)		 
+            
+			//msginfo(VALTYPE(nDescuento))
+			//MSGINFO(VALTYPE(ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) )))
+			//msginfo((nDescuento))
+			//MSGINFO((ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) )))
             nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
                       ToNum( oTreeView:GetAutoValue(__PRECIO,   aIter))) - nDescuento
          else
@@ -1107,13 +1120,15 @@ nMonto := (VAL(uValue) * ;
          nIvaPorcen := ToNum( oTreeView:GetAutoValue(__IVAPORCEN, aIter) )
          if nIvaPorcen > 0
             nIvaMonto := ROUND( nMonto * (nIvaPorcen / 100), 2 )
+			//msginfo(nIvaMonto)
             oModel:Set( aIter, __IVAMONTO, STR(nIvaMonto) )
             //oModel:Set( aIter, __IVAMONTO, TRANSFORM(nIvaMonto, P_92) )
          endif
          oModel:Set( aIter, __TOTAL, STR( ROUND( nMonto + nIvaMonto ,2 ) ) )
          //oModel:Set( aIter, __TOTAL, TRANSFORM( ROUND( nMonto + nIvaMonto ,2 ), P_92 ) )
 
-         uValue := STR( VAL(uValue) )
+         //uValue := STR( VAL(uValue) )
+		 uValue := STR( TONUM(uValue) )
          //uValue := TRANSFORM( VAL(uValue), P_92 )
       endif
 
