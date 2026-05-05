@@ -117,7 +117,7 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
    oCliForm:rVentas  := rVentas
    oCliForm:lNew     := lNew
 
-   oCliForm:aTipo    := {"V - Natural Vzla",;
+   oCliForm:aTipo    := {"V - Venezolano",;
                          "J - Jurídica", ;
                          "E - Extranjero",;
                          "P - Pasaporte",;
