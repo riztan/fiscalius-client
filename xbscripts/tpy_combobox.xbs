@@ -54,17 +54,12 @@ CLASS TPY_COMBOBOX FROM GCOMBOBOX
 ENDCLASS
 
 
-
 METHOD SetRoot()  CLASS TPY_COMBOBOX
    if ::lRoot ; return .t. ; endif
-   if !hb_isBlock(::bChange) .or. empty( ::bChange )
-      ::bChange := {||.t.}
-   endif
    AADD( ::aActions, ::bChange )
    ::bChange := { || AEVAL( ::aActions, { | bBlock | EVAL( bBlock) } ) }
    ::lRoot := .t.
 RETURN .t.
-
 
 
 METHOD SetChild( oComboChild )  CLASS TPY_COMBOBOX
@@ -75,7 +70,6 @@ METHOD SetChild( oComboChild )  CLASS TPY_COMBOBOX
    if !::lRoot ; ::SetRoot() ; endif
    ::AddAction( {|| EVAL( oComboChild:bRefresh, oComboChild, ::aItems, ::GetText() ) } )
 RETURN .t.
-
 
 
 METHOD SetMirror( oComboMirror )  CLASS TPY_COMBOBOX
@@ -98,11 +92,7 @@ METHOD SetMirror( oComboMirror )  CLASS TPY_COMBOBOX
 RETURN .t.
 
 
-
 METHOD Rebuild( aItems, cItem ) CLASS TPY_COMBOBOX
-
-   if !hb_isArray( aItems ) ; return .f. ; endif
-
    ::Disconnect( "changed" )
 
    if !Empty( ::aItems ) ; ::RemoveAll() ; endif
