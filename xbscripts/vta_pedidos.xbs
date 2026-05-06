@@ -54,9 +54,14 @@ procedure vta_pedidos( oFormParent )
    DEFINE LABEL ::oLabUsuario TEXT "" MARKUP ID "lab_usuario" RESOURCE ::oRes
    DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
 
-   DEFINE BUTTON ::oBtnGuardar ;
-          ACTION __PedSave( oForm, oFormParent ) ;
-          ID "btn_guardar" RESOURCE ::oRes
+DEFINE BUTTON ::oBtnGuardar ;
+           ACTION __PedSave( oForm, oFormParent ) ;
+           ID "btn_guardar" RESOURCE ::oRes
+
+           if !hb_IsObject( oTPuy:oUser ) .or. ;
+              !(oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:isDevel() .or. oTPuy:oUser:IsFacturacion())
+              ::oBtnGuardar:Disable()
+           endif
 
    DEFINE BUTTON ::oBtnConvertir ;
           ACTION __PedConvertir( oForm, oFormParent ) ;

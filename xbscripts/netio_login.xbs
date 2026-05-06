@@ -153,9 +153,17 @@ function login_IsUser(oForm)
 
    if tps_isMessage( hSession ) .and. hSession.ok //hSession["ok"]
       hMsgContent := hSession.content 
+<<<<<<< HEAD
       oUser := hMsgContent.session_id 
       //oUser := hSession["content"]["session_id"]
       hUserData := hMsgContent.user_data
+=======
+      if !hb_IsNil( hMsgContent ) .and. hb_IsHash( hMsgContent )
+         oUser := hMsgContent.session_id 
+         //oUser := hSession["content"]["session_id"]
+         hUserData := iif( hb_HHasKey( hMsgContent, "user_data" ), hMsgContent["user_data"], {=>} )
+      endif
+>>>>>>> 6b03e219ae51618b398946f6983640fbe5509d62
    endif
 
    // Ahora se debe registrar el objeto oUser localmente
@@ -169,6 +177,7 @@ function login_IsUser(oForm)
    if !oTpuy:IsDef( "oUser") .or. !hb_IsObject( oTpuy:oUser )
 
       // Creamos el objeto local correspondiente al usuario.
+<<<<<<< HEAD
       oTPuy:oUser    := gUser():New( oUser, ;
                                      cUser, ;
                                      hUserData.nombre, ;
@@ -177,6 +186,23 @@ function login_IsUser(oForm)
 
 	
 
+=======
+      if !hb_IsNil( hUserData ) .and. hb_IsHash( hUserData ) .and. hb_HHasKey( hUserData, "id" )
+         oTpuy:oUser    := gUser():New( oUser, ;
+                                         iif( hb_HHasKey( hUserData, "login" ), hUserData["login"], cUser ), ;
+                                         iif( hb_HHasKey( hUserData, "nombre" ), hUserData["nombre"], "" ), ;
+                                         iif( hb_HHasKey( hUserData, "cargo" ), hUserData["cargo"], "" ), ;
+                                         hUserData["id"] )
+      else
+         // Si no hay datos de usuario, creamos con datos básicos
+         oTpuy:oUser    := gUser():New( oUser, cUser, "", "", NIL )
+      endif
+
+      // Verificar si ya tiene el id:
+      if oTpuy:oUser:IsDef("id") 
+         nUserId := oTpuy:oUser:Get("id")
+      endif
+>>>>>>> 6b03e219ae51618b398946f6983640fbe5509d62
 
       oTpuy:rSession := RSession():New( oTpuy:oUser )
    endif

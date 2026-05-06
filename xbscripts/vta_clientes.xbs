@@ -294,6 +294,11 @@ procedure vtc_edit( oForm, oCliWnd, oModel, rVentas, lNew )
 
       DEFINE BUTTON oCliForm:oBtnSave   ACTION __VtaCliSave( oCliForm ) ID "btn_save" RESOURCE oRes
 
+       if !hb_IsObject( oTPuy:oUser ) .or. ;
+          !(oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:isDevel() .or. oTPuy:oUser:IsFacturacion())
+          oCliForm:oBtnSave:Disable()
+       endif
+
       DEFINE BUTTON oCliForm:oBtnCancel ACTION ( oCliForm:lClose := .T., oCliForm:oWnd:End() ) ;
              ID "btn_cancel" RESOURCE oRes
 
