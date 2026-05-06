@@ -142,7 +142,8 @@ return .t.
 function login_IsUser(oForm)
    local cUser, cPasswd, cHome := "default" 
    local oUser,cAux, hSession, hUserData, hMsgContent
-
+   local nUserId
+   
    cUser := ::oEntUser:GetText()
    cPasswd := hb_crypt(::oPasswd:GetText(), oTPuy:cPassword ) //hb_MD5( ::oPasswd:GetText() )
 
@@ -183,9 +184,12 @@ function login_IsUser(oForm)
 
       // Creamos el objeto local correspondiente al usuario.
       oTPuy:oUser    := gUser():New( oUser, ;
-                                     cUser, ;
-                                     hUserData.nombre, ;
-                                     hUserData.nombre_corto )
+                                      hUserData["login"], ;
+                                      hUserData["nombre"], ;
+                                      hUserData["cargo"], ;
+                                      hUserData["id"] )
+   */
+   
 
       oTPuy:rSession := RSession():New( oTPuy:oUser )
 

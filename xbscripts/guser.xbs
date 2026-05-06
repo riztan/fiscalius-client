@@ -1,19 +1,14 @@
 /**
- *
- *
- */
-
+  *
+  *
+  */
+ 
 #include "tpy_class.ch"
-
+ 
 CLASS GUSER FROM TPUBLIC
-
-//   DATA rHandle   //Enlace al Usuario en remoto
-//   DATA cLogin
-//   DATA cNombre
-//   DATA cCargo
-
-   METHOD New( cHandle, cLogin, cNombre, cCargo )
-
+  
+   METHOD New( cHandle, cLogin, cNombre, cCargo, nId )
+  
    METHOD IsDeveloper()  INLINE oTPuy:rSession:UserData()["perfil"]["desarrollo"] //oTPuy:rSession:UserData()["devel"]
    METHOD IsDevel()      INLINE ::IsDeveloper()
 
@@ -30,8 +25,7 @@ CLASS GUSER FROM TPUBLIC
 ENDCLASS
 
 
-
-METHOD New( cHandle, cLogin, cNombre, cCargo ) CLASS GUSER
+METHOD New( cHandle, cLogin, cNombre, cCargo, nId ) CLASS GUSER
 
    ::Super:New()
 
@@ -39,8 +33,8 @@ METHOD New( cHandle, cLogin, cNombre, cCargo ) CLASS GUSER
    ::cLogin  := cLogin
    ::cNombre := cNombre
    ::cCargo  := cCargo
-
-
+   ::Add("id", nId)
+   
 RETURN Self
 
 //eof
