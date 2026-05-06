@@ -7,7 +7,7 @@
  
 CLASS GUSER FROM TPUBLIC
    
-   METHOD New( cHandle, cLogin, cNombre, cCargo, nId )
+   METHOD New( cHandle, cLogin, cNombre, cCargo )
  
    METHOD IsDeveloper()  INLINE oTPuy:rSession:UserData()["perfil"]["desarrollo"]
    METHOD IsDevel()      INLINE ::IsDeveloper()
@@ -25,7 +25,7 @@ CLASS GUSER FROM TPUBLIC
 ENDCLASS
  
  
-METHOD New( cHandle, cLogin, cNombre, cCargo, nId ) CLASS GUSER
+METHOD New( cHandle, cLogin, cNombre, cCargo ) CLASS GUSER
  
    ::Super:New()
  
@@ -33,7 +33,7 @@ METHOD New( cHandle, cLogin, cNombre, cCargo, nId ) CLASS GUSER
    ::cLogin  := cLogin
    ::cNombre := cNombre
    ::cCargo  := cCargo
-   ::Add("id", nId)
+  // ::Add("id", nId)
    
 RETURN Self
 

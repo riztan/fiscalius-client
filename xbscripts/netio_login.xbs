@@ -149,13 +149,13 @@ function login_IsUser(oForm)
 
 //View( hb_valtoexp(hSession) )
 
+#xtranslate <message>.<value>  =>  <message>\[#<value>\]
+
    if tps_isMessage( hSession ) .and. hSession.ok //hSession["ok"]
       hMsgContent := hSession.content 
-      if !hb_IsNil( hMsgContent ) .and. hb_IsHash( hMsgContent )
-         oUser := hMsgContent.session_id 
-         //oUser := hSession["content"]["session_id"]
-         hUserData := hb_HGetDef( hMsgContent, "user_data", {=>} )
-      endif
+      oUser := hMsgContent.session_id 
+      //oUser := hSession["content"]["session_id"]
+      hUserData := hMsgContent.user_data
    endif
 
    // Ahora se debe registrar el objeto oUser localmente
@@ -169,24 +169,14 @@ function login_IsUser(oForm)
    if !oTpuy:IsDef( "oUser") .or. !hb_IsObject( oTpuy:oUser )
 
       // Creamos el objeto local correspondiente al usuario.
-      if !hb_IsNil( hUserData ) .and. hb_IsHash( hUserData )
-         oTpuy:oUser    := gUser():New( oUser, ;
-                                         hUserData["login"], ;
-                                         hUserData["nombre"], ;
-                                         hUserData["cargo"], ;
-                                         hUserData["id"] )
-      else
-         // Si no hay datos de usuario, creamos con datos básicos
-         oTpuy:oUser    := gUser():New( oUser, cUser, "", "", NIL )
-      endif
+      oTPuy:oUser    := gUser():New( oUser, ;
+                                     cUser, ;
+                                     hUserData.nombre, ;
+                                     hUserData.nombre_corto )
+									 
 
-      // Verificar si ya tiene el id:
-      if oTpuy:oUser:IsDef("id") 
-         nUserId := oTpuy:oUser:Get("id")
-         // msginfo(nUserId)
-      else
-         // msginfo("no lo tiene")
-      endif
+	
+
 
       oTpuy:rSession := RSession():New( oTpuy:oUser )
    endif
@@ -198,6 +188,7 @@ FUNCTION tpyLogout( cUser )
    local uValue, oMsgRun
 
    oMsgRun := MsgRunStart("Cerrando Objetos de la Sesión")
+
       inkey(.5)
       FOR EACH uValue IN oTpuy:oUser:hVars
          If hb_IsObject(uValue)
@@ -205,7 +196,7 @@ FUNCTION tpyLogout( cUser )
          EndIf
       NEXT 
 
-      if hb_IsObject( oTpuy:oUser )
+      if hb_IsObject( oTPuy:oUser )
          lRet := ~ServerLogout( cUser )
          oTpuy:Del("oUser") 
          tracelog("Eliminado el objeto oTpuy:oUser")
