@@ -1,34 +1,34 @@
 /**
-  *
+  * guser.xbs  Clase de usuario con componentes gráficos
   *
   */
- 
+
 #include "tpy_class.ch"
  
 CLASS GUSER FROM TPUBLIC
-  
-   METHOD New( cHandle, cLogin, cNombre, cCargo, nId )
-  
-   METHOD IsDeveloper()  INLINE oTPuy:rSession:UserData()["perfil"]["desarrollo"] //oTPuy:rSession:UserData()["devel"]
-   METHOD IsDevel()      INLINE ::IsDeveloper()
-
-   METHOD IsAdmin()      INLINE oTPuy:rSession:UserData()["perfil"]["configuracion"] //oTPuy:rSession:UserData()["admin"]
-
-   METHOD IsFacturacion  INLINE oTPuy:rSession:UserData()["perfil"]["facturacion"] 
-
-   METHOD IsCobranza     INLINE oTPuy:rSession:UserData()["perfil"]["cobranza"] 
-
-   METHOD IsAuditoria    INLINE oTPuy:rSession:UserData()["perfil"]["auditoria"] 
-
-   METHOD Finalize()     INLINE ~ServerLogout( ::cHandle )
    
+   METHOD New( cHandle, cLogin, cNombre, cCargo, nId )
+ 
+   METHOD IsDeveloper()  INLINE oTPuy:rSession:UserData()["perfil"]["desarrollo"]
+   METHOD IsDevel()      INLINE ::IsDeveloper()
+ 
+   METHOD IsAdmin()      INLINE oTPuy:rSession:UserData()["perfil"]["configuracion"]
+ 
+   METHOD IsFacturacion  INLINE oTPuy:rSession:UserData()["perfil"]["facturacion"] 
+ 
+   METHOD IsCobranza     INLINE oTPuy:rSession:UserData()["perfil"]["cobranza"] 
+ 
+   METHOD IsAuditoria    INLINE oTPuy:rSession:UserData()["perfil"]["auditoria"] 
+ 
+   METHOD Finalize()     INLINE ~ServerLogout( ::cHandle )
+    
 ENDCLASS
-
-
+ 
+ 
 METHOD New( cHandle, cLogin, cNombre, cCargo, nId ) CLASS GUSER
-
+ 
    ::Super:New()
-
+ 
    ::cHandle := cHandle
    ::cLogin  := cLogin
    ::cNombre := cNombre
