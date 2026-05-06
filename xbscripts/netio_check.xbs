@@ -39,7 +39,7 @@ FUNCTION netio_check()
 
   endif
 
-if (hb_DateTime() - oTpuy:tLastNetIO) >= 0.001000 
+if (hb_DateTime() - oTpuy:tLastNetIO) >= 0.001000 then
       if netio_GetConnection( NETSERVER, NETPORT,, NETPASSWD ) == NIL
         oTpuy:lNetIO := .f.
      else
@@ -93,11 +93,11 @@ Procedure __FilesCheck(cType)
       aRFiles := ~IncList()
       cDir := oTpuy:cIncludes
       bGet := {|| ~IncGet(aFile[1]) }
-   elseif cType = "RES"
+   elseif cType == "RES"
       aRFiles := ~ResourceList()
       cDir := oTpuy:cResources
       bGet := {|| ~ResourceGet(aFile[1]) }
-   elseif cType = "IMG"
+   elseif cType == "IMG"
       aRFiles := ~ImageList()
       cDir := oTpuy:cImages
       bGet := {|| ~ImageGet(aFile[1]) }
