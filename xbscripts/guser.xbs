@@ -9,16 +9,16 @@ CLASS GUSER FROM TPUBLIC
    
    METHOD New( cHandle, cLogin, cNombre, cCargo, nId )
  
-   METHOD IsDeveloper()  INLINE oTPuy:rSession:UserData()["perfil"]["desarrollo"]
+   METHOD IsDeveloper()
    METHOD IsDevel()      INLINE ::IsDeveloper()
  
-   METHOD IsAdmin()      INLINE oTPuy:rSession:UserData()["perfil"]["configuracion"]
+   METHOD IsAdmin()
  
-   METHOD IsFacturacion  INLINE oTPuy:rSession:UserData()["perfil"]["facturacion"] 
+   METHOD IsFacturacion() 
  
-   METHOD IsCobranza     INLINE oTPuy:rSession:UserData()["perfil"]["cobranza"] 
+   METHOD IsCobranza()
  
-   METHOD IsAuditoria    INLINE oTPuy:rSession:UserData()["perfil"]["auditoria"] 
+   METHOD IsAuditoria()
  
    METHOD Finalize()     INLINE ~ServerLogout( ::cHandle )
     
@@ -26,15 +26,77 @@ ENDCLASS
  
  
 METHOD New( cHandle, cLogin, cNombre, cCargo, nId ) CLASS GUSER
- 
    ::Super:New()
- 
    ::cHandle := cHandle
    ::cLogin  := cLogin
    ::cNombre := cNombre
    ::cCargo  := cCargo
    ::Add("id", nId)
-   
 RETURN Self
+
+
+METHOD IsDeveloper() CLASS GUSER
+   local hUserData, hPerfil, uValue
+   hUserData := oTPuy:rSession:UserData()
+   if !hb_IsHash( hUserData ); return .F.; endif
+   if !hb_HHasKey( hUserData, "perfil" ); return .F.; endif
+   hPerfil := hUserData["perfil"]
+   if !hb_IsHash( hPerfil ); return .F.; endif
+   if !hb_HHasKey( hPerfil, "desarrollo" ); return .F.; endif
+   uValue := hPerfil["desarrollo"]
+   if hb_IsNil( uValue ); return .F.; endif
+RETURN uValue
+
+
+METHOD IsAdmin() CLASS GUSER
+   local hUserData, hPerfil, uValue
+   hUserData := oTPuy:rSession:UserData()
+   if !hb_IsHash( hUserData ); return .F.; endif
+   if !hb_HHasKey( hUserData, "perfil" ); return .F.; endif
+   hPerfil := hUserData["perfil"]
+   if !hb_IsHash( hPerfil ); return .F.; endif
+   if !hb_HHasKey( hPerfil, "configuracion" ); return .F.; endif
+   uValue := hPerfil["configuracion"]
+   if hb_IsNil( uValue ); return .F.; endif
+RETURN uValue
+
+
+METHOD IsFacturacion() CLASS GUSER
+   local hUserData, hPerfil, uValue
+   hUserData := oTPuy:rSession:UserData()
+   if !hb_IsHash( hUserData ); return .F.; endif
+   if !hb_HHasKey( hUserData, "perfil" ); return .F.; endif
+   hPerfil := hUserData["perfil"]
+   if !hb_IsHash( hPerfil ); return .F.; endif
+   if !hb_HHasKey( hPerfil, "facturacion" ); return .F.; endif
+   uValue := hPerfil["facturacion"]
+   if hb_IsNil( uValue ); return .F.; endif
+RETURN uValue
+
+
+METHOD IsCobranza() CLASS GUSER
+   local hUserData, hPerfil, uValue
+   hUserData := oTPuy:rSession:UserData()
+   if !hb_IsHash( hUserData ); return .F.; endif
+   if !hb_HHasKey( hUserData, "perfil" ); return .F.; endif
+   hPerfil := hUserData["perfil"]
+   if !hb_IsHash( hPerfil ); return .F.; endif
+   if !hb_HHasKey( hPerfil, "cobranza" ); return .F.; endif
+   uValue := hPerfil["cobranza"]
+   if hb_IsNil( uValue ); return .F.; endif
+RETURN uValue
+
+
+METHOD IsAuditoria() CLASS GUSER
+   local hUserData, hPerfil, uValue
+   hUserData := oTPuy:rSession:UserData()
+   if !hb_IsHash( hUserData ); return .F.; endif
+   if !hb_HHasKey( hUserData, "perfil" ); return .F.; endif
+   hPerfil := hUserData["perfil"]
+   if !hb_IsHash( hPerfil ); return .F.; endif
+   if !hb_HHasKey( hPerfil, "auditoria" ); return .F.; endif
+   uValue := hPerfil["auditoria"]
+   if hb_IsNil( uValue ); return .F.; endif
+RETURN uValue
 
 //eof

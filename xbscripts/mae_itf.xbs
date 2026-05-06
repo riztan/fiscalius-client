@@ -50,9 +50,14 @@ procedure mae_itf( oParentForm, oWndParent, oEntParent )
 
    DEFINE BOX oBoxBotones ID "box_botones" RESOURCE oRes
 
-   DEFINE BUTTON oBtnNewITF TEXT "+ Nuevo" ;
-          ACTION __BtnNewITF( oForm, oModITF, oLBoxCli ) ;
-          OF oBoxBotones 
+DEFINE BUTTON oBtnNewITF TEXT "+ Nuevo" ;
+           ACTION __BtnNewITF( oForm, oModITF, oLBoxCli ) ;
+           OF oBoxBotones 
+
+    if !hb_IsObject( oTPuy:oUser ) .or. ;
+       !(oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:IsDevel())
+       oBtnNewITF:Disable()
+    endif
 
 
    DEFINE MODEL oModITF ;

@@ -169,11 +169,11 @@ function login_IsUser(oForm)
    if !oTpuy:IsDef( "oUser") .or. !hb_IsObject( oTpuy:oUser )
 
       // Creamos el objeto local correspondiente al usuario.
-      if !hb_IsNil( hUserData ) .and. hb_IsHash( hUserData )
+      if !hb_IsNil( hUserData ) .and. hb_IsHash( hUserData ) .and. hb_HHasKey( hUserData, "id" )
          oTpuy:oUser    := gUser():New( oUser, ;
-                                         hUserData["login"], ;
-                                         hUserData["nombre"], ;
-                                         hUserData["cargo"], ;
+                                         iif( hb_HHasKey( hUserData, "login" ), hUserData["login"], cUser ), ;
+                                         iif( hb_HHasKey( hUserData, "nombre" ), hUserData["nombre"], "" ), ;
+                                         iif( hb_HHasKey( hUserData, "cargo" ), hUserData["cargo"], "" ), ;
                                          hUserData["id"] )
       else
          // Si no hay datos de usuario, creamos con datos básicos
@@ -183,9 +183,6 @@ function login_IsUser(oForm)
       // Verificar si ya tiene el id:
       if oTpuy:oUser:IsDef("id") 
          nUserId := oTpuy:oUser:Get("id")
-         // msginfo(nUserId)
-      else
-         // msginfo("no lo tiene")
       endif
 
       oTpuy:rSession := RSession():New( oTpuy:oUser )

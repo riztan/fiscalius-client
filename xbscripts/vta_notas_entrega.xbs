@@ -53,10 +53,15 @@ procedure vta_notas_entrega( oFormParent, cTipoDocumento )
    DEFINE LABEL ::oLabUsuario TEXT "" MARKUP ID "lab_usuario" RESOURCE ::oRes
    DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
 
-   DEFINE BUTTON ::oBtnGuardar ;
-          ACTION __NESave( oForm, oFormParent ) ;
-          ID "btn_guardar" RESOURCE ::oRes
-   DEFINE BUTTON ::oBtnCobrar ;
+DEFINE BUTTON ::oBtnGuardar ;
+           ACTION __NESave( oForm, oFormParent ) ;
+           ID "btn_guardar" RESOURCE ::oRes
+
+           if !hb_IsObject( oTPuy:oUser ) .or. ;
+              !(oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:isDevel() .or. oTPuy:oUser:IsFacturacion())
+              ::oBtnGuardar:Disable()
+           endif
+    DEFINE BUTTON ::oBtnCobrar ;
           ACTION __NECobrar( oForm, oFormParent ) ;
           ID "btn_cobro" RESOURCE ::oRes
    DEFINE BUTTON ::oBtnImprime ;

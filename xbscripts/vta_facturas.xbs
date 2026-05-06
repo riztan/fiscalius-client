@@ -61,6 +61,11 @@ procedure vta_facturas( oFormParent )
           ACTION __VtaSave( oForm, oFormParent ) ;
           ID "btn_guardar" RESOURCE ::oRes
 
+if !hb_IsObject( oTPuy:oUser ) .or. ;
+              !(oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:isDevel() .or. oTPuy:oUser:IsFacturacion())
+              ::oBtnGuardar:Disable()
+           endif
+
    DEFINE BUTTON ::oBtnCobrar ;
           ACTION __VtaCobrar( oForm, oFormParent ) ;
           ID "btn_cobro" RESOURCE ::oRes
