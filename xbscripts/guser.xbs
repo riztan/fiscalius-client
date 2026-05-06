@@ -23,25 +23,19 @@ CLASS GUSER FROM TPUBLIC
    METHOD Finalize()     INLINE ~ServerLogout( ::cHandle )
     
 ENDCLASS
- 
- 
-<<<<<<< HEAD
+
+
+
 METHOD New( cHandle, cLogin, cNombre, cCargo ) CLASS GUSER
- 
-=======
-METHOD New( cHandle, cLogin, cNombre, cCargo, nId ) CLASS GUSER
->>>>>>> 6b03e219ae51618b398946f6983640fbe5509d62
+
    ::Super:New()
    ::cHandle := cHandle
    ::cLogin  := cLogin
    ::cNombre := cNombre
    ::cCargo  := cCargo
-<<<<<<< HEAD
-  // ::Add("id", nId)
    
-=======
-   ::Add("id", nId)
->>>>>>> 6b03e219ae51618b398946f6983640fbe5509d62
+   
+
 RETURN Self
 
 
