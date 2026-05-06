@@ -188,22 +188,37 @@ DEFINE CHECKBOX oUsuForm:oChkActivo VAR oUsuForm:lActivo ID "chk_activo" RESOURC
              ID "btn_cancel" RESOURCE oRes
 
 // Solo admin y devel pueden modificar datos de usuario
-      // El auditor, demo y cualquier otro usuario que no sea admin/devel no puede editar nada
+// El propio usuario (no auditor, no demo) puede cambiar su contraseña
       lEsAdminDevel := hb_IsObject( oTPuy:oUser ) .and. (oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:IsDevel())
+      lEsMismoUsuario := hb_IsObject( oTPuy:oUser ) .and. oUsuForm:cLogin == oTPuy:oUser:cLogin
+      lEsAuditor := hb_IsObject( oTPuy:oUser ) .and. oTPuy:oUser:IsAuditoria()
 
       if !lEsAdminDevel
-         // No es admin/devel (tampoco demo, auditor, u otros) - deshabilitar todo
-         oUsuForm:oEntLogin:Disable()
-         oUsuForm:oEntNombre:Disable()
-         oUsuForm:oEntNombreC:Disable()
-         oUsuForm:oChkActivo:Disable()
-         oUsuForm:oChkFact:Disable()
-         oUsuForm:oChkCob:Disable()
-         oUsuForm:oChkConfig:Disable()
-         oUsuForm:oChkDesa:Disable()
-         oUsuForm:oChkAud:Disable()
-         oUsuForm:oEntPass:Disable()
-         oUsuForm:oEntPass1:Disable()
+         if !lEsMismoUsuario .or. lEsAuditor
+            // No es su propio usuario o es auditor - deshabilitar todo
+            oUsuForm:oEntLogin:Disable()
+            oUsuForm:oEntNombre:Disable()
+            oUsuForm:oEntNombreC:Disable()
+            oUsuForm:oChkActivo:Disable()
+            oUsuForm:oChkFact:Disable()
+            oUsuForm:oChkCob:Disable()
+            oUsuForm:oChkConfig:Disable()
+            oUsuForm:oChkDesa:Disable()
+            oUsuForm:oChkAud:Disable()
+            oUsuForm:oEntPass:Disable()
+            oUsuForm:oEntPass1:Disable()
+         else
+            // Es su propio usuario (no auditor) - solo puede cambiar contraseña
+            oUsuForm:oEntLogin:Disable()
+            oUsuForm:oEntNombre:Disable()
+            oUsuForm:oEntNombreC:Disable()
+            oUsuForm:oChkActivo:Disable()
+            oUsuForm:oChkFact:Disable()
+            oUsuForm:oChkCob:Disable()
+            oUsuForm:oChkConfig:Disable()
+            oUsuForm:oChkDesa:Disable()
+            oUsuForm:oChkAud:Disable()
+         endif
       endif
 
    ACTIVATE WINDOW oUsuForm:oWnd MODAL VALID __UsuExit( oUsuForm )
@@ -214,22 +229,27 @@ return
 
 procedure __UsuSave( oForm )
    local hData, uResp, aIter, lNew, cPerfil
-   local lEsAdminDevel
+   local lEsAdminDevel, lEsMismoUsuario, lEsAuditor
 
-   // Verificar si es admin o devel
+   // Verificar permisos
    lEsAdminDevel := hb_IsObject( oTPuy:oUser ) .and. (oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:IsDevel())
+   lEsMismoUsuario := hb_IsObject( oTPuy:oUser ) .and. oForm:cLogin == oTPuy:oUser:cLogin
+   lEsAuditor := hb_IsObject( oTPuy:oUser ) .and. oTPuy:oUser:IsAuditoria()
 
-   // Solo admin y devel pueden modificar datos completos
-   if !lEsAdminDevel
+   // Solo admin/devel pueden modificar datos completos
+   // El propio usuario (no auditor) puede cambiar su contraseña
+   if !lEsAdminDevel .and. (!lEsMismoUsuario .or. lEsAuditor)
       MsgStop( "No tiene permisos para modificar usuarios.", "Atención" )
       return 
    endif
 
-   // Validar login antes de guardar
-   if !__ValidaLogin( oForm:oEntLogin, oForm )
-      MsgAlert("El login ingresado es inválido o ya está registrado.", "Error")
-      oForm:oEntLogin:SetFocus()
-      return
+   // Validar login antes de guardar (solo admin/devel)
+   if lEsAdminDevel
+      if !__ValidaLogin( oForm:oEntLogin, oForm )
+         MsgAlert("El login ingresado es inválido o ya está registrado.", "Error")
+         oForm:oEntLogin:SetFocus()
+         return
+      endif
    endif
 
    // Validar contraseña antes de guardar
