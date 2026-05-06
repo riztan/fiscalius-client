@@ -621,7 +621,7 @@
   <object class="GtkImage" id="image76">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="pixbuf">../images/series-fiscales.png</property>
+    <property name="pixbuf">../images/series-fiscales_32.png</property>
   </object>
   <object class="GtkImage" id="image77">
     <property name="visible">True</property>
@@ -631,12 +631,12 @@
   <object class="GtkImage" id="image78">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="pixbuf">../images/series-fiscales.png</property>
+    <property name="pixbuf">../images/series-fiscales_32.png</property>
   </object>
   <object class="GtkImage" id="image79">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="pixbuf">../images/series-fiscales.png</property>
+    <property name="pixbuf">../images/series-fiscales_32.png</property>
   </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
