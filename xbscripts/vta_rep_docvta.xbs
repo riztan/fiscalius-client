@@ -19,6 +19,7 @@ procedure vta_rep_docvta( oFormParent, oWndParent, oEntParent )
    local cEntCliente, cEntDocumento, oEntCliente, oEntDocumento,lActivo:=.T.
    local cEntFechaDesde, cEntFechaHasta
    local oEntFechaDesde, oEntFechaHasta
+   local hParam := hb_hash()
    
    SET PUBLIC oForm
 
@@ -84,12 +85,15 @@ procedure vta_rep_docvta( oFormParent, oWndParent, oEntParent )
    DEFINE BOX oBoxData ID "box_data" RESOURCE oRes EXPAND FILL
 
    // Cargar datos iniciales (CxC pendientes)
+   
    oCxc := rVentas:DocumentosVenta()
-
+/*
    if hb_isNIL( oCxc )
       MsgStop("No hay datos de Cuentas por Cobrar disponibles")
       return
    endif
+   */
+   
 
    DEFINE MODEL oModCxc ;
           STRUCT oCxc:Struct() ;
@@ -109,7 +113,7 @@ procedure vta_rep_docvta( oFormParent, oWndParent, oEntParent )
   // oLBoxCxc:SetColVisible( 1, .F. )    // empresa_id
    oLBoxCxc:SetColVisible( 3, .F. )    // cliente_id
    oLBoxCxc:SetColVisible( 9, .F. )    // Base
-   oLBoxCxc:SetColVisible( 12, .F. )    // imp pvp
+   //oLBoxCxc:SetColVisible( 12, .F. )    // imp pvp
    oLBoxCxc:SetColVisible( 13, .F. )    // imp prod
    
    // Títulos de columnas
@@ -122,6 +126,7 @@ procedure vta_rep_docvta( oFormParent, oWndParent, oEntParent )
    oLBoxCxc:SetColTitle( 8, "Tipo Doc." )
    oLBoxCxc:SetColTitle( 10, "Total Doc." )
    oLBoxCxc:SetColTitle( 11, "Tasa Cambio" )
+   oLBoxCxc:SetColTitle( 12, "Usuario" )
   oLBoxCxc:Active()
 
    ACTIVATE WINDOW oCxcWnd MODAL
@@ -190,7 +195,7 @@ procedure __CxcBuscar( oForm, oWnd, oModel, oList, oEntCliente, oEntDocumento, o
          APPEND LIST_STORE oModel:oLbx ITER aIter ;
                 VALUES dtoc(aLine[1]), aLine[2], hb_ntos(aLine[3]),aLine[4], aLine[5], hb_ntos(aLine[6]),;
                       hb_ntos(aLine[7]),aLine[8],hb_ntos(aLine[9]),TRANSFORM(aLine[10],P_92),;
-                      TRANSFORM(aLine[11],P_92),hb_ntos(aLine[12]),hb_ntos(aLine[13])
+                      TRANSFORM(aLine[11],P_92),"riztan",hb_ntos(aLine[13])
       NEXT
 	  
 	  IF lActivo
@@ -295,7 +300,7 @@ procedure __CxcGenerarPDF( aData,cCliente,cDocumento )
    oPDF:CMSAY( nY, 17, "Tipo Doc." )
    oPDF:CMSAY( nY, 20, "Total Doc." )
    oPDF:CMSAY( nY, 22.5, "TC" )
-   
+   oPDF:CMSAY( nY, 23.5, "Usuario" )
 
    nY += 0.5
 
@@ -316,6 +321,7 @@ procedure __CxcGenerarPDF( aData,cCliente,cDocumento )
 	    
 	  oPDF:CMSAY( nY, 18.9,   TRANSFORM(aLine[10], "@E 9,999,999.99") )   // Total Doc.
 	  oPDF:CMSAY( nY, 21,   TRANSFORM(aLine[11], "@E 999,999.99") )   // Tasa
+	  oPDF:CMSAY( nY, 23,   "riztan" )   // 
      // nTotMto += aLine[11]
 	 // nTotApli += aLine[13]
 	 
