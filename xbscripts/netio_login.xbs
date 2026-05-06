@@ -154,7 +154,7 @@ function login_IsUser(oForm)
       if !hb_IsNil( hMsgContent ) .and. hb_IsHash( hMsgContent )
          oUser := hMsgContent.session_id 
          //oUser := hSession["content"]["session_id"]
-         hUserData := hb_HGetDef( hMsgContent, "user_data", {=>} )
+         hUserData := iif( hb_HHasKey( hMsgContent, "user_data" ), hMsgContent["user_data"], {=>} )
       endif
    endif
 
