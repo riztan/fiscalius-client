@@ -10,6 +10,8 @@
 #include "xbscripts/gempresa.xbs"
 
 #include "tpy_xbs.ch"
+#include "xbscripts/poslogin_error_handler.xbs"
+
 
 procedure poslogin( oParent )
    Local oForm, tDbDateTime
@@ -70,7 +72,10 @@ procedure poslogin( oParent )
 
    //View( hb_TToS( hb_DateTime() ) )
    oTPuy:nDTFactor := hb_DateTime() - tDBDateTime //net:hb_DateTime()  // diferencia de fecha/hora en local y el servidor.
-   oTPuy:bDTServer := {|| hb_DateTime() - oTPuy:nDTFactor }
+    oTPuy:bDTServer := {|| hb_DateTime() - oTPuy:nDTFactor }
+
+    // Enviar errores pendientes al servidor
+    EnviarErroresAlServidor( oForm )
 
 //   ::oLangs:= ::rEmpresa:Langs()
 
@@ -179,10 +184,13 @@ procedure poslogin( oParent )
       DEFINE MENUITEM ::oMnuVtaLibro ACTION oTPuy:RunXBS("vta_libro", oForm );  
              ID "itm_vta_libro" RESOURCE ::oRes
 
-      DEFINE MENUITEM ::oMnuAuditoria ACTION oTPuy:RunXBS("auditoria", oForm );  
-             ID "itm_auditoria" RESOURCE ::oRes
+       DEFINE MENUITEM ::oMnuAuditoria ACTION oTPuy:RunXBS("auditoria", oForm );  
+              ID "itm_auditoria" RESOURCE ::oRes
 
-      DEFINE MENUITEM ::oMnuAuditUs ACTION oTPuy:RunXBS("usabilidad", oForm );  
+       DEFINE MENUITEM ::oMnuErrorCli ACTION oTPuy:RunXBS("errorcli", oForm );  
+              ID "itm_errorcli" RESOURCE ::oRes
+
+       DEFINE MENUITEM ::oMnuAuditUs ACTION oTPuy:RunXBS("usabilidad", oForm );  
              ID "itm_usabilidad" RESOURCE ::oRes
 
       DEFINE MENUITEM ::oMnuCtasCobrar ACTION oTPuy:RunXBS("vta_ctasxcobrar", oForm );  
@@ -201,30 +209,31 @@ procedure poslogin( oParent )
               ID "itm_usabilidad" RESOURCE ::oRes
 */
 
-      if !(oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:IsDevel() .or. oTPuy:oUser:IsAuditoria() )
-         ::oMnuUser:Hide() 
-         ::oMnuPagos:Hide()
-         ::oMnuMonedas:Hide()
-         ::oMnuTasas:Hide()
-         ::oMnuAlicuotas:Hide()
-         ::oMnuSeriesFis:Hide()
-		 ::oMnuSeriesCon:Hide()
-		 ::oMnuSeriesTip:Hide()
-         ::oMnuInventario:Hide()
-         ::oMnuIGTF:Hide()
-         ::oMnuClientes:Hide()
-         ::oMnuPedidos:Hide()
-         ::oMnuFacturas:Hide()
-         ::oMnuNotaCre:Hide()
-         ::oMnuNotaDeb:Hide()
-         ::oMnuNotaEnt:Hide()
-         ::oMnuVtaLibro:Hide()
-         ::oMnuAuditoria:Hide()
-         ::oMnuAuditUs:Hide()
-         ::oMnuCtasCobrar:Hide()
-         ::oMnuVtaRep:Hide()
-         ::oMnuIGTFRep:Hide()
-      endif 
+       if !(oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:IsDevel() .or. oTPuy:oUser:IsAuditoria() )
+          ::oMnuUser:Hide() 
+          ::oMnuPagos:Hide()
+          ::oMnuMonedas:Hide()
+          ::oMnuTasas:Hide()
+          ::oMnuAlicuotas:Hide()
+          ::oMnuSeriesFis:Hide()
+		  ::oMnuSeriesCon:Hide()
+		  ::oMnuSeriesTip:Hide()
+          ::oMnuInventario:Hide()
+          ::oMnuIGTF:Hide()
+          ::oMnuClientes:Hide()
+          ::oMnuPedidos:Hide()
+          ::oMnuFacturas:Hide()
+          ::oMnuNotaCre:Hide()
+          ::oMnuNotaDeb:Hide()
+          ::oMnuNotaEnt:Hide()
+          ::oMnuVtaLibro:Hide()
+          ::oMnuAuditoria:Hide()
+          ::oMnuErrorCli:Hide()
+          ::oMnuAuditUs:Hide()
+          ::oMnuCtasCobrar:Hide()
+          ::oMnuVtaRep:Hide()
+          ::oMnuIGTFRep:Hide()
+       endif
       if oTPuy:oUser:IsFacturacion()
          ::oMnuPedidos:Show()
          ::oMnuFacturas:Show()

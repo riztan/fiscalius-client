@@ -1,0 +1,141 @@
+/* errorcli.xbs
+ *
+ * Formulario para consultar errores del cliente en Fiscalius
+ * Reutiliza auditoria.ui para la interfaz
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure errorcli( oForm, oWndParent, oEntParent )
+   local oErrWnd, oRes
+   local rEmpresa, aErrorCli, oModError, oLBoxErr
+   local oBtnBuscar, oBtnSalir
+   local cEntFecha
+   local oEntFecha
+   local nIndex, aItem
+   
+   rEmpresa := oTPuy:rEmpresa
+   
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"auditoria.ui"
+   
+   DEFINE WINDOW oErrWnd ;
+          TITLE "Fiscalius. Errores del Cliente" ;
+          SIZE 900,550 ;
+          ID "window1" RESOURCE oRes
+   
+   DEFINE IMAGE oImgBanner ID "img_banner" RESOURCE oRes
+   oImgBanner:Adjust(900)
+   
+   DEFINE IMAGE oImgLogo ID "img_logo" RESOURCE oRes
+   oImgLogo:Adjust(60)
+   
+   // Campo de filtro de fecha
+   DEFINE ENTRY TYPE DATE oEntFecha VAR cEntFecha CALENDAR ;
+          VALID .T. ;
+          ID "ent_fecha_desde" RESOURCE oRes
+   
+   // Botones
+   DEFINE BUTTON oBtnBuscar ;
+          ACTION __ErrorCliBuscar( oErrWnd, rEmpresa, oModError, oLBoxErr, oEntFecha ) ;
+          ID "btn_buscar" RESOURCE oRes
+   
+   DEFINE BUTTON oBtnSalir ;
+          ACTION oErrWnd:End() ;
+          ID "btn_salir" RESOURCE oRes
+   
+   // Box para el listbox
+   DEFINE BOX oBoxData ID "box_data" RESOURCE oRes EXPAND FILL
+   
+   // Cargar datos iniciales (hoy)
+   aErrorCli := rEmpresa:GetErrorCliLog( {"fecha" => DToS(DATE()) } )
+   
+   if !hb_isArray( aErrorCli ) .or. LEN(aErrorCli) = 0
+      MsgStop("No hay errores del cliente disponibles para hoy")
+      return
+   endif
+   
+   DEFINE MODEL oModError ;
+          STRUCT { {"archivo","C",20,0},;
+                   {"fecha","D",10,0},;
+                   {"tamano","N",10,2},;
+                   {"contenido","C",200,0};
+                  } ;
+          DATA   aErrorCli
+   
+   DEFINE LISTBOX oLBoxErr ;
+          MODEL oModError ;
+          OF oBoxData
+   
+   oLBoxErr:lBar := .F.
+   
+   // Títulos de columnas
+   oLBoxErr:SetColTitle( 1, "Archivo" )
+   oLBoxErr:SetColTitle( 2, "Fecha" )
+   oLBoxErr:SetColTitle( 3, "Tamaño (bytes)" )
+   
+   // Doble clic para ver contenido
+   //oLBoxErr:oTreeView:Connect( "row-activated", {|| __VerContenidoErrorCli( oLBoxErr, aErrorCli ) } )
+   
+   oLBoxErr:Active()
+   
+   ACTIVATE WINDOW oErrWnd MODAL
+   
+return
+
+
+procedure __ErrorCliBuscar( oWnd, rEmpresa, oModel, oList, oEntFecha )
+   local cFecha
+   local aErrorCli
+   local aIter := ARRAY(3)
+   local nIndex
+   
+   cFecha := alltrim( oEntFecha:GetText() )
+   
+   if Empty( cFecha )
+      cFecha := DToS( DATE() )
+   endif
+   
+   aErrorCli := rEmpresa:GetErrorCliLog( {"fecha" => cFecha } )
+   
+   if !hb_isArray( aErrorCli ) .or. LEN(aErrorCli) = 0
+      MsgStop("No hay errores para la fecha indicada")
+      return
+   endif
+   
+   // Limpiar modelo
+   oModel:oTreeView:ClearModel(.t.)
+   
+   // Agregar datos
+   FOR nIndex := 1 TO LEN(aErrorCli)
+      aItem := aErrorCli[nIndex]
+      APPEND LIST_STORE oModel:oLbx ITER aIter ;
+             VALUES aItem["archivo"], ;
+                    aItem["fecha"], ;
+                    hb_ntos(aItem["tamano"])
+   NEXT
+   
+return
+
+
+procedure __VerContenidoErrorCli( oList, aData )
+   local nRow, cContenido, aItem
+   
+   nRow := oList:GetActiveRow()
+   
+   if nRow > 0 .and. nRow <= LEN(aData)
+      aItem := aData[nRow]
+      if hb_IsHash( aItem ) .and. hb_hHasKey( aItem, "contenido" )
+         cContenido := aItem["contenido"]
+      else
+         cContenido := ""
+      endif
+      
+      if !EMPTY( cContenido )
+         View( cContenido, "Contenido del Error" )
+      endif
+   endif
+   
+return
+
+//eof
