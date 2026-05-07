@@ -133,7 +133,7 @@ function login_IsUser(oForm)
    cUser := ::oEntUser:GetText()
    cPasswd := hb_crypt(::oPasswd:GetText(), oTPuy:cPassword ) //hb_MD5( ::oPasswd:GetText() )
 
-   /* Si ya estaba un usuario registrado... entonces.. hay que cerrar la sesion. */
+   /* Si ya estaba un usuario registrado... entonces.. hay que cerrar la sesión. */
    if oTPuy:IsDef("oUser") .and. hb_IsObject( oTPuy:oUser )
       if oTpuy:oUser:cLogin = cUser
          MsgInfo("Esta sesión corresponde al usuario ["+cUser+"]")
@@ -144,7 +144,7 @@ function login_IsUser(oForm)
 
    /* oUser es el identificador del objeto remoto..
     * para enviar o recibir algo del objeto remoto usar:
-    * ~~oUser:<mensaje> ó r:oUser:<mensaje>  */
+    * ~~oUser:<mensaje> ó r:<mensaje>  */
    hSession := ~ServerLogin( cUser, cPasswd, "127.0.0.1", cHome /*TODO# Detectar IP*/ )
 
 //View( hb_valtoexp(hSession) )
@@ -153,9 +153,11 @@ function login_IsUser(oForm)
 
    if tps_isMessage( hSession ) .and. hSession.ok //hSession["ok"]
       hMsgContent := hSession.content 
-      oUser := hMsgContent.session_id 
-      //oUser := hSession["content"]["session_id"]
-      hUserData := hMsgContent.user_data
+      if !hb_IsNil( hMsgContent ) .and. hb_IsHash( hMsgContent )
+         oUser := hMsgContent.session_id 
+         //oUser := hSession["content"]["session_id"]
+         hUserData := iif( hb_HHasKey( hMsgContent, "user_data" ), hMsgContent["user_data"], {=>} )
+      endif
    endif
 
    // Ahora se debe registrar el objeto oUser localmente
@@ -166,19 +168,26 @@ function login_IsUser(oForm)
       return .f. 
    endif
 
-   if !oTpuy:IsDef( "oUser") .or. !hb_IsObject( oTpuy:oUser )
+if !oTpuy:IsDef( "oUser") .or. !hb_IsObject( oTpuy:oUser )
 
       // Creamos el objeto local correspondiente al usuario.
-      oTPuy:oUser    := gUser():New( oUser, ;
-                                     cUser, ;
-                                     hUserData.nombre, ;
-                                     hUserData.nombre_corto )
-									 
+      if !hb_IsNil( hUserData ) .and. hb_IsHash( hUserData ) .and. hb_HHasKey( hUserData, "id" )
+         oTpuy:oUser    := gUser():New( oUser, ;
+                                         iif( hb_HHasKey( hUserData, "login" ), hUserData["login"], cUser ), ;
+                                         iif( hb_HHasKey( hUserData, "nombre" ), hUserData["nombre"], "" ), ;
+                                         iif( hb_HHasKey( hUserData, "cargo" ), hUserData["cargo"], "" ), ;
+                                         hUserData["id"] )
+      else
+         // Si no hay datos de usuario, creamos con datos básicos
+         oTpuy:oUser    := gUser():New( oUser, cUser, "", "", NIL )
+      endif
 
-	
+      // Verificar si ya tiene el id:
+      if oTpuy:oUser:IsDef("id") 
+         nUserId := oTpuy:oUser:Get("id")
+      endif
 
-      oTPuy:rSession := RSession():New( oTPuy:oUser )
-
+      oTpuy:rSession := RSession():New( oTpuy:oUser )
    endif
 
 Return .t.
