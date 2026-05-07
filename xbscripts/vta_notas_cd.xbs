@@ -1332,9 +1332,9 @@ return
    if nPorcentaje = 0
       nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
       nTotal := ROUND( nMonto, 2 )
-      ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
+     // ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
       ::oEntIvaE:SetValue( TRANSFORM( nTotal, P_92 ) )
-      ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
+     // ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
    endif
 
    // Calcular monto IVA y separar por porcentaje
@@ -1382,6 +1382,7 @@ nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
                      ToNum( ::oEntIvaR:GetValue() ) +;
                      ToNum( ::oEntIvaG:GetValue() ) +;
                      ToNum( ::oEntIvaS:GetValue() ) +;
+					 ToNum( ::oEntIvaE:GetValue() )+; 
                      nOtrImp + nImpProd, 2 ) // Include otros_imp + imp_prod
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
 
@@ -1619,7 +1620,8 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
 
    uResp := ::rDocumento:SetData( ::hDocumento )
 
-   //view(::hDocumento)
+  //msginfo( ::hDocumento["monto_total"      ] )
+  //return .t.
    
 
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]

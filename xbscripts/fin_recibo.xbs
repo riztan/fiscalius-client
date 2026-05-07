@@ -663,7 +663,7 @@ return
     local aDivisaTokens, nTasa, cMoneda, cCajaCod
 
     // Validar saldo
-    if ::nSaldo > 0
+    if round(::nSaldo,2) > 0
        ::oLabInfo:SetText("Hay Saldo Pendiente, no puede guardar.")
        return .F.
     endif
@@ -684,6 +684,9 @@ return
        endif
     NEXT
 
+    // view(aApps)
+	 //return .t.
+	 
     // Recolectar instrumentos de pago (medios)
     aMedios := ::oModMedios:oTreeView:FillArray()
     FOR EACH aLine IN aMedios

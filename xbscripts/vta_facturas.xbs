@@ -1213,7 +1213,7 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    if nPorcentaje = 0  // Producto exento de IVA
       nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
       nTotal := ROUND( nMonto, 2 )
-      ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
+     // ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
       ::oEntIvaE:SetValue( TRANSFORM( nTotal, P_92 ) )
    endif
 
@@ -1266,6 +1266,7 @@ nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
                      ToNum( ::oEntIvaR:GetValue() ) +;
                      ToNum( ::oEntIvaG:GetValue() ) +;
                      ToNum( ::oEntIvaS:GetValue() ) +;
+					 ToNum( ::oEntIvaE:GetValue() )+; 
                      nOtrImp + nImpProd, 2 ) // Include otros_imp + imp_prod
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) ) 
    //::oEntTotBs:SetValue( TRANSFORM( nTotal*TONUM(SUBSTR(::cDivisa,5)), P_92 ) ) 
@@ -1464,7 +1465,8 @@ Procedure __VtaSave( oForm, oFormParent )
    ::hFactura["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hFactura["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
 
-
+//view( ::hFactura["monto_total"      ] )
+ //return .t.
  nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
    ::hFactura["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 0)
   ::cCondicionID:=::hFactura["condicion_id"]
@@ -1494,6 +1496,10 @@ Procedure __VtaSave( oForm, oFormParent )
 
    uResp := ::rFactura:SetData( ::hFactura )
    ::hFactura := ::rFactura:Data()
+   
+  // view( ::hFactura["monto_total"      ] )
+  // return .t.
+   
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
       ::oLabInfo:SetText( uResp["message"] )
       //::oLabInfo:SetText("No ha sido posible actualizar los datos.")

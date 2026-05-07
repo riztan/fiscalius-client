@@ -145,6 +145,7 @@ procedure vta_libro_xlsx( oForm, rQry )
     worksheet_merge_range( ::worksheet, CELL("V8"),CELL("V10"), "Exento", ::format_title0 )
     worksheet_merge_range( ::worksheet, CELL("W8"),CELL("W10"), "IVA Retenido ", ::format_title0 )
     worksheet_merge_range( ::worksheet, CELL("X8"),CELL("X10"), "IVA Percibido", ::format_title0 )
+	worksheet_merge_range( ::worksheet, CELL("Y8"),CELL("Y10"), "", ::format_title0 )
    
    /* Variables de Totales */
    hTotal:nVtasNoGravadas := {"base"  => 0, ;

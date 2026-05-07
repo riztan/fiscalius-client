@@ -208,7 +208,7 @@ procedure poslogin( oParent )
        DEFINE MENUITEM ACTION oTPuy:RunXBS("usabilidad", oForm );  
               ID "itm_usabilidad" RESOURCE ::oRes
 */
-
+       
        if !(oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:IsDevel() .or. oTPuy:oUser:IsAuditoria() )
           ::oMnuUser:Hide() 
           ::oMnuPagos:Hide()
@@ -239,6 +239,8 @@ procedure poslogin( oParent )
          ::oMnuFacturas:Show()
          ::oMnuNotaCre:Show()
       endif
+	  
+	 // ::oMnuNotaEnt:Hide()
 
 
       DEFINE TOOLBUTTON ::oTBQuit ;
