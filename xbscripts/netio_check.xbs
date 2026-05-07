@@ -87,7 +87,7 @@ return
 /* Realiza verificación de ficheros base */
 Procedure __FilesCheck(cType)
    local aRFiles, aLFiles, cDir
-   local aFile, cLFile_MD5
+   local aFile, cLFile_MD5, bGet
 
    if cType == "INC"
       aRFiles := ~IncList()
