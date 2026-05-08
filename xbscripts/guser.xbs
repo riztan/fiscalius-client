@@ -7,7 +7,7 @@
  
 CLASS GUSER FROM TPUBLIC
    
-   METHOD New( cHandle, cLogin, cNombre, cCargo )
+   METHOD New( cHandle, cLogin, cNombre, cCargo, nId )
  
    METHOD IsDeveloper()
    METHOD IsDevel()      INLINE ::IsDeveloper()

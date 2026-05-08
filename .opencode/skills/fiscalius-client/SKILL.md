@@ -149,6 +149,19 @@ RETURN
 
 ---
 
+## ⚠️ REGLA CRÍTICA: NO MODIFICAR ARCHIVOS SIN PERMISO
+
+**NUNCA modificar un archivo que está funcionando correctamente.**
+
+- Si el sistema funciona, NO tocar el código
+- Si detectas un "problema", primero PREGUNTAR al usuario antes de tocar algo
+- Si el usuario no reporta ningún problema, NO hacer cambios preventivos
+- Cualquier modificación debe ser SOLICITADA explícitamente por el usuario
+
+> Ejemplo de lo que NO se debe hacer: "Veo que netio_check funciona bien, pero voy a optimizarlo" → **PROHIBIDO**
+
+---
+
 ## ⏱️ REGLA DE TIEMPO: PIDE AYUDA A TIEMPO
 
 **Si en ~1 minuto no encuentras la información que necesitas, DETENTE y pregunta al usuario.**

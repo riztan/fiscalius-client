@@ -14,6 +14,15 @@ Antes de escribir código nuevo:
 
 ---
 
+## ⚠️ REGLA CRÍTICA: NO MODIFICAR ARCHIVOS SIN PERMISO
+
+- NO modificar archivos que funcionan correctamente
+- Si el sistema está operativo, NO tocar el código
+- Primero PREGUNTAR al usuario antes de cualquier modificación
+- Solo modificar si el usuario SOLICITA un cambio específico
+
+---
+
 ## ⏱️ TIEMPO LÍMITE: PIDE AYUDA A TIEMPO
 
 **Si en ~1 minuto no encuentras lo que buscas, DETENTE y pregunta.**
