@@ -21,6 +21,10 @@ Antes de escribir código nuevo:
 - Primero PREGUNTAR al usuario antes de cualquier modificación
 - Solo modificar si el usuario SOLICITA un cambio específico
 
+**Si mientras trabajas en X detectas un problema en Y (ajeno a X):**
+- ❌ NO modificar Y directamente
+- ✅ INFORMAR al programador y esperar autorización
+
 ---
 
 ## ⏱️ TIEMPO LÍMITE: PIDE AYUDA A TIEMPO
