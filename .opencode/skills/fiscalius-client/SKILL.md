@@ -149,6 +149,28 @@ RETURN
 
 ---
 
+## ⚠️ REGLA CRÍTICA: NO MODIFICAR ARCHIVOS SIN PERMISO
+
+**NUNCA modificar un archivo que está funcionando correctamente.**
+
+- Si el sistema funciona, NO tocar el código
+- Si detectas un "problema", primero PREGUNTAR al usuario antes de tocar algo
+- Si el usuario no reporta ningún problema, NO hacer cambios preventivos
+- Cualquier modificación debe ser SOLICITADA explícitamente por el usuario
+
+> Ejemplo de lo que NO se debe hacer: "Veo que netio_check funciona bien, pero voy a optimizarlo" → **PROHIBIDO**
+
+### 🔍 Regla de alcance: detectado en código ajeno
+
+**Si mientras trabajas en X detectas un problema en Y (ajeno a X):**
+1. ❌ NO modificar Y directamente
+2. ✅ INFORMAR al programador del problema detectado
+3. ✅ ESPERAR autorización para planificar y ejecutar el cambio
+
+> Ejemplo: Trabajando en `totalizar()` detectas que `ToNum()` no calcula bien → **NO modificar ToNum()** → Informar al programador porque ToNum() es función fundamental usada en TODO el sistema.
+
+---
+
 ## ⏱️ REGLA DE TIEMPO: PIDE AYUDA A TIEMPO
 
 **Si en ~1 minuto no encuentras la información que necesitas, DETENTE y pregunta al usuario.**

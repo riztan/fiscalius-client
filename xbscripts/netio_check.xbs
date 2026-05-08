@@ -13,33 +13,33 @@ FUNCTION netio_check()
 
   if !oTpuy:lNetIO 
 
-     try
-        oMsgRun := MsgRunStart("Conectando al Servidor NetIO...")
-        lConnect := netio_connect( NETSERVER, NETPORT,, NETPASSWD )
-        if lConnect
-           if !oTpuy:Isdef( "oUser" )
-              __Login() //oTpuy:RunXBS("netio_login",.f.)
-           endif
-        endif
-        oMsgRun:End()
-     catch
-        MsgStop( "No se puede conectar con "+NETSERVER )
-        oMsgRun:End()
-        Return .F.
-     end
+      try
+         oMsgRun := MsgRunStart("Conectando al Servidor NetIO...")
+         lConnect := netio_connect( NETSERVER, NETPORT,, NETPASSWD )
+         oMsgRun:End()  // Cerrar MsgRun ANTES de llamar al login
+         if lConnect
+            if !oTpuy:Isdef( "oUser" )
+               __Login() //oTpuy:RunXBS("netio_login",.f.)
+            endif
+         endif
+      catch
+         oMsgRun:End()
+         MsgStop( "No se puede conectar con "+NETSERVER )
+         Return .F.
+      end
 
-     If !lConnect
-        MsgAlert("No logro conectar con "+NETSERVER)
-        Return lConnect
-     EndIf
+      If !lConnect
+         MsgAlert("No logro conectar con "+NETSERVER)
+         Return lConnect
+      EndIf
 
-     oTpuy:lNetIO := .t.
-     Check_Version()
-     oTpuy:tLastNetIO := hb_DateTime()
+      oTpuy:lNetIO := .t.
+      //Check_Version() // Desactivado - auto-update pendiente de revisar
+      oTpuy:tLastNetIO := hb_DateTime()
 
-  endif
+   endif
 
-  if (hb_DateTime() - oTpuy:tLastNetIO) >= 0.001000
+   if (hb_DateTime() - oTpuy:tLastNetIO) >= 0.001000
       if netio_GetConnection( NETSERVER, NETPORT,, NETPASSWD ) = NIL
         oTpuy:lNetIO := .f.
      else
@@ -58,22 +58,25 @@ Procedure __Login()
    local cScriptName := "netio_login", cScriptFile
    local aScripts, aScript, cMD5, cSource 
 
-   __FilesCheck("INC")
-   __FilesCheck("RES")
-   __FilesCheck("IMG")
+   // Solo verificar archivos si NO es desarrollador (archivo "devel" no existe)
+   if !FILE( "devel" )
+      __FilesCheck("INC")
+      __FilesCheck("RES")
+      __FilesCheck("IMG")
+   endif
 
-   aScripts := ~GetScripts()
+   // Sincronización de scripts (desactivada temporalmente)
+   // aScripts := ~GetScripts()
+   // FOR EACH aScript IN aScripts
+   //    cScriptFile := oTpuy:cXBScripts+aScript[1]+".xbs"
+   //    cMD5 := hb_MD5File( cScriptFile )
+   //    if !File( cScriptFile ) .or. !(aScript[2] == cMD5)
+   //       cSource := ~GetScripts( aScript[1] )
+   //       hb_MemoWrit( cScriptFile, cSource )
+   //    endif
+// NEXT
 
-   FOR EACH aScript IN aScripts
-      cScriptFile := oTpuy:cXBScripts+aScript[1]+".xbs"
-      cMD5 := hb_MD5File( cScriptFile )
-      if !File( cScriptFile ) .or. !(aScript[2] == cMD5)
-         cSource := ~GetScripts( aScript[1] )
-         hb_MemoWrit( cScriptFile, cSource )
-      endif
-   NEXT
-
-   cScriptFile := oTpuy:cXBScripts+cScriptName+".xbs" 
+   cScriptFile := oTpuy:cXBScripts+cScriptName+".xbs"
 
    If File(cScriptFile)
       oTpuy:RunXBS(cScriptName,.f.)
@@ -87,7 +90,7 @@ return
 /* Realiza verificación de ficheros base */
 Procedure __FilesCheck(cType)
    local aRFiles, aLFiles, cDir
-   local aFile, cLFile_MD5
+   local aFile, cLFile_MD5, bGet
 
    if cType == "INC"
       aRFiles := ~IncList()
