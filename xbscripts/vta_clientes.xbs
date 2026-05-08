@@ -309,7 +309,7 @@ return
 
 
 Procedure __VtaCliSave( oForm )
-   local hData, uWidget, uResp, aIter, lNew
+   local hData, uWidget, uResp, aIter, lNew, aLine, rQry
 
    // Validar el RIF antes de guardar
    if !__ValidaRIF( ::oEntRif, oForm )
@@ -396,6 +396,37 @@ Procedure __VtaCliSave( oForm )
       ::oModel:SetValue( 8, hData["tipo_entidad"] ) // Añadir Tipo de Entidad
       //::oModel:SetValue( 8, hData["nombre_corto"] ) // Añadir nombre_corto
       //::oModel:SetValue( 9, hData["cedula"] )       // Añadir cedula
+    endif
+
+   // Guardar direcciones pendientes (cliente nuevo con direcciones en memoria)
+   if lNew .and. LEN( ::aDirecciones ) > 0
+      FOR EACH aIter IN ::aDirecciones
+         hDir := hb_hash()
+         hDir["parroquia_id"] := ::aParroquiasId[ ASCAN( ::aParroquias, {|x| ALLTRIM(x) == ALLTRIM(aIter[3])} ) ]
+         hDir["direccion"] := aIter[4]
+         hDir["es_principal"] := ( aIter[5] == "Si" )
+         uResp := ::rCliente:AddDireccion( hDir )
+         if hb_isHash(uResp) .and. hb_hHasKey(uResp, "ok") .and. !uResp["ok"]
+            MsgAlert( "Error al guardar dirección: " + uResp["message"], "Error" )
+         endif
+      NEXT
+      ::aDirecciones := {}
+      ::oModDirecciones:oTreeView:ClearModel(.t.)
+      // Recargar direcciones desde BD
+      rQry := ::rCliente:GetDirecciones()
+      if hb_isObject(rQry)
+         While !rQry:Eof()
+            AADD( ::aDirecciones, { ALLTRIM(rQry:estado), ALLTRIM(rQry:municipio),;
+                                   ALLTRIM(rQry:parroquia), ALLTRIM(rQry:direccion),;
+                                   iif(rQry:es_principal, "Si", "No"), rQry:id } )
+            rQry:Skip()
+         EndDo
+         aIter := ARRAY(4)
+         FOR EACH aLine IN ::aDirecciones
+            APPEND LIST_STORE ::oModDirecciones:oLbx ITER aIter ;
+                   VALUES aLine[1], aLine[2], aLine[3], aLine[4], aLine[5], hb_ntos(aLine[6])
+         NEXT
+      endif
    endif
 
    // Actualizar los campos del formulario
@@ -753,16 +784,26 @@ procedure __AddDireccion( oForm )
    hDir["direccion"] := oForm:cDirAdic
    hDir["es_principal"] := oForm:lPrincipal
 
-   uResp := oForm:rCliente:AddDireccion( hDir )
-   if hb_isHash(uResp) .and. hb_hHasKey(uResp, "ok") .and. !uResp["ok"]
-      MsgAlert( uResp["message"], "Error" )
-      RETURN
-   endif
+   if oForm:lNew
+      // Cliente nuevo: acumular en memoria
+      AADD( oForm:aDirecciones, { cEdo, cMun, cPar, oForm:cDirAdic,;
+                                  iif(oForm:lPrincipal, "Si", "No"), 0 } )
+      aIter := ARRAY(4)
+      APPEND LIST_STORE oForm:oModDirecciones:oLbx ITER aIter ;
+             VALUES cEdo, cMun, cPar, oForm:cDirAdic,;
+                    iif(oForm:lPrincipal, "Si", "No"), "0"
+   else
+      // Cliente existente: guardar directo en BD
+      uResp := oForm:rCliente:AddDireccion( hDir )
+      if hb_isHash(uResp) .and. hb_hHasKey(uResp, "ok") .and. !uResp["ok"]
+         MsgAlert( uResp["message"], "Error" )
+         RETURN
+      endif
 
-   // Recargar direcciones
-   oForm:aDirecciones := {}
-   oForm:oModDirecciones:oTreeView:ClearModel(.t.)
-   __CargarDirecciones( oForm )
+      oForm:aDirecciones := {}
+      oForm:oModDirecciones:oTreeView:ClearModel(.t.)
+      __CargarDirecciones( oForm )
+   endif
 
    // Limpiar campos
    oForm:cEstado := ""
@@ -787,7 +828,7 @@ procedure __DelDireccion( oForm )
    endif
 
    nDirId := ::oModDirecciones:GetCol( 6, aIter )
-View( nDirId )
+   nDirId := VAL( nDirId )
    if nDirId = 0
       RETURN
    endif
