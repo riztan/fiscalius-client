@@ -54,7 +54,7 @@ procedure vta_pedidos( oFormParent )
    DEFINE LABEL ::oLabUsuario TEXT "" MARKUP ID "lab_usuario" RESOURCE ::oRes
    DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
 
-DEFINE BUTTON ::oBtnGuardar ;
+   DEFINE BUTTON ::oBtnGuardar ;
            ACTION __PedSave( oForm, oFormParent ) ;
            ID "btn_guardar" RESOURCE ::oRes
 
@@ -77,10 +77,10 @@ DEFINE BUTTON ::oBtnGuardar ;
    DEFINE BOX ::oBoxPedido ID "vbox_factura" RESOURCE ::oRes
           ::oBoxPedido:Hide()
 
-    DEFINE BUTTON ::oBtn ACTION __vtaPedido( oForm, oFormParent, ::oBoxPedido, ::oModPedidos, .T.  ) ;
+   DEFINE BUTTON ::oBtn ACTION __vtaPedido( oForm, oFormParent, ::oBoxPedido, ::oModPedidos, .T.  ) ;
            ID "btn_add" RESOURCE ::oRes
 
-    DEFINE BUTTON ::oBtnConvertir ;
+   DEFINE BUTTON ::oBtnConvertir ;
            ACTION __PedConvertir( oForm, oFormParent ) ;
            ID "btn_convertir" RESOURCE ::oRes
    //::oLBoxPedidos:bEdit := {|oModel| __vtaPedido( oForm, oFormParent, ::oBoxPedido, oModel, .F. ) }
@@ -105,13 +105,13 @@ DEFINE BUTTON ::oBtnGuardar ;
    ::cFecha := DTOC( DATE() )
    ::cPFecha := ::cFecha
    DEFINE ENTRY TYPE DATE ::oEntFecha VAR ::cFecha CALENDAR ;
-          VALID __PedValFecha( oForm, ::oEntFecha, @::cPFecha ) ;
+          VALID __PedValFecha( oForm, ::oEntFecha, @::cPFecha, "doc" ) ;
           ID "ent_fecha" RESOURCE ::oRes
 
    ::cVcmto := DTOC( DATE() )
    ::cPVcmto := ::cVcmto
    DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::cVcmto CALENDAR ;
-          VALID __PedValFecha( oForm, ::oEntVcmto, @::cPVcmto ) ;
+          VALID __PedValFecha( oForm, ::oEntVcmto, @::cPVcmto, "vcmto" ) ;
           ID "ent_vcmto" RESOURCE ::oRes
 
    DEFINE BOX ::oBoxCondicion ID "box_condicion" RESOURCE ::oRes
@@ -344,7 +344,7 @@ procedure __ModPedsRefresh(oForm)
    if ::isDef("oModPedidos")
 //View( ::oModPedidos:oTreeView:IsGetSelected( aIter ) )
       ::oModPedidos:oTreeView:ClearModel(.t.)
-FOR EACH aLine IN ::rPedidos:GetData()
+      FOR EACH aLine IN ::rPedidos:GetData()
           APPEND LIST_STORE ::oModPedidos:oLbx ITER aIter ;
                  VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
                         ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
@@ -353,7 +353,7 @@ FOR EACH aLine IN ::rPedidos:GetData()
                         hb_ntos(aLine[ 9]), aLine[ 10], ;
                         hb_ntos(aLine[ 11]), aLine[ 12]
 
-       NEXT
+      NEXT
 
       bDetalCode := {|oTView, pModel, aIter | ;
                      iif( oTView:GetAutoValue(1, aIter)==::hPedido["numero"], ;
@@ -376,9 +376,11 @@ return .F.
 
 
 
-function __PedValFecha( oForm, oEnt, dValPrevio )
+function __PedValFecha( oForm, oEnt, dValPrevio, cTipo )
    local lRes := .t.
-   local nValor, rQry
+   local nValor, rQry, bDetalCode
+
+   default cTipo := ''
 
    if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
       //llevamos fecha de vencimiento a la misma fecha del documento.
@@ -392,6 +394,10 @@ function __PedValFecha( oForm, oEnt, dValPrevio )
 */
    endif
    
+   if cTipo = "vcmto"
+      return lRes
+   endif
+
    dValPrevio := CTOD( oEnt:getValue() )
 
    // Obtener tasa de cambio correspondiente.
@@ -415,9 +421,60 @@ function __PedValFecha( oForm, oEnt, dValPrevio )
       ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )  
    endif
 
-//View( hb_valtoexp( ::aMonedas ) )
+   if hb_isObject( ::oModDetal )
+      bDetalCode := {| oTView, pModel, aIter, pPath | ;
+                       __PedItemCalPre( oForm, oTView, pModel, aIter, rQry, ::oModDetal ) } 
+      ::oLBoxDetal:ForEach( bDetalCode )
+      __PedCalcula(oForm)
+   endif
+
+   rQry:End()
 
 return lRes
+
+
+procedure __PedItemCalPre( oForm, oTView, pModel, aIter, rQry, oModel )
+   local nMonedaId := VAL(oTView:GetAutoValue( 25, aIter ))
+   local nCantidad := ToNum(oTView:GetAutoValue(  5, aIter ))
+   local nDescuento:= ToNum(oTView:GetAutoValue(  7, aIter ))
+   local nMonto, nImpPvp, nImpProduccion, nIvaPorcen, nIvaMonto:=0
+   local nValor 
+   local nPrecio 
+
+   if nMonedaId != 1
+      rQry:GoTop()
+      While !rQry:Eof()
+         if rQry:moneda_id=nMonedaId 
+            ::oLabInfo:SetText("Reajustando precios. ")
+
+            nValor := iif( rQry:valor > 0, rQry:valor, 1 )
+            nPrecio := ROUND( ToNum( oTView:GetAutoValue( 26 ) ) * nValor, 2 )
+
+            nMonto         := ( nCantidad * nPrecio ) - nDescuento
+            nIvaPorcen     := ToNum( oTView:GetAutoValue( 9, aIter) )  //Porcentaje de IVA
+            nImpPvp        := ToNum( oTView:GetAutoValue(22, aIter) ) * nCantidad   // Recalculate imp_pvp
+            nImpProduccion := ToNum( oTView:GetAutoValue(24, aIter) ) * nCantidad // Recalculate imp_produccion
+
+            oModel:SetValue(  6, hb_ntos( nPrecio ), aIter ) // Precio
+            oModel:SetValue(  8, hb_ntos( nMonto ), aIter )  // Subtotal
+            oModel:SetValue( 21, hb_ntos( nImpPvp ), aIter ) // ImpPvp
+            oModel:SetValue( 23, hb_ntos( nImpProduccion ), aIter ) // Set imp_produccion
+
+            if nIvaPorcen > 0
+               nIvaMonto := ROUND( nMonto * (nIvaPorcen / 100), 2 )
+               oModel:SetValue( 10, hb_ntos(nIvaMonto), aIter )  // Monto de IVA
+            endif
+            oModel:SetValue( 11, hb_ntos( ROUND( nMonto + nIvaMonto ,2 ) ), aIter )  // TOTAL
+
+            __PedCalcula( oForm )
+            __PedCalMontos( oTView, pModel, aIter, oForm ) 
+         endif
+         rQry:Skip()
+      EndDo   
+   endif
+return
+
+
 
 function __PedCargarCondiciones( oForm )
    local rQryCond
@@ -429,17 +486,17 @@ function __PedCargarCondiciones( oForm )
       AADD( ::aCondicionesId, hb_ntos(rQryCond:id) )
       rQryCond:Skip()
    EndDo
-   
 
-      if hb_isObject( ::oComboCondicion ) .and. !empty( ::aCondiciones )
-       if VALTYPE(::oComboCondicion:aItems)="A"
+   if hb_isObject( ::oComboCondicion ) .and. !empty( ::aCondiciones )
+      if VALTYPE(::oComboCondicion:aItems)="A"
          ::oComboCondicion:RemoveAll()
-       endif
-         ::oComboCondicion:SetItems( ::aCondiciones )
       endif
+      ::oComboCondicion:SetItems( ::aCondiciones )
+   endif
 
-   
 return .T.
+
+
 
 function __PedCargarSeries( oForm )
    local rQrySeries
@@ -455,21 +512,20 @@ function __PedCargarSeries( oForm )
       rQrySeries:Skip()
    EndDo
    
-    if hb_isObject( ::oComboSerie )
+   if hb_isObject( ::oComboSerie )
      if VALTYPE(::oComboSerie:aItems)="A"
        ::oComboSerie:RemoveAll()
      endif
        ::oComboSerie:SetItems( ::aSeries )
-    endif
+   endif
 	  
-	  
-    if !empty( ::aSeries )
-    IF len(::aSeries) = 1
-       ::oComboSerie:Enable( .F. )
-       ::oComboSerie:SetValue( ::aSeries[1] )
-       ::cSerieId := ::aSeriesId[1]
-    ENDI
-    endif
+   if !empty( ::aSeries )
+      IF len(::aSeries) = 1
+         ::oComboSerie:Enable( .F. )
+         ::oComboSerie:SetValue( ::aSeries[1] )
+         ::cSerieId := ::aSeriesId[1]
+      ENDI
+   endif
     
 return .T.
 
@@ -513,13 +569,13 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
 
    ::lNew := lNew
 
-if ::lNew 
-       ::lLoad      := .F.
-       ::lSave      := .F.
-       ::rPedido   := ::rVentas:Pedido('')
-       ::hPedido   := ::rPedido:Data()
-       ::rPedDetal := nil  // No cargar detalles para nuevo documento
-       ::cFecha := DTOC( DATE() )
+   if ::lNew 
+      ::lLoad      := .F.
+      ::lSave      := .F.
+      ::rPedido   := ::rVentas:Pedido('')
+      ::hPedido   := ::rPedido:Data()
+      ::rPedDetal := nil  // No cargar detalles para nuevo documento
+      ::cFecha := DTOC( DATE() )
 
       ::oLabNumero:SetValue( "00000000" )
       ::oLabNroControl:SetValue( "00000000" )
@@ -544,11 +600,11 @@ if ::lNew
       ::oEntTotal:SetValue( "0" )
        //::oEntTotBs:SetValue( "0" )
 
-if hb_isObject( ::oModDetal )
+      if hb_isObject( ::oModDetal )
           ::oModDetal:oTreeView:ClearModel(.t.)
           // Forzar array vacío para nuevo documento
           ::aDetal := {}
-       endif
+      endif
 
    else
       ::lLoad      := .T. // Consultando el documento.
@@ -592,12 +648,12 @@ if hb_isObject( ::oModDetal )
       if hb_hHasKey( ::hPedido, "otros_imp" )
          ::oEntOtrImp:SetValue( TRANSFORM( ::hPedido["otros_imp"], P_92 ) )        
          ::oEntImpProd:SetValue( TRANSFORM( ::hPedido["imp_prod"], P_92 ) )
-else
-          ::oEntOtrImp:SetValue( "0" )
-           ::oEntImpProd:SetValue( "0" )
-       endif
+      else
+         ::oEntOtrImp:SetValue( "0" )
+         ::oEntImpProd:SetValue( "0" )
+      endif
 
-       FOR EACH hIva IN ::hPedido["iva"]
+      FOR EACH hIva IN ::hPedido["iva"]
          if hIva["porcentaje"] = 0
             ::oEntIvaE:SetValue( TRANSFORM(hIva["monto"],P_92) )
          endif
@@ -616,9 +672,9 @@ else
          nCompRetIVA := hIva["comprobante_retencion"]
          cFechRetIVA := DTOC(hIva["fecha_retencion"])
 
-NEXT
+      NEXT
 
-       ::oEntMonBase:SetValue( TRANSFORM(::hPedido["monto_base"],P_92) ) //oModel:GetCol(::hCol["monto base"]) )
+      ::oEntMonBase:SetValue( TRANSFORM(::hPedido["monto_base"],P_92) ) //oModel:GetCol(::hCol["monto base"]) )
       ::oEntTotal:SetValue( TRANSFORM(::hPedido["monto_total"],P_92) )  
       //::oEntTotBs:SetValue( TRANSFORM(::hPedido["monto_total"]*TONUM(SUBSTR(::cDivisa,5)),P_92) )  
 
@@ -645,8 +701,9 @@ NEXT
       if !hb_isNIL( ::rPedDetal ) .and. !::lNew
 
          aStruct := ::rPedDetal:Struct()
-         AADD( aStruct, {"imp_pvp_1",      "N",1,2} )
-         AADD( aStruct, {"imp_produccion_1",      "N",1,2} )
+         AADD( aStruct, {"imp_pvp_1",        "N",10,2} )
+         AADD( aStruct, {"imp_produccion_1", "N",10,2} )
+         AADD( aStruct, {"precio_moneda",    "N",14,2} )
          aData := {}
          AEVAL( ::rPedDetal:GetData(), {|a| AADD( aData, {a[ 1],;
                                                            a[ 2],;
@@ -680,60 +737,62 @@ NEXT
          // Para nuevo documento o cuando no hay datos, usar estructura vacía
          if ::lNew
             aData := {}
-            aStruct := {{"detalle_id",     "N",10, 0},;
-                        {"documento" ,     "N",10, 0},;
-                        {"codigo_local",   "C",20, 0},;
-                        {"descripcion",    "C",100,0},;
-                        {"cantidad",       "N",10, 0},;
-                        {"precio_unitario","N",13, 2},;
-                        {"descuento",      "N",13, 2},;
-                        {"subtotal",       "N",13, 2},;
-                        {"iva_porcentaje", "N",04, 2},;
-                        {"iva_monto",      "N",13, 2},;
-                        {"total",          "N",13, 2},;
-                        {"nombre_global",  "C",100,0},;
-                        {"tipo_inventario","C",01, 0},;
-                        {"lote",           "C",10, 0},;
-                        {"fecha_vcmto",    "D",10, 0},;
-                        {"id_ubicacion",   "N",10, 0},;
-                        {"almacen_id",     "N",10, 0},;
-                        {"nombre_almacen", "C",100,0},;
-                        {"detalles_json",  "C",255,0},;
-                        {"item",           "C",10, 0},;
-                        {"imp_pvp",        "N",13, 2},;
-                        {"imp_pvp_1",      "N",13, 2},;
-                        {"imp_produccion",  "N",13, 2},;
-                        {"imp_produccion_1",  "N",13, 2},;
-                        {"moneda_id",      "N",10, 0}}
+            aStruct := {{"detalle_id",        "N",10, 0},; // 01
+                        {"documento" ,        "N",10, 0},; // 02
+                        {"codigo_local",      "C",20, 0},; // 03
+                        {"descripcion",       "C",100,0},; // 04
+                        {"cantidad",          "N",10, 0},; // 05
+                        {"precio_unitario",   "N",13, 2},; // 06
+                        {"descuento",         "N",13, 2},; // 07
+                        {"subtotal",          "N",13, 2},; // 08
+                        {"iva_porcentaje",    "N",04, 2},; // 09
+                        {"iva_monto",         "N",13, 2},; // 10
+                        {"total",             "N",13, 2},; // 11
+                        {"nombre_global",     "C",100,0},; // 12
+                        {"tipo_inventario",   "C",01, 0},; // 13
+                        {"lote",              "C",10, 0},; // 14
+                        {"fecha_vcmto",       "D",10, 0},; // 15
+                        {"id_ubicacion",      "N",10, 0},; // 16
+                        {"almacen_id",        "N",10, 0},; // 17
+                        {"nombre_almacen",    "C",100,0},; // 18
+                        {"detalles_json",     "C",255,0},; // 19
+                        {"item",              "C",10, 0},; // 20
+                        {"imp_pvp",           "N",13, 2},; // 21
+                        {"imp_pvp_1",         "N",13, 2},; // 22
+                        {"imp_produccion",    "N",13, 2},; // 23
+                        {"imp_produccion_1",  "N",13, 2},; // 24
+                        {"moneda_id",         "N",10, 0},; // 25
+                        {"precio_moneda",     "N",14, 2}}  // 26
          endif
          
          DEFINE MODEL   ::oModDetal           ;
-                STRUCT  {{"detalle_id",     "N",10, 0},;
-                         {"documento" ,     "N",10, 0},;
-                         {"codigo_local",   "C",20, 0},;
-                         {"descripcion",    "C",100,0},;
-                         {"cantidad",       "N",10, 0},;
-                         {"precio_unitario","N",13, 2},;
-                         {"descuento",      "N",13, 2},;
-                         {"subtotal",       "N",13, 2},;
-                         {"iva_porcentaje", "N",04, 2},;
-                         {"iva_monto",      "N",13, 2},;
-                         {"total",          "N",13, 2},;
-                         {"nombre_global",  "C",100,0},;
-                         {"tipo_inventario","C",01, 0},;
-                         {"lote",           "C",10, 0},;
-                         {"fecha_vcmto",    "D",10, 0},;
-                         {"id_ubicacion",   "N",10, 0},;
-                         {"almacen_id",     "N",10, 0},;
-                         {"nombre_almacen", "C",100,0},;
-                         {"detalles_json",  "C",255,0},;
-                         {"item",           "C",10, 0},;
-                         {"imp_pvp",        "N",13, 2},; // Add imp_pvp
-                         {"imp_pvp_1",      "N",13, 2},; // Add imp_pvp
-                         {"imp_produccion",  "N",13, 2},; // Add imp_produccion
-                         {"imp_produccion_1",  "N",13, 2},; // Add imp_produccion
-                         {"moneda_id",      "N",10, 0}};
-                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0,0,0}}
+                STRUCT  {{"detalle_id",      "N",10, 0},; // 01
+                         {"documento" ,      "N",10, 0},; // 02
+                         {"codigo_local",    "C",20, 0},; // 03
+                         {"descripcion",     "C",100,0},; // 04
+                         {"cantidad",        "N",10, 0},; // 05
+                         {"precio_unitario", "N",13, 2},; // 06
+                         {"descuento",       "N",13, 2},; // 07
+                         {"subtotal",        "N",13, 2},; // 08
+                         {"iva_porcentaje",  "N",04, 2},; // 09
+                         {"iva_monto",       "N",13, 2},; // 10
+                         {"total",           "N",13, 2},; // 11
+                         {"nombre_global",   "C",100,0},; // 12
+                         {"tipo_inventario", "C",01, 0},; // 13
+                         {"lote",            "C",10, 0},; // 14
+                         {"fecha_vcmto",     "D",10, 0},; // 15
+                         {"id_ubicacion",    "N",10, 0},; // 16
+                         {"almacen_id",      "N",10, 0},; // 17
+                         {"nombre_almacen",  "C",100,0},; // 18
+                         {"detalles_json",   "C",255,0},; // 19
+                         {"item",            "C",10, 0},; // 20
+                         {"imp_pvp",         "N",13, 2},; // 21 // Add imp_pvp
+                         {"imp_pvp_1",       "N",13, 2},; // 22 // Add imp_pvp
+                         {"imp_produccion",  "N",13, 2},; // 23 // Add imp_produccion
+                         {"imp_produccion_1","N",13, 2},; // 24 // Add imp_produccion
+                         {"moneda_id",       "N",10, 0},; // 25 
+                         {"precio_moneda",   "N",14, 2}}; // 26
+                DATA    {{0,0,'','',0,0,0,0,0,0,0,'','','',date(),0,0,'','',0,0,0,0,0,0}}
 
       endif
 
@@ -782,7 +841,7 @@ NEXT
       if hb_isNIL( ::rPedDetal )
          ::oModDetal:oTreeView:ClearModel(.t.)
       endif
-else
+   else
   
       ::oModDetal:oTreeView:ClearModel(.t.)
       if !hb_isNIL( ::rPedDetal )
@@ -815,9 +874,10 @@ else
                              aLine[19], ;
                              hb_ntos(aLine[20]),;
                              hb_ntos(aLine[21]), hb_ntos(aLine[21]/aLine[5]),;
-                             hb_ntos(aLine[22]), hb_ntos(aLine[22]/aLine[5])
+                             hb_ntos(aLine[22]), hb_ntos(aLine[22]/aLine[5]),;
+                             hb_ntos(aLine[25]), hb_ntos(aLine[9])
             CATCH oErr
-               View( oErr:Description )
+               View( "Atención: "+CRLF+oErr:Description )
             END
 
          NEXT
@@ -1016,10 +1076,10 @@ PROCEDURE __PedSetValue( oTreeView, oModel, aIter, nCol, uValue  )
          endif
 
          if nCol = __CANTIDAD 
-nMonto := (VAL(uValue) * ;
+            nMonto := (VAL(uValue) * ;
                       ToNum( oTreeView:GetAutoValue(__PRECIO, aIter))) - nDescuento
-             nImpPvp := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(22, aIter) ), 2 ) // Calculate imp_pvp
-             nImpProduccion := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(24, aIter) ), 2 ) // Calculate imp_produccion
+            nImpPvp := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(22, aIter) ), 2 ) // Calculate imp_pvp
+            nImpProduccion := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(24, aIter) ), 2 ) // Calculate imp_produccion
          elseif nCol = __PRECIO
             nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
                       VAL(uValue)) - nDescuento
@@ -1033,7 +1093,6 @@ nMonto := (VAL(uValue) * ;
          oModel:Set( aIter, __SUBTOTAL, STR( nMonto ) )
          oModel:Set( aIter, 21, STR( nImpPvp ) ) // Set imp_pvp
          oModel:Set( aIter, 23, STR( nImpProduccion ) ) // Set imp_produccion
-
          nIvaPorcen := ToNum( oTreeView:GetAutoValue(__IVAPORCEN, aIter) )
          if nIvaPorcen > 0
             nIvaMonto := ROUND( nMonto * (nIvaPorcen / 100), 2 )
@@ -1189,7 +1248,7 @@ return
 
 procedure __PedAddDetal( oForm )
    local aIter := ARRAY(4)
-   local aLine := {'','','','','','','','','','','','','','','','','','','','','','','',''}
+   local aLine := {'','','','','','','','','','','','','','','','','','','','','','','','','',''}
 
    //-  ignoramos si el documento esta anulado o cerrado.
    if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada" 
@@ -1208,7 +1267,8 @@ procedure __PedAddDetal( oForm )
                  aLine[18], aLine[19], ;
                  aLine[20], aLine[21], ;
                  aLine[22], aLine[23], ;
-                 aLine[24]
+                 aLine[24], aLine[25], ;
+                 aLine[26]
 
    ::oModDetal:oTreeView:SetFocus()
    ::oModDetal:GoBottom()
@@ -1238,7 +1298,7 @@ procedure __PedRefresh( oForm, lConfirm )
       ::oEntCli:Disable()
       ::oEntFecha:Disable()
       ::oEntVcmto:Disable()
-if ::hPedido["estado"]="C"
+      if ::hPedido["estado"]="C"
 
           ::oBtnImprime:Enable() 
        endif
@@ -1251,7 +1311,7 @@ if ::hPedido["estado"]="C"
       //else
       //   ::oComboEstado:Disable()
       endif
-else
+   else
        ::oEntCli:Enable()
        ::oEntFecha:Enable()
        ::oEntVcmto:Enable()
@@ -1328,7 +1388,7 @@ Procedure __PedSave( oForm, oFormParent )
    ::hPedido["condicion_id"     ] := '1'                          // Condicion (de momento no importa  )
    ::hPedido["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
    ::hPedido["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
-   ::hPedido["imp_prod"        ] := ::oEntImpProd:GetValue()      // Impuesto Produccion
+   ::hPedido["imp_prod"         ] := ::oEntImpProd:GetValue()     // Impuesto Produccion
    ::hPedido["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hPedido["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
    nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
@@ -1461,7 +1521,7 @@ procedure __PedSaveDetal(oTView, pModel, aIter, oForm)
    hDetal["detalles_json"    ] := oTView:GetAutoValue( 19, aIter )
    hDetal["item"             ] := oTView:GetAutoValue( 20, aIter )
    hDetal["imp_pvp"          ] := VAL( oTView:GetAutoValue( 21, aIter ) ) // Add imp_pvp
-   hDetal["imp_produccion"] := VAL( oTView:GetAutoValue( 23, aIter ) ) // Add imp_produccion
+   hDetal["imp_produccion"   ] := VAL( oTView:GetAutoValue( 23, aIter ) ) // Add imp_produccion
     //View( oTView:GetAutoValue(20, aIter) )
    
    AADD( ::aDetal, hDetal )
@@ -1604,10 +1664,15 @@ PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                   ::oModDetal:aIter, 23, ; // imp_produccion
                   STR( rProductos:imp_produccion )) // Set imp_produccion
   
-     __PedSetValue( ::oModDetal:oTreeView, ;
+      __PedSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, 24, ; // imp_produccion
                   STR( rProductos:imp_produccion )) // Set imp_produccion
+
+      __PedSetValue( ::oModDetal:oTreeView, ;
+                  ::oModDetal:oLbx, ;
+                  ::oModDetal:aIter, 25, ; // imp_produccion
+                  STR( rProductos:moneda_id )) // Set moneda_id
 
       __PedSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
@@ -1675,32 +1740,40 @@ PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 				     ::oModDetal:aIter, __PRECIO ,  ;
                                      __Pedf_CalPrecio( oForm, ;
                                                        oModProductos:oTreeView:GetAutoValue( 10 ), ;
-                                                       oModProductos:oTreeView:GetAutoValue( 29 ) );
+                                                       oModProductos:oTreeView:GetAutoValue( 30 ) );
                                      ),;
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, __IVAPORCEN, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),; // iva_procentaje
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 21, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),; //imp_pvp
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 22, ;
-STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),;
-	                             __PedSetValue( ::oModDetal:oTreeView, ;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),; //imp_pvp
+	                 __PedSetValue( ::oModDetal:oTreeView, ;
 	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 23, ;
-STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),; //imp_produccion
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 24, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),; //imp_produccion
+                         __PedSetValue( ::oModDetal:oTreeView, ;
+ 	                             ::oModDetal:oLbx, ;
+	                             ::oModDetal:aIter, 25, ;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 29 ) ))),; //moneda_id
+                         __PedSetValue( ::oModDetal:oTreeView, ;
+ 	                             ::oModDetal:oLbx, ;
+	                             ::oModDetal:aIter, 26, ;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 10 ) ))),; //moneda_id
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 13, ;
-                                     oModProductos:oTreeView:GetAutoValue( 7 ) ),;
+                                     oModProductos:oTreeView:GetAutoValue( 7 ) ),; // tipo_inventario
                          oTreeView:SetPosCol( aIter, __CANTIDAD, .f. ), ;
 			 ::oInvWnd:End() }
 
