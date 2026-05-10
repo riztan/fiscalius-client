@@ -1558,6 +1558,10 @@ Procedure __VtaSave( oForm, oFormParent )
 
    uResp := ::rFactura:SetData( ::hFactura )
    ::hFactura := ::rFactura:Data()
+   
+  // view( ::hFactura["monto_total"      ] )
+  // return .t.
+   
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
       ::oLabInfo:SetText( uResp["message"] )
       //::oLabInfo:SetText("No ha sido posible actualizar los datos.")
