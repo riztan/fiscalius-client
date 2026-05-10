@@ -456,6 +456,7 @@ procedure __PedItemCalPre( oForm, oTView, pModel, aIter, rQry, oModel )
             nImpProduccion := ToNum( oTView:GetAutoValue(24, aIter) ) * nCantidad // Recalculate imp_produccion
 
             oModel:SetValue(  6, hb_ntos( nPrecio ), aIter ) // Precio
+            oModel:SetValue(  7, '', aIter )                 // Descuento
             oModel:SetValue(  8, hb_ntos( nMonto ), aIter )  // Subtotal
             oModel:SetValue( 21, hb_ntos( nImpPvp ), aIter ) // ImpPvp
             oModel:SetValue( 23, hb_ntos( nImpProduccion ), aIter ) // Set imp_produccion
@@ -1041,9 +1042,9 @@ procedure __PedEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, n
    if nCol=__DESCUENTO
       if RIGHT( uVal, 1 ) = "%"
          // Si nos dan porcentaje, lo calculamos.
-         uVal := TRANSFORM( ToNum( oTreeView:GetAutoValue( __PRECIO ))  * ;
+         uVal := hb_ntos( ROUND( ToNum( oTreeView:GetAutoValue( __PRECIO ))  * ;
                           ( ToNum(uVal)/100 ) * ;
-                            ToNum( oTreeView:GetAutoValue( __CANTIDAD ) ), P_92 )
+                            ToNum( oTreeView:GetAutoValue( __CANTIDAD ) ), 2) )
          __PedSetValue( oTreeView, oModel, aIter, nCol, uVal )
       endif
       if ToNum(uVal) < ( ToNum(oTreeView:GetAutoValue( __CANTIDAD )) * ;
@@ -1068,21 +1069,21 @@ PROCEDURE __PedSetValue( oTreeView, oModel, aIter, nCol, uValue  )
       if nCol= __CANTIDAD .or. nCol= __PRECIO .or. nCol= __DESCUENTO
 
          if nCol = __DESCUENTO
-            nDescuento := VAL(uValue)
-            nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
-                      ToNum( oTreeView:GetAutoValue(__PRECIO,   aIter))) - nDescuento
+            nDescuento := ToNum(uValue)
+            nMonto := Round( (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
+                             ToNum( oTreeView:GetAutoValue(__PRECIO,   aIter))) - nDescuento, 2 )
          else
-            nDescuento := VAL( oTreeView:GetAutoValue(__DESCUENTO, aIter) )
+            nDescuento := ToNum( oTreeView:GetAutoValue(__DESCUENTO, aIter) )
          endif
 
          if nCol = __CANTIDAD 
-            nMonto := (VAL(uValue) * ;
-                      ToNum( oTreeView:GetAutoValue(__PRECIO, aIter))) - nDescuento
-            nImpPvp := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(22, aIter) ), 2 ) // Calculate imp_pvp
-            nImpProduccion := ROUND( VAL(uValue) * ToNum( oTreeView:GetAutoValue(24, aIter) ), 2 ) // Calculate imp_produccion
+            nMonto := ROUND( (ToNum(uValue) * ;
+                             ToNum( oTreeView:GetAutoValue(__PRECIO, aIter))) - nDescuento, 2 )
+            nImpPvp := ROUND( ToNum(uValue) * ToNum( oTreeView:GetAutoValue(22, aIter) ), 2 ) // Calculate imp_pvp
+            nImpProduccion := ROUND( ToNum(uValue) * ToNum( oTreeView:GetAutoValue(24, aIter) ), 2 ) // Calculate imp_produccion
          elseif nCol = __PRECIO
-            nMonto := (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
-                      VAL(uValue)) - nDescuento
+            nMonto := ROUND( (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
+                              ToNum(uValue)) - nDescuento, 2 )
             nImpPvp := ToNum( oTreeView:GetAutoValue(22, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_pvp
             nImpProduccion := ToNum( oTreeView:GetAutoValue(24, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_produccion
          else
@@ -1102,8 +1103,8 @@ PROCEDURE __PedSetValue( oTreeView, oModel, aIter, nCol, uValue  )
          oModel:Set( aIter, __TOTAL, STR( ROUND( nMonto + nIvaMonto ,2 ) ) )
          //oModel:Set( aIter, __TOTAL, TRANSFORM( ROUND( nMonto + nIvaMonto ,2 ), P_92 ) )
 
-         uValue := STR( VAL(uValue) )
-         //uValue := TRANSFORM( VAL(uValue), P_92 )
+         uValue := STR( ToNum(uValue) )
+         //uValue := TRANSFORM( ToNum(uValue), P_92 )
       endif
 
       oModel:Set( aIter, nCol, uValue )
@@ -1464,8 +1465,8 @@ Procedure __PedSave( oForm, oFormParent )
 
 //View( hb_valtoexp(::hPedido) )
 //View( ::hPedido["numero"] )
-      if VALTYPE(::hPedido["numero"])="C" .AND. VAL(::hPedido["numero"])>0
-         ::oLabNumero:SetValue( STRZERO( VAL(::hPedido["numero"]), 8) )
+      if VALTYPE(::hPedido["numero"])="C" .AND. ToNum(::hPedido["numero"])>0
+         ::oLabNumero:SetValue( STRZERO( ToNum(::hPedido["numero"]), 8) )
       elseif VALTYPE(::hPedido)="N" 
          ::oLabNumero:SetValue( ALLTRIM(STR(::hPedido["numero"])) )
       elseif VALTYPE(::hPedido)="C"
@@ -1504,13 +1505,13 @@ procedure __PedSaveDetal(oTView, pModel, aIter, oForm)
    hDetal["documento_id"     ] := ::hPedido[ "id" ]
    hDetal["codigo_local"     ] := ALLTRIM(oTView:GetAutoValue( 03, aIter ))
    hDetal["descripcion"      ] := oTView:GetAutoValue( 04, aIter )
-   hDetal["cantidad"         ] := VAL( oTView:GetAutoValue( 05, aIter ) )
-   hDetal["precio_unitario"  ] := VAL( oTView:GetAutoValue( 06, aIter ) )
-   hDetal["descuento"        ] := VAL( oTView:GetAutoValue( 07, aIter ) )
-   hDetal["subtotal"         ] := VAL( oTView:GetAutoValue( 08, aIter ) )
-   hDetal["iva_porcentaje"   ] := VAL( oTView:GetAutoValue( 09, aIter ) )
-   hDetal["iva_monto"        ] := VAL( oTView:GetAutoValue( 10, aIter ) )
-   hDetal["total"            ] := VAL( oTView:GetAutoValue( 11, aIter ) )
+   hDetal["cantidad"         ] := ToNum( oTView:GetAutoValue( 05, aIter ) )
+   hDetal["precio_unitario"  ] := ToNum( oTView:GetAutoValue( 06, aIter ) )
+   hDetal["descuento"        ] := ToNum( oTView:GetAutoValue( 07, aIter ) )
+   hDetal["subtotal"         ] := ToNum( oTView:GetAutoValue( 08, aIter ) )
+   hDetal["iva_porcentaje"   ] := ToNum( oTView:GetAutoValue( 09, aIter ) )
+   hDetal["iva_monto"        ] := ToNum( oTView:GetAutoValue( 10, aIter ) )
+   hDetal["total"            ] := ToNum( oTView:GetAutoValue( 11, aIter ) )
    hDetal["nombre_global"    ] := oTView:GetAutoValue( 12, aIter )
    hDetal["tipo_inventario"  ] := oTView:GetAutoValue( 13, aIter )
    hDetal["lote"             ] := ALLTRIM(oTView:GetAutoValue( 14, aIter ))
@@ -1520,8 +1521,8 @@ procedure __PedSaveDetal(oTView, pModel, aIter, oForm)
    hDetal["nombre_almacen"   ] := oTView:GetAutoValue( 18, aIter )
    hDetal["detalles_json"    ] := oTView:GetAutoValue( 19, aIter )
    hDetal["item"             ] := oTView:GetAutoValue( 20, aIter )
-   hDetal["imp_pvp"          ] := VAL( oTView:GetAutoValue( 21, aIter ) ) // Add imp_pvp
-   hDetal["imp_produccion"   ] := VAL( oTView:GetAutoValue( 23, aIter ) ) // Add imp_produccion
+   hDetal["imp_pvp"          ] := ToNum( oTView:GetAutoValue( 21, aIter ) ) // Add imp_pvp
+   hDetal["imp_produccion"   ] := ToNum( oTView:GetAutoValue( 23, aIter ) ) // Add imp_produccion
     //View( oTView:GetAutoValue(20, aIter) )
    
    AADD( ::aDetal, hDetal )
