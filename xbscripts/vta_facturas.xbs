@@ -1872,7 +1872,7 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 29 ) ))),; // moneda_id
                           __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
-	                             ::oModDetal:aIter, 28, ;
+	                             ::oModDetal:aIter, 26, ;
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 10 ) ))),; // precio_ficha
                           __SetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;

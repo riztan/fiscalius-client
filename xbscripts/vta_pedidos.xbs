@@ -895,7 +895,8 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
                              hb_ntos(aLine[20]),;
                              hb_ntos(aLine[21]), hb_ntos(aLine[21]/aLine[5]),;
                              hb_ntos(aLine[22]), hb_ntos(aLine[22]/aLine[5]),;
-                             hb_ntos(aLine[25]), hb_ntos(aLine[26]), '', ''
+                             hb_ntos(aLine[23]), hb_ntos(aLine[24]),;
+                             hb_ntos(aLine[25]), hb_ntos(aLine[26])
             CATCH oErr
                View( "Atención: "+CRLF+oErr:Description )
             END
@@ -1763,12 +1764,12 @@ PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 				     ::oModDetal:aIter, __PRECIO ,  ;
                                      __Pedf_CalPrecio( oForm, ;
                                                        oModProductos:oTreeView:GetAutoValue( 10 ), ;
-                                                       oModProductos:oTreeView:GetAutoValue( 30 ) );
+                                                       oModProductos:oTreeView:GetAutoValue( 25 ) );
                                      ),;
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, __IVAPORCEN, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),; // iva_procentaje
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),; //iva_procentaje
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 21, ;
@@ -1776,23 +1777,23 @@ PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 22, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),; //imp_pvp
-	                 __PedSetValue( ::oModDetal:oTreeView, ;
-	                             ::oModDetal:oLbx, ;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),; //imp_produccion
+                         __PedSetValue( ::oModDetal:oTreeView, ;
+ 	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 23, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),; //imp_produccion
-                         __PedSetValue( ::oModDetal:oTreeView, ;
- 	                             ::oModDetal:oLbx, ;
-	                             ::oModDetal:aIter, 24, ;
-                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),; //imp_produccion
-                         __PedSetValue( ::oModDetal:oTreeView, ;
- 	                             ::oModDetal:oLbx, ;
-	                             ::oModDetal:aIter, 25, ;
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 29 ) ))),; //moneda_id
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
-	                             ::oModDetal:aIter, 26, ;
+	                             ::oModDetal:aIter, 24, ;
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 10 ) ))),; //precio_ficha
+	                 __PedSetValue( ::oModDetal:oTreeView, ;
+	                             ::oModDetal:oLbx, ;
+	                             ::oModDetal:aIter, 25, ;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),; //imp_pvp
+                         __PedSetValue( ::oModDetal:oTreeView, ;
+ 	                             ::oModDetal:oLbx, ;
+	                             ::oModDetal:aIter, 26, ;
+                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),; //imp_produccion
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 13, ;
