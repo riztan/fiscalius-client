@@ -448,8 +448,8 @@ procedure __PedItemCalPre( oForm, oTView, pModel, aIter, rQry, oModel )
    nCantidad := ToNum(oTView:GetAutoValue(  5, aIter ))
    nDescuento:= ToNum(oTView:GetAutoValue(  7, aIter ))
 
-   if oTView:GetColumns() >= 25
-      nMonedaId := ToNum(oTView:GetAutoValue( 25, aIter ))
+   if oTView:GetColumns() >= 23
+      nMonedaId := ToNum(oTView:GetAutoValue( 23, aIter ))
    endif
 
    if nMonedaId != 1
@@ -458,8 +458,9 @@ procedure __PedItemCalPre( oForm, oTView, pModel, aIter, rQry, oModel )
          if rQry:moneda_id=nMonedaId
             ::oLabInfo:SetText("Reajustando precios. ")
 
-            nValor := iif( rQry:valor > 0, rQry:valor, 1 )
-            nPrecio := ROUND( ToNum( oTView:GetAutoValue( 26 ) ) * nValor, 2 )
+            nValor := ROUND( iif( rQry:valor > 0, rQry:valor, 1 ), 2 )
+//View( hb_ntos(rQry:valor) + " * " + oTView:GetAutoValue(24) +" = "+ hb_ntos(ROUND(rQry:valor,2) * ToNum(oTView:GetAutoValue(24))) )
+            nPrecio := ROUND( ToNum( oTView:GetAutoValue( 24 ) ) * nValor, 2 )
 
             // Es necesario reiniciar descuento a cero
             nDescuento     := 0
@@ -468,19 +469,19 @@ procedure __PedItemCalPre( oForm, oTView, pModel, aIter, rQry, oModel )
             nMonto         := ( nCantidad * nPrecio ) - nDescuento
             nIvaPorcen     := ToNum( oTView:GetAutoValue( 9, aIter) )
             nImpPvp        := iif( oTView:GetColumns() >= 21, ToNum( oTView:GetAutoValue(21, aIter) ) * nCantidad, 0 )
-            nImpProduccion := iif( oTView:GetColumns() >= 22, ToNum( oTView:GetAutoValue(22, aIter) ) * nCantidad, 0 )
+            nImpProduccion := iif( oTView:GetColumns() >= 25, ToNum( oTView:GetAutoValue(25, aIter) ) * nCantidad, 0 )
 
             oModel:SetValue(  6, TRANSFORM( nPrecio, P_92 ), aIter ) // Precio
             oModel:SetValue(  8, TRANSFORM( nMonto,  P_92 ), aIter ) // Subtotal
             oModel:SetValue( 21, TRANSFORM( nImpPvp, P_92 ), aIter ) // ImpPvp
-            oModel:SetValue( 22, TRANSFORM( nImpProduccion, P_92 ), aIter )
+            oModel:SetValue( 25, TRANSFORM( nImpProduccion, P_92 ), aIter )
 
             if nIvaPorcen > 0
                nIvaMonto := ROUND( nMonto * (nIvaPorcen / 100), 2 )
                oModel:SetValue( 10, TRANSFORM(nIvaMonto, P_92), aIter )
             endif
             oModel:SetValue( 11, TRANSFORM( ROUND( nMonto + nIvaMonto ,2 ), P_92 ), aIter )
-            __PedSetValue( oTView, oModel, aIter, 6, hb_ntos(nPrecio)  )
+            __PedSetValue( oTView, oModel, aIter, 6, TRANSFORM(nPrecio,P_92)  )
 
 //            __PedCalMontos( oTView, pModel, aIter, oForm )
          endif
@@ -852,8 +853,8 @@ procedure __vtaPedido( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::oLBoxDetal:SetColTitle( 11, "Total" )         //-- Columna Total
       ::oLBoxDetal:SetColTitle( 21, "PVP Total" )     //-- Columna PVP Total Linea
       ::oLBoxDetal:SetColTitle( 22, "PVP Total Unit" )   //-- Columna PVP Total Linea
-      ::oLBoxDetal:SetColTitle( 23, "Imp Prod. Total" )     //-- Columna Imp Prod. Total Linea
-      ::oLBoxDetal:SetColTitle( 24, "Imp Prod. Unit" )   //-- Columna Imp Prod. Total Linea
+      ::oLBoxDetal:SetColTitle( 25, "Imp Prod. Total" )     //-- Columna Imp Prod. Total Linea
+      ::oLBoxDetal:SetColTitle( 26, "Imp Prod. Unit" )   //-- Columna Imp Prod. Total Linea
 	  //::oLBoxDetal:SetColTitle( 23, "Capacidad" )   //-- Columna 
 
       ::oLBoxDetal:Active()
@@ -1100,18 +1101,19 @@ PROCEDURE __PedSetValue( oTreeView, oModel, aIter, nCol, uValue  )
             nMonto := ROUND( (ToNum(uValue) * ;
                              ToNum( oTreeView:GetAutoValue(__PRECIO, aIter))) - nDescuento, 2 )
             nImpPvp := ROUND( ToNum(uValue) * ToNum( oTreeView:GetAutoValue(22, aIter) ), 2 ) // Calculate imp_pvp
-            nImpProduccion := ROUND( ToNum(uValue) * ToNum( oTreeView:GetAutoValue(24, aIter) ), 2 ) // Calculate imp_produccion
+            nImpProduccion := ROUND( ToNum(uValue) * ToNum( oTreeView:GetAutoValue(25, aIter) ), 2 ) // Calculate imp_produccion
          elseif nCol = __PRECIO
             nMonto := ROUND( (ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) * ;
                               ToNum(uValue)) - nDescuento, 2 )
             nImpPvp := ToNum( oTreeView:GetAutoValue(22, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_pvp
-            nImpProduccion := ToNum( oTreeView:GetAutoValue(24, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_produccion
+            nImpProduccion := ToNum( oTreeView:GetAutoValue(25, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_produccion
          else
             nImpPvp := ToNum( oTreeView:GetAutoValue(22, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_pvp
-         nImpProduccion := ToNum( oTreeView:GetAutoValue(24, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_produccion
+         nImpProduccion := ToNum( oTreeView:GetAutoValue(25, aIter) ) * ToNum( oTreeView:GetAutoValue(__CANTIDAD, aIter) ) // Recalculate imp_produccion
          endif
          nMonto := ROUND( nMonto, 2 )
          oModel:Set( aIter, __SUBTOTAL, TRANSFORM( nMonto, P_92 ) )
+
          oModel:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) ) // Set imp_pvp
          oModel:Set( aIter, 23, TRANSFORM( nImpProduccion, P_92 ) ) // Set imp_produccion
 
@@ -1188,7 +1190,7 @@ procedure __PedCalMontos( oTView, pModel, aIter, oForm )
 
     // Calculate imp_pvp
    nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 22, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_pvp * cantidad
-   nImpProduccion := ROUND( ToNum( oTView:GetAutoValue( 24, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_produccion * cantidad
+   nImpProduccion := ROUND( ToNum( oTView:GetAutoValue( 26, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 ) // imp_produccion * cantidad
 //   oTView:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) )
    nOtrImp += nImpPvp
    nImpProd += nImpProduccion
@@ -1625,7 +1627,7 @@ FUNCTION __Pedf_CalPrecio( oForm, cPrecio, cDivisa )
 
    While !rQry:Eof()
       if rQry:codigo=cDivisa 
-         rValor := iif( rQry:valor > 0, rQry:valor, 1 ) // No puede haber valor cero en divisa.
+         rValor := ROUND( iif( rQry:valor > 0, rQry:valor, 1 ), 2) // No puede haber valor cero en divisa.
          nPrecio := ROUND( nPrecio * rValor , 2 )
       endif
       rQry:Skip()
@@ -1685,18 +1687,18 @@ PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 
       __PedSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
-                  ::oModDetal:aIter, 23, ; // imp_produccion
+                  ::oModDetal:aIter, 25, ; // moneda_id
+                  STR( rProductos:moneda_id )) // Set moneda_id
+
+      __PedSetValue( ::oModDetal:oTreeView, ;
+                  ::oModDetal:oLbx, ;
+                  ::oModDetal:aIter, 25, ; // imp_produccion
                   STR( rProductos:imp_produccion )) // Set imp_produccion
   
       __PedSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
-                  ::oModDetal:aIter, 24, ; // imp_produccion
+                  ::oModDetal:aIter, 26, ; // imp_produccion
                   STR( rProductos:imp_produccion )) // Set imp_produccion
-
-      __PedSetValue( ::oModDetal:oTreeView, ;
-                  ::oModDetal:oLbx, ;
-                  ::oModDetal:aIter, 25, ; // moneda_id
-                  STR( rProductos:moneda_id )) // Set moneda_id
 
       __PedSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
@@ -1764,7 +1766,7 @@ PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 				     ::oModDetal:aIter, __PRECIO ,  ;
                                      __Pedf_CalPrecio( oForm, ;
                                                        oModProductos:oTreeView:GetAutoValue( 10 ), ;
-                                                       oModProductos:oTreeView:GetAutoValue( 25 ) );
+                                                       oModProductos:oTreeView:GetAutoValue( 30 ) );
                                      ),;
                          __PedSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
