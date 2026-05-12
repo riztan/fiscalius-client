@@ -655,8 +655,6 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
    ::oFacWnd:Maximize()
 
-View( ::rVentas:FechaMin( 4 ) )
-
    ::lNew := lNew
 
    if ::lNew 
