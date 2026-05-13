@@ -178,8 +178,8 @@ procedure poslogin( oParent )
       DEFINE MENUITEM ::oMnuNotaDeb ACTION oTPuy:RunXBS("vta_notas_cd", oForm, "D" );  
              ID "itm_notadebito" RESOURCE ::oRes
 
-      DEFINE MENUITEM ::oMnuNotaEnt ACTION oTPuy:RunXBS("vta_notas_entrega", oForm, "E" );  
-             ID "itm_notaentrega" RESOURCE ::oRes
+      DEFINE MENUITEM ::oMnuNotaEnt ACTION oTPuy:RunXBS("vta_orden_entrega", oForm, "E" );  
+             ID "itm_ordenentrega" RESOURCE ::oRes
 
       DEFINE MENUITEM ::oMnuVtaLibro ACTION oTPuy:RunXBS("vta_libro", oForm );  
              ID "itm_vta_libro" RESOURCE ::oRes
