@@ -110,6 +110,7 @@ procedure vta_libro_xlsx( oForm, rQry )
    worksheet_set_column( ::worksheet, Column("N"), Column("O"), 16 )
    worksheet_set_column( ::worksheet, Column("P"), Column("U"), 14 )
    worksheet_set_column( ::worksheet, Column("V"), Column("X"), 14 )
+    worksheet_set_column( ::worksheet, Column("Y"), Column("Z"), 14 )
 
    /* Creamos los titulos de columna y unimos las columnas donde se requiere */
    worksheet_merge_range( ::worksheet, CELL("A8"),CELL("A10"), "Oper.", ::format_title0 )
@@ -124,8 +125,8 @@ procedure vta_libro_xlsx( oForm, rQry )
    worksheet_merge_range( ::worksheet, CELL("I8"),CELL("I10"), "Nro de Control", ::format_title0 )
    worksheet_merge_range( ::worksheet, CELL("J8"),CELL("J10"), "Nro de N.Débito", ::format_title0 )
    worksheet_merge_range( ::worksheet, CELL("K8"),CELL("K10"), "Nro de N.Crédito", ::format_title0 )
-   worksheet_merge_range( ::worksheet, CELL("L8"),CELL("L10"), "Tipo de Transacción", ::format_title0 )
-   worksheet_merge_range( ::worksheet, CELL("M8"),CELL("M10"), "Nro de Factura Afectada", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("L8"),CELL("L10"), "Nro de Factura Afectada", ::format_title0 )
+   worksheet_merge_range( ::worksheet, CELL("M8"),CELL("M10"), "Tipo de Transacción", ::format_title0 )
    worksheet_merge_range( ::worksheet, CELL("N8"),CELL("N10"), "Total Ventas Incluyendo IVA", ::format_title0 )
    worksheet_merge_range( ::worksheet, CELL("O8"),CELL("O10"), "Ventas Internas No Gravadas", ::format_title0 )
  
@@ -143,9 +144,10 @@ procedure vta_libro_xlsx( oForm, rQry )
     xlsx_set_string ::worksheet cell: "U10" value: "Monto Impuesto"   format: ::format_title0  
 
     worksheet_merge_range( ::worksheet, CELL("V8"),CELL("V10"), "Exento", ::format_title0 )
-    worksheet_merge_range( ::worksheet, CELL("W8"),CELL("W10"), "IVA Retenido ", ::format_title0 )
-    worksheet_merge_range( ::worksheet, CELL("X8"),CELL("X10"), "IVA Percibido", ::format_title0 )
-	worksheet_merge_range( ::worksheet, CELL("Y8"),CELL("Y10"), "", ::format_title0 )
+worksheet_merge_range( ::worksheet, CELL("W8"),CELL("W10"), "IVA Retenido ", ::format_title0 )
+     worksheet_merge_range( ::worksheet, CELL("X8"),CELL("X10"), "IVA Percibido", ::format_title0 )
+     worksheet_merge_range( ::worksheet, CELL("Y8"),CELL("Y10"), "Impuesto PVP", ::format_title0 )
+     worksheet_merge_range( ::worksheet, CELL("Z8"),CELL("Z10"), "Impuesto Prod.", ::format_title0 )
    
    /* Variables de Totales */
    hTotal:nVtasNoGravadas := {"base"  => 0, ;
@@ -165,8 +167,11 @@ procedure vta_libro_xlsx( oForm, rQry )
    hTotal:nVtasAliGNSun   := {"base"  => 0 ,; 
                               "debito"=> 0 }  //por ahora no contemplado
 
-   hTotal:nIVARet := {"nVtasGen"    => 0, ; //rQry:RTI_MONTO ,;
-                      "nVtasGenPer" => 0 }  //rQry:DOC_MTOIVA-rQry:RTI_MONTO }
+hTotal:nIVARet := {"nVtasGen"    => 0, ; //rQry:RTI_MONTO ,;
+                       "nVtasGenPer" => 0 }  //rQry:DOC_MTOIVA-rQry:RTI_MONTO }
+
+    hTotal:nOtrosImp := 0
+    hTotal:nImpProd  := 0
 
    /* Incluimos los datos de la consulta en la hoja de calculo */
    rQry:GoTop()
@@ -208,19 +213,19 @@ procedure vta_libro_xlsx( oForm, rQry )
       endif
 
       if rQry:monto_retencion<>0 .AND. rQry:fecha < dDesde 
-        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: '02-COM'           //Tipo de Transaccion
-      else
-        // 01-registro 02-complemento 03-anulacion 04-ajuste
-        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: "01-REG"           //Tipo de Transaccion
-      endif
-      if rQry:estado="A"
-        xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: "03-ANU"           //Tipo de Transaccion
+         xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nro de Factura
+      else 
+         xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: PADL(ALLTRIM(hb_ntos(ToNum(rQry:factura_asociada))), 8, "0")      //Factura Afectada
       endif
 
       if rQry:monto_retencion<>0 .AND. rQry:fecha < dDesde 
-         xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nro de Factura
-      else 
-         xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: PADL(ALLTRIM(hb_ntos(ToNum(rQry:factura_asociada))), 8, "0")      //Factura Afectada
+        xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: '02-COM'           //Tipo de Transaccion
+      else
+        // 01-registro 02-complemento 03-anulacion 04-ajuste
+        xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: "01-REG"           //Tipo de Transaccion
+      endif
+      if rQry:estado="A"
+        xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: "03-ANU"           //Tipo de Transaccion
       endif
 
 /*
@@ -231,88 +236,66 @@ procedure vta_libro_xlsx( oForm, rQry )
       endif
 */
 
-       xlsx_set_string ::worksheet cell: "Y"+hb_ntos(i) value: rQry:tipo_documento     //Tipo de Documento
+xlsx_set_string ::worksheet cell: "Y"+hb_ntos(i) value: rQry:tipo_documento     //Tipo de Documento
 
-        /* Procesamiento por alicuotas separadas - columna segun tipo */
-        while cIndex =  rQry:rif+rQry:tipo_documento+rQry:numero .AND. !rQry:Eof()
+         /* Procesamiento por alicuotas - usando columnas directas de la vista */
+         /* Exento - Columna V */
+         worksheet_write_number( ::worksheet, i-1, Column("V"), rQry:base_exento, ::format_numlin )
 
-           cIndex := rQry:rif+rQry:tipo_documento+rQry:numero
+         /* Alicuota 16% (GEN) - Columnas P-Q */
+         worksheet_write_number( ::worksheet, i-1, Column("P"), rQry:base_general, ::format_numlin )
+         worksheet_write_number( ::worksheet, i-1, Column("Q"), rQry:iva_general, ::format_numlin )
 
-           /* Alicuota Exenta */
-           if rQry:tipo_tasa="EXE"
-              worksheet_write_number( ::worksheet, i-1, Column("V"), rQry:total, ::format_numlin )
-              nTotalExento += rQry:total
-              nTotalDoc += rQry:total
-           endif
+         /* Alicuota 8% (RED) - Columnas R-S */
+         worksheet_write_number( ::worksheet, i-1, Column("R"), rQry:base_reducido, ::format_numlin )
+         worksheet_write_number( ::worksheet, i-1, Column("S"), rQry:iva_reducido, ::format_numlin )
 
-            /* Alicuota 16% (GEN) - Columnas P-Q */
-            if rQry:tipo_tasa="GEN"
-               worksheet_write_number( ::worksheet, i-1, Column("P"), rQry:total-rQry:iva_monto, ::format_numlin )
-               worksheet_write_number( ::worksheet, i-1, Column("Q"), rQry:iva_monto, ::format_numlin )
-               nIvaAcum += rQry:iva_monto
-               nRetAcum += rQry:monto_retencion * rQry:factor
-               nTotalDoc += rQry:total
-            endif
+         /* Alicuota 31% (SUN) - Columnas T-U */
+         worksheet_write_number( ::worksheet, i-1, Column("T"), rQry:base_sun, ::format_numlin )
+         worksheet_write_number( ::worksheet, i-1, Column("U"), rQry:iva_sun, ::format_numlin )
 
-            /* Alicuota 8% (RED) - Columnas R-S */
-            if rQry:tipo_tasa="RED"
-               worksheet_write_number( ::worksheet, i-1, Column("R"), rQry:total-rQry:iva_monto, ::format_numlin )
-               worksheet_write_number( ::worksheet, i-1, Column("S"), rQry:iva_monto, ::format_numlin )
-               nIvaAcum += rQry:iva_monto
-               nRetAcum += rQry:monto_retencion * rQry:factor
-               nTotalDoc += rQry:total
-            endif
+         /* Total del documento (ya viene calculado de la vista) */
+         nTotalDoc := rQry:total
 
-            /* Alicuota 32% (SUN) - Columnas T-U */
-            if rQry:tipo_tasa="SUN"
-               worksheet_write_number( ::worksheet, i-1, Column("T"), rQry:total-rQry:iva_monto, ::format_numlin )
-               worksheet_write_number( ::worksheet, i-1, Column("U"), rQry:iva_monto, ::format_numlin )
-               nIvaAcum += rQry:iva_monto
-               nRetAcum += rQry:monto_retencion * rQry:factor
-               nTotalDoc += rQry:total
-            endif
+         /* IVA Retenido */
+         nRetAcum := rQry:monto_retencion
 
-            /* Exento también suma al total */
-            if rQry:tipo_tasa="EXE"
-               nTotalDoc += rQry:total
-            endif
+         /*IVA Total acumulado*/
+         nIvaAcum := rQry:iva_general + rQry:iva_reducido + rQry:iva_sun
 
-          /*HAY QUE PROBAR CON DATOS QUE INCLUYAN VARIAS ALICUOTAS (RIGC ABR-2024)*/
-          /* Cuenta de acumuladores (totales) */
-          if rQry:tipo_tasa="EXE"
-             hTotal:nVtasNoGravadas["base"] += rQry:total
-          endif
-          if rQry:tipo_tasa="GEN"
-             hTotal:nVtasAliGN["base"]      += rQry:total-rQry:iva_monto
-             hTotal:nVtasAliGN["debito"]    += rQry:iva_monto
+         /* Acumuladores para totales generales */
+         hTotal:nVtasNoGravadas["base"] += rQry:base_exento
+         hTotal:nVtasAliGN["base"]      += rQry:base_general
+         hTotal:nVtasAliGN["debito"]    += rQry:iva_general
+         hTotal:nVtasAliGNRed["base"]   += rQry:base_reducido
+         hTotal:nVtasAliGNRed["debito"] += rQry:iva_reducido
+         hTotal:nVtasAliGNSun["base"]   += rQry:base_sun
+         hTotal:nVtasAliGNSun["debito"] += rQry:iva_sun
 
-             hTotal:nIVARet["nVtasGen"]     += rQry:monto_retencion
-             hTotal:nIVARet["nVtasGenPer"]  += rQry:iva_monto-rQry:monto_retencion
-          endif
-          if rQry:tipo_tasa="RED"
-             hTotal:nVtasAliGNRed["base"]      += rQry:total-rQry:iva_monto
-             hTotal:nVtasAliGNRed["debito"]    += rQry:iva_monto
-          endif
-          if rQry:tipo_tasa="SUN"
-             hTotal:nVtasAliGNSun["base"]      += rQry:total-rQry:iva_monto
-             hTotal:nVtasAliGNSun["debito"]    += rQry:iva_monto
-          endif
+         hTotal:nIVARet["nVtasGen"]     += rQry:monto_retencion
+         hTotal:nIVARet["nVtasGenPer"]  += (rQry:iva_general + rQry:iva_reducido + rQry:iva_sun) - rQry:monto_retencion
 
-           rQry:Skip()
-        EndDo
+         /* Total Venta Incluye IVA - usando total de la vista */
+         worksheet_write_number( ::worksheet, i-1, Column("N"), rQry:total, ::format_numlin )
 
-        /* Total Venta Incluye IVA - suma de todas las alicuotas */
-        worksheet_write_number( ::worksheet, i-1, Column("N"), nTotalDoc, ::format_numlin )
+         /* Ventas Internas No Gravadas (Exento) */
+         worksheet_write_number( ::worksheet, i-1, Column("O"), rQry:base_exento, ::format_numlin )
 
-        /* Ventas Internas No Gravadas (Exento) */
-        worksheet_write_number( ::worksheet, i-1, Column("O"), nTotalExento, ::format_numlin )
+         /* IVA Retenido y Percibido */
+         worksheet_write_number( ::worksheet, i-1, Column("W"), rQry:monto_retencion, ::format_numlin )
+         worksheet_write_number( ::worksheet, i-1, Column("X"), nIvaAcum - rQry:monto_retencion, ::format_numlin )
 
-        /* IVA Retenido y Percibido - сумa de todas las alicuotas */
-        worksheet_write_number( ::worksheet, i-1, Column("W"), nRetAcum, ::format_numlin )
-        worksheet_write_number( ::worksheet, i-1, Column("X"), nIvaAcum - nRetAcum, ::format_numlin )
+         /* Impuesto PVP (otros_imp) e Impuesto Produccion (imp_prod) */
+         worksheet_write_number( ::worksheet, i-1, Column("Y"), rQry:otros_imp, ::format_numlin )
+         worksheet_write_number( ::worksheet, i-1, Column("Z"), rQry:imp_prod, ::format_numlin )
 
-       i++  // Solo incrementar al salir del bucle interno (una fila por documento)
-    EndDo
+         hTotal:nOtrosImp += rQry:otros_imp
+         hTotal:nImpProd  += rQry:imp_prod
+
+        i++  // Solo incrementar al salir del bucle interno (una fila por documento)
+
+        rQry:Skip()
+     EndDo
 
     /* totales posterior a los datos */
     xlsx_set_string ::worksheet cell: "M"+hb_ntos(i) value: "Totales" format: ::frmt_resumen
@@ -328,6 +311,8 @@ procedure vta_libro_xlsx( oForm, rQry )
     worksheet_write_formula( ::worksheet, CELL("V"+hb_ntos(i)), "=SUM("+StrRange("V",nLin,"V",i-1)+")", ::format_numero ) 
     worksheet_write_formula( ::worksheet, CELL("W"+hb_ntos(i)), "=SUM("+StrRange("W",nLin,"W",i-1)+")", ::format_numero ) 
     worksheet_write_formula( ::worksheet, CELL("X"+hb_ntos(i)), "=SUM("+StrRange("X",nLin,"X",i-1)+")", ::format_numero ) 
+     worksheet_write_formula( ::worksheet, CELL("Y"+hb_ntos(i)), "=SUM("+StrRange("Y",nLin,"Y",i-1)+")", ::format_numero )
+     worksheet_write_formula( ::worksheet, CELL("Z"+hb_ntos(i)), "=SUM("+StrRange("Z",nLin,"Z",i-1)+")", ::format_numero ) 
    
     i := i+3
 
@@ -360,8 +345,8 @@ procedure vta_libro_xlsx( oForm, rQry )
     worksheet_write_number( ::worksheet, i-1, Column("O"), hTotal:nVtasAliGNSun["debito"], ::format_numero ) 
     i++
 
-   /* finalizamos */
-   error := workbook_close( ::workbook )
+/* finalizamos */
+    error := workbook_close( ::workbook )
 
    /* Check if there was any error creating the xlsx file. */
    IF error > 0
