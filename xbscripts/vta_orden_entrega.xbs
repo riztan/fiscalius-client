@@ -1,9 +1,9 @@
-/* vta_notas_entrega.xbs - Script para nota de entrega */
+/* vta_orden_entrega.xbs - Script para orden de entrega */
 
 #include "tpy_xbs.ch"
 #define SEPARATOR  " "+CHR(199)+CHR(129)+" "
 
-procedure vta_notas_entrega( oFormParent, cTipoDocumento )
+procedure vta_orden_entrega( oFormParent, cTipoDocumento )
    local oForm, cEntCli
    default cTipoDocumento := "E"
 
@@ -18,7 +18,7 @@ procedure vta_notas_entrega( oFormParent, cTipoDocumento )
    ::aDetal := {}
    ::cTipoDocumento := cTipoDocumento
    
-   ::cFormTitle := "Nota de Entrega"
+   ::cFormTitle := "Orden de Entrega"
 
    ::cEmpresa := oFormParent:cCBEmpresa
    ::rEmpresa := oFormParent:oGEmpresa
@@ -30,7 +30,7 @@ procedure vta_notas_entrega( oFormParent, cTipoDocumento )
       Return 
    endif
 
-   SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"vta_notas_entrega.ui"
+   SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"vta_orden_entrega.ui"
 
    DEFINE WINDOW ::oNotaWnd ;
           TITLE "Fiscalius. "+::cFormTitle ;

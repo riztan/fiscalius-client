@@ -53,10 +53,10 @@ function netio_login( oWnd )
 
              //ACTION ( oTpuy:RunXBS("netio_table"), ::oWnd:End() ) ;
 
-      DEFINE IMAGE ::oImgLogo FILE oTpuy:cImages+"fiscalius_logo_2.png" ; 
+      DEFINE IMAGE ::oImgLogo FILE oTpuy:cImages+"fiscalius.gif";  //"fiscalius_logo_2.png" ; 
              ID "image8" RESOURCE ::oResource
 
-         ::oImgLogo:Adjust(250)
+         //::oImgLogo:Adjust(250)
 
 
       DEFINE IMAGE ::oImgInvited FILE oTpuy:cImages+"photographer_32.png" ; 

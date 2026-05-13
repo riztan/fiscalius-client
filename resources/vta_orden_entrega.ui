@@ -28,7 +28,7 @@
                   <object class="GtkLabel" id="lab_documentos">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Facturas de Venta</property>
+                    <property name="label" translatable="yes">Orden de Entrega</property>
                     <attributes>
                       <attribute name="weight" value="bold"/>
                       <attribute name="size" value="200"/>
@@ -1113,7 +1113,7 @@
                                   <object class="GtkLabel" id="label3">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">&lt;i&gt;Datos de la Nota&lt;/i&gt;</property>
+                                    <property name="label" translatable="yes">&lt;i&gt;Datos de la Orden&lt;/i&gt;</property>
                                     <property name="use_markup">True</property>
                                   </object>
                                   <packing>
