@@ -80,10 +80,6 @@ procedure vta_pedidos( oFormParent )
    DEFINE BUTTON ::oBtn ACTION __vtaPedido( oForm, oFormParent, ::oBoxPedido, ::oModPedidos, .T.  ) ;
            ID "btn_add" RESOURCE ::oRes
 
-   DEFINE BUTTON ::oBtnConvertir ;
-           ACTION __PedConvertir( oForm, oFormParent ) ;
-           ID "btn_convertir" RESOURCE ::oRes
-   //::oLBoxPedidos:bEdit := {|oModel| __vtaPedido( oForm, oFormParent, ::oBoxPedido, oModel, .F. ) }
 
    //-------------------------
    DEFINE LABEL ::oLabNumero ID "lab_numero" RESOURCE ::oRes
@@ -1572,6 +1568,7 @@ PROCEDURE __PedConvertir( oForm, oFormParent )
    endif
 
    if MsgYesNo( "¿Convertir este pedido a factura?", "Confirmar" )
+
       uResp := ::rPedido:ConvertirFactura()
       
       if hb_isHash( uResp ) .and. hb_hHasKey( uResp, "ok" )

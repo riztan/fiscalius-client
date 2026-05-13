@@ -460,8 +460,7 @@ function __FactValFecha( oForm, oEnt, dValPrevio, cTipo )
          if CTOD( ::oEntFecha:getValue() ) < dDateMin
             ::oLabInfo:SetText("La fecha del documento no puede ser menor a " + DTOC(dDateMin) )
             ::oEntFecha:SetText( DTOC(dDateMin) )
-            __FactValFecha( oForm, oEnt, dValPrevio, cTipo )
-            //return .F.
+            return .F.
          endif
       endif
    endif
