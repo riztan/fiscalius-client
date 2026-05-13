@@ -1158,7 +1158,8 @@ return
 
 PROCEDURE __SetValue( oTreeView, oModel, aIter, nCol, uValue  )
    local nMonto, nDescuento, nIvaPorcen, nIvaMonto:= 0
-
+   local nImpPvp:=0,nImpProduccion:=0
+   
    if oTreeView:IsGetSelected( aIter )
 
       if nCol= __CANTIDAD .or. nCol= __PRECIO .or. nCol= __DESCUENTO
@@ -1266,9 +1267,10 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
     // Calculate imp_pvp (proteger contra modelos sin estas columnas)
    nImpPvp := 0
    nImpProduccion := 0
+   //msginfo(oTView:GetAutoValue( 21, aIter ))
    if oTView:GetColumns() >= 24
-      nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 21, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 )
-      nImpProduccion := ROUND( ToNum( oTView:GetAutoValue( 22, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 )
+      nImpPvp := ROUND( ToNum( oTView:GetAutoValue( 22, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 )
+      nImpProduccion := ROUND( ToNum( oTView:GetAutoValue( 24, aIter ) ) * ToNum( oTView:GetAutoValue( __CANTIDAD, aIter ) ), 2 )
    endif
 //   oTView:Set( aIter, 21, TRANSFORM( nImpPvp, P_92 ) )
    nOtrImp += nImpPvp
