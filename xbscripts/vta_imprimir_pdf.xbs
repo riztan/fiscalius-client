@@ -91,16 +91,16 @@ procedure vta_imprimir_pdf( oForm )
       oPDF:CMSAY( nY, 12.2, "Cap." )
       oPDF:CMSAY( nY, 13.2, "Grados" )
    ENDIF
-   oPDF:CMSAY( nY, 14.5+nPosDet, "Precio Uni." )
-   oPDF:CMSAY( nY, 17.5+nPosDet, "Desc Uni." )
-   oPDF:CMSAY( nY, 19.5+nPosDet, "% IVA" )
+   oPDF:CMSAY( nY, 12.5+nPosDet, "Precio Uni." )
+   oPDF:CMSAY( nY, 15.0+nPosDet, "Desc Uni." )
+   oPDF:CMSAY( nY, 16.9+nPosDet, "% IVA" )
    oPDF:CMSAY( nY, 22.0+nPosDet, "Total" )
 
    IF tonum(::nMontoOtrImp)>0
-      oPDF:CMSAY( nY, 21.6, "Imp. Pvp" )
+      oPDF:CMSAY( nY, 21.2, "Imp. Pvp" )
    ENDIF
    IF tonum(::nMontoImpProd)>0
-      oPDF:CMSAY( nY, 23.4, "Imp. Prod." )
+      oPDF:CMSAY( nY, 22.8, "Imp. Prod." )
 
    ENDIF
 
@@ -141,16 +141,16 @@ procedure vta_imprimir_pdf( oForm )
          oPDF:CMSAY( nY, 12.2, TRANSFORM(aLine[24], "@E 999.99") )
          oPDF:CMSAY( nY, 13.2, TRANSFORM(aLine[23], "@E 999.99") )
       ENDIF
-      oPDF:CMSAY( nY, 14.3+nPosDet, TRANSFORM(aLine[6], "@E 9,999,999.99") )
-      oPDF:CMSAY( nY, 17.0+nPosDet, TRANSFORM(aLine[7], "@E 9,999,999.99") )
-      oPDF:CMSAY( nY, 20.0+nPosDet, TRANSFORM(aLine[9], "@E 99") )
-      oPDF:CMSAY( nY, 21.9+nPosDet, TRANSFORM(aLine[8], "@E 9,999,999.99") )
+      oPDF:CMSAY( nY, 12.3+nPosDet, TRANSFORM(aLine[6], "@E 9,999,999.99") )
+      oPDF:CMSAY( nY, 14.1+nPosDet, TRANSFORM(aLine[7], "@E 9,999,999.99") )
+      oPDF:CMSAY( nY, 17.1+nPosDet, TRANSFORM(aLine[9], "@E 99") )
+      oPDF:CMSAY( nY, 20.6+nPosDet, TRANSFORM(aLine[8], "@E 9,999,999.99") )
       IF tonum(::nMontoOtrImp)>0
-         oPDF:CMSAY( nY, 23.6, TRANSFORM(aLine[21], "@E 99,999.99") )
+         oPDF:CMSAY( nY, 20.9, TRANSFORM(aLine[21], "@E 99,999.99") )
       ENDIF
 
       IF tonum(::nMontoImpProd)>0
-         oPDF:CMSAY( nY, 24.5, TRANSFORM(aLine[22], "@E 99,999.99") )
+         oPDF:CMSAY( nY, 22.4, TRANSFORM(aLine[22], "@E 99,999.99") )
       ENDIF
 
 
@@ -228,10 +228,10 @@ procedure vta_imprimir_pdf( oForm )
       nY += 0.4
    ENDIF
 
-   oPDF:CMSAYRECT( nY, 10.2, "SubTotal "+cDivisa+" :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
-   oPDF:CMSAYRECT( nY, 18.2, "SubTotal "+cMoneda+" :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
-   oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(::hFactura["monto_base"]/nDivisa, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
-   oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(::hFactura["monto_base"], "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
+   //oPDF:CMSAYRECT( nY, 10.2, "SubTotal "+cDivisa+" :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+   //oPDF:CMSAYRECT( nY, 18.2, "SubTotal "+cMoneda+" :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+   //oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(::hFactura["monto_base"]/nDivisa, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
+   //oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(::hFactura["monto_base"], "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
    nY += 0.4
 
    IF nBasEXE>0
@@ -316,7 +316,7 @@ procedure vta_imprimir_pdf( oForm )
    oPDF:CMSAYRECT( nY, 10.2, TRANSFORM((tonum(::oEntTotal:GetValue())+nMtoITF)/nDivisa,"@E 99,999,999.99"), "Helvetica-Bold", 11, 0,0,0,, nY, 16.5, 1 )
    oPDF:CMSAYRECT( nY, 18.2, TRANSFORM((tonum(::oEntTotal:GetValue())+nMtoITF),"@E 99,999,999.99"), "Helvetica-Bold", 11, 0,0,0,, nY, 24.5, 1 )
 
-   nY += 0.5
+   nY += 0.8
 
 
    // =====================================
