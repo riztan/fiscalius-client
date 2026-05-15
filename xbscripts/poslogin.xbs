@@ -240,7 +240,8 @@ procedure poslogin( oParent )
          ::oMnuNotaCre:Show()
       endif
 	  
-	 // ::oMnuNotaEnt:Hide()
+      //-- Deshabilita Orden de Entrega
+      ::oMnuNotaEnt:Hide()
 
 
       DEFINE TOOLBUTTON ::oTBQuit ;
