@@ -216,8 +216,8 @@ procedure poslogin( oParent )
           ::oMnuTasas:Hide()
           ::oMnuAlicuotas:Hide()
           ::oMnuSeriesFis:Hide()
-		  ::oMnuSeriesCon:Hide()
-		  ::oMnuSeriesTip:Hide()
+	  ::oMnuSeriesCon:Hide()
+	  ::oMnuSeriesTip:Hide()
           ::oMnuInventario:Hide()
           ::oMnuIGTF:Hide()
           ::oMnuClientes:Hide()
@@ -237,7 +237,7 @@ procedure poslogin( oParent )
       if oTPuy:oUser:IsFacturacion()
          ::oMnuPedidos:Show()
          ::oMnuFacturas:Show()
-         ::oMnuNotaCre:Show()
+         //::oMnuNotaCre:Show()
       endif
 	  
       //-- Deshabilita Orden de Entrega
@@ -474,7 +474,8 @@ procedure modulo_ComboBox( oForm )
           ON CHANGE  ::oGEmpresa:SetModulo( ::oCBModulos:GetValue(), .t. /* desde el combobox*/, ::oLabMsgs )  ; 
           OF ::oBoxModulo
 
-   if nModulos = 1 ; ::oCBModulos:Disable() ; endif
+   //if nModulos = 1 ; ::oCBModulos:Disable() ; endif
+   ::oCBModulos:Disable()
 
    // Asignamos el combobox como el correspondiente a la Modulo en el objeto oGModulo
    //::oGModulo:SetComboboxModulo( @::oCBModulos ) // Es mejor que la clase GModulo proporcione el combobox
