@@ -1,109 +1,47 @@
-# AGENTS.md - Fiscalius Client
+# AGENTS.md — Fiscalius Client
 
-**Proyecto**: Cliente TPuy/xHarbour + GTK para el ERP fiscal venezolano Fiscalius
-**Directorio**: `/home/riztan/git/fiscalius-client`
+Cliente TPuy/xHarbour + GTK para el ERP fiscal venezolano Fiscalius.
+**No accede a la BD directamente** — toda la lógica está en el servidor vía NetIO (hb_netio TCP/IP, puerto 2942).
 
----
-
-## Ejecución
+## Comandos
 
 ```bash
-tpuy  # Desde el directorio del proyecto
+tpuy                            # Ejecutar desde raíz del proyecto
 ```
 
-El cliente no accede a la base de datos directamente. Toda la lógica de negocio está en el servidor.
+## Reglas
 
----
+- NO modificar `.xbs` o `.ui` sin permiso explícito
+- NO hacer commits/push sin autorización
+- Si detectas un problema en Y mientras trabajas en X, informa pero NO modifiques Y sin autorización
+- Si en ~1 minuto no encuentras lo que buscas, pregúntale al usuario
+- NUNCA inventar funciones o procedimientos — verifica que existen con grep en `xbscripts/`
 
-## Reglas Absolutas
+## Harbour — Errores silenciosos
 
-- **NUNCA** modificar archivos `.xbs` o `.ui` sin permiso explícito del usuario
-- **NUNCA** hacer commits o push sin autorización
-- **NUNCA** usar valores hardcoded o inventar datos
-- **SIEMPRE** verificar coherencia: BD = API = Cliente
+| Regla | ❌ Incorrecto | ✅ Correcto |
+|-------|--------------|-------------|
+| `LOCAL` al inicio | `FOR EACH ...; local nLen := ...; NEXT` | `local aLine, nLen, aVal` al inicio del procedure |
+| `::` en procedures | Usar `::cVar` en function/procedure | `SET PUBLIC oForm` → `oForm:cVar` |
+| Conversión numérica | `VAL(cValor)` pierde decimales | `ToNum(cValor)` siempre |
+| `APPEND LIST_STORE` valores | `VALUES aLine[1], aLine[1]/aLine[5]` | `VALUES aLine[1], aLine[2]` (solo strings, calcular antes) |
+| Acceso a objetos/hash | `oObj:campo` sin verificar | `hb_isObject(oObj) .and. !hb_isNIL(oObj:campo)` |
+| `hb_hGetDef` | No existe en Harbour de TPuy | `hb_HHasKey(h, "k")` + acceso directo |
+| `ENDMETHOD` | No existe en xHarbour | `RETURN` (sin `ENDMETHOD`) |
+| Deshabilitar botón UI | `::oBtn:Disable()` antes de `DEFINE BUTTON` | Después de la definición del botón |
 
----
-
-## LOCAL en Harbour — Regla Crítica
-
-`LOCAL` debe declararse **AL INICIO** del procedimiento, antes de cualquier código ejecutable.
-
-```harbour
-// ✅ Correcto
-procedure MiProc()
-   local aLine, nLen, aVal
-
-   FOR EACH aLine IN aData
-      nLen := Len( aLine )
-   NEXT
-end
-
-// ❌ Error E0004 - LOCAL dentro del bucle
-procedure MiProc()
-   FOR EACH aLine IN aData
-      local nLen := Len( aLine )
-   NEXT
-end
-```
-
----
-
-## Conversión Numérica
-
-Usar **siempre `ToNum()`** para campos con decimales. `VAL()` puede perder decimales.
-
-```xbase
-nValor := ToNum( cValor )   // ✅ Correcto
-nValor := VAL( cValor )     // ❌ Incorrecto
-```
-
----
-
-## LIST_STORE — Solo Strings
-
-El widget `APPEND LIST_STORE` espera **todos los valores como strings**. No hacer operaciones matemáticas dentro de VALUES.
-
-```harbour
-// ✅ Correcto - pasar valores ya formateados
-APPEND LIST_STORE ::oModDetal:oLbx ITER aIter VALUES aLine[21], aLine[22], aLine[23]
-
-// ❌ Incorrecto - operaciones dentro de VALUES
-APPEND LIST_STORE ::oModDetal:oLbx ITER aIter VALUES aLine[21], aLine[21]/aLine[5], aLine[5]
-```
-
----
-
-## Acceso a Objetos — Verificar Antes
-
-Error "condicional: nil" (BASE/1123) cuando se accede a propiedades de objetos nulos:
-
-```xbase
-// ✅ Verificar antes
-if hb_isObject( oObj ) .and. !hb_isNIL( oObj:campo )
-   cValor := oObj:campo
-endif
-
-// ✅ Acceso en cursor
-if !oQry:Eof() .and. !hb_isNIL( oQry:fecha )
-   cValor := oQry:fecha
-endif
-```
-
----
-
-## Patrón de Llamada al Servidor (NetIO)
+## NetIO — Patrón de llamada al servidor
 
 ```xbase
 // 1. Verificar conexión
 if !oTPuy:RunXBS("netio_check")
-   MsgStop("Sin conexión al servidor")
-   RETURN
+   MsgStop("Sin conexión al servidor"); RETURN
 endif
 
-// 2. Obtener objeto remoto
-::rFinanzas := oFormParent:oGEmpresa:SetModulo("Finanzas")
+// 2. Obtener módulo remoto
+::rVentas := oFormParent:oGEmpresa:SetModulo("Ventas")
 
-// 3. Llamar método (respuesta transparente como tcursor)
+// 3. Llamar método (retorna tcursor local transparente)
 oClientes := ::rVentas:Clientes( hParams )
 
 // 4. Cargar datos al ListBox
@@ -113,94 +51,45 @@ FOR EACH aLine IN oClientes:GetData()
 NEXT
 ```
 
----
+Sintaxis alternativa (de `tpy_netio.ch`):
+- `~objeto:msg(params)` → `FromRemote("__object", objeto, #msg, params)`
+- `r:objeto:msg` → `FromRemote("__objmethod", objeto, #msg)`
 
-## Estructura del Proyecto
+## UI GTK (.ui) — Orden crítico
 
-```
-fiscalius-client/
-├── xbscripts/          # Lógica del negocio (.xbs)
-│   ├── begin.xbs       # Punto de entrada
-│   ├── vta_*.xbs       # Módulo Ventas
-│   ├── mae_*.xbs       # Maestros (inventario, clientes…)
-│   └── fin_*.xbs       # Módulo Finanzas
-├── resources/          # Interfaces GTK (.ui)
-├── images/             # Recursos gráficos
-└── init.conf           # Rutas y configuración
+```xbase
+SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"vta_facturas.ui"
+DEFINE WINDOW ::oFacWnd TITLE "Fiscalius. Factura" SIZE 800,600 ID "window1" RESOURCE ::oRes
+DEFINE BUTTON ::oBtnGuardar ID "btn_guardar" RESOURCE ::oRes
 ```
 
----
+- `SetColVisible`, `SetColTitle` debe ir **antes** de `Active()`
+- Deshabilitar botones (Disable) **después** de `DEFINE BUTTON`
+- Permisos: Admin/Devel acceso total; Propio usuario: solo cambio contraseña; Auditor/Demo: sin acceso
 
-## Módulos Principales
+## Flujo de entrada
 
-| Script | Función |
-|--------|---------|
-| `vta_facturas.xbs` | Facturación |
-| `vta_notas_cd.xbs` | Notas crédito/débito |
-| `vta_notas_entrega.xbs` | Notas de entrega |
-| `fin_recibo.xbs` | Recibos de cobranza |
-| `fin_cajas.xbs` | Cajas registradoras |
-| `mae_inventario.xbs` | Catálogo productos |
+`xbscripts/begin.xbs` → timer `__NetIOUpdate()` cada 1s → `netio_check.xbs` → login → `poslogin.xbs` (session, empresa, fuentes) → `menu.xbs`
 
----
+Archivo `devel` (vacío) en raíz → salta sincronización de archivos en login (modo desarrollo).
 
-## Prefijos de Procedimientos
-
-- `vta_` → Ventas, `mae_` → Maestros, `fin_` → Finanzas
-- `__` → Procedimiento interno del módulo (no llamar desde afuera)
-
----
-
-## Tipos de Documentos Fiscales
-
-- `tipo_id = 4`: Factura (serie A)
-- `tipo_id = 5`: Pedido (serie B)
-- `tipo_id = 6`: Nota Crédito (serie B)
-- `tipo_id = 14`: Nota Entrega (serie C)
-
----
-
-## Tablas Clave del Servidor
-
-- `vta_serie_fiscal`: maestro de series (A, B, C, '')
-- `vta_serie_tipos`: vincula series a tipos de documentos
-- `vta_serie_consecutivos`: correlativos de control por serie_id
-
----
-
-## Variables Globales
-
-- `oTPuy` → Objeto TPublic global, accesible desde cualquier script
-
----
-
-## Verificaciones Obligatorias
-
-1. Antes de afirmar algo, leer el código fuente y cite archivo:líneas
-2. Si no encuentra algo en ~1 minuto, pregunte al usuario
-3. Verificar con la BD real antes de asumir comportamiento
-
----
-
-## Documentación de Referencia
+## Archivos de configuración clave
 
 | Archivo | Contenido |
 |---------|-----------|
-| `docs/directrices-ia.md` | Reglas del proyecto (LEER SIEMPRE) |
-| `.opencode/skills/fiscalius-client/SKILL.md` | Skill completo con arquitectura |
-| `docs/guia-rapida.md` | Mapa del proyecto |
-| `CHANGELOG.md` | Historial de cambios |
-| `docs/SESION_MAYO_2026.md` | Resumen de sesión de trabajo (leer para retomar) |
+| `connect.ch` | `NETSERVER`, `NETPORT` (2942), `NETPASSWD` — incluido por `netio_check.xbs` vía `#include` en tiempo de ejecución |
+| `init.conf` | `oTPuy:cResources`, `cImages`, `cXBScript`, `nDecimals := 2` |
 
----
+## Prefijos de procedimientos
 
-## Proyecto Completo (Cliente + Servidor)
+`vta_` (ventas), `mae_` (maestros), `fin_` (finanzas), `netio_` (conexión), `__` (interno del módulo)
 
-Para retomar contexto del servidor, leer en el **servidor**:
+## Referencias útiles (no reescribir aquí)
 
-- `AGENTS.md` - Reglas del servidor y comandos de compilación
-- `SESION_TRABAJO.md` - Historial de sesiones de trabajo
-- `docs_ia/QUICK_CONTEXT.md` - Resumen rápido del estado actual
-- `docs_ia/TAREAS_PENDIENTES.md` - Roadmap y deudas técnicas
-- `docs_ia/PREGUNTAS_ABIERTAS.md` - Preguntas respondidas del proyecto
-- `work/registrar-notas-entrega/` - Tareas pendientes para notas de entrega |
+| Archivo | Contenido |
+|---------|-----------|
+| `.opencode/skills/fiscalius-client/SKILL.md` | Skill completo con objetos remotos y patrones |
+| `.github/copilot-instructions.md` | Procedimientos verificados y objetos remotos |
+| `.cursor/rules/fiscalius.md` | Reglas detalladas para Cursor IDE |
+| `docs/directrices-ia.md` | Reglas de comportamiento IA |
+| `docs/SESION_MAYO_2026.md` | Problemas conocidos (BASE/1132, hb_hGetDef, permisos) |
