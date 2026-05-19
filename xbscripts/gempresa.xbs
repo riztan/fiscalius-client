@@ -115,6 +115,7 @@ CLASS GEMPRESA
    METHOD GetNextControl( hParam )        INLINE ::rEmpresa:GetNextControl( hParam )
 
    METHOD Auditoria( hParam )        INLINE ::rEmpresa:Auditoria( hParam )
+   METHOD AuditoriaTransacciones( hParam ) INLINE ::rEmpresa:AuditoriaTransacciones( hParam )
    METHOD GetUsageLog( hParam )      INLINE ::rEmpresa:GetUsageLog( hParam )
 
    METHOD LoadFile()

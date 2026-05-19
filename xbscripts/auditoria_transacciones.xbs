@@ -1,0 +1,129 @@
+/* auditoria_transacciones.xbs
+ *
+ * Formulario para consultar auditoría de transacciones (vw_auditoria_transacciones)
+ * Usa archivo de recursos: auditoria_transacciones.ui
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure auditoria_transacciones( oForm, oWndParent, oEntParent )
+   local oAudWnd, oRes
+   local rEmpresa, oAuditoria, oModAuditoria, oLBoxAud
+   local oBtnBuscar, oBtnSalir
+   local oEntFechaDesde, oEntFechaHasta, oEntDocumento
+   local cEntFechaDesde, cEntFechaHasta, cEntDocumento
+
+   cEntFechaDesde := ""
+   cEntFechaHasta := ""
+   cEntDocumento := ""
+
+   rEmpresa := ::oGEmpresa
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"auditoria_transacciones.ui"
+
+   DEFINE WINDOW oAudWnd ;
+          TITLE "Fiscalius. Auditoría de Transacciones" ;
+          SIZE 900,550 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ID "img_banner" RESOURCE oRes
+   oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ID "img_logo" RESOURCE oRes
+   oImgLogo:Adjust(60)
+
+   DEFINE ENTRY TYPE DATE oEntFechaDesde VAR cEntFechaDesde CALENDAR ;
+          VALID .T. ;
+          ID "ent_fecha_desde" RESOURCE oRes
+
+   DEFINE ENTRY TYPE DATE oEntFechaHasta VAR cEntFechaHasta CALENDAR ;
+          ID "ent_fecha_hasta" RESOURCE oRes
+
+   DEFINE ENTRY oEntDocumento VAR cEntDocumento ;
+          ID "ent_documento" RESOURCE oRes
+
+   DEFINE BUTTON oBtnBuscar ;
+          ACTION __AudTransBuscar( oAudWnd, rEmpresa, oModAuditoria, oLBoxAud, ;
+                                    oEntFechaDesde, oEntFechaHasta, oEntDocumento ) ;
+          ID "btn_buscar" RESOURCE oRes
+
+   DEFINE BUTTON oBtnSalir ;
+          ACTION oAudWnd:End() ;
+          ID "btn_salir" RESOURCE oRes
+
+   DEFINE BOX oBoxData ID "box_data" RESOURCE oRes EXPAND FILL
+
+   oAuditoria := rEmpresa:AuditoriaTransacciones( {"limite" => 100 } )
+
+   if hb_isNIL( oAuditoria )
+      MsgStop("No hay datos de auditor\u00eda de transacciones disponibles")
+      return
+   endif
+
+   DEFINE MODEL oModAuditoria ;
+          STRUCT oAuditoria:Struct() ;
+          DATA   oAuditoria:GetData()
+
+   DEFINE LISTBOX oLBoxAud ;
+          MODEL oModAuditoria ;
+          OF oBoxData
+
+   oLBoxAud:lBar := .F.
+
+   oLBoxAud:SetColVisible( 1, .F. )    // ID
+   oLBoxAud:SetColVisible( 2, .F. )    // transaccion_id
+
+   oLBoxAud:SetColTitle( 3, "Fecha" )
+   oLBoxAud:SetColTitle( 4, "Acción" )
+   oLBoxAud:SetColTitle( 5, "Documento" )
+   oLBoxAud:SetColTitle( 6, "Empresa" )
+   oLBoxAud:SetColTitle( 7, "Usuario" )
+   oLBoxAud:SetColTitle( 8, "Resumen" )
+
+   oLBoxAud:Active()
+
+   ACTIVATE WINDOW oAudWnd MODAL
+
+return
+
+
+procedure __AudTransBuscar( oWnd, rEmpresa, oModel, oList, oEntFechaDesde, oEntFechaHasta, oEntDocumento )
+   local hParam := hb_hash()
+   local oAuditoria, aData
+   local cFechaDesde, cFechaHasta, cDocumento
+   local aLine, aIter := ARRAY(8)
+
+   cFechaDesde := alltrim( oEntFechaDesde:GetText() )
+   cFechaHasta := alltrim( oEntFechaHasta:GetText() )
+   cDocumento  := alltrim( oEntDocumento:GetText() )
+
+   if !empty( cFechaDesde )
+      hParam[ "fecha_desde" ] := CTOD(cFechaDesde)
+   endif
+
+   if !empty( cFechaHasta )
+      hParam[ "fecha_hasta" ] := CTOD(cFechaHasta)
+   endif
+
+   if !empty( cDocumento )
+      hParam[ "documento" ] := cDocumento
+   endif
+
+   hParam[ "limite" ] := 500
+
+   oAuditoria := rEmpresa:AuditoriaTransacciones( hParam )
+
+   if !hb_isNIL( oAuditoria )
+      oModel:oTreeView:ClearModel(.t.)
+
+      aData := oAuditoria:GetData()
+      FOR EACH aLine IN aData
+         APPEND LIST_STORE oModel:oLbx ITER aIter ;
+                VALUES hb_ntos(aLine[1]), hb_ntos(aLine[2]), ALLTRIM(aLine[3]), ;
+                       ALLTRIM(aLine[4]), ALLTRIM(aLine[5]), ALLTRIM(aLine[6]), ;
+                       ALLTRIM(aLine[7]), ALLTRIM(aLine[8])
+      NEXT
+   endif
+
+return

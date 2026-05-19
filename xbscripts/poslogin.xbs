@@ -193,6 +193,9 @@ procedure poslogin( oParent )
        DEFINE MENUITEM ::oMnuAuditUs ACTION oTPuy:RunXBS("usabilidad", oForm );  
              ID "itm_usabilidad" RESOURCE ::oRes
 
+       DEFINE MENUITEM ::oMnuAudTransacciones ACTION oTPuy:RunXBS("auditoria_transacciones", oForm );
+             ID "itm_auditoria_transacciones" RESOURCE ::oRes
+
       DEFINE MENUITEM ::oMnuCtasCobrar ACTION oTPuy:RunXBS("vta_ctasxcobrar", oForm );  
               ID "itm_ctasxcobrar" RESOURCE ::oRes
 			  
@@ -230,6 +233,7 @@ procedure poslogin( oParent )
           ::oMnuAuditoria:Hide()
           ::oMnuErrorCli:Hide()
           ::oMnuAuditUs:Hide()
+          ::oMnuAudTransacciones:Hide()
           ::oMnuCtasCobrar:Hide()
           ::oMnuVtaRep:Hide()
           ::oMnuIGTFRep:Hide()
@@ -241,7 +245,7 @@ procedure poslogin( oParent )
       endif
 	  
       //-- Deshabilita Orden de Entrega
-      ::oMnuNotaEnt:Hide()
+      //::oMnuNotaEnt:Hide()
 
 
       DEFINE TOOLBUTTON ::oTBQuit ;

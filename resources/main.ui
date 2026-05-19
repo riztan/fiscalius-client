@@ -1180,6 +1180,16 @@
                                 <property name="use_stock">False</property>
                               </object>
                             </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_auditoria_transacciones">
+                                <property name="label" translatable="yes">Auditoria (Transacciones)</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Consulta auditoría de transacciones de documentos</property>
+                                <property name="image">gtk-orientation13</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
                           </object>
                         </child>
                       </object>
