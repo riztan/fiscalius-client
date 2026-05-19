@@ -9,7 +9,7 @@
 FUNCTION netio_check()
 
   local lConnect := .f.
-  local oMsgRun
+  local oMsgRun, oErr
 
   if FILE( "connect.ch" )
      #include "connect.ch"
@@ -22,10 +22,10 @@ FUNCTION netio_check()
   endif
 
   if (!oTPuy:lNetIO .and. !oTPuy:lExit ) .or. ;
-     netio_GetConnection( NETSERVER, NETPORT,, NETPASSWD ) = NIL
+       netio_GetConnection( NETSERVER, NETPORT,, NETPASSWD ) == NIL
 
      try
-        oMsgRun := MsgRunStart("Conectando al Servidor NetIO...")
+        oMsgRun := MsgRunStart("Conectando al Servidor...")
         lConnect := netio_connect( NETSERVER, NETPORT,, NETPASSWD )
      catch oErr
         MsgStop( "No se puede conectar con "+NETSERVER+CRLF+;
@@ -56,15 +56,16 @@ FUNCTION netio_check()
 
   endif
 
-  if (hb_DateTime() - oTpuy:tLastNetIO) >= 0.001000
-     if netio_GetConnection( NETSERVER, NETPORT,, NETPASSWD ) = NIL
-        oTpuy:lNetIO := .f.
-     else
-        if !oTpuy:IsDef("oUser")
-           __Login() 
-        endif
-     endif
-  endif
+if (hb_DateTime() - oTPuy:tLastNetIO) >= 0.000500
+      if netio_GetConnection( NETSERVER, NETPORT,, NETPASSWD ) == NIL
+         oTPuy:lNetIO := .f.
+      else
+         oTPuy:tLastNetIO := hb_DateTime()
+         if !oTPuy:IsDef("oUser")
+            __Login() 
+         endif
+      endif
+   endif
 
 RETURN .T.
 
@@ -73,38 +74,41 @@ RETURN .T.
 Procedure __Login()
 
    local cScriptName := "netio_login", cScriptFile
-   local aScripts, aScript, cMD5, cSource, oMsgRun
+   local aScripts, aScript, cMD5, cSource, oErr
 
-   // Solo verificar archivos si NO es desarrollador (archivo "devel" no existe)
    if !FILE( "devel" )
-      oMsgRun := MsgRunStart("Actualizando Fiscalius...")
       __FilesCheck("INC")
       __FilesCheck("RES")
       __FilesCheck("IMG")
       __FilesCheck("XBS")
-      oMsgRun:End()  // Cerrar MsgRun
    endif
 
-   // Sincronización de scripts (desactivada temporalmente)
-   // aScripts := ~GetScripts()
-   // FOR EACH aScript IN aScripts
-   //    cScriptFile := oTpuy:cXBScripts+aScript[1]+".xbs"
-   //    cMD5 := hb_MD5File( cScriptFile )
-   //    if !File( cScriptFile ) .or. !(aScript[2] == cMD5)
-   //       cSource := ~GetScripts( aScript[1] )
-   //       hb_MemoWrit( cScriptFile, cSource )
-   //    endif
-// NEXT
+/*
+   aScripts := ~GetScripts()
 
-   cScriptFile := oTpuy:cXBScripts+cScriptName+".xbs"
+   FOR EACH aScript IN aScripts
+      cScriptFile := oTPuy:cXBScripts+aScript[1]+".xbs"
+      cMD5 := hb_MD5File( cScriptFile )
+      if !File( cScriptFile ) .or. !(aScript[2] == cMD5)
+         cSource := ~GetScripts( aScript[1] )
+         hb_MemoWrit( cScriptFile, cSource )
+      endif
+   NEXT
+*/
+   cScriptFile := oTPuy:cXBScripts+cScriptName+".xbs" 
 
    If File(cScriptFile)
-      oTpuy:RunXBS(cScriptName,.f.)
+      try
+         oTPuy:RunXBS(cScriptName, .F. )
+      catch oErr
+         MsgStop( oErr:description )
+      end
    Else
       MsgStop("No se puede ejecutar script de login.")
    EndIf
 
 return
+
 
 
 /* Realiza verificación de ficheros base */

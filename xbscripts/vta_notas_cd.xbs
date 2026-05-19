@@ -184,7 +184,7 @@ DEFINE BUTTON ::oBtnGuardar ;
 
    DEFINE BOX ::oBoxEstado ID "box_estado" RESOURCE ::oRes
 
-   ::aComboEstado := {"Borrador","Anulada","Cerrada"}
+   ::aComboEstado := {"Borrador","Cerrada"}
    ::cComboEstado := ""
    DEFINE COMBOBOX ::oComboEstado ;
           VAR ::cComboEstado ITEMS ::aComboEstado ;

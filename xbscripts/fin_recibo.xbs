@@ -676,11 +676,13 @@ return
 
     // Recolectar aplicaciones (documentos seleccionados)
     aDoc := ::oModDocuments:oTreeView:FillArray()
+//View( aDoc )
     FOR EACH aLine IN aDoc
        // Columna 16 = seleccionado, Columna 6 = transaccion_id, Columna 13 = monto_aplicado
        if aLine[16] .AND. ToNum(aLine[13]) > 0
-          AADD( aApps, { "transaccion_id" => aLine[6], "monto_aplicado" => ToNum(aLine[13]) } )
-          nMontoDocs += ToNum(aLine[13])
+          AADD( aApps, { "transaccion_id" => aLine[6], ;
+                         "monto_aplicado" => ToNum(aLine[13]) * ToNum( aLine[29] ) } )
+          nMontoDocs += ToNum(aLine[13]) * ToNum(aLine[29])
        endif
     NEXT
 
@@ -692,12 +694,15 @@ return
     FOR EACH aLine IN aMedios
        // Columna 3 = monto, Columna 1 = codigo, Columna 4 = soporte_nro
        if ToNum(aLine[3]) > 0
-          AADD( aInsts, { "medio_pago_id" => aLine[1], "monto" => ToNum(aLine[3]), "soporte_nro" => aLine[4] } )
+          AADD( aInsts, { "medio_pago_id" => aLine[1], ;
+                          "monto" => ToNum(aLine[3]), ;
+                          "soporte_nro" => aLine[4] } )
           nMontoInst += ToNum(aLine[3])
        endif
     NEXT
 
     // Validar equilibrio: monto documentos = monto instrumentos
+//View( hb_ntos(nMontoDocs) + " | " +hb_ntos( nMontoInst ) )
     if nMontoDocs != nMontoInst
        ::oLabInfo:SetText("Error: Montos no cuadran. Docs: " + hb_ntos(nMontoDocs) + " vs Inst: " + hb_ntos(nMontoInst))
        return .F.
