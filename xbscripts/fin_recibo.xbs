@@ -659,7 +659,8 @@ return
     local aDoc := {}
     local aApps := {}, aInsts := {}, aLine
     local hData := {}, hResp
-    local nMontoDocs := 0, nMontoInst := 0
+    local nMontoDocs := 0, nMontoSuma := 0, nMontoInst := 0
+    local nFactor, nMontoBase, nIGTF, nMontoSumaIGTF
     local aDivisaTokens, nTasa, cMoneda, cCajaCod
 
     // Validar saldo
@@ -682,20 +683,49 @@ return
           nMontoDocs += ToNum(aLine[13]) * ToNum(aLine[29])
        endif
     NEXT
-    
+
+    // Columna 29 = comportamiento_documento_num (1=SUMA, -1=RESTA)
+    // Armar aApps y acumular monto base de documentos SUMA para prorrateo IGTF
+    nMontoSuma := 0
     FOR EACH aLine IN aDoc
-       // Columna 16 = seleccionado, Columna 6 = transaccion_id, Columna 13 = monto_aplicado
        if aLine[16] .AND. ToNum(aLine[13]) > 0
+          nFactor    := ToNum(aLine[29])
+          nMontoBase := ToNum(aLine[13])
+          if nFactor = 1
+             nMontoSuma += nMontoBase
+          endif
           AADD( aApps, { "transaccion_id" => aLine[6], ;
-                         "monto_aplicado" => ToNum(aLine[13]) * ToNum( aLine[29] ),;
-                         "monto_igtf"     => iif( ToNum(aLine[29])=1, 1, 0) ;
-                       } )
-          //nMontoDocs += ToNum(aLine[13]) * ToNum(aLine[29])
+                         "monto_aplicado" => nMontoBase * nFactor, ;
+                         "monto_igtf"     => 0, ;
+                         "monto_base"     => nMontoBase, ;
+                         "factor"         => nFactor } )
        endif
     NEXT
 
-//    view(aApps)
-//return .t.
+    // Prorratear IGTF entre documentos SUMA
+    nIGTF := ToNum( ::cIGTF )
+    if nIGTF > 0 .and. nMontoSuma > 0
+       FOR EACH aLine IN aApps
+          if aLine["factor"] = 1
+             aLine["monto_igtf"] := ROUND( nIGTF * (aLine["monto_base"] / nMontoSuma), 2 )
+          endif
+       NEXT
+       // Ajustar posible diferencia por redondeo en el último elemento SUMA
+       nMontoSumaIGTF := 0
+       FOR EACH aLine IN aApps
+          if aLine["factor"] = 1
+             nMontoSumaIGTF += aLine["monto_igtf"]
+          endif
+       NEXT
+       if nMontoSumaIGTF != nIGTF
+          FOR EACH aLine IN aApps
+             if aLine["factor"] = 1
+                aLine["monto_igtf"] += nIGTF - nMontoSumaIGTF
+                exit
+             endif
+          NEXT
+       endif
+    endif
 	 
     // Recolectar instrumentos de pago (medios)
     aMedios := ::oModMedios:oTreeView:FillArray()
