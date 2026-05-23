@@ -1627,9 +1627,14 @@ Procedure __VtaSave( oForm, oFormParent )
       //   para obtener primero el nro del documento
       ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
-      if !::rFactura:SetDetal( ::aDetal )
-         ::oLabInfo:SetText("No se actualizaron los detalles" )
-         uResp := .F.
+      uResp := ::rFactura:SetDetal( ::aDetal )
+      if !hb_isHash( uResp )
+         if (VALTYPE(uResp)="L" .and. !uResp )
+            ::oLabInfo:SetText("No se actualizaron los detalles" )
+            uResp := .F.
+         else
+            uResp := .T.
+         endif
       endif
 
       if VALTYPE(::hFactura["numero"])="C" .AND. ToNum(::hFactura["numero"])>0

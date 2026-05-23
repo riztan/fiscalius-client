@@ -678,16 +678,24 @@ return
     aDoc := ::oModDocuments:oTreeView:FillArray()
 //View( aDoc )
     FOR EACH aLine IN aDoc
-       // Columna 16 = seleccionado, Columna 6 = transaccion_id, Columna 13 = monto_aplicado
        if aLine[16] .AND. ToNum(aLine[13]) > 0
-          AADD( aApps, { "transaccion_id" => aLine[6], ;
-                         "monto_aplicado" => ToNum(aLine[13]) * ToNum( aLine[29] ) } )
           nMontoDocs += ToNum(aLine[13]) * ToNum(aLine[29])
        endif
     NEXT
+    
+    FOR EACH aLine IN aDoc
+       // Columna 16 = seleccionado, Columna 6 = transaccion_id, Columna 13 = monto_aplicado
+       if aLine[16] .AND. ToNum(aLine[13]) > 0
+          AADD( aApps, { "transaccion_id" => aLine[6], ;
+                         "monto_aplicado" => ToNum(aLine[13]) * ToNum( aLine[29] ),;
+                         "monto_igtf"     => iif( ToNum(aLine[29])=1, 1, 0) ;
+                       } )
+          //nMontoDocs += ToNum(aLine[13]) * ToNum(aLine[29])
+       endif
+    NEXT
 
-    // view(aApps)
-	 //return .t.
+//    view(aApps)
+//return .t.
 	 
     // Recolectar instrumentos de pago (medios)
     aMedios := ::oModMedios:oTreeView:FillArray()
