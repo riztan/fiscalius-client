@@ -95,6 +95,7 @@ DEFINE BUTTON ::oBtnGuardar ;
 
    ::cEntCli := ""
    ::cCodCli := ""
+   ::nMontoIGTF := 0
    DEFINE ENTRY  ::oEntCli VAR ::cEntCli ;
           ACTION (oTPuy:RunXBS("vta_clientes", oFormParent, ::oNotaWnd, ::oEntCli, @::cCodCli,,'4'), ;
                  iif( !empty(::cCodCli), ::SetCliente(::cCodCli), NIL ), ;
@@ -110,13 +111,18 @@ DEFINE BUTTON ::oBtnGuardar ;
    ::cFacturaNro := ""
    DEFINE ENTRY ::oEntFacturaNro VAR ::cFacturaNro ;
           ACTION ( __NC_Docs( oForm ), ::oEntFacturaNro:SetFocus() ) ; 
-           VALID  ( iif( !empty(::cFacturaNro), ::rDocumento:SetRefNumero(::cFacturaNro), NIL), ;
-                     __NCDelDetal( oForm, .T. ), ;
-                    ::rFactDetal := ::rDocumento:DetalFrom(), __NCDetalRefresh(oForm), ;
-                    iif( CTOD(::oEntFecha:GetValue()) < ::rVentas:Transacciones('F', ::cFacturaNro):fecha, ;
-                         ::oEntFecha:SetValue(DTOC(::rVentas:Transacciones('F', ::cFacturaNro):fecha)), ;
-                         NIL), ;
-                    ::oLabInfo:SetText("ATENCION: Debe guardar los cambios luego de relacionar una factura"), .T. );
+           VALID  ( iif( !empty(::cFacturaNro), (::rDocumento:SetRefNumero(::cFacturaNro),;
+                                                      ::rDocumento:LoadFactura(::cFacturaNro),;
+                                                      ::hDocumento := ::rDocumento:Data(),;
+                                                      iif( hb_hHasKey( ::hDocumento, "monto_igtf" ),;
+                                                           ::oEntIGTF:SetValue( TRANSFORM( ::hDocumento["monto_igtf"], P_92 ) ),;
+                                                           NIL ) ), NIL), ;
+                      __NCDelDetal( oForm, .T. ), ;
+                     ::rFactDetal := ::rDocumento:DetalFrom(), __NCDetalRefresh(oForm), ;
+                     iif( CTOD(::oEntFecha:GetValue()) < ::rVentas:Transacciones('F', ::cFacturaNro):fecha, ;
+                          ::oEntFecha:SetValue(DTOC(::rVentas:Transacciones('F', ::cFacturaNro):fecha)), ;
+                          NIL), ;
+                     ::oLabInfo:SetText("ATENCION: Debe guardar los cambios luego de relacionar una factura"), .T. );
           RIGHT BUTTON ::oImgDocIcon ;
           ID "ent_orden_compra" RESOURCE ::oRes
    ::oEntFacturaNro:SetEditable( .F. )
@@ -273,6 +279,12 @@ DEFINE BUTTON ::oBtnGuardar ;
    ::oEntImpProd:Justify( GTK_JUSTIFY_RIGHT )
    ::oEntImpProd:SetEditable( .F. )
    
+   DEFINE BOX ::oBoxIGTF ID "box_igtf" RESOURCE ::oRes 
+   ::nMontoIGTF := 0
+   DEFINE MONEY ENTRY ::oEntIGTF VAR ::nMontoIGTF ;
+          ID "ent_igtf" RESOURCE ::oRes 
+   ::oEntIGTF:Justify( GTK_JUSTIFY_RIGHT )
+   ::oEntIGTF:SetEditable( .F. )
 
    ::nMontoTotal := 0
    DEFINE MONEY ENTRY ::oEntTotal VAR ::nMontoTotal ;
@@ -785,6 +797,8 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaS:SetValue( "0" )
       ::oEntOtrImp:SetValue( "0" )
       ::oEntImpProd:SetValue( "0" )
+      ::nMontoIGTF := 0
+      ::oEntIGTF:SetValue( "0" )
       ::oEntMonBase:SetValue( "0" )
 
       ::oComboEstado:SetValue("Borrador", .F. ) 
@@ -825,18 +839,15 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::cSerie :=  oModel:GetCol(::hCol["serie_fiscal"])
       
       //view(::cSerieId)
-      
       // Actualizar el combo para mostrar la condicion seleccionada
       
-         if hb_isObject( ::oComboCondicion ) .and. !empty( ::aCondiciones )
-             ::oComboCondicion:SetValue( ::cCondicion )
-         endif
+      if hb_isObject( ::oComboCondicion ) .and. !empty( ::aCondiciones )
+         ::oComboCondicion:SetValue( ::cCondicion )
+      endif
           
- 		 
-          if hb_isObject( ::oComboSerie ) .and. !empty( ::aSeries )
-             ::oComboSerie:SetValue( ::cSerie )
-          endif
-        
+      if hb_isObject( ::oComboSerie ) .and. !empty( ::aSeries )
+         ::oComboSerie:SetValue( ::cSerie )
+      endif
       
       ::cCodVendedor := oModel:GetCol("vendedor_id")
 
@@ -848,14 +859,19 @@ procedure __vtaNotaCD( oForm, oFormParent, oBoxFactura, oModel, lNew )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
       ::oEntIvaS:SetValue( "0" )
-// Usar otros_imp e imp_prod desde el servidor si existe, sino inicializar en 0
-       if hb_hHasKey( ::hDocumento, "otros_imp" ) .and. hb_hHasKey( ::hDocumento, "imp_prod" )
- 			::oEntOtrImp:SetValue( TRANSFORM( ::hDocumento["otros_imp"], P_92 ) )        
-             ::oEntImpProd:SetValue( TRANSFORM( ::hDocumento["imp_prod"], P_92 ) )
-       else
-           ::oEntOtrImp:SetValue( "0" )
-           ::oEntImpProd:SetValue( "0" )
-       endif
+// Usar otros_imp, imp_prod y monto_igtf desde el servidor
+      if hb_hHasKey( ::hDocumento, "otros_imp" ) .and. hb_hHasKey( ::hDocumento, "imp_prod" )
+         ::oEntOtrImp:SetValue( TRANSFORM( ::hDocumento["otros_imp"], P_92 ) )        
+         ::oEntImpProd:SetValue( TRANSFORM( ::hDocumento["imp_prod"], P_92 ) )
+      else
+         ::oEntOtrImp:SetValue( "0" )
+         ::oEntImpProd:SetValue( "0" )
+      endif
+      if hb_hHasKey( ::hDocumento, "monto_igtf" )
+         ::oEntIGTF:SetValue( TRANSFORM( ::hDocumento["monto_igtf"], P_92 ) )
+      else
+         ::oEntIGTF:SetValue( "0" )
+      endif
 
       ::oEntRetIva:SetValue( "" )
       ::oEntRetIvaF:SetValue( "" )
@@ -1148,8 +1164,8 @@ procedure __NCEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nC
       //if ::cTipoDocumento="D" //Debito
          __SetValue( oTreeView, oModel, aIter, nCol, 'S-001' ) //parche Riztan 2026-03-29
          if ::cTipoDocumento="C" //Credito
-            __Productos( oForm, 'IGTF', oModel, nCol, oTreeView, aIter )
-         else
+         //   __Productos( oForm, 'IGTF', oModel, nCol, oTreeView, aIter )
+         //else
             __Productos( oForm, 'S-001', oModel, nCol, oTreeView, aIter )
          endif
          oTreeView:SetPosCol( aIter, __DESCRIPCION, .f. )
@@ -1256,6 +1272,7 @@ procedure __NCCalcula( oForm )
    ::oEntIvaR:SetValue("0")
    ::oEntIvaG:SetValue("0")
    ::oEntIvaS:SetValue("0")
+   ::oEntIGTF:SetValue("0")
    ::bDetalCode := {|oTView, pModel, aIter| __NCCalMontos( oTView, pModel, aIter, oForm ) }
    if !hb_isObject( ::oLBoxDetal )
       return
@@ -1326,7 +1343,8 @@ procedure __NCCalMontos( oTView, pModel, aIter, oForm )
                     ToNum( ::oEntIvaR:GetValue() ) +;
                     ToNum( ::oEntIvaG:GetValue() ) +;
                     ToNum( ::oEntIvaS:GetValue() ) +;
-                    ToNum( ::oEntIvaE:GetValue() ), 2 )
+                    ToNum( ::oEntIvaE:GetValue() ) +;
+                    ToNum( ::oEntIGTF:GetValue() ), 2 )
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) )
 
    FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
@@ -1374,7 +1392,7 @@ procedure __NCAddDetal( oForm )
                  aLine[18], aLine[19], ;
                  aLine[20], aLine[21], ;
                  aLine[22], aLine[23], ;
-                 aLine[24],aLine[25]
+                 aLine[24], aLine[25]
 
    ::oModDetal:oTreeView:SetFocus()
    ::oModDetal:GoBottom()
@@ -1521,7 +1539,6 @@ Procedure __NCSave( oForm, oFormParent )
       return 
    endif
 
-
    ::hDocumento["cliente_id"       ] := ::cCodCli                    // Cliente
    ::hDocumento["vendedor_id"      ] := ::cCodVendedor               // Vendedor
    ::hDocumento["doc_referencia_id"] := ::cFacturaNro                // Factura Relacionada
@@ -1532,11 +1549,12 @@ Procedure __NCSave( oForm, oFormParent )
    //if ::cTipoDocumento = "C" //Credito
    ::hDocumento["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
    ::hDocumento["imp_prod"        ] := ::oEntImpProd:GetValue()      // Impuesto Produccion
+   ::hDocumento["monto_igtf"      ] := ::oEntIGTF:GetValue()         // IGTF
    //endif
    ::hDocumento["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hDocumento["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
   
-nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
+   nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
    ::hDocumento["condicion_id"]        := iif(nIdx > 0, ::aCondicionesId[nIdx], 1)
 
    nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
@@ -1657,7 +1675,7 @@ procedure __NCSaveDetal(oTView, pModel, aIter, oForm)
    hDetal["detalles_json"    ] := oTView:GetAutoValue( 19, aIter )
    hDetal["item"             ] := oTView:GetAutoValue( 20, aIter )
    hDetal["imp_pvp"          ] := oTView:GetAutoValue( 21, aIter )
-    hDetal["imp_produccion"] := VAL( oTView:GetAutoValue( 24, aIter ) ) // Add imp_produccion
+   hDetal["imp_produccion"] := VAL( oTView:GetAutoValue( 24, aIter ) ) // Add imp_produccion
 //View( oTView:GetAutoValue(20, aIter) )
    
    AADD( ::aDetal, hDetal )
@@ -1673,6 +1691,7 @@ PROCEDURE __NCCobrar( oForm, oFormParent)
    
    oTPuy:RunXBS( "fin_recibo", oForm, oFormParent, iif( ::cTipoDocumento="C", "5", "6") /*Documento*/ )
 RETURN
+
 
 
 PROCEDURE __NCImprime( oForm )
