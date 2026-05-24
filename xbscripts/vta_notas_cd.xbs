@@ -1353,7 +1353,8 @@ procedure __NCCalMontos( oTView, pModel, aIter, oForm )
                       {::oBoxIvaGen, ::oEntIvaG   }, ;
                       {::oBoxIvaSun, ::oEntIvaS   }, ;
                       {::oBoxOtrImp, ::oEntOtrImp }, ;
-                      {::oBoxImpProd,::oEntImpProd} }
+                      {::oBoxImpProd,::oEntImpProd}, ;
+                      {::oBoxIGTF,   ::oEntIGTF   } }
       if ToNum( aBox[2]:GetValue() ) = 0
          aBox[1]:Hide()
       else
