@@ -193,7 +193,7 @@ procedure __CxcBuscar( oForm, oWnd, oModel, oList, oEntCliente, oEntDocumento, o
       //view(oCxc:GetData())
       FOR EACH aLine IN aData
          APPEND LIST_STORE oModel:oLbx ITER aIter ;
-                VALUES dtoc(aLine[1]), aLine[2], hb_ntos(aLine[3]),aLine[4], aLine[5], hb_ntos(aLine[6]),;
+                 VALUES dtoc(aLine[1]), aLine[2], hb_ntos(aLine[3]),aLine[4], aLine[5], aLine[6],;
                       hb_ntos(aLine[7]),aLine[8],hb_ntos(aLine[9]),TRANSFORM(aLine[10],P_92),;
                       TRANSFORM(aLine[11],P_92),"riztan",hb_ntos(aLine[13])
       NEXT
@@ -243,7 +243,6 @@ procedure __CxcGenerarPDF( aData,cCliente,cDocumento )
    local nY := 1
    local nTotMto := 0,nTotApli := 0,nTotSal := 0
    local cFilePDF := "tmp/vta_ctasxcobrar.pdf"
-   //local pIter := gtk_tree_iter_new() // Iterador para recorrer las filas
    local lValid := .F.,aLine
    
    
@@ -314,7 +313,7 @@ procedure __CxcGenerarPDF( aData,cCliente,cDocumento )
 	  oPDF:CMSAY( nY, 6, LEFT(aLine[4],30) )   // Cliente
 	  oPDF:CMSAY( nY, 11, LEFT(aLine[5],12) )   // Serie
 	
-	  oPDF:CMSAY( nY, 13, STRZERO(aLine[6],8) )   // Contrl
+ 	  oPDF:CMSAY( nY, 13, aLine[6] )   // Contrl
 	  oPDF:CMSAY( nY, 15,  STRZERO(VAL(aLine[7]),8)  )   // Numero
 	  oPDF:CMSAY( nY, 17,   (aLine[8]) )   // Tipo Doc.
 	  
