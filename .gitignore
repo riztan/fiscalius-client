@@ -21,3 +21,23 @@
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Directorios de IA/agentes
+.agent/
+
+# Archivos varios no relacionados
+*.txt
+*.bat
+*.mp4
+video.*
+images/
+
+# Respaldos específicos de scripts
+xbscripts/*.bak.*
+xbscripts/*_backup.*
+xbscripts/*_original.*
+xbscripts/*_antes.*
+xbscripts/.*.sw?
+xbscripts/riztan.*
+xbscripts/test_*
+xbscripts/netio_check_antes.*
