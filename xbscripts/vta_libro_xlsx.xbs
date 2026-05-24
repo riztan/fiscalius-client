@@ -203,23 +203,23 @@ hTotal:nIVARet := {"nVtasGen"    => 0, ; //rQry:RTI_MONTO ,;
          xlsx_set_string ::worksheet cell: "F"+hb_ntos(i) value: DTOC(rQry:fecha_retencion)//Fecha Comprobante Ret
       endif
       if lower(rQry:tipo_documento) = "factura"
-         xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nro de Factura
+         xlsx_set_string ::worksheet cell: "H"+hb_ntos(i) value: ALLTRIM(rQry:serie_fiscal) + "-" + PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nro de Factura
       endif
       cNroControl := PADL( hb_ntos(rQry:numero_control), 10, "0" )
       cNroControl := LEFT(cNroControl,2)+"-"+RIGHT(cNroControl,8)
       xlsx_set_string ::worksheet cell: "I"+hb_ntos(i) value: cNroControl  //Nro de Control Factura
       //xlsx_set_string ::worksheet cell: "I"+hb_ntos(i) value: PADL(hb_ntos(rQry:numero_control), 8, "0")  //Nro de Control Factura
       if lower(rQry:tipo_documento) = "nota de débito"
-         xlsx_set_string ::worksheet cell: "J"+hb_ntos(i) value: PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nota de Débito
+         xlsx_set_string ::worksheet cell: "J"+hb_ntos(i) value: ALLTRIM(rQry:serie_fiscal) + "-" + PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nota de Débito
       endif
       if lower(rQry:tipo_documento) = "nota de crédito"
-         xlsx_set_string ::worksheet cell: "K"+hb_ntos(i) value: PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nota de Crédito
+         xlsx_set_string ::worksheet cell: "K"+hb_ntos(i) value: ALLTRIM(rQry:serie_fiscal) + "-" + PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nota de Crédito
       endif
 
       if rQry:monto_retencion<>0 .AND. rQry:fecha < dDesde 
-         xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nro de Factura
+         xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: ALLTRIM(rQry:serie_fiscal) + "-" + PADL(ALLTRIM(hb_ntos(ToNum(rQry:numero))), 8, "0")       //Nro de Factura
       else 
-         xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: PADL(ALLTRIM(hb_ntos(ToNum(rQry:factura_asociada))), 8, "0")      //Factura Afectada
+         xlsx_set_string ::worksheet cell: "L"+hb_ntos(i) value: iif(Empty(rQry:factura_asociada), "", ALLTRIM(rQry:factura_asociada_serie) + "-" + PADL(ALLTRIM(hb_ntos(ToNum(rQry:factura_asociada))), 8, "0"))      //Factura Afectada
       endif
 
       if rQry:monto_retencion<>0 .AND. rQry:fecha < dDesde 
