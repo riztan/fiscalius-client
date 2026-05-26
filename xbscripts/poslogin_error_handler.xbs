@@ -4,38 +4,34 @@
  */
 
 procedure EnviarErroresAlServidor()
-   local cErrorDir, aFiles, aFile
+   local aFiles, aFile
    local cContenido, uResp, cArchivo
    local rEmpresa
-   
-   if type("oTPuy") != "O"
+
+   if !oTPuy:IsDef("rEmpresa")
       return
    endif
-   
+
    rEmpresa := oTPuy:rEmpresa
-   
-   if type("rEmpresa") != "O"
-      return
-   endif
-   
-   cErrorDir := oTPuy:cTempDir + "logs/"
-   
-   aFiles := DIRECTORY( cErrorDir + "error_*.log" )
-   
+
+/*
+   aFiles := DIRECTORY( "error_*.log" )
+
    if aFiles = NIL .or. LEN( aFiles ) = 0
       return
    endif
-   
+
    FOR EACH aFile IN aFiles
-      cArchivo := cErrorDir + aFile[1]
-      
+      cArchivo := aFile[1]
+*/
+      cArchivo := "error_.log"
       if FILE( cArchivo )
-         
+
          cContenido := MEMOREAD( cArchivo )
-         
+
          if !EMPTY( cContenido )
             uResp := rEmpresa:RecibirErrorCli( { "contenido" => cContenido } )
-            
+
             if hb_isLogical( uResp ) .and. uResp
                FERASE( cArchivo )
             endif
@@ -43,6 +39,7 @@ procedure EnviarErroresAlServidor()
             FERASE( cArchivo )
          endif
       endif
+/*
    NEXT
-   
+*/
 return

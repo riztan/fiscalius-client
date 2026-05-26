@@ -59,6 +59,9 @@ procedure errorcli( oForm, oWndParent, oEntParent )
           STRUCT { {"archivo","C",20,0},;
                    {"fecha","D",10,0},;
                    {"tamano","N",10,2},;
+                   {"usuario","C",30,0},;
+                   {"sesion_id","C",40,0},;
+                   {"ip_origen","C",20,0},;
                    {"contenido","C",200,0};
                   } ;
           DATA   aErrorCli
@@ -72,7 +75,13 @@ procedure errorcli( oForm, oWndParent, oEntParent )
    // Títulos de columnas
    oLBoxErr:SetColTitle( 1, "Archivo" )
    oLBoxErr:SetColTitle( 2, "Fecha" )
-   oLBoxErr:SetColTitle( 3, "Tamaño (bytes)" )
+   oLBoxErr:SetColTitle( 3, "Tamaño" )
+   oLBoxErr:SetColTitle( 4, "Usuario" )
+   oLBoxErr:SetColTitle( 5, "Sesión" )
+   oLBoxErr:SetColTitle( 6, "IP Origen" )
+   oLBoxErr:SetColTitle( 7, "Contenido" )
+
+   oLBoxErr:SetColVisible( 5, .F. )
    
    // Doble clic para ver contenido
    //oLBoxErr:oTreeView:Connect( "row-activated", {|| __VerContenidoErrorCli( oLBoxErr, aErrorCli ) } )
@@ -86,35 +95,35 @@ return
 
 procedure __ErrorCliBuscar( oWnd, rEmpresa, oModel, oList, oEntFecha )
    local cFecha
-   local aErrorCli
-   local aIter := ARRAY(3)
-   local nIndex
-   
+   local aErrorCli, aStruct
+
    cFecha := alltrim( oEntFecha:GetText() )
-   
+
    if Empty( cFecha )
       cFecha := DToS( DATE() )
    endif
-   
+
    aErrorCli := rEmpresa:GetErrorCliLog( {"fecha" => cFecha } )
-   
+
    if !hb_isArray( aErrorCli ) .or. LEN(aErrorCli) = 0
       MsgStop("No hay errores para la fecha indicada")
       return
    endif
-   
-   // Limpiar modelo
-   oModel:oTreeView:ClearModel(.t.)
-   
-   // Agregar datos
-   FOR nIndex := 1 TO LEN(aErrorCli)
-      aItem := aErrorCli[nIndex]
-      APPEND LIST_STORE oModel:oLbx ITER aIter ;
-             VALUES aItem["archivo"], ;
-                    aItem["fecha"], ;
-                    hb_ntos(aItem["tamano"])
-   NEXT
-   
+
+   aStruct := { {"archivo","C",20,0},;
+                {"fecha","D",10,0},;
+                {"tamano","N",10,2},;
+                {"usuario","C",30,0},;
+                {"sesion_id","C",40,0},;
+                {"ip_origen","C",20,0},;
+                {"contenido","C",200,0} }
+
+   DEFINE MODEL oModelNew ;
+          STRUCT aStruct ;
+          DATA   aErrorCli
+
+   oList:SetModel( oModelNew )
+
 return
 
 

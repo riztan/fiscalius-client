@@ -72,10 +72,10 @@ procedure poslogin( oParent )
 
    //View( hb_TToS( hb_DateTime() ) )
    oTPuy:nDTFactor := hb_DateTime() - tDBDateTime //net:hb_DateTime()  // diferencia de fecha/hora en local y el servidor.
-    oTPuy:bDTServer := {|| hb_DateTime() - oTPuy:nDTFactor }
+   oTPuy:bDTServer := {|| hb_DateTime() - oTPuy:nDTFactor }
 
-    // Enviar errores pendientes al servidor
-    EnviarErroresAlServidor( oForm )
+   // Enviar errores pendientes al servidor
+   EnviarErroresAlServidor( oForm )
 
 //   ::oLangs:= ::rEmpresa:Langs()
 
@@ -148,13 +148,13 @@ procedure poslogin( oParent )
       DEFINE MENUITEM ::oMnuAlicuotas ACTION oTPuy:RunXBS( "mae_alicuotas", oForm, oTPuy:oWnd ) ;
              ID "item_alicuotas" RESOURCE ::oRes
 			 
-	   DEFINE MENUITEM ::oMnuSeriesFis ACTION oTPuy:RunXBS( "vta_serie_fiscal", oForm, oTPuy:oWnd ) ;
+      DEFINE MENUITEM ::oMnuSeriesFis ACTION oTPuy:RunXBS( "vta_serie_fiscal", oForm, oTPuy:oWnd ) ;
              ID "item_serie_fiscal" RESOURCE ::oRes			 
 			 
       DEFINE MENUITEM ::oMnuSeriesCon ACTION oTPuy:RunXBS( "vta_series_consecutivos", oForm, oTPuy:oWnd ) ;
              ID "item_series_consecutivos" RESOURCE ::oRes
 	   
-	  DEFINE MENUITEM ::oMnuSeriesTip ACTION oTPuy:RunXBS( "vta_serie_tipos", oForm, oTPuy:oWnd ) ;
+      DEFINE MENUITEM ::oMnuSeriesTip ACTION oTPuy:RunXBS( "vta_serie_tipos", oForm, oTPuy:oWnd ) ;
              ID "item_serie_tipos" RESOURCE ::oRes
 			 
       DEFINE MENUITEM ::oMnuInventario ACTION oTPuy:RunXBS( "mae_inventario", oForm, oTPuy:oWnd ) ;
@@ -184,26 +184,26 @@ procedure poslogin( oParent )
       DEFINE MENUITEM ::oMnuVtaLibro ACTION oTPuy:RunXBS("vta_libro", oForm );  
              ID "itm_vta_libro" RESOURCE ::oRes
 
-       DEFINE MENUITEM ::oMnuAuditoria ACTION oTPuy:RunXBS("auditoria", oForm );  
-              ID "itm_auditoria" RESOURCE ::oRes
+      DEFINE MENUITEM ::oMnuAuditoria ACTION oTPuy:RunXBS("auditoria", oForm );  
+             ID "itm_auditoria" RESOURCE ::oRes
 
-       DEFINE MENUITEM ::oMnuErrorCli ACTION oTPuy:RunXBS("errorcli", oForm );  
-              ID "itm_errorcli" RESOURCE ::oRes
+      DEFINE MENUITEM ::oMnuErrorCli ACTION oTPuy:RunXBS("errorcli", oForm );  
+             ID "itm_errorcli" RESOURCE ::oRes
 
-       DEFINE MENUITEM ::oMnuAuditUs ACTION oTPuy:RunXBS("usabilidad", oForm );  
+      DEFINE MENUITEM ::oMnuAuditUs ACTION oTPuy:RunXBS("usabilidad", oForm );  
              ID "itm_usabilidad" RESOURCE ::oRes
 
-       DEFINE MENUITEM ::oMnuAudTransacciones ACTION oTPuy:RunXBS("auditoria_transacciones", oForm );
+      DEFINE MENUITEM ::oMnuAudTransacciones ACTION oTPuy:RunXBS("auditoria_transacciones", oForm );
              ID "itm_auditoria_transacciones" RESOURCE ::oRes
 
       DEFINE MENUITEM ::oMnuCtasCobrar ACTION oTPuy:RunXBS("vta_ctasxcobrar", oForm );  
-              ID "itm_ctasxcobrar" RESOURCE ::oRes
+             ID "itm_ctasxcobrar" RESOURCE ::oRes
 			  
-	  DEFINE MENUITEM ::oMnuVtaRep ACTION oTPuy:RunXBS("vta_rep_docvta", oForm );  
-              ID "itm_rep_docvta" RESOURCE ::oRes
+      DEFINE MENUITEM ::oMnuVtaRep ACTION oTPuy:RunXBS("vta_rep_docvta", oForm );  
+             ID "itm_rep_docvta" RESOURCE ::oRes
 
       DEFINE MENUITEM ::oMnuIGTFRep ACTION oTPuy:RunXBS("igtf_recibidos", oForm );  
-              ID "itm_igtf" RESOURCE ::oRes
+             ID "itm_igtf" RESOURCE ::oRes
 /*
        DEFINE MENUITEM ACTION oTPuy:RunXBS("auditoria", oForm );  
               ID "itm_auditoria" RESOURCE ::oRes
