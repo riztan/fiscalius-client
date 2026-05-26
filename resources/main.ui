@@ -111,6 +111,18 @@
     <property name="yalign">0.40000000596046448</property>
     <property name="pixbuf">../images/auditor_32.png</property>
   </object>
+  <object class="GtkImage" id="gtk-orientation13">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/auditor_32.png</property>
+  </object>
+  <object class="GtkImage" id="gtk-orientation14">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="yalign">0.40000000596046448</property>
+    <property name="pixbuf">../images/auditor_32.png</property>
+  </object>
   <object class="GtkImage" id="gtk-orientation2">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -643,6 +655,16 @@
     <property name="can_focus">False</property>
     <property name="pixbuf">../images/theme03_32.png</property>
   </object>
+  <object class="GtkImage" id="image80">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/auditor_32.png</property>
+  </object>
+  <object class="GtkImage" id="image81">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/auditor_32.png</property>
+  </object>
   <object class="GtkImage" id="image9">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -1150,7 +1172,7 @@
                               </object>
                             </child>
                             <child>
-                              <object class="GtkImageMenuItem" id="itm_auditoria">
+                              <object class="GtkImageMenuItem" id="itm_auditoria_mnu">
                                 <property name="label" translatable="yes">_Auditoria</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
@@ -1158,36 +1180,52 @@
                                 <property name="use_underline">True</property>
                                 <property name="image">gtk-orientation8</property>
                                 <property name="use_stock">False</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkImageMenuItem" id="itm_errorcli">
-                                <property name="label" translatable="yes">Errores Cliente</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Consulta errores registrados del cliente</property>
-                                <property name="image">gtk-orientation9</property>
-                                <property name="use_stock">False</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkImageMenuItem" id="itm_usabilidad">
-                                <property name="label" translatable="yes">Auditoria (Usabilidad)</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Consulta registros de auditoría en usabilidad del sistema</property>
-                                <property name="image">gtk-orientation12</property>
-                                <property name="use_stock">False</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkImageMenuItem" id="itm_auditoria_transacciones">
-                                <property name="label" translatable="yes">Auditoria (Transacciones)</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Consulta auditoría de transacciones de documentos</property>
-                                <property name="image">gtk-orientation13</property>
-                                <property name="use_stock">False</property>
+                                <child type="submenu">
+                                  <object class="GtkMenu" id="menu5">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <child>
+                                      <object class="GtkImageMenuItem" id="itm_auditoria">
+                                        <property name="label" translatable="yes">Auditoria General</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Auditoria general de base de datos</property>
+                                        <property name="image">image81</property>
+                                        <property name="use_stock">False</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkImageMenuItem" id="itm_auditoria_transacciones">
+                                        <property name="label" translatable="yes">Documentos de Venta</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Auditoria de transacciones en documentos de ventas</property>
+                                        <property name="image">image80</property>
+                                        <property name="use_stock">False</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkImageMenuItem" id="itm_usabilidad">
+                                        <property name="label" translatable="yes">Usabilidad</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Consulta registros de auditoría en usabilidad del sistema</property>
+                                        <property name="image">gtk-orientation13</property>
+                                        <property name="use_stock">False</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkImageMenuItem" id="itm_errorcli">
+                                        <property name="label" translatable="yes">Errores de la aplicación</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Consulta errores registrados del cliente</property>
+                                        <property name="image">gtk-orientation14</property>
+                                        <property name="use_stock">False</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
                               </object>
                             </child>
                           </object>
