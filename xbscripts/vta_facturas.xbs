@@ -470,6 +470,9 @@ function __FactValFecha( oForm, oEnt, dValPrevio, cTipo )
    default cTipo := ''
 
    if ::isDef( "oComboEstado" )
+      if LEFT(::oComboEstado:GetValue(), 1)="C"
+         return .T.
+      endif 
       if LEFT(::oComboEstado:GetValue(), 1)="B" 
          dDateMin := ::rVentas:FechaMin( 4 /*FACTURA*/)
          if CTOD( ::oEntFecha:getValue() ) < dDateMin
