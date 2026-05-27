@@ -38,14 +38,16 @@ procedure vta_orden_entrega( oFormParent )
    ::lNew     := .T.
    ::lSilence := .F.
 
+   ::oFormParent := oFormParent
+
    ::aDetal := {}
 
    ::cEmpresa  := oFormParent:cCBEmpresa
    ::rEmpresa  := oFormParent:oGEmpresa
    ::rVentas   := oFormParent:oGEmpresa:SetModulo("Ventas")
-   ::rGuia := ::rVentas:OrdenesEntrega()
+   ::rOrdEnt := ::rVentas:OrdenesEntrega()
   
-   if hb_isNIL( ::rGuia )
+   if hb_isNIL( ::rOrdEnt )
       MsgStop( "no se puede obtener información de guías de despacho" )
       Return 
    endif
@@ -73,7 +75,7 @@ procedure vta_orden_entrega( oFormParent )
    DEFINE LABEL ::oLabEmpresa TEXT "" MARKUP ID "lab_empresa" RESOURCE ::oRes
 
    DEFINE BUTTON ::oBtnGuardar ;
-          ACTION __GuiaSave( oForm, oFormParent ) ;
+          ACTION __OrdEntSave( oForm, oFormParent ) ;
           ID "btn_guardar" RESOURCE ::oRes
 
    if !hb_IsObject( oTPuy:oUser ) .or. ;
@@ -82,22 +84,22 @@ procedure vta_orden_entrega( oFormParent )
    endif
 
    DEFINE BUTTON ::oBtnConvertir ;
-          ACTION __GuiaConvertir( oForm, oFormParent ) ;
+          ACTION __OrdEntConvertir( oForm, oFormParent ) ;
           ID "btn_convert" RESOURCE ::oRes
 
    ::oBtnConvertir:Disable()
 
    DEFINE BUTTON ::oBtnImprime ;
-          ACTION __GuiaImprime( oForm ) ;
+          ACTION __OrdEntImprime( oForm ) ;
           ID "btn_print" RESOURCE ::oRes
 
 
    DEFINE BOX ::oBoxData ID "boxdata" RESOURCE ::oRes
 
-   DEFINE BOX ::oBoxGuia ID "vbox_factura" RESOURCE ::oRes
-          ::oBoxGuia:Hide()
+   DEFINE BOX ::oBoxOrdEnt ID "vbox_factura" RESOURCE ::oRes
+          ::oBoxOrdEnt:Hide()
 
-   DEFINE BUTTON ::oBtn ACTION __vtaGuia( oForm, oFormParent, ::oBoxGuia, ::oModGuias, .T.  ) ;
+   DEFINE BUTTON ::oBtn ACTION __vtaOrdEnt( oForm, oFormParent, ::oBoxOrdEnt, ::oModOrdEnts, .T.  ) ;
            ID "btn_add" RESOURCE ::oRes
 
 
@@ -106,10 +108,14 @@ procedure vta_orden_entrega( oFormParent )
 
    ::cCodVendedor := "1" // Valor preeterminado (por ahora y para siempre) RIGC
 
+   DEFINE LABEL ::oLabDestinatario ID "lab_destinatario" RESOURCE ::oRes
+
    ::cEntCli := ""
    ::cCodCli := ""
+   ::bEntCliAction := { || oTPuy:RunXBS("vta_clientes", ::oFormParent, ::oWnd, ::oEntCli, @::cCodCli) }
+          //ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oWnd, ::oEntCli, @::cCodCli) ;
    DEFINE ENTRY  ::oEntCli VAR ::cEntCli ;
-          ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oWnd, ::oEntCli, @::cCodCli) ;
+          ACTION ::bEntCliAction ;
           VALID  .T. ;
           ID "ent_clientes" RESOURCE ::oRes
 
@@ -121,13 +127,13 @@ procedure vta_orden_entrega( oFormParent )
    ::cFecha := DTOC( DATE() )
    ::cPFecha := ::cFecha
    DEFINE ENTRY TYPE DATE ::oEntFecha VAR ::cFecha CALENDAR ;
-          VALID __GuiaValFecha( oForm, ::oEntFecha, @::cPFecha, "doc" ) ;
+          VALID __OrdEntValFecha( oForm, ::oEntFecha, @::cPFecha, "doc" ) ;
           ID "ent_fecha" RESOURCE ::oRes
 
    ::cVcmto := DTOC( DATE() )
    ::cPVcmto := ::cVcmto
    DEFINE ENTRY TYPE DATE ::oEntVcmto VAR ::cVcmto CALENDAR ;
-          VALID __GuiaValFecha( oForm, ::oEntVcmto, @::cPVcmto, "vcmto" ) ;
+          VALID __OrdEntValFecha( oForm, ::oEntVcmto, @::cPVcmto, "vcmto" ) ;
           ID "ent_vcmto" RESOURCE ::oRes
 
    DEFINE BOX ::oBoxCondicion ID "box_condicion" RESOURCE ::oRes
@@ -139,7 +145,7 @@ procedure vta_orden_entrega( oFormParent )
 
    DEFINE COMBOBOX ::oComboCondicion ;
           VAR ::cCondicion ITEMS ::aCondiciones ;
-          ON CHANGE __GuiaCambiarClasificacion( oForm ) ;
+          ON CHANGE __OrdEntCambiarClasificacion( oForm ) ;
           OF ::oBoxCondicion
 
    ::cDestinatarioNombre := ""
@@ -181,19 +187,19 @@ procedure vta_orden_entrega( oFormParent )
 	::oComboSerie:Disable()
 		
   
-   __GuiaCargarSeries( oForm )
+   __OrdEntCargarSeries( oForm )
    
    */
 
    DEFINE BOX ::oBoxDivisa ID "box_divisa" RESOURCE ::oRes
    ::aMonedas := {}
    ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
-   __GuiaValFecha( oForm, ::oEntFecha, @::cPFecha )
+   __OrdEntValFecha( oForm, ::oEntFecha, @::cPFecha )
    ::cDivisa := ""
    ::nTasa   := 0
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
-          ON CHANGE __GuiaCalcula( oForm )   ;
+          ON CHANGE __OrdEntCalcula( oForm )   ;
           OF ::oBoxDivisa
 
    DEFINE BOX ::oBoxEstado ID "box_estado" RESOURCE ::oRes
@@ -202,7 +208,7 @@ procedure vta_orden_entrega( oFormParent )
    ::cComboEstado := ""
    DEFINE COMBOBOX ::oComboEstado ;
           VAR ::cComboEstado ITEMS ::aComboEstado ;
-          ON CHANGE ( __GuiaChangeEstado( oForm, ::lConfirm ) ) ;
+          ON CHANGE ( __OrdEntChangeEstado( oForm, ::lConfirm ) ) ;
           OF ::oBoxEstado
 
 
@@ -306,36 +312,36 @@ procedure vta_orden_entrega( oFormParent )
 */
 
    //-------------------------
-   DEFINE MODEL  ::oModGuias ;
-          STRUCT ::rGuia:Struct() ;
-          DATA   ::rGuia:GetData()
+   DEFINE MODEL  ::oModOrdEnts ;
+          STRUCT ::rOrdEnt:Struct() ;
+          DATA   ::rOrdEnt:GetData()
    
-   DEFINE LISTBOX ::oLBoxGuias ;
-          MODEL   ::oModGuias ;
+   DEFINE LISTBOX ::oLBoxOrdEnts ;
+          MODEL   ::oModOrdEnts ;
           OF      ::oBoxData
 
-   ::oLBoxGuias:lBar  := .f.
-   ::oLBoxGuias:bEdit := {|oModel| __vtaGuia( oForm, oFormParent, ::oBoxGuia, oModel, .F. ) }
+   ::oLBoxOrdEnts:lBar  := .f.
+   ::oLBoxOrdEnts:bEdit := {|oModel| __vtaOrdEnt( oForm, oFormParent, ::oBoxOrdEnt, oModel, .F. ) }
 
-   ::oLBoxGuias:Active() 
+   ::oLBoxOrdEnts:Active() 
 
    //View( oLBoxPedidos:GetCol(1):ClassName() )
    
-   ::oLBoxGuias:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
-   ::oLBoxGuias:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
-   ::oLBoxGuias:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
-   ::oLBoxGuias:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
-   ::oLBoxGuias:SetColVisible( 12, .f. )          //- - Ocultamos la serie fiscal
+   ::oLBoxOrdEnts:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
+   ::oLBoxOrdEnts:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
+   ::oLBoxOrdEnts:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
+   ::oLBoxOrdEnts:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
+   ::oLBoxOrdEnts:SetColVisible( 12, .f. )          //- - Ocultamos la serie fiscal
    
 
-   ::oLBoxGuias:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
-   ::oLBoxGuias:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
-   ::oLBoxGuias:SetColTitle( 4, "Fecha" )  //- Cambiamos el titulo 
-    ::oLBoxGuias:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
-   ::oLBoxGuias:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
-   ::oLBoxGuias:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
-   ::oLBoxGuias:SetColTitle( 10, "Tipo" )       //- Cambiamos el titulo 
-   //::oLBoxGuias:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo 
+   ::oLBoxOrdEnts:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
+   ::oLBoxOrdEnts:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
+   ::oLBoxOrdEnts:SetColTitle( 4, "Fecha" )  //- Cambiamos el titulo 
+    ::oLBoxOrdEnts:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
+   ::oLBoxOrdEnts:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
+   ::oLBoxOrdEnts:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
+   ::oLBoxOrdEnts:SetColTitle( 10, "Tipo" )       //- Cambiamos el titulo 
+   //::oLBoxOrdEnts:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo 
 
    ::hCol := hb_hash()
    ::hCol["numero"]           := 1
@@ -351,29 +357,31 @@ procedure vta_orden_entrega( oFormParent )
    ::hCol["serie_id"]         := 11
    ::hCol["serie_fiscal"]     := 12
 
-   //::oLBoxGuias:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
+   //::oLBoxOrdEnts:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 
    //-- Botones varios.
    DEFINE BUTTON ::oBtnSalir ACTION ::oWnd:End();
           ID "btn_salir" RESOURCE ::oRes
 
-   ACTIVATE WINDOW ::oWnd MODAL VALID __GuiaExit(oForm)
+   ACTIVATE WINDOW ::oWnd MODAL VALID __OrdEntExit(oForm)
+
+   __OrdEntCambiarClasificacion( oForm )
 
 return
 
 
 
-procedure __ModGuiaRefresh(oForm)
+procedure __ModOrdEntRefresh(oForm)
    local aLine, aIter := ARRAY(4)
    local bDetalCode
 
-   ::rGuia := ::rVentas:OrdenesEntrega()
-   if ::isDef("oModGuias")
-//View( ::oModGuias:oTreeView:IsGetSelected( aIter ) )
-      ::oModGuias:oTreeView:ClearModel(.t.)
-      FOR EACH aLine IN ::rGuia:GetData()
+   ::rOrdEnt := ::rVentas:OrdenesEntrega()
+   if ::isDef("oModOrdEnts")
+//View( ::oModOrdEnts:oTreeView:IsGetSelected( aIter ) )
+      ::oModOrdEnts:oTreeView:ClearModel(.t.)
+      FOR EACH aLine IN ::rOrdEnt:GetData()
 
-          APPEND LIST_STORE ::oModGuias:oLbx ITER aIter ;
+          APPEND LIST_STORE ::oModOrdEnts:oLbx ITER aIter ;
                  VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
                         ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
                         DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
@@ -384,17 +392,17 @@ procedure __ModGuiaRefresh(oForm)
       NEXT
 
       bDetalCode := {|oTView, pModel, aIter | ;
-                     iif( oTView:GetAutoValue(1, aIter)==::hGuia["numero"], ;
+                     iif( oTView:GetAutoValue(1, aIter)==::hOrdEnt["numero"], ;
                           gtk_tree_view_set_cursor( oTview:pWidget, oTView:getPath(aIter), NIL, .F.  ),;
                           .t. ) }
-      ::oLBoxGuias:ForEach( bDetalCode )
+      ::oLBoxOrdEnts:ForEach( bDetalCode )
 
    endif
 return 
 
 
 
-function __GuiaExit(oForm)
+function __OrdEntExit(oForm)
    if MsgNoYes("¿Realmente desea salir?")
       ::oTimer:End()
       oForm:Release()
@@ -404,7 +412,7 @@ return .F.
 
 
 
-function __GuiaValFecha( oForm, oEnt, dValPrevio, cTipo )
+function __OrdEntValFecha( oForm, oEnt, dValPrevio, cTipo )
    local lRes := .t.
    local nValor, rQry, bDetalCode
 
@@ -451,9 +459,9 @@ function __GuiaValFecha( oForm, oEnt, dValPrevio, cTipo )
 
    if hb_isObject( ::oModDetal )
       bDetalCode := {| oTView, pModel, aIter, pPath | ;
-                       __GuiaItemCalPre( oForm, oTView, pModel, aIter, rQry, ::oModDetal ) } 
+                       __OrdEntItemCalPre( oForm, oTView, pModel, aIter, rQry, ::oModDetal ) } 
       ::oLBoxDetal:ForEach( bDetalCode )
-      __GuiaCalcula(oForm)
+      __OrdEntCalcula(oForm)
    endif
 
    rQry:End()
@@ -462,7 +470,7 @@ return lRes
 
 
 
-procedure __GuiaItemCalPre( oForm, oTView, pModel, aIter, rQry, oModel )
+procedure __OrdEntItemCalPre( oForm, oTView, pModel, aIter, rQry, oModel )
    local nMonedaId := 1
    local nCantidad, nDescuento, nMonto, nImpPvp, nImpProduccion, nIvaPorcen, nIvaMonto:=0
    local nValor
@@ -508,9 +516,9 @@ procedure __GuiaItemCalPre( oForm, oTView, pModel, aIter, rQry, oModel )
                oModel:SetValue( 10, TRANSFORM(nIvaMonto, P_92), aIter )
             endif
             oModel:SetValue( 11, TRANSFORM( ROUND( nMonto + nIvaMonto ,2 ), P_92 ), aIter )
-            __GuiaSetValue( oTView, oModel, aIter, 6, TRANSFORM(nPrecio,P_92)  )
+            __OrdEntSetValue( oTView, oModel, aIter, 6, TRANSFORM(nPrecio,P_92)  )
 
-//            __GuiaCalMontos( oTView, pModel, aIter, oForm )
+//            __OrdEntCalMontos( oTView, pModel, aIter, oForm )
          endif
          rQry:Skip()
       EndDo
@@ -519,7 +527,7 @@ return
 
 
 
-function __GuiaCargarCondiciones( oForm )
+function __OrdEntCargarCondiciones( oForm )
    ::aCondiciones := {"Venta Diferida", "Traslado Interno", "Traslado a Tercero"}
    ::aCondicionesId := {"VENTA_DIFERIDA", "TRASLADO_SEDE", "TRASLADO_OTRO"}
 
@@ -534,7 +542,7 @@ return .T.
 
 
 
-static function __GuiaCondToDB( cDisplay )
+static function __OrdEntCondToDB( cDisplay )
    do case
       case cDisplay == "Venta Diferida"      ; return "VENTA_DIFERIDA"
       case cDisplay == "Traslado Interno"    ; return "TRASLADO_SEDE"
@@ -544,7 +552,7 @@ return "VENTA_DIFERIDA"
 
 
 
-static function __GuiaDBToDisplay( cDB )
+static function __OrdEntDBToDisplay( cDB )
    do case
       case cDB == "VENTA_DIFERIDA"  ; return "Venta Diferida"
       case cDB == "TRASLADO_SEDE"   ; return "Traslado Interno"
@@ -554,8 +562,12 @@ return "Venta Diferida"
 
 
 
-static procedure __GuiaCambiarClasificacion( oForm )
-   local lEsVenta := ( ::cCondicion == "Venta Diferida" )
+static procedure __OrdEntCambiarClasificacion( oForm )
+   local lEsVenta, lInterno, lOtro
+
+   lEsVenta := ( ::cCondicion == "Venta Diferida" .OR. ::cCondicion == "VENTA_DIFERIDA" )
+   lInterno := ( ::cCondicion == "Traslado Interno" )
+   lOtro    := ( ::cCondicion == "Traslado a Tercero" )
 
    // Mostrar/ocultar montos
    if hb_isObject( ::oBoxMontos )
@@ -568,13 +580,27 @@ static procedure __GuiaCambiarClasificacion( oForm )
 
    // Mostrar/ocultar selector de cliente
    if hb_isObject( ::oEntCli )
-      if lEsVenta
-         ::oEntCli:Show()
-         ::oEntCli:Enable()
-      else
-         ::oEntCli:Hide()
-         ::oEntCli:Disable()
-      endif
+      //if lEsVenta
+      Do Case
+      Case lEsVenta
+         //::oEntCli:SetAction( {|| View("Hola!") }  )  //riztan
+         //::bEntCliAction := {|| View("Aqui vamos!") }
+         ::oLabDestinatario:SetText("Cliente: ")
+         ::bEntCliAction := { || oTPuy:RunXBS("vta_clientes", ::oFormParent, ::oWnd, ::oEntCli, @::cCodCli) }
+         //::oEntCli:Show()
+         //::oEntCli:Enable()
+      Case lInterno
+         ::bEntCliAction := {|| View("TRASLADO INTERNO!") }
+         ::oLabDestinatario:SetText("Sede/Almacen: ")
+      Case lOtro
+         ::bEntCliAction := {|| View("TRASLADO A TERCERO") }
+         ::oLabDestinatario:SetText("Destinatario: ")
+      //Other
+      //   ::oEntCli:Hide()
+      //   ::oEntCli:Disable()
+      EndCase
+      ::oEntCli:SetAction( ::bEntCliAction )
+      ::oEntCli:SetValue("")
    endif
 
    // Mostrar/ocultar campos de destinatario texto
@@ -589,7 +615,7 @@ return
 
 
 
-function __GuiaCargarSeries( oForm )
+function __OrdEntCargarSeries( oForm )
    local rQrySeries
    
    rQrySeries := ::rEmpresa:SeriesFiscales(13)
@@ -621,20 +647,20 @@ return .T.
 
 
 
-procedure __GuiaChangeEstado( oForm, lConfirm )
+procedure __OrdEntChangeEstado( oForm, lConfirm )
 //View( ::cPreEstado + " --> " + ::cComboEstado )
    if ::lSilence ; return ; endif
 
    if ::cComboEstado = "Anulada" .or. ;
       ::cComboEstado = "Cerrada"
-      __GuiaRefresh( oForm, lConfirm )
-	  //__GuiaCargarSeries( oForm )
+      __OrdEntRefresh( oForm, lConfirm )
+	  //__OrdEntCargarSeries( oForm )
    // Tipo de guía ya se asignó en ::aCondiciones al inicio
       if ::cPreEstado == "B" 
-         __GuiaSave( oForm )
+         __OrdEntSave( oForm )
       endif
    else
-      __GuiaRefresh( oForm, !lConfirm )
+      __OrdEntRefresh( oForm, !lConfirm )
    endif
 return
 
@@ -642,7 +668,7 @@ return
 
 //-- Este procedimiento se ejecuta al solicitar una factura nueva o seleccionar 
 //   un pedido para consultar y/o editar.
-procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
+procedure __vtaOrdEnt( oForm, oFormParent, oBoxPedido, oModel, lNew )
 
    local lPreConfirm := ::lConfirm
    local aData, aLine
@@ -662,8 +688,8 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
    if ::lNew 
       ::lLoad      := .F.
       ::lSave      := .F.
-      ::rGuiaDoc    := ::rVentas:OrdenEntrega('')
-      ::hGuia    := ::rGuiaDoc:Data()
+      ::rOrdEntDoc    := ::rVentas:OrdenEntrega('')
+      ::hOrdEnt    := ::rOrdEntDoc:Data()
       ::rPedDetal  := nil  // No cargar detalles para nuevo documento
       ::cFecha := DTOC( DATE() )
 
@@ -680,7 +706,7 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
          ::oEntDestRif:SetValue( "" )
          ::oEntMotivo:SetValue( "" )
       endif
-      __GuiaCambiarClasificacion( oForm )
+      __OrdEntCambiarClasificacion( oForm )
 
       ::oEntOrdCompra:SetValue("")
 
@@ -708,18 +734,18 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
    else
       ::lLoad      := .T. // Consultando el documento.
       ::lSave      := .F.
-      ::rGuiaDoc   := ::rVentas:OrdenEntrega( oModel:GetCol( ::hCol["numero"] ) )
-      ::hGuia   := ::rGuiaDoc:Data()
-      ::rPedDetal := ::rGuiaDoc:Detal()
+      ::rOrdEntDoc   := ::rVentas:OrdenEntrega( oModel:GetCol( ::hCol["numero"] ) )
+      ::hOrdEnt   := ::rOrdEntDoc:Data()
+      ::rPedDetal := ::rOrdEntDoc:Detal()
 
-      ::cFecha := DTOC( ::hGuia["fecha"] )
+      ::cFecha := DTOC( ::hOrdEnt["fecha"] )
       //::oLabNumero:SetValue( STRZERO( VAL(oModel:GetCol(::hCol["numero"])), 8) )
       ::oLabNumero:SetValue( oModel:GetCol(::hCol["numero"]) )
-      ::oLabNroControl:SetValue( ::hGuia["numero_control"] )
+      ::oLabNroControl:SetValue( ::hOrdEnt["numero_control"] )
       ::oEntCli:SetValue( oModel:GetCol(::hCol["cliente"]) )
       ::cCodCli      := oModel:GetCol(::hCol["cliente_id"])
       ::cCondicionId := oModel:GetCol(::hCol["condicion_id"])
-      ::cCondicion   := __GuiaDBToDisplay( oModel:GetCol(::hCol["condicion_nombre"]) )
+      ::cCondicion   := __OrdEntDBToDisplay( oModel:GetCol(::hCol["condicion_nombre"]) )
       ::cSerieId     := oModel:GetCol(::hCol["serie_id"])
       ::cSerie       := oModel:GetCol(::hCol["serie_fiscal"])
    
@@ -729,9 +755,9 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
       endif
 
       // Destinatario y motivo
-      ::cDestinatarioNombre := hb_DefaultValue( ::hGuia["destinatario_nombre"], "" )
-      ::cDestinatarioRif    := hb_DefaultValue( ::hGuia["destinatario_rif"], "" )
-      ::cMotivoTraslado     := hb_DefaultValue( ::hGuia["motivo_traslado"], "" )
+      ::cDestinatarioNombre := hb_DefaultValue( ::hOrdEnt["destinatario_nombre"], "" )
+      ::cDestinatarioRif    := hb_DefaultValue( ::hOrdEnt["destinatario_rif"], "" )
+      ::cMotivoTraslado     := hb_DefaultValue( ::hOrdEnt["motivo_traslado"], "" )
       if hb_isObject( ::oEntDestNombre )
          ::oEntDestNombre:SetValue( ::cDestinatarioNombre )
          ::oEntDestRif:SetValue( ::cDestinatarioRif )
@@ -739,7 +765,7 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
       endif
 
       // Mostrar campos según clasificación
-      __GuiaCambiarClasificacion( oForm )
+      __OrdEntCambiarClasificacion( oForm )
 	/*	 
       if hb_isObject( ::oComboSerie ) .and. !empty( ::aSeries )
          ::oComboSerie:SetValue( ::cSerie )
@@ -750,22 +776,22 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::cCodVendedor := oModel:GetCol(::hCol["vendedor_id"])
       ::oEntFecha:SetValue( oModel:GetCol(::hCol["fecha"]) )
       ::oEntVcmto:SetValue( oModel:GetCol(::hCol["fecha_vcmto"]) )
-      ::oEntOrdCompra:SetValue( ::hGuia["orden_compra"] ) 
+      ::oEntOrdCompra:SetValue( ::hOrdEnt["orden_compra"] ) 
 
       ::oEntIvaE:SetValue( "0" )
       ::oEntIvaR:SetValue( "0" )
       ::oEntIvaG:SetValue( "0" )
       ::oEntIvaS:SetValue( "0" )
       // Usar otros_imp desde el servidor si existe, sino inicializar en 0
-      if hb_hHasKey( ::hGuia, "otros_imp" )
-         ::oEntOtrImp:SetValue( TRANSFORM( ::hGuia["otros_imp"], P_92 ) )        
-         ::oEntImpProd:SetValue( TRANSFORM( ::hGuia["imp_prod"], P_92 ) )
+      if hb_hHasKey( ::hOrdEnt, "otros_imp" )
+         ::oEntOtrImp:SetValue( TRANSFORM( ::hOrdEnt["otros_imp"], P_92 ) )        
+         ::oEntImpProd:SetValue( TRANSFORM( ::hOrdEnt["imp_prod"], P_92 ) )
       else
          ::oEntOtrImp:SetValue( "0" )
          ::oEntImpProd:SetValue( "0" )
       endif
 
-      FOR EACH hIva IN ::hGuia["iva"]
+      FOR EACH hIva IN ::hOrdEnt["iva"]
          if hIva["porcentaje"] = 0
             ::oEntIvaE:SetValue( TRANSFORM(hIva["monto"],P_92) )
          endif
@@ -786,27 +812,27 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
 
       NEXT
 
-      ::oEntMonBase:SetValue( TRANSFORM(::hGuia["monto_base"],P_92) ) //oModel:GetCol(::hCol["monto base"]) 
-      ::oEntTotal:SetValue( TRANSFORM(::hGuia["monto_total"],P_92) )  
-      //::oEntTotBs:SetValue( TRANSFORM(::hGuia["monto_total"]*TONUM(SUBSTR(::cDivisa,5)),P_92) )  
+      ::oEntMonBase:SetValue( TRANSFORM(::hOrdEnt["monto_base"],P_92) ) //oModel:GetCol(::hCol["monto base"]) 
+      ::oEntTotal:SetValue( TRANSFORM(::hOrdEnt["monto_total"],P_92) )  
+      //::oEntTotBs:SetValue( TRANSFORM(::hOrdEnt["monto_total"]*TONUM(SUBSTR(::cDivisa,5)),P_92) )  
 
       ::lConfirm := .F.
       do case
-      case ::hGuia["estado"] = "B"
+      case ::hOrdEnt["estado"] = "B"
          ::oComboEstado:SetValue( "Borrador" )
-      case ::hGuia["estado"] = "A"
+      case ::hOrdEnt["estado"] = "A"
          ::oComboEstado:SetValue( "Anulada"  )
-      case ::hGuia["estado"] = "C"
+      case ::hOrdEnt["estado"] = "C"
          ::oComboEstado:SetValue( "Cerrada"  )
       endcase
-      ::cPreEstado := ::hGuia["estado"] //::cComboEstado
+      ::cPreEstado := ::hOrdEnt["estado"] //::cComboEstado
       ::lConfirm := lPreconfirm
 
       //::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
 
    endif
 
-   __GuiaValFecha( oForm, ::oEntFecha, @::cPFecha )
+   __OrdEntValFecha( oForm, ::oEntFecha, @::cPFecha )
 
    if !hb_isObject( ::oModDetal )
 
@@ -921,9 +947,9 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
              MODEL   ::oModDetal  ;
              OF      ::oBoxDetalles
       ::oLBoxDetal:lBar  := .f.
-      ::oLBoxDetal:bNew  := {|| __GuiaAddDetal( oForm ) }
+      ::oLBoxDetal:bNew  := {|| __OrdEntAddDetal( oForm ) }
       ::oLBoxDetal:bEdit := {|| .T. }
-      ::oLBoxDetal:bDel  := {|| __GuiaDelDetal( oForm ) }
+      ::oLBoxDetal:bDel  := {|| __OrdEntDelDetal( oForm ) }
 
       ::oLBoxDetal:SetColVisible( 01, .f. )
       ::oLBoxDetal:SetColVisible( 02, .f. )
@@ -1015,7 +1041,7 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
    oCol := ::oModDetal:aCol[__CODIGO] // Codigo
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __GuiaEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __OrdEntEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __CODIGO )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -1023,7 +1049,7 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
    oCol := ::oModDetal:aCol[__DESCRIPCION] // Descripcion
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __GuiaEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __OrdEntEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __DESCRIPCION )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -1032,7 +1058,7 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
    oCol := ::oModDetal:aCol[__CANTIDAD] // Cantidad
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __GuiaEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __OrdEntEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __CANTIDAD )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -1041,7 +1067,7 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
    oCol := ::oModDetal:aCol[__PRECIO] // Cantidad
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __GuiaEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __OrdEntEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __PRECIO )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -1050,7 +1076,7 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
    oCol := ::oModDetal:aCol[__DESCUENTO] // Cantidad
    oCol:oRenderer:SetEditable( .T. )
    oCol:oRenderer:bEdited := {|oSender, path, uVal, aIter|;
-                               __GuiaEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
+                               __OrdEntEditInv( oForm, oSender, path, uVal, ::oModDetal:aIter,;
                                           ::oModDetal:oLbx, ::oModDetal:oTreeView, __DESCUENTO )  }
    oCol:oRenderer:SetColumn( oCol )
 
@@ -1059,13 +1085,13 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
 
     //-- Continuamos, calcular valores.
    ::oEntMonBase:SetValue("0")
-   ::bDetalCode := {|oTView, pModel, aIter| __GuiaCalMontos( oTView, pModel, aIter, oForm ) }
+   ::bDetalCode := {|oTView, pModel, aIter| __OrdEntCalMontos( oTView, pModel, aIter, oForm ) }
    ::oLBoxDetal:ForEach( ::bDetalCode )
 
 
       //::oEntMonBase:SetValue( "0" )
-   __GuiaRefresh( oForm, .F. )
-   __GuiaCalcula(oForm)
+   __OrdEntRefresh( oForm, .F. )
+   __OrdEntCalcula(oForm)
 
    FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE}, ;
                       {::oBoxIvaRed, ::oEntIvaR}, ;
@@ -1080,7 +1106,7 @@ procedure __vtaGuia( oForm, oFormParent, oBoxPedido, oModel, lNew )
       endif
    NEXT
 
-//View( ::hGuia )
+//View( ::hOrdEnt )
 
    oBoxPedido:Show()
 
@@ -1090,7 +1116,7 @@ return
 
 
 
-procedure __GuiaEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
+procedure __OrdEntEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, nCol )
    local pNextCol, pPath, uPrevio
 
    //-  ignoramos la edición si el documento esta anulado o cerrado.
@@ -1103,8 +1129,8 @@ procedure __GuiaEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, 
    uPrevio := oTreeView:GetAutoValue( nCol )
 
    if nCol=__CODIGO
-      //__GuiaSetValue( oTreeView, oModel, aIter, nCol, uVal )
-      __GuiaProductos( oForm, uVal, oModel, nCol, oTreeView, aIter )
+      //__OrdEntSetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __OrdEntProductos( oForm, uVal, oModel, nCol, oTreeView, aIter )
       if oTreeView:GetAutoValue( 13 ) = "S" // Tipo de Inventario  V-Venta S-Servicio
          oTreeView:SetPosCol( aIter, __DESCRIPCION, .f. )
       else
@@ -1115,8 +1141,8 @@ procedure __GuiaEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, 
 
    if nCol=__DESCRIPCION 
 //View( oTreeView:GetAutoValue(28)
-      __GuiaSetValue( oTreeView, oModel, aIter, nCol, uVal )
-      //__GuiaProductos( oForm, uVal, oModel, nCol, oTreeView, aIter )
+      __OrdEntSetValue( oTreeView, oModel, aIter, nCol, uVal )
+      //__OrdEntProductos( oForm, uVal, oModel, nCol, oTreeView, aIter )
       oTreeView:SetPosCol( aIter, __CANTIDAD, .f. )
       return
    endif
@@ -1128,8 +1154,8 @@ procedure __GuiaEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, 
    endif
 
    if nCol=__CANTIDAD
-      __GuiaSetValue( oTreeView, oModel, aIter, nCol, uVal )
-      __GuiaCalcula( oForm )
+      __OrdEntSetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __OrdEntCalcula( oForm )
       oTreeView:SetPosCol( aIter, __PRECIO, .f. )
       //oTreeView:GoNext()
       return
@@ -1138,11 +1164,11 @@ procedure __GuiaEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, 
    if nCol=__PRECIO
       if ToNum(uVal) <=0
          ::oLabInfo:SetText("El precio no puede ser menor o igual a cero")
-         __GuiaSetValue( oTreeView, oModel, aIter, nCol, uPrevio )
+         __OrdEntSetValue( oTreeView, oModel, aIter, nCol, uPrevio )
          return
       endif
-      __GuiaSetValue( oTreeView, oModel, aIter, nCol, uVal )
-      __GuiaCalcula( oForm )
+      __OrdEntSetValue( oTreeView, oModel, aIter, nCol, uVal )
+      __OrdEntCalcula( oForm )
       oTreeView:SetPosCol( aIter, __DESCUENTO, .f. )
       return
    endif
@@ -1153,16 +1179,16 @@ procedure __GuiaEditInv( oForm, oSender, cPath, uVal, aIter, oModel, oTreeView, 
          uVal := hb_ntos( ROUND( ToNum( oTreeView:GetAutoValue( __PRECIO ))  * ;
                           ( ToNum(uVal)/100 ) * ;
                             ToNum( oTreeView:GetAutoValue( __CANTIDAD ) ), 2) )
-         __GuiaSetValue( oTreeView, oModel, aIter, nCol, uVal )
+         __OrdEntSetValue( oTreeView, oModel, aIter, nCol, uVal )
       endif
       if ToNum(uVal) < ( ToNum(oTreeView:GetAutoValue( __CANTIDAD )) * ;
                          ToNum(oTreeView:GetAutoValue( __PRECIO   )) )
-         __GuiaSetValue( oTreeView, oModel, aIter, nCol, uVal )
-         __GuiaCalcula( oForm )
+         __OrdEntSetValue( oTreeView, oModel, aIter, nCol, uVal )
+         __OrdEntCalcula( oForm )
          oTreeView:SetPosCol( aIter, __TOTAL, .f. )
       else
          ::oLabInfo:SetText("El descuento no puede ser mayor o igual al monto del item.")
-         __GuiaSetValue( oTreeView, oModel, aIter, nCol, '0,00' )
+         __OrdEntSetValue( oTreeView, oModel, aIter, nCol, '0,00' )
       endif
       return
    endif
@@ -1170,7 +1196,7 @@ return
 
 
 
-PROCEDURE __GuiaSetValue( oTreeView, oModel, aIter, nCol, uValue  )
+PROCEDURE __OrdEntSetValue( oTreeView, oModel, aIter, nCol, uValue  )
    local nMonto, nDescuento, nIvaPorcen, nIvaMonto:= 0
    local nImpPvp:=0,nImpProduccion:=0
 
@@ -1236,7 +1262,7 @@ RETURN
 
 
 
-procedure __GuiaCalcula( oForm )
+procedure __OrdEntCalcula( oForm )
    local nOtrosImp := 0, aTasa
 
    ::oEntTotal:SetValue("0")
@@ -1248,8 +1274,8 @@ procedure __GuiaCalcula( oForm )
    ::oEntIvaS:SetValue("0")
    ::oEntOtrImp:SetValue("0") // Initialize otros_imp
    ::oEntImpProd:SetValue("0") // Initialize imp_prod
-   ::hGuia["iva"] := hb_hash()  // Initialize IVA hash here, once
-   ::bDetalCode := {|oTView, pModel, aIter| __GuiaCalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
+   ::hOrdEnt["iva"] := hb_hash()  // Initialize IVA hash here, once
+   ::bDetalCode := {|oTView, pModel, aIter| __OrdEntCalMontos( oTView, pModel, aIter, oForm, @nOtrosImp ) }
    
    if !hb_isObject( ::oLBoxDetal )
       return
@@ -1271,7 +1297,7 @@ return
 
 
 
-procedure __GuiaCalMontos( oTView, pModel, aIter, oForm )
+procedure __OrdEntCalMontos( oTView, pModel, aIter, oForm )
    local nBase:=0, nMonto:=0, nTotal:=0, cIva, nImpPvp, nImpProduccion, nOtrImp:=0,nImpProd:=0,aBox
 
 //   nMonto := ROUND( ToNum( oTView:GetAutoValue(__CANTIDAD, aIter) )*;
@@ -1326,22 +1352,22 @@ procedure __GuiaCalMontos( oTView, pModel, aIter, oForm )
          nTotal := ROUND( nBase+nMonto, 2 )
          ::oEntIvaS:SetValue( TRANSFORM( nTotal, P_92 ) )
       endif
-            //if !hb_hHasKey( ::hGuia, "iva" )
-      //   ::hGuia["iva"] := hb_hash()
+            //if !hb_hHasKey( ::hOrdEnt, "iva" )
+      //   ::hOrdEnt["iva"] := hb_hash()
       //endif
       cIva := ALLTRIM( STRTRAN(STRTRAN(oTView:GetAutoValue(__IVAPORCEN, aIter),",",""), ".","") )
-      if hb_hHasKey( ::hGuia["iva"], cIva )
-         nMonto += ::hGuia["iva"][cIva]["monto"]
+      if hb_hHasKey( ::hOrdEnt["iva"], cIva )
+         nMonto += ::hOrdEnt["iva"][cIva]["monto"]
       endif
-//View( hb_valtoexp( ::hGuia["iva"] ) )
+//View( hb_valtoexp( ::hOrdEnt["iva"] ) )
 
-hb_hSet( ::hGuia["iva"], cIva, ;
+hb_hSet( ::hOrdEnt["iva"], cIva, ;
                { "porcentaje" => ToNum(oTView:GetAutoValue(__IVAPORCEN, aIter)), ;
                  "monto"      => nMonto ;
                } )
 
-///View( "registrado iva "+cIva+hb_ntos( len(::hGuia["iva"]) ) )
-//View( ::hGuia )
+///View( "registrado iva "+cIva+hb_ntos( len(::hOrdEnt["iva"]) ) )
+//View( ::hOrdEnt )
    endif
 
    nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
@@ -1378,7 +1404,7 @@ return
 
 
 
-procedure __GuiaAddDetal( oForm )
+procedure __OrdEntAddDetal( oForm )
    local aIter := ARRAY(4)
     local aLine := {'','','','','','','','','','','','','','','','','','','','','','','','','','','',''}
 
@@ -1410,9 +1436,9 @@ return
 
 
 
-procedure __GuiaRefresh( oForm, lConfirm )
+procedure __OrdEntRefresh( oForm, lConfirm )
 
-   if !hb_isHash( ::hGuia ) .or. !hb_hHasKey( ::hGuia, "estado" )
+   if !hb_isHash( ::hOrdEnt ) .or. !hb_hHasKey( ::hOrdEnt, "estado" )
       return
    endif
 
@@ -1430,16 +1456,16 @@ procedure __GuiaRefresh( oForm, lConfirm )
    ::oEntIvaS:SetEditable( .F. )
    ::oEntMonBase:SetEditable( .F. )
 
-   if (::hGuia["estado"] = "A" .or. ::hGuia["estado"] = "C") .or. ;
+   if (::hOrdEnt["estado"] = "A" .or. ::hOrdEnt["estado"] = "C") .or. ;
       ( ::cComboEstado = "A" .or. ::cComboEstado = "C" )
       ::oEntCli:Disable()
       ::oEntFecha:Disable()
       ::oEntVcmto:Disable()
-      if ::hGuia["estado"]="C"
+      if ::hOrdEnt["estado"]="C"
 
           ::oBtnImprime:Enable() 
        endif
-       if ::hGuia["estado"]="A"
+       if ::hOrdEnt["estado"]="A"
 
           ::oBtnImprime:Disable() 
        endif
@@ -1466,7 +1492,7 @@ return
 
 
 
-Procedure __GuiaDelDetal( oForm )
+Procedure __OrdEntDelDetal( oForm )
    local aIter := ARRAY(4)
    local pPath
  
@@ -1480,7 +1506,7 @@ Procedure __GuiaDelDetal( oForm )
       pPath := ::oModDetal:oTreeView:GetPath( aIter )
       if !Empty( ::oModDetal:oTreeView:GetAutoValue( 20 ) )
          if MsgNoYes( "¿Realmente desea eliminar este item?" )
-            if !::rGuiaDoc:DelItem( ALLTRIM( ::oModDetal:oTreeView:GetAutoValue( 20 ) ) ) //20-> ITEM
+            if !::rOrdEntDoc:DelItem( ALLTRIM( ::oModDetal:oTreeView:GetAutoValue( 20 ) ) ) //20-> ITEM
                return 
             endif
          endif
@@ -1489,26 +1515,26 @@ Procedure __GuiaDelDetal( oForm )
       gtk_tree_view_set_cursor( ::oModDetal:oTreeView:pWidget, pPath )
 
    endif
-   __GuiaCalcula( oForm )
+   __OrdEntCalcula( oForm )
 return
 
 
 
-Procedure __GuiaSave( oForm, oFormParent )
+Procedure __OrdEntSave( oForm, oFormParent )
    local bSaveDetal, uResp, dUltimaFecha, aIter := ARRAY(4), lSuccess := .F., nIdx:=0
    local hCorrel 
    
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
-       __GuiaCalcula( oForm )
-//View( hb_valtoexp( ::hGuia ) )
-      ::rGuiaDoc:ActualizarFlujos( ::hGuia )
+       __OrdEntCalcula( oForm )
+//View( hb_valtoexp( ::hOrdEnt ) )
+      ::rOrdEntDoc:ActualizarFlujos( ::hOrdEnt )
       MsgAlert( "Este documento no es objeto para ser alterado y luego almacenar.", "Atención" )
       return 
    endif
 
    //-- Se verifica la fecha de la factura. No puede ser menor a la ultima registrada
-   dUltimaFecha := ::rGuiaDoc:Ultima()["fecha"]
+   dUltimaFecha := ::rOrdEntDoc:Ultima()["fecha"]
    if dUltimaFecha > CTOD(::oEntFecha:GetValue())
       ::oEntFecha:SetValue( DTOC( dUltimaFecha ) )
       if dUltimaFecha > CTOD(::oEntVcmto:GetValue())
@@ -1517,24 +1543,24 @@ Procedure __GuiaSave( oForm, oFormParent )
       ::oLabInfo:SetText( "Ajustado valor de fecha." )
    endif
 
-   ::hGuia["cliente_id"       ] := ::cCodCli                    // Cliente (solo VENTA_DIFERIDA)
-   ::hGuia["vendedor_id"      ] := ::cCodVendedor               // Vendedor
-   ::hGuia["fecha"            ] := CTOD(::oEntFecha:GetValue()) // Fecha
-   ::hGuia["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue()) // Vencimiento
-   ::hGuia["clasificacion"    ] := __GuiaCondToDB( ::cCondicion )
-   ::hGuia["condicion_id"     ] := '1'                          // Condicion fija
-   ::hGuia["destinatario_nombre"] := ::cDestinatarioNombre
-   ::hGuia["destinatario_rif" ] := ::cDestinatarioRif
-   ::hGuia["motivo_traslado"  ] := ::cMotivoTraslado
-   ::hGuia["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
-   ::hGuia["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
-   ::hGuia["imp_prod"         ] := ::oEntImpProd:GetValue()     // Impuesto Produccion
-   ::hGuia["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
-   ::hGuia["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
+   ::hOrdEnt["cliente_id"       ] := ::cCodCli                    // Cliente (solo VENTA_DIFERIDA)
+   ::hOrdEnt["vendedor_id"      ] := ::cCodVendedor               // Vendedor
+   ::hOrdEnt["fecha"            ] := CTOD(::oEntFecha:GetValue()) // Fecha
+   ::hOrdEnt["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue()) // Vencimiento
+   ::hOrdEnt["clasificacion"    ] := __OrdEntCondToDB( ::cCondicion )
+   ::hOrdEnt["condicion_id"     ] := '1'                          // Condicion fija
+   ::hOrdEnt["destinatario_nombre"] := ::cDestinatarioNombre
+   ::hOrdEnt["destinatario_rif" ] := ::cDestinatarioRif
+   ::hOrdEnt["motivo_traslado"  ] := ::cMotivoTraslado
+   ::hOrdEnt["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
+   ::hOrdEnt["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
+   ::hOrdEnt["imp_prod"         ] := ::oEntImpProd:GetValue()     // Impuesto Produccion
+   ::hOrdEnt["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
+   ::hOrdEnt["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
 
-   //::hGuia["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
-   ::hGuia["serie_id"]        := ""
-   ::cSerieID:=::hGuia["serie_id"]
+   //::hOrdEnt["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
+   ::hOrdEnt["serie_id"]        := ""
+   ::cSerieID:=::hOrdEnt["serie_id"]
      //::hFactura["serie_nombre"     ] := ::cSerie
 	 //view(::aSeriesId)
 	 //view(nidx)
@@ -1554,13 +1580,13 @@ Procedure __GuiaSave( oForm, oFormParent )
 	
 
 
-//   View( ::hGuia["iva"] ) 
+//   View( ::hOrdEnt["iva"] ) 
 
-//View( ::hGuia )
+//View( ::hOrdEnt )
 //return
 
-   uResp := ::rGuiaDoc:SetData( ::hGuia )
-   ::hGuia := ::rGuiaDoc:Data()
+   uResp := ::rOrdEntDoc:SetData( ::hOrdEnt )
+   ::hOrdEnt := ::rOrdEntDoc:Data()
 //View( uResp )
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
       ::oLabInfo:SetText( uResp["message"] )
@@ -1569,10 +1595,10 @@ Procedure __GuiaSave( oForm, oFormParent )
    endif
 
    //-- Actualizar detalles de la factura.
-   bSaveDetal := {|oTView, pModel, aIter| __GuiaSaveDetal( oTView, pModel, aIter, oForm )  }
+   bSaveDetal := {|oTView, pModel, aIter| __OrdEntSaveDetal( oTView, pModel, aIter, oForm )  }
 
-//View( ::hGuia )
-   uResp := ::rGuiaDoc:Save()
+//View( ::hOrdEnt )
+   uResp := ::rOrdEntDoc:Save()
 
    // Verificar si hubo error
    lSuccess := .F.
@@ -1588,22 +1614,22 @@ Procedure __GuiaSave( oForm, oFormParent )
          ::oLabInfo:SetText( uResp["message"] )
       endif
 //View("atualizamos hPedido ")
-      ::hGuia   := ::rGuiaDoc:Data()
+      ::hOrdEnt   := ::rOrdEntDoc:Data()
       //-- Importante invocar SetDetal después de rPedido:Save() 
       //   para obtener primero el nro del documento
       ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
-      if !::rGuiaDoc:SetDetal( ::aDetal )
+      if !::rOrdEntDoc:SetDetal( ::aDetal )
          ::oLabInfo:SetText("No se actualizaron los detalles" )
          uResp := .F.
       endif
 
-      if VALTYPE(::hGuia["numero"])="C" .AND. ToNum(::hGuia["numero"])>0
-         ::oLabNumero:SetValue( STRZERO( ToNum(::hGuia["numero"]), 8) )
-      elseif VALTYPE(::hGuia)="N" 
-         ::oLabNumero:SetValue( ALLTRIM(STR(::hGuia["numero"])) )
-      elseif VALTYPE(::hGuia)="C"
-         ::oLabNumero:SetValue( ALLTRIM(::hGuia["numero"]) )
+      if VALTYPE(::hOrdEnt["numero"])="C" .AND. ToNum(::hOrdEnt["numero"])>0
+         ::oLabNumero:SetValue( STRZERO( ToNum(::hOrdEnt["numero"]), 8) )
+      elseif VALTYPE(::hOrdEnt)="N" 
+         ::oLabNumero:SetValue( ALLTRIM(STR(::hOrdEnt["numero"])) )
+      elseif VALTYPE(::hOrdEnt)="C"
+         ::oLabNumero:SetValue( ALLTRIM(::hOrdEnt["numero"]) )
       endif
       if ::lNew
          ::lNew := .F.
@@ -1611,13 +1637,13 @@ Procedure __GuiaSave( oForm, oFormParent )
          //-- Igual debemos atualizar valor de numero asignado si hubo cambio de estado a "Cerrado"
       endif
 
-      __ModGuiaRefresh( oForm )
+      __ModOrdEntRefresh( oForm )
       //-- Este paso es importante para que se actualicen los nros de item en la app cliente.
       //   Y asi evitar que vuelva a insertar datos. (RIGC-JUN2025)
-      //::oModGuias:oTreeView:ClearModel(.t.)
+      //::oModOrdEnts:oTreeView:ClearModel(.t.)
       if !hb_isNIL( oFormParent )
-         if ::oModGuias:oTreeView:IsGetSelected( aIter )
-            __vtaGuia( oForm, oFormParent, ::oBoxGuia, ::oModGuias, .F. )
+         if ::oModOrdEnts:oTreeView:IsGetSelected( aIter )
+            __vtaOrdEnt( oForm, oFormParent, ::oBoxOrdEnt, ::oModOrdEnts, .F. )
          endif
        endif
     endif
@@ -1626,7 +1652,7 @@ return
 
 
 
-procedure __GuiaSaveDetal(oTView, pModel, aIter, oForm)
+procedure __OrdEntSaveDetal(oTView, pModel, aIter, oForm)
    local hDetal := hb_hash()
 //   nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
 //   View( oTView:GetAutoValue( __CODIGO ) )
@@ -1634,7 +1660,7 @@ procedure __GuiaSaveDetal(oTView, pModel, aIter, oForm)
 //   View( oTView:GetAutoValue( 3 ) )
 
     //hDetal["id"               ] := ALLTRIM(oTView:GetAutoValue( 01 ))
-   hDetal["documento_id"     ] := ::hGuia[ "id" ]
+   hDetal["documento_id"     ] := ::hOrdEnt[ "id" ]
    hDetal["codigo_local"     ] := ALLTRIM(oTView:GetAutoValue( 03, aIter ))
    hDetal["descripcion"      ] := oTView:GetAutoValue( 04, aIter )
    hDetal["cantidad"         ] := ToNum( oTView:GetAutoValue( 05, aIter ) )
@@ -1663,34 +1689,34 @@ return
 
 
 
-PROCEDURE __GuiaImprime( oForm )
+PROCEDURE __OrdEntImprime( oForm )
 
    oTPuy:RunXBS( "vta_imprimir_pdf_pedido", oForm )
   
 RETURN
 
 
-PROCEDURE __GuiaConvertir( oForm, oFormParent )
+PROCEDURE __OrdEntConvertir( oForm, oFormParent )
    local uResp, i, aLine
 
-   if ::hGuia["estado"] != "C"
+   if ::hOrdEnt["estado"] != "C"
       MsgInfo( "El pedido debe estar cerrado para convertir a factura." )
       RETURN
    endif
 
    if MsgYesNo( "¿Convertir este pedido a factura?", "Confirmar" )
 
-      uResp := ::rGuiaDoc:ConvertirFactura()
+      uResp := ::rOrdEntDoc:ConvertirFactura()
       
       if hb_isHash( uResp ) .and. hb_hHasKey( uResp, "ok" )
          if uResp["ok"]
             MsgInfo( "Pedido convertido a factura correctamente.", "Éxito" )
             // Recargar lista de pedidos
-            ::rGuia := ::rVentas:OrdenesEntrega()
-            if ::isDef("oModGuias")
-               ::oModGuias:oTreeView:ClearModel(.t.)
-               FOR EACH aLine IN ::rGuia:GetData()
-                  APPEND LIST_STORE ::oModGuias:oLbx ITER aIter ;
+            ::rOrdEnt := ::rVentas:OrdenesEntrega()
+            if ::isDef("oModOrdEnts")
+               ::oModOrdEnts:oTreeView:ClearModel(.t.)
+               FOR EACH aLine IN ::rOrdEnt:GetData()
+                  APPEND LIST_STORE ::oModOrdEnts:oLbx ITER aIter ;
                          VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
                                 ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
                                 DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
@@ -1703,13 +1729,13 @@ PROCEDURE __GuiaConvertir( oForm, oFormParent )
       elseif hb_isLogical( uResp )
          if uResp
             MsgInfo( "Pedido convertido a factura correctamente.", "Éxito" )
-            ::rGuia := ::rVentas:OrdenesEntrega()
-            if ::isDef("oModGuias")
-               ::oModGuias:oTreeView:ClearModel(.t.)
-               ::aGuias := ::rGuia:GetData()
-               FOR i := 1 TO Len( ::aGuias )
-                  aLine := ::aGuias[ i ]
-                  APPEND LIST_STORE ::oModGuias:oLbx ITER aIter ;
+            ::rOrdEnt := ::rVentas:OrdenesEntrega()
+            if ::isDef("oModOrdEnts")
+               ::oModOrdEnts:oTreeView:ClearModel(.t.)
+               ::aOrdEnts := ::rOrdEnt:GetData()
+               FOR i := 1 TO Len( ::aOrdEnts )
+                  aLine := ::aOrdEnts[ i ]
+                  APPEND LIST_STORE ::oModOrdEnts:oLbx ITER aIter ;
                          VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
                                 ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
                                 DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
@@ -1726,7 +1752,7 @@ PROCEDURE __GuiaConvertir( oForm, oFormParent )
 RETURN
 
 
-FUNCTION __Guiaf_CalPrecio( oForm, cPrecio, cDivisa )
+FUNCTION __OrdEntf_CalPrecio( oForm, cPrecio, cDivisa )
    Local cValue := '1', rQry, rValor := 1
    Local nPrecio := ToNum( cPrecio )  //ToNum(oModel:oTreeView:GetAutoValue( 10 )) 
    //Local cDivisa := oModel:oTreeView:GetAutoValue( 29 ) //Codigo de Moneda
@@ -1747,7 +1773,7 @@ RETURN STR( nPrecio )
 
 
 
-PROCEDURE __GuiaProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
+PROCEDURE __OrdEntProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
    local oRes, oImgBanner, oImgLogo
    local oBoxData, oModProductos, oLBoxInv
    local uValue, cLabTitulo := "Productos o Conceptos"
@@ -1760,60 +1786,60 @@ PROCEDURE __GuiaProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
    rProductos := ::rVentas:Productos( cStr )
 
    if rProductos:RecCount() = 1
-      __GuiaSetValue( ::oModDetal:oTreeView, ;
+      __OrdEntSetValue( ::oModDetal:oTreeView, ;
  	          ::oModDetal:oLbx, ;
 	          ::oModDetal:aIter, __CODIGO, ;
 	          rProductos:codigo_local )
 
-      __GuiaSetValue( ::oModDetal:oTreeView, ;
+      __OrdEntSetValue( ::oModDetal:oTreeView, ;
  	          ::oModDetal:oLbx, ;
 	          ::oModDetal:aIter, __DESCRIPCION, ;
 	          rProductos:descripcion ) 
 
-      __GuiaSetValue( ::oModDetal:oTreeView, ;
+      __OrdEntSetValue( ::oModDetal:oTreeView, ;
  	          ::oModDetal:oLbx, ;
 	          ::oModDetal:aIter, __PRECIO, ;
-                  __Guiaf_CalPrecio( oForm, rProductos:precio_unitario, rProductos:moneda_codigo))
+                  __OrdEntf_CalPrecio( oForm, rProductos:precio_unitario, rProductos:moneda_codigo))
 	          //STR( rProductos:precio_unitario ))
 
 	          //TRANSFORM( rProductos:precio_unitario, P_92 )
 
-      __GuiaSetValue( ::oModDetal:oTreeView, ;
+      __OrdEntSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, __IVAPORCEN, ;
                   STR( rProductos:iva_porcentaje ))
 
-      __GuiaSetValue( ::oModDetal:oTreeView, ;
+      __OrdEntSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, __IMP_PVP, ;
                   STR( rProductos:imp_pvp )) // imp_pvp ORIGINAL
 
-      __GuiaSetValue( ::oModDetal:oTreeView, ;
+      __OrdEntSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, __IMP_PVP_CALC, ;
-                  __Guiaf_CalPrecio( oForm, rProductos:imp_pvp, rProductos:moneda_codigo )) // imp_pvp CALCULADO
+                  __OrdEntf_CalPrecio( oForm, rProductos:imp_pvp, rProductos:moneda_codigo )) // imp_pvp CALCULADO
 
-      __GuiaSetValue( ::oModDetal:oTreeView, ;
+      __OrdEntSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, __IMP_PRODUCCION, ;
                   STR( rProductos:imp_produccion )) // imp_produccion ORIGINAL
 
-      __GuiaSetValue( ::oModDetal:oTreeView, ;
+      __OrdEntSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, __IMP_PRODUCC_CALC, ;
-                  __Guiaf_CalPrecio( oForm, rProductos:imp_produccion, rProductos:moneda_codigo )) // imp_produccion CALCULADO
+                  __OrdEntf_CalPrecio( oForm, rProductos:imp_produccion, rProductos:moneda_codigo )) // imp_produccion CALCULADO
 
-      __GuiaSetValue( ::oModDetal:oTreeView, ;
+      __OrdEntSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, __MONEDA_ID, ;
                   STR( rProductos:moneda_id )) // moneda_id
 
-      __GuiaSetValue( ::oModDetal:oTreeView, ;
+      __OrdEntSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, __PRECIO_FICHA, ;
                   STR( rProductos:precio_unitario )) // precio_unitario original
 
-      __GuiaSetValue( ::oModDetal:oTreeView, ;
+      __OrdEntSetValue( ::oModDetal:oTreeView, ;
                   ::oModDetal:oLbx, ;
                   ::oModDetal:aIter, 13, ; 
                   rProductos:tipo_inventario ) 
@@ -1862,58 +1888,58 @@ PROCEDURE __GuiaProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 
    oLBoxInv:lBar  := .f.
    oLBoxInv:bEdit := {|oModProductos|;
-                         __GuiaSetValue( ::oModDetal:oTreeView,      ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView,      ;
 				     ::oModDetal:oLbx,           ;
 				     ::oModDetal:aIter, __CODIGO,;
 				     oModProductos:oTreeView:GetAutoValue( 4 ) ),;
-                         __GuiaSetValue( ::oModDetal:oTreeView, ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView, ;
 				     ::oModDetal:oLbx,      ;
 				     ::oModDetal:aIter, __DESCRIPCION,  ;
 				     oModProductos:oTreeView:GetAutoValue( 5 ) ),;
-                         __GuiaSetValue( ::oModDetal:oTreeView, ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView, ;
 				     ::oModDetal:oLbx,      ;
 				     ::oModDetal:aIter, __CANTIDAD ,  ;
 				     "1" ),;
-                         __GuiaSetValue( ::oModDetal:oTreeView, ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView, ;
 				     ::oModDetal:oLbx,      ;
 				     ::oModDetal:aIter, __PRECIO ,  ;
-                                     __Guiaf_CalPrecio( oForm, ;
+                                     __OrdEntf_CalPrecio( oForm, ;
                                                        oModProductos:oTreeView:GetAutoValue( 10 ), ;
                                                        oModProductos:oTreeView:GetAutoValue( 30 ) );
                                      ),;
-                         __GuiaSetValue( ::oModDetal:oTreeView, ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, __IVAPORCEN, ;
                                      STR(ToNum(oModProductos:oTreeView:GetAutoValue( 9 ) ))),; //iva_porcentaje
-                         __GuiaSetValue( ::oModDetal:oTreeView, ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView, ;
                                  ::oModDetal:oLbx, ;
                                  ::oModDetal:aIter, __IMP_PVP, ;
                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 27 ) ))),; //imp_pvp ORIGINAL
-                         __GuiaSetValue( ::oModDetal:oTreeView, ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView, ;
                                  ::oModDetal:oLbx, ;
                                  ::oModDetal:aIter, __IMP_PVP_CALC, ;
-                                    __Guiaf_CalPrecio( oForm, ;
+                                    __OrdEntf_CalPrecio( oForm, ;
                                                        oModProductos:oTreeView:GetAutoValue( 27 ), ;
                                                        oModProductos:oTreeView:GetAutoValue( 30 ) ) ),; //imp_pvp CALCULADO
-                         __GuiaSetValue( ::oModDetal:oTreeView, ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView, ;
                                  ::oModDetal:oLbx, ;
                                  ::oModDetal:aIter, __IMP_PRODUCCION, ;
                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 28 ) ))),; //imp_produccion ORIGINAL
-                         __GuiaSetValue( ::oModDetal:oTreeView, ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView, ;
                                  ::oModDetal:oLbx, ;
                                  ::oModDetal:aIter, __IMP_PRODUCC_CALC, ;
-                                    __Guiaf_CalPrecio( oForm, ;
+                                    __OrdEntf_CalPrecio( oForm, ;
                                                        oModProductos:oTreeView:GetAutoValue( 28 ), ;
                                                        oModProductos:oTreeView:GetAutoValue( 30 ) ) ),; //imp_produccion CALCULADO
-                         __GuiaSetValue( ::oModDetal:oTreeView, ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView, ;
                                  ::oModDetal:oLbx, ;
                                  ::oModDetal:aIter, __MONEDA_ID, ;
                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 29 ) ))),; //moneda_id
-                         __GuiaSetValue( ::oModDetal:oTreeView, ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView, ;
                                  ::oModDetal:oLbx, ;
                                  ::oModDetal:aIter, __PRECIO_FICHA, ;
                                     STR(ToNum(oModProductos:oTreeView:GetAutoValue( 10 ) ))),; //precio_unitario original
-                         __GuiaSetValue( ::oModDetal:oTreeView, ;
+                         __OrdEntSetValue( ::oModDetal:oTreeView, ;
  	                             ::oModDetal:oLbx, ;
 	                             ::oModDetal:aIter, 13, ;
                                      oModProductos:oTreeView:GetAutoValue( 7 ) ),; // tipo_inventario

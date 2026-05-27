@@ -28,7 +28,7 @@
                   <object class="GtkLabel" id="lab_documentos">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Pedidos de Venta</property>
+                    <property name="label" translatable="yes">Orden de Entrega</property>
                     <attributes>
                       <attribute name="weight" value="bold"/>
                       <attribute name="size" value="200"/>
@@ -172,7 +172,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">Convierte pedido a factura.</property>
+                            <property name="tooltip_text" translatable="yes">Convierte Orden de Entrega a factura.</property>
                             <property name="relief">none</property>
                             <child>
                               <object class="GtkImage" id="image_conv">
@@ -242,7 +242,33 @@
                                         <property name="can_focus">False</property>
                                         <property name="spacing">3</property>
                                         <child>
-                                          <object class="GtkLabel" id="label5">
+                                          <object class="GtkLabel" id="label6">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="label" translatable="yes">Condición:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">False</property>
+                                            <property name="position">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkHBox" id="box_condicion">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <child>
+                                              <placeholder/>
+                                            </child>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">False</property>
+                                            <property name="position">1</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="lab_destinatario">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
                                             <property name="label" translatable="yes">Cliente:</property>
@@ -250,7 +276,7 @@
                                           <packing>
                                             <property name="expand">False</property>
                                             <property name="fill">False</property>
-                                            <property name="position">0</property>
+                                            <property name="position">2</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -268,32 +294,6 @@
                                           <packing>
                                             <property name="expand">True</property>
                                             <property name="fill">True</property>
-                                            <property name="position">1</property>
-                                          </packing>
-                                        </child>
-                                        <child>
-                                          <object class="GtkLabel" id="label6">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">Condición:</property>
-                                          </object>
-                                          <packing>
-                                            <property name="expand">False</property>
-                                            <property name="fill">False</property>
-                                            <property name="position">2</property>
-                                          </packing>
-                                        </child>
-                                        <child>
-                                          <object class="GtkHBox" id="box_condicion">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <child>
-                                              <placeholder/>
-                                            </child>
-                                          </object>
-                                          <packing>
-                                            <property name="expand">False</property>
-                                            <property name="fill">False</property>
                                             <property name="position">3</property>
                                           </packing>
                                         </child>
@@ -1204,7 +1204,7 @@
                                   <object class="GtkLabel" id="label3">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">&lt;i&gt;Datos del Pedido &lt;/i&gt;</property>
+                                    <property name="label" translatable="yes">&lt;i&gt;Datos de la Orden &lt;/i&gt;</property>
                                     <property name="use_markup">True</property>
                                   </object>
                                   <packing>
