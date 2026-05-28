@@ -160,7 +160,7 @@ procedure vta_imprimir_pdf( oForm )
 
    //VIEW(tonum(::nMontoOtrImp))
 
-   FOR i:=1 TO 15-LEN(aData)
+   FOR i:=1 TO 10-LEN(aData)
       nY += 0.35
    NEXT
 

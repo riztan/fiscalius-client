@@ -21,16 +21,20 @@ procedure vta_imprimir_pdf_nota( oForm )
    local nY := 1,nTotPagBs:=0,nTotPagDi:=0
    local cFilePDF := "tmp/vta_documento_" + STRTRAN(::hDocumento["numero"], "/", "_") + ".pdf"
    local cMoneda:="Bs",cDivisa:=LEFT(::cDivisa,3),nDivisa:=TONUM(SUBSTR(::cDivisa,5))
-   local rDetCobro:=::rVentas:DetCobroFact( {"sucursal"=>"1", "tipo_id"=> ::hDocumento["tipo_id"],"numero"=>::hDocumento["numero"]} )
+   //local rDetCobro:=	::rVentas:DetCobroFact( {"sucursal"=>"1", "tipo_id"=> ::hDocumento["tipo_id"],"numero"=>::hDocumento["numero"]} )
+   local rDetCobro:=::rVentas:DetCobroFact( {"sucursal"=>"1", "tipo_id"=>IIF(::cTipoDocumento = "C","4",::hDocumento["tipo_id"]),"numero"=>IIF(::cTipoDocumento = "C",::cFacturaNro,::hDocumento["numero"])} )
    local aDetCobro:=rDetCobro:GetData()
    local nBasGEN:=0,nBasRED:=0,nBasSUN:=0,nIVAGEN:=0,nIVARED:=0,nIVASUN:=0
    local nBasEXE:=TONUM(::nMontoIvaE)
    local nPosDet:=0,nBasITF:=0,nPorITF:=3,nMtoITF:=0
    local nTotBru:=0,nTotDesc:=0
-   local oRefData,aRef,dFchFac:=CTOD("0"),nMontoFac :=0
-
+   local oRefData,aRef,dFchFac:=CTOD("0"),nMontoFac :=0,nProrrat:=1
+   
+   
    // Obtener datos de la factura afectada
    oRefData := ::rDocumento:ReferData(::cFacturaNro)
+   
+   //view(aDetCobro)
 	
    if !hb_isNIL(oRefData) .and. oRefData:RecCount() > 0
       aRef := oRefData:GetData()
@@ -38,11 +42,22 @@ procedure vta_imprimir_pdf_nota( oForm )
       nMontoFac := aRef[1, 2]  // monto_total
       cSerieFac:=IIF(hb_isNIL(aRef[1, 3]),"",aRef[1, 3])
    endif
+   
+   
+   IF ::cTipoDocumento = "C"
+    nProrrat:=tonum(::oEntTotal:GetValue())/nMontoFac
+   ELSE	
+    nProrrat:=1  
+   ENDIF
+   
+  // msginfo(nProrrat)
 
    //view(aDetCobro))
    
    FERASE( cFilePDF )
    
+   
+  // msginfo(nprorrat)
    oPDF := TIMPRIMEPDF():New( cFilePDF )
     //oPDF:PageSetSize( HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_PORTRAIT )
    oPDF:PageSetSize( HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_LANDSCAPE )
@@ -170,7 +185,7 @@ procedure vta_imprimir_pdf_nota( oForm )
    
    //VIEW(tonum(::nMontoOtrImp))
    
-   FOR i:=1 TO 15-LEN(aData)
+   FOR i:=1 TO 10-LEN(aData)
       nY += 0.35
    NEXT
 
@@ -190,22 +205,26 @@ procedure vta_imprimir_pdf_nota( oForm )
       nTotPagBs:=0
       FOR i := 1 TO LEN( aDetCobro )
          aLine := aDetCobro[i]
-         IF ::cTipoDocumento = "D"
+        // IF ::cTipoDocumento = "D"
             IF I=1
-               nMtoITF:=aLine[3]
+			  
+               nMtoITF:=aLine[3]*nProrrat
                nPorITF:=IIF(nMtoITF=0,0,3)
+			   //msginfo(nPorITF)
             ENDIF
-         ENDIF
+        // ENDIF
+        //MsgInfo(ALLTRIM(aLine[1])) 
          oPDF:CMSAY( nY, 2, ALLTRIM(aLine[1]))
-         oPDF:CMSAY( nY, 6, TRANSFORM(aLine[2], P_92))
+         oPDF:CMSAY( nY, 6, TRANSFORM(aLine[2]*nProrrat, "@E 9,999,999.99"))
          nTotPagBs:=nTotPagBs+(aLine[2])
-         IF ::cTipoDocumento = "D"
+        // IF ::cTipoDocumento = "D"
             IF aLine[4]
                nBasITF += aLine[2]
             ENDIF
-         ENDIF
+        // ENDIF
          nY += 0.35
       NEXT
+      nBasITF:=nBasITF*nProrrat
       nY += 0.35
       //oPDF:SetFont( "Helvetica-Bold", 8 )
       // IF LEN( aDetCobro )>0
@@ -309,20 +328,16 @@ procedure vta_imprimir_pdf_nota( oForm )
    oPDF:SetFont( "Helvetica", 11 )
    oPDF:CMSAYRECT( nY, 10.2, "Base Imponible IGTF "+cDivisa+" :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
    oPDF:CMSAYRECT( nY, 18.2, "Base Imponible IGTF "+cMoneda+" :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
-   IF ::cTipoDocumento = "D"
+   //IF ::cTipoDocumento = "D"
       oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(nBasITF/nDivisa, P_92), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
       oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(nBasITF,P_92), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
-   ENDIF
+  // ENDIF
    nY += 0.4
 
    oPDF:CMSAYRECT( nY, 10.2, "TOTAL IGTF "+hb_ntos(nPorITF)+ "% "+cDivisa+" :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
    oPDF:CMSAYRECT( nY, 18.2, "TOTAL IGTF "+hb_ntos(nPorITF) +"% "+cMoneda+" :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
-   IF ::cTipoDocumento = "D"
-      oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(nMtoITF/nDivisa, P_92), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
-      oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(nMtoITF, P_92), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
-   ELSE
-      oPDF:CMSAYRECT( nY, 18.2, ::oEntIGTF:GetValue(), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
-   ENDIF
+   oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(nMtoITF/nDivisa,"@E 99,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
+   oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(nMtoITF,"@E 99,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
    nY += 0.4
 
    oPDF:SetFont( "Helvetica-Bold", 11 )
