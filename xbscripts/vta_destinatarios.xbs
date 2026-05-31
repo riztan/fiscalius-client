@@ -1,0 +1,85 @@
+/* vta_destinatarios.xbs
+ *  Selector unificado de destinatarios desde mae_partner
+ *  Filtra segun clasificacion: VENTA_DIFERIDA -> solo clientes
+ *                               TRASLADO_SEDE  -> solo sucursales
+ *                               TRASLADO_OTRO  -> solo otros
+ */
+
+#include "xbscripts/tpy_combobox.xbs"
+#include "tpy_xbs.ch"
+
+procedure vta_destinatarios( oForm, oWndParent, oEntParent, nDestId, cTipoDest, cNombreDest, cClasificacion )
+
+   local oDestWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Destinatarios"
+   local rVentas, rPartners, oModPartners, oLBoxDest, hParam
+
+   default nDestId       to 0
+   default cTipoDest     to ""
+   default cNombreDest   to ""
+   default cClasificacion to ""
+
+   hParam := { "clasificacion" => cClasificacion }
+
+   rVentas := ::oGEmpresa:SetModulo("Ventas")
+   rPartners := rVentas:Partners( hParam )
+
+   if hb_isNIL(rPartners)
+      MsgStop("No se pudieron cargar los destinatarios")
+      return
+   endif
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+   DEFINE WINDOW oDestWnd ;
+          TITLE "Fiscalius. Seleccionar Destinatario" ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+   DEFINE MODEL oModPartners ;
+          STRUCT rPartners:Struct() ;
+          DATA   rPartners:GetData()
+    
+   DEFINE LISTBOX oLBoxDest ;
+          MODEL oModPartners ;
+          OF oBoxData
+
+   oLBoxDest:lBar  := .f.
+
+   if hb_isObject( oEntParent )
+      oLBoxDest:bEdit := {|oModel| ( nDestId     := oModel:GetCol(1), ;
+                                      cTipoDest   := oModel:GetCol(2), ;
+                                      cNombreDest := oModel:GetCol(4), ;
+                                      iif( !hb_isObject(oWndParent),                ;
+                                            .T.,                                     ;
+                                            oEntParent:setText( ALLTRIM(cTipoDest)+": "+;
+                                                                oModel:GetCol(4) )), ;
+                                      oDestWnd:End() ) }
+   endif
+    
+   oLBoxDest:SetColVisible( 1, .F. )    // Ocultamos ID
+   oLBoxDest:SetColVisible( 2, .F. )    // Ocultamos Tipo
+
+   oLBoxDest:SetColTitle( 2, "Tipo" )              
+   oLBoxDest:SetColTitle( 3, "Codigo" )            
+   oLBoxDest:SetColTitle( 4, "Nombre" )            
+   oLBoxDest:SetColTitle( 5, "RIF" )               
+
+   ACTIVATE WINDOW oDestWnd MODAL
+
+return

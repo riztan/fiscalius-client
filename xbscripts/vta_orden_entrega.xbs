@@ -56,7 +56,7 @@ procedure vta_orden_entrega( oFormParent )
    SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"vta_orden_entrega.ui"
 
    DEFINE WINDOW ::oWnd ;
-          TITLE "Fiscalius. Guía de Despacho" ;
+          TITLE "Fiscalius. Orden de Entrega" ;
           SIZE 800,600 ;
           ID "window1" RESOURCE ::oRes
 
@@ -112,7 +112,10 @@ procedure vta_orden_entrega( oFormParent )
 
    ::cEntCli := ""
    ::cCodCli := ""
-   ::bEntCliAction := { || oTPuy:RunXBS("vta_clientes", ::oFormParent, ::oWnd, ::oEntCli, @::cCodCli) }
+   ::cDestinatarioTipo := ""
+   ::nDestinatarioId := 0
+   ::cDestinatarioNombre := ""
+   ::bEntCliAction := { || oTPuy:RunXBS("vta_destinatarios", ::oFormParent, ::oWnd, ::oEntCli, @::nDestinatarioId, @::cDestinatarioTipo, @::cDestinatarioNombre, __OrdEntCondToDB(::cCondicion)) }
           //ACTION oTPuy:RunXBS("vta_clientes", oFormParent, ::oWnd, ::oEntCli, @::cCodCli) ;
    DEFINE ENTRY  ::oEntCli VAR ::cEntCli ;
           ACTION ::bEntCliAction ;
@@ -148,29 +151,12 @@ procedure vta_orden_entrega( oFormParent )
           ON CHANGE __OrdEntCambiarClasificacion( oForm ) ;
           OF ::oBoxCondicion
 
-   ::cDestinatarioNombre := ""
-   ::cDestinatarioRif := ""
    ::cMotivoTraslado := ""
-
-   DEFINE BOX ::oBoxDestinatario HOMO
-
-   DEFINE ENTRY ::oEntDestNombre VAR ::cDestinatarioNombre ;
-          OF ::oBoxDestinatario
-
-   DEFINE ENTRY ::oEntDestRif VAR ::cDestinatarioRif ;
-          OF ::oBoxDestinatario
-
-   DEFINE ENTRY ::oEntMotivo VAR ::cMotivoTraslado ;
-          OF ::oBoxDestinatario
-
-   // Ocultar destinatario texto por defecto (Venta Diferida usa cliente)
-   ::oBoxDestinatario:Hide()
    ::cNroControl := ""
    DEFINE LABEL ::oLabNroControl TEXT ::cNroControl ;
           ID "lab_nro_control" RESOURCE ::oRes
-/*
 
-  DEFINE BOX ::oBoxSerie ID "box_serie" RESOURCE ::oRes
+   DEFINE BOX ::oBoxSerie ID "box_serie" RESOURCE ::oRes
    ::cSerie := ""
    ::cSerieID := ""
    ::aSeries := {}
@@ -182,15 +168,11 @@ procedure vta_orden_entrega( oFormParent )
           VAR ::cSerie ITEMS ::aSeries ;
           ON CHANGE .T. ;
            OF ::oBoxSerie
-	//::oComboSerie:Enable( .F. )
-	//::oComboSerie:SetSensitive( .F. )
-	::oComboSerie:Disable()
+ 	//::oComboSerie:Disable()
 		
   
    __OrdEntCargarSeries( oForm )
    
-   */
-
    DEFINE BOX ::oBoxDivisa ID "box_divisa" RESOURCE ::oRes
    ::aMonedas := {}
    ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
@@ -330,8 +312,8 @@ procedure vta_orden_entrega( oFormParent )
    ::oLBoxOrdEnts:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
    ::oLBoxOrdEnts:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
    ::oLBoxOrdEnts:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
-   ::oLBoxOrdEnts:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
-   ::oLBoxOrdEnts:SetColVisible( 12, .f. )          //- - Ocultamos la serie fiscal
+   //::oLBoxOrdEnts:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
+   //::oLBoxOrdEnts:SetColVisible( 12, .f. )          //- - Ocultamos la serie fiscal
    
 
    ::oLBoxOrdEnts:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
@@ -578,38 +560,14 @@ static procedure __OrdEntCambiarClasificacion( oForm )
       endif
    endif
 
-   // Mostrar/ocultar selector de cliente
+   // Mostrar/ocultar selector de destinatario (unificado)
    if hb_isObject( ::oEntCli )
-      //if lEsVenta
-      Do Case
-      Case lEsVenta
-         //::oEntCli:SetAction( {|| View("Hola!") }  )  //riztan
-         //::bEntCliAction := {|| View("Aqui vamos!") }
-         ::oLabDestinatario:SetText("Cliente: ")
-         ::bEntCliAction := { || oTPuy:RunXBS("vta_clientes", ::oFormParent, ::oWnd, ::oEntCli, @::cCodCli) }
-         //::oEntCli:Show()
-         //::oEntCli:Enable()
-      Case lInterno
-         ::bEntCliAction := {|| View("TRASLADO INTERNO!") }
-         ::oLabDestinatario:SetText("Sede/Almacen: ")
-      Case lOtro
-         ::bEntCliAction := {|| View("TRASLADO A TERCERO") }
-         ::oLabDestinatario:SetText("Destinatario: ")
-      //Other
-      //   ::oEntCli:Hide()
-      //   ::oEntCli:Disable()
-      EndCase
+      ::oLabDestinatario:SetText("Destinatario: ")
+      ::bEntCliAction := { || oTPuy:RunXBS("vta_destinatarios", ::oFormParent, ;
+                              ::oWnd, ::oEntCli, @::nDestinatarioId, @::cDestinatarioTipo, ;
+                               @::cDestinatarioNombre, __OrdEntCondToDB(::cCondicion)) }
       ::oEntCli:SetAction( ::bEntCliAction )
       ::oEntCli:SetValue("")
-   endif
-
-   // Mostrar/ocultar campos de destinatario texto
-   if hb_isObject( ::oBoxDestinatario )
-      if lEsVenta
-         ::oBoxDestinatario:Hide()
-      else
-         ::oBoxDestinatario:Show()
-      endif
    endif
 return
 
@@ -618,7 +576,7 @@ return
 function __OrdEntCargarSeries( oForm )
    local rQrySeries
    
-   rQrySeries := ::rEmpresa:SeriesFiscales(13)
+   rQrySeries := ::rEmpresa:SeriesFiscales(14)
    ::aSeries := {}
    ::aSeriesId := {}
    
@@ -688,7 +646,7 @@ procedure __vtaOrdEnt( oForm, oFormParent, oBoxPedido, oModel, lNew )
    if ::lNew 
       ::lLoad      := .F.
       ::lSave      := .F.
-      ::rOrdEntDoc    := ::rVentas:OrdenEntrega('')
+      ::rOrdEntDoc := ::rVentas:OrdenEntrega('')
       ::hOrdEnt    := ::rOrdEntDoc:Data()
       ::rPedDetal  := nil  // No cargar detalles para nuevo documento
       ::cFecha := DTOC( DATE() )
@@ -698,14 +656,7 @@ procedure __vtaOrdEnt( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::oEntCli:SetValue( "" )
       ::oEntFecha:SetValue( DTOC(DATE()) )
       ::oEntVcmto:SetValue( DTOC(DATE()) )
-      ::cDestinatarioNombre := ""
-      ::cDestinatarioRif := ""
       ::cMotivoTraslado := ""
-      if hb_isObject( ::oEntDestNombre )
-         ::oEntDestNombre:SetValue( "" )
-         ::oEntDestRif:SetValue( "" )
-         ::oEntMotivo:SetValue( "" )
-      endif
       __OrdEntCambiarClasificacion( oForm )
 
       ::oEntOrdCompra:SetValue("")
@@ -754,18 +705,19 @@ procedure __vtaOrdEnt( oForm, oFormParent, oBoxPedido, oModel, lNew )
          ::oComboCondicion:SetValue( ::cCondicion )
       endif
 
-      // Destinatario y motivo
-      ::cDestinatarioNombre := hb_DefaultValue( ::hOrdEnt["destinatario_nombre"], "" )
-      ::cDestinatarioRif    := hb_DefaultValue( ::hOrdEnt["destinatario_rif"], "" )
-      ::cMotivoTraslado     := hb_DefaultValue( ::hOrdEnt["motivo_traslado"], "" )
-      if hb_isObject( ::oEntDestNombre )
-         ::oEntDestNombre:SetValue( ::cDestinatarioNombre )
-         ::oEntDestRif:SetValue( ::cDestinatarioRif )
-         ::oEntMotivo:SetValue( ::cMotivoTraslado )
-      endif
-
-      // Mostrar campos según clasificación
+      // Mostrar campos según clasificación (configura acción del entry)
       __OrdEntCambiarClasificacion( oForm )
+
+      // Destinatario desde el servidor (después de CambiarClasificacion para no ser limpiado)
+      ::cDestinatarioTipo   := iif( hb_hHasKey( ::hOrdEnt, "destinatario_tipo" ), ::hOrdEnt["destinatario_tipo"], "" )
+      ::nDestinatarioId     := iif( hb_hHasKey( ::hOrdEnt, "destinatario_id" ), ::hOrdEnt["destinatario_id"], 0 )
+      ::cDestinatarioNombre := iif( hb_hHasKey( ::hOrdEnt, "destinatario_nombre" ), ::hOrdEnt["destinatario_nombre"], "" )
+      ::cMotivoTraslado     := iif( hb_hHasKey( ::hOrdEnt, "motivo_traslado" ), ::hOrdEnt["motivo_traslado"], "" )
+      if !Empty( ::cDestinatarioNombre )
+         ::oEntCli:SetValue( ::cDestinatarioNombre )
+      elseif !Empty( ::cDestinatarioTipo )
+         ::oEntCli:SetValue( ::cDestinatarioTipo + ": " + Str(::nDestinatarioId) )
+      endif
 	/*	 
       if hb_isObject( ::oComboSerie ) .and. !empty( ::aSeries )
          ::oComboSerie:SetValue( ::cSerie )
@@ -1521,8 +1473,8 @@ return
 
 
 Procedure __OrdEntSave( oForm, oFormParent )
-   local bSaveDetal, uResp, dUltimaFecha, aIter := ARRAY(4), lSuccess := .F., nIdx:=0
-   local hCorrel 
+   local bSaveDetal, uResp, dUltimaFecha, aIter := ARRAY(4), lSuccess := .F.
+   local hCorrel, nIdx
    
    if (::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada") .and. ;
       !( ::cPreEstado = "B" )
@@ -1543,40 +1495,39 @@ Procedure __OrdEntSave( oForm, oFormParent )
       ::oLabInfo:SetText( "Ajustado valor de fecha." )
    endif
 
-   ::hOrdEnt["cliente_id"       ] := ::cCodCli                    // Cliente (solo VENTA_DIFERIDA)
+   // Validar que se haya seleccionado un destinatario
+   if ToNum(::nDestinatarioId) == 0
+      MsgStop("Debe seleccionar un destinatario antes de guardar", "Error")
+      return
+   endif
+
+   // Cliente segun clasificacion (solo para vta_transacciones)
+   if ::cCondicion == "Venta Diferida"
+      ::hOrdEnt["cliente_id"] := ::nDestinatarioId
+   else
+      ::hOrdEnt["cliente_id"] := "46"  // Cliente dummy 'TRASLADO'
+   endif
    ::hOrdEnt["vendedor_id"      ] := ::cCodVendedor               // Vendedor
    ::hOrdEnt["fecha"            ] := CTOD(::oEntFecha:GetValue()) // Fecha
    ::hOrdEnt["fecha_vencimiento"] := CTOD(::oEntVcmto:GetValue()) // Vencimiento
-   ::hOrdEnt["clasificacion"    ] := __OrdEntCondToDB( ::cCondicion )
    ::hOrdEnt["condicion_id"     ] := '1'                          // Condicion fija
-   ::hOrdEnt["destinatario_nombre"] := ::cDestinatarioNombre
-   ::hOrdEnt["destinatario_rif" ] := ::cDestinatarioRif
-   ::hOrdEnt["motivo_traslado"  ] := ::cMotivoTraslado
    ::hOrdEnt["monto_base"       ] := ::oEntMonBase:GetValue()     // Monto Base o SubTotal
    ::hOrdEnt["otros_imp"        ] := ::oEntOtrImp:GetValue()      // Otros Impuestos
    ::hOrdEnt["imp_prod"         ] := ::oEntImpProd:GetValue()     // Impuesto Produccion
    ::hOrdEnt["monto_total"      ] := ::oEntTotal:GetValue()       // Monto Total
    ::hOrdEnt["estado"           ] := LEFT( ::oComboEstado:GetValue(), 1 )
-
-   //::hOrdEnt["serie_id"]        := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
-   ::hOrdEnt["serie_id"]        := ""
-   ::cSerieID:=::hOrdEnt["serie_id"]
-     //::hFactura["serie_nombre"     ] := ::cSerie
-	 //view(::aSeriesId)
-	 //view(nidx)
-    // view(::cSerieID)
+   nIdx := ASCAN( ::aSeries, {|x| ALLTRIM(x) == ALLTRIM(::cSerie)} )
+   ::hOrdEnt["serie_id"] := iif(nIdx > 0, ::aSeriesId[nIdx], 0)
+   ::cSerieID := ::hOrdEnt["serie_id"]
 	
+   hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 14 )
 	
-	// hCorrel := ::rVentas:ValidarCorrelativo( ::cSerieId, 13 )
-	 
-	 /*
-	if ::cComboEstado == "Cerrada"		
-		if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
-		MsgStop( hCorrel["mensaje"] + ". No se puede cerrar el documento.", "Error" )
-		return
-		endif
-	endif
-	*/
+   if ::cComboEstado == "Cerrada"
+      if !hb_hHasKey(hCorrel, "disponible") .or. !hCorrel["disponible"]
+         MsgStop( hCorrel["mensaje"] + ". No se puede cerrar el documento.", "Error" )
+         return
+      endif
+   endif
 	
 
 
@@ -1586,13 +1537,23 @@ Procedure __OrdEntSave( oForm, oFormParent )
 //return
 
    uResp := ::rOrdEntDoc:SetData( ::hOrdEnt )
-   ::hOrdEnt := ::rOrdEntDoc:Data()
 //View( uResp )
+//riztan
    if hb_isHash(uResp) .and. hb_hHasKey(uResp, "return") .and. !uResp["return"]
       ::oLabInfo:SetText( uResp["message"] )
       //::oLabInfo:SetText("No ha sido posible actualizar los datos.")
       return
    endif
+
+   // Campos especificos de orden de entrega (no procesados por SetData)
+   ::rOrdEntDoc:SetClasificacion( __OrdEntCondToDB( ::cCondicion ) )
+   if ::cCondicion == "Venta Diferida"
+      ::rOrdEntDoc:SetDestinatario( { "tipo" => "cliente", "id" => ::nDestinatarioId } )
+   else
+      ::rOrdEntDoc:SetDestinatario( { "tipo" => ::cDestinatarioTipo, "id" => ::nDestinatarioId } )
+   endif
+   ::rOrdEntDoc:SetValue( "motivo_traslado", ::cMotivoTraslado )
+   ::hOrdEnt := ::rOrdEntDoc:Data()
 
    //-- Actualizar detalles de la factura.
    bSaveDetal := {|oTView, pModel, aIter| __OrdEntSaveDetal( oTView, pModel, aIter, oForm )  }
