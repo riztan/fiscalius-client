@@ -111,10 +111,10 @@ DEFINE BUTTON ::oBtnGuardar ;
    ::cFacturaNro := ""
    DEFINE ENTRY ::oEntFacturaNro VAR ::cFacturaNro ;
           ACTION ( __NC_Docs( oForm ), ::oEntFacturaNro:SetFocus() ) ; 
-           VALID  ( iif( !empty(::cFacturaNro), ::rDocumento:SetRefNumero(::cFacturaNro), NIL), ;
-                       __NCDelDetal( oForm, .T. ), ;
-                      ::rFactDetal := ::rDocumento:DetalFrom(), __NCDetalRefresh(oForm), ;
-                      __NC_LoadIGTF( oForm, ::cFacturaNro ), ;
+            VALID  ( iif( !empty(::cFacturaNro), ::rDocumento:SetRefNumero(::cFacturaNro), NIL), ;
+                        __NCDelDetal( oForm, .T. ), ;
+                       __NCLoadDetailsIfCredito( oForm ), ;
+                       __NC_LoadIGTF( oForm, ::cFacturaNro ), ;
                       iif( CTOD(::oEntFecha:GetValue()) < ::rVentas:Transacciones('F', ::cFacturaNro):fecha, ;
                            ::oEntFecha:SetValue(DTOC(::rVentas:Transacciones('F', ::cFacturaNro):fecha)), ;
                            NIL), ;
@@ -399,14 +399,18 @@ procedure __NC_Docs( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() )
          RETURN
       endif
       ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:factura_numero) )
-      ::rFactDetal := ::rDocumento:DetalFrom()
+      if ::cTipoDocumento = "C"
+         ::rFactDetal := ::rDocumento:DetalFrom()
+      endif
       __NC_LoadIGTF( oForm, ALLTRIM(rFacturas:factura_numero) )
       return
    endif
 
    if rFacturas:RecCount() = 1
       ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:factura_numero) )
-      ::rFactDetal := ::rDocumento:Detal()
+      if ::cTipoDocumento = "C"
+         ::rFactDetal := ::rDocumento:Detal()
+      endif
       __NC_LoadIGTF( oForm, ALLTRIM(rFacturas:factura_numero) )
 //View( ::rFactDetal:Data() )
       return
@@ -750,6 +754,13 @@ procedure __NCDetalRefresh( oForm )
 
 return
 
+
+procedure __NCLoadDetailsIfCredito( oForm )
+   if ::cTipoDocumento = "C"
+      ::rFactDetal := ::rDocumento:DetalFrom()
+      __NCDetalRefresh(oForm)
+   endif
+return
 
 //-- Este procedimiento se ejecuta al solicitar una factura nueva o seleccionar 
 //   una factura para consultar y/o editar.
@@ -1600,8 +1611,9 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
 //View( ::hDocumento )
       //-- Importante invocar SetDetal después de rDocumento:Save() 
       //   para obtener primero el nro del documento
-      ::aDetal := {}
+     // ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
+	 // VIEW(::ADETAL)
       lDetal := ::rDocumento:SetDetal( ::aDetal )
       if empty(lDetal) .or. !lDetal
          ::oLabInfo:SetText("No se actualizaron los detalles" )
@@ -1683,7 +1695,7 @@ procedure __NCSaveDetal(oTView, pModel, aIter, oForm)
 //View( oTView:GetAutoValue(20, aIter) )
    
    AADD( ::aDetal, hDetal )
-
+   //VIEW(::aDetal)
 return
 
 
@@ -1710,6 +1722,9 @@ PROCEDURE __NC_LoadIGTF( oForm, cFacturaNro )
 
    ::oEntIGTF:SetValue( "0" )
    if Empty( cFacturaNro )
+      RETURN
+   endif
+   if ::cTipoDocumento != "C"
       RETURN
    endif
 
