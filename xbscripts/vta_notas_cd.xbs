@@ -1610,10 +1610,11 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
 //View( ::hDocumento )
       //-- Importante invocar SetDetal después de rDocumento:Save() 
       //   para obtener primero el nro del documento
-     // ::aDetal := {}
+      ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
-	 // VIEW(::ADETAL)
+	 //VIEW(::ADETAL)
       lDetal := ::rDocumento:SetDetal( ::aDetal )
+	 // VIEW(::ADETAL)
       if empty(lDetal) .or. !lDetal
          ::oLabInfo:SetText("No se actualizaron los detalles" )
          uResp := .F.
@@ -1673,13 +1674,13 @@ procedure __NCSaveDetal(oTView, pModel, aIter, oForm)
    hDetal["numero"           ] := ::hDocumento[ "numero" ]
    hDetal["codigo_local"     ] := ALLTRIM(oTView:GetAutoValue( 03, aIter ))
    hDetal["descripcion"      ] := oTView:GetAutoValue( 04, aIter )
-   hDetal["cantidad"         ] := VAL( oTView:GetAutoValue( 05, aIter ) )
-   hDetal["precio_unitario"  ] := VAL( oTView:GetAutoValue( 06, aIter ) )
-   hDetal["descuento"        ] := VAL( oTView:GetAutoValue( 07, aIter ) )
-   hDetal["subtotal"         ] := VAL( oTView:GetAutoValue( 08, aIter ) )
-   hDetal["iva_porcentaje"   ] := VAL( oTView:GetAutoValue( 09, aIter ) )
-   hDetal["iva_monto"        ] := VAL( oTView:GetAutoValue( 10, aIter ) )
-   hDetal["total"            ] := VAL( oTView:GetAutoValue( 11, aIter ) )
+   hDetal["cantidad"         ] := TONUM( oTView:GetAutoValue( 05, aIter ) )
+   hDetal["precio_unitario"  ] := TONUM( oTView:GetAutoValue( 06, aIter ) )
+   hDetal["descuento"        ] := TONUM( oTView:GetAutoValue( 07, aIter ) )
+   hDetal["subtotal"         ] := TONUM( oTView:GetAutoValue( 08, aIter ) )
+   hDetal["iva_porcentaje"   ] := TONUM( oTView:GetAutoValue( 09, aIter ) )
+   hDetal["iva_monto"        ] := TONUM( oTView:GetAutoValue( 10, aIter ) )
+   hDetal["total"            ] := TONUM( oTView:GetAutoValue( 11, aIter ) )
    hDetal["nombre_global"    ] := oTView:GetAutoValue( 12, aIter )
    hDetal["tipo_inventario"  ] := oTView:GetAutoValue( 13, aIter )
    hDetal["lote"             ] := ALLTRIM(oTView:GetAutoValue( 14, aIter ))
@@ -1690,7 +1691,10 @@ procedure __NCSaveDetal(oTView, pModel, aIter, oForm)
    hDetal["detalles_json"    ] := oTView:GetAutoValue( 19, aIter )
    hDetal["item"             ] := oTView:GetAutoValue( 20, aIter )
    hDetal["imp_pvp"          ] := oTView:GetAutoValue( 21, aIter )
-    hDetal["imp_produccion"] := VAL( oTView:GetAutoValue( 24, aIter ) ) // Add imp_produccion
+    hDetal["imp_produccion"] := TONUM( oTView:GetAutoValue( 24, aIter ) ) // Add imp_produccion
+	
+	
+	
 //View( oTView:GetAutoValue(20, aIter) )
    
    AADD( ::aDetal, hDetal )
