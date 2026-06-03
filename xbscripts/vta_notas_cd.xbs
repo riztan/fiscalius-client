@@ -1354,8 +1354,7 @@ procedure __NCCalMontos( oTView, pModel, aIter, oForm )
    nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
                     ToNum( ::oEntIvaR:GetValue() ) +;
                     ToNum( ::oEntIvaG:GetValue() ) +;
-                    ToNum( ::oEntIvaS:GetValue() ) +;
-                    ToNum( ::oEntIGTF:GetValue() ), 2 )
+                    ToNum( ::oEntIvaS:GetValue() ), 2 )
    ::oEntTotal:SetValue( TRANSFORM( nTotal, P_92 ) )
 
    FOR EACH aBox IN { {::oBoxIvaExe, ::oEntIvaE   }, ;
