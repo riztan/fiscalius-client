@@ -111,10 +111,10 @@ DEFINE BUTTON ::oBtnGuardar ;
    ::cFacturaNro := ""
    DEFINE ENTRY ::oEntFacturaNro VAR ::cFacturaNro ;
           ACTION ( __NC_Docs( oForm ), ::oEntFacturaNro:SetFocus() ) ; 
-           VALID  ( iif( !empty(::cFacturaNro), ::rDocumento:SetRefNumero(::cFacturaNro), NIL), ;
-                       __NCDelDetal( oForm, .T. ), ;
-                      ::rFactDetal := ::rDocumento:DetalFrom(), __NCDetalRefresh(oForm), ;
-                      __NC_LoadIGTF( oForm, ::cFacturaNro ), ;
+            VALID  ( iif( !empty(::cFacturaNro), ::rDocumento:SetRefNumero(::cFacturaNro), NIL), ;
+                        __NCDelDetal( oForm, .T. ), ;
+                       __NCLoadDetailsIfCredito( oForm ), ;
+                       __NC_LoadIGTF( oForm, ::cFacturaNro ), ;
                       iif( CTOD(::oEntFecha:GetValue()) < ::rVentas:Transacciones('F', ::cFacturaNro):fecha, ;
                            ::oEntFecha:SetValue(DTOC(::rVentas:Transacciones('F', ::cFacturaNro):fecha)), ;
                            NIL), ;
@@ -399,14 +399,18 @@ procedure __NC_Docs( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() )
          RETURN
       endif
       ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:factura_numero) )
-      ::rFactDetal := ::rDocumento:DetalFrom()
+      if ::cTipoDocumento = "C"
+         ::rFactDetal := ::rDocumento:DetalFrom()
+      endif
       __NC_LoadIGTF( oForm, ALLTRIM(rFacturas:factura_numero) )
       return
    endif
 
    if rFacturas:RecCount() = 1
       ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:factura_numero) )
-      ::rFactDetal := ::rDocumento:Detal()
+      if ::cTipoDocumento = "C"
+         ::rFactDetal := ::rDocumento:Detal()
+      endif
       __NC_LoadIGTF( oForm, ALLTRIM(rFacturas:factura_numero) )
 //View( ::rFactDetal:Data() )
       return
@@ -750,6 +754,13 @@ procedure __NCDetalRefresh( oForm )
 
 return
 
+
+procedure __NCLoadDetailsIfCredito( oForm )
+   if ::cTipoDocumento = "C"
+      ::rFactDetal := ::rDocumento:DetalFrom()
+      __NCDetalRefresh(oForm)
+   endif
+return
 
 //-- Este procedimiento se ejecuta al solicitar una factura nueva o seleccionar 
 //   una factura para consultar y/o editar.
@@ -1609,7 +1620,9 @@ nIdx := ASCAN( ::aCondiciones, {|x| ALLTRIM(x) == ALLTRIM(::cCondicion)} )
       //   para obtener primero el nro del documento
       ::aDetal := {}
       ::oLBoxDetal:ForEach( bSaveDetal )
+	 //VIEW(::ADETAL)
       lDetal := ::rDocumento:SetDetal( ::aDetal )
+	 // VIEW(::ADETAL)
       if empty(lDetal) .or. !lDetal
          ::oLabInfo:SetText("No se actualizaron los detalles" )
          uResp := .F.
@@ -1669,13 +1682,13 @@ procedure __NCSaveDetal(oTView, pModel, aIter, oForm)
    hDetal["numero"           ] := ::hDocumento[ "numero" ]
    hDetal["codigo_local"     ] := ALLTRIM(oTView:GetAutoValue( 03, aIter ))
    hDetal["descripcion"      ] := oTView:GetAutoValue( 04, aIter )
-   hDetal["cantidad"         ] := VAL( oTView:GetAutoValue( 05, aIter ) )
-   hDetal["precio_unitario"  ] := VAL( oTView:GetAutoValue( 06, aIter ) )
-   hDetal["descuento"        ] := VAL( oTView:GetAutoValue( 07, aIter ) )
-   hDetal["subtotal"         ] := VAL( oTView:GetAutoValue( 08, aIter ) )
-   hDetal["iva_porcentaje"   ] := VAL( oTView:GetAutoValue( 09, aIter ) )
-   hDetal["iva_monto"        ] := VAL( oTView:GetAutoValue( 10, aIter ) )
-   hDetal["total"            ] := VAL( oTView:GetAutoValue( 11, aIter ) )
+   hDetal["cantidad"         ] := TONUM( oTView:GetAutoValue( 05, aIter ) )
+   hDetal["precio_unitario"  ] := TONUM( oTView:GetAutoValue( 06, aIter ) )
+   hDetal["descuento"        ] := TONUM( oTView:GetAutoValue( 07, aIter ) )
+   hDetal["subtotal"         ] := TONUM( oTView:GetAutoValue( 08, aIter ) )
+   hDetal["iva_porcentaje"   ] := TONUM( oTView:GetAutoValue( 09, aIter ) )
+   hDetal["iva_monto"        ] := TONUM( oTView:GetAutoValue( 10, aIter ) )
+   hDetal["total"            ] := TONUM( oTView:GetAutoValue( 11, aIter ) )
    hDetal["nombre_global"    ] := oTView:GetAutoValue( 12, aIter )
    hDetal["tipo_inventario"  ] := oTView:GetAutoValue( 13, aIter )
    hDetal["lote"             ] := ALLTRIM(oTView:GetAutoValue( 14, aIter ))
@@ -1686,11 +1699,14 @@ procedure __NCSaveDetal(oTView, pModel, aIter, oForm)
    hDetal["detalles_json"    ] := oTView:GetAutoValue( 19, aIter )
    hDetal["item"             ] := oTView:GetAutoValue( 20, aIter )
    hDetal["imp_pvp"          ] := oTView:GetAutoValue( 21, aIter )
-    hDetal["imp_produccion"] := VAL( oTView:GetAutoValue( 24, aIter ) ) // Add imp_produccion
+    hDetal["imp_produccion"] := TONUM( oTView:GetAutoValue( 24, aIter ) ) // Add imp_produccion
+	
+	
+	
 //View( oTView:GetAutoValue(20, aIter) )
    
    AADD( ::aDetal, hDetal )
-
+   //VIEW(::aDetal)
 return
 
 
@@ -1717,6 +1733,9 @@ PROCEDURE __NC_LoadIGTF( oForm, cFacturaNro )
 
    ::oEntIGTF:SetValue( "0" )
    if Empty( cFacturaNro )
+      RETURN
+   endif
+   if ::cTipoDocumento != "C"
       RETURN
    endif
 
