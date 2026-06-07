@@ -30,11 +30,7 @@ procedure vta_imprimir_pdf_nota( oForm )
    local nTotBru:=0,nTotDesc:=0
    local oRefData,aRef,dFchFac:=CTOD("0"),nMontoFac :=0,nProrrat:=1
    
-   IF ::cTipoDocumento = "C"
-    nProrrat:=tonum(::oEntTotal:GetValue())/nMontoFac
-   ELSE	
-    nProrrat:=1  
-   ENDIF
+   
    // Obtener datos de la factura afectada
    oRefData := ::rDocumento:ReferData(::cFacturaNro)
    
@@ -46,6 +42,15 @@ procedure vta_imprimir_pdf_nota( oForm )
       nMontoFac := aRef[1, 2]  // monto_total
       cSerieFac:=IIF(hb_isNIL(aRef[1, 3]),"",aRef[1, 3])
    endif
+   
+   
+   IF ::cTipoDocumento = "C"
+    nProrrat:=tonum(::oEntTotal:GetValue())/nMontoFac
+   ELSE	
+    nProrrat:=1  
+   ENDIF
+   
+  // msginfo(nProrrat)
 
    //view(aDetCobro))
    
@@ -180,7 +185,7 @@ procedure vta_imprimir_pdf_nota( oForm )
    
    //VIEW(tonum(::nMontoOtrImp))
    
-   FOR i:=1 TO 15-LEN(aData)
+   FOR i:=1 TO 10-LEN(aData)
       nY += 0.35
    NEXT
 
@@ -202,13 +207,15 @@ procedure vta_imprimir_pdf_nota( oForm )
          aLine := aDetCobro[i]
         // IF ::cTipoDocumento = "D"
             IF I=1
-              // nMtoITF:=aLine[3]*nProrrat
+			  
+               nMtoITF:=aLine[3]*nProrrat
                nPorITF:=IIF(nMtoITF=0,0,3)
+			   //msginfo(nPorITF)
             ENDIF
         // ENDIF
         //MsgInfo(ALLTRIM(aLine[1])) 
          oPDF:CMSAY( nY, 2, ALLTRIM(aLine[1]))
-         oPDF:CMSAY( nY, 6, TRANSFORM(aLine[2], "@E 9,999,999.99"))
+         oPDF:CMSAY( nY, 6, TRANSFORM(aLine[2]*nProrrat, "@E 9,999,999.99"))
          nTotPagBs:=nTotPagBs+(aLine[2])
         // IF ::cTipoDocumento = "D"
             IF aLine[4]
@@ -217,7 +224,7 @@ procedure vta_imprimir_pdf_nota( oForm )
         // ENDIF
          nY += 0.35
       NEXT
-     // nBasITF:=nBasITF*nProrrat
+      nBasITF:=nBasITF*nProrrat
       nY += 0.35
       //oPDF:SetFont( "Helvetica-Bold", 8 )
       // IF LEN( aDetCobro )>0

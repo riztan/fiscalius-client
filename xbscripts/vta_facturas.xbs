@@ -1309,13 +1309,13 @@ procedure __CalMontos( oTView, pModel, aIter, oForm )
    nImpProd += nImpProduccion
    
    
-   if nPorcentaje = 0  // Producto exento de IVA
-      nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
-      nTotal := ROUND( nMonto, 2 )
-
-      ::oEntMonBase:SetValue( TRANSFORM( nTotal, P_92 ) )
-      ::oEntIvaE:SetValue( TRANSFORM( nTotal, P_92 ) )
-   endif
+    if nPorcentaje = 0  // Producto exento de IVA
+       nMonto := ToNum( oTView:GetAutoValue( __SUBTOTAL, aIter ) )
+       nBase  := ToNum( ::oEntMonBase:GetValue() ) + nMonto
+       ::oEntMonBase:SetValue( TRANSFORM( nBase, P_92 ) )
+       nBaseE := ToNum( ::oEntIvaE:GetValue() ) + nMonto
+       ::oEntIvaE:SetValue( TRANSFORM( nBaseE, P_92 ) )
+    endif
 
 
    if nPorcentaje > 0

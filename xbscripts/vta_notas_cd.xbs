@@ -1351,6 +1351,14 @@ procedure __NCCalMontos( oTView, pModel, aIter, oForm )
       ::hDocumento[ "islr" ]["fecha"      ] := CTOD( ::cIslrFecha )   
    endif
 
+ /*
+  nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
+                    ToNum( ::oEntIvaR:GetValue() ) +;
+                    ToNum( ::oEntIvaG:GetValue() ) +;
+                    ToNum( ::oEntIvaS:GetValue() ) +;
+                    ToNum( ::oEntIGTF:GetValue() ), 2 )
+     */
+					
    nTotal := ROUND( ToNum( ::oEntMonBase:GetValue() ) +;
                     ToNum( ::oEntIvaR:GetValue() ) +;
                     ToNum( ::oEntIvaG:GetValue() ) +;
@@ -1731,7 +1739,10 @@ PROCEDURE __NC_LoadIGTF( oForm, cFacturaNro )
       RETURN
    endif
 
-   hResp := ::rDocumento:LoadFactura( cFacturaNro )
+
+   IF ::cTipoDocumento="C"
+    hResp := ::rDocumento:LoadFactura( cFacturaNro )
+   ENDIF
    if hb_isHash(hResp) //.and. hb_hHasKey(hResp, "ok") .and. hResp["ok"]
       hDocData := ::rDocumento:Data()
       if hb_hHasKey( hDocData, "monto_igtf" )
