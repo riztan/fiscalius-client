@@ -236,12 +236,12 @@ Procedure __VehicSave( oForm )
    lNew := oForm:rEntity:IsNew()
 
    oForm:rEntity:SetData( { "placa"                  => oForm:cPlaca,       ;
-                            "marca"                  => oForm:cMarca,       ;
-                            "modelo"                 => oForm:cModelo,      ;
-                            "anio"                   => oForm:nAnio,        ;
-                            "capacidad_kg"           => oForm:nCapacidad,   ;
-                            "empresa_transporte_id"  => nEmpresaTransporteId,;
-                            "activo"                 => oForm:lActivo } )
+                             "marca"                  => oForm:cMarca,       ;
+                             "modelo"                 => oForm:cModelo,      ;
+                             "anio"                   => ToNum(oForm:nAnio), ;
+                             "capacidad_kg"           => ToNum(oForm:nCapacidad),;
+                             "empresa_transporte_id"  => nEmpresaTransporteId,;
+                             "activo"                 => oForm:lActivo } )
 
    uResp := oForm:rEntity:Save()
 
