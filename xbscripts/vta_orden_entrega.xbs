@@ -216,7 +216,7 @@ procedure vta_orden_entrega( oFormParent )
    ::oEntVehiculo:SetAction( ::bEntVehiculoAction )
 
    //-- Conductor
-   ::bEntConductorAction := { || oTPuy:RunXBS("mae_conductores", ::oFormParent, ::oWnd, ::oEntConductor, @::nConductorId, @::cConductor, ::nEmpresaTransporteId) }
+    ::bEntConductorAction := { || oTPuy:RunXBS("mae_conductores", ::oFormParent, ::oWnd, ::oEntConductor, @::nConductorId, @::cConductor, ::nEmpresaTransporteId) }
    DEFINE ENTRY ::oEntConductor VAR ::cConductor ;
           ACTION ::bEntConductorAction ;
           VALID .T. ;
@@ -1558,7 +1558,7 @@ Procedure __OrdEntSave( oForm, oFormParent )
    endif
 
    // Validar que se haya seleccionado un destinatario
-   if ToNum(::nDestinatarioId) == 0
+   if ::nDestinatarioId == 0
       MsgStop("Debe seleccionar un destinatario antes de guardar", "Error")
       return
    endif
@@ -1616,8 +1616,8 @@ Procedure __OrdEntSave( oForm, oFormParent )
    endif
    ::rOrdEntDoc:SetValue( "motivo_traslado", ::cMotivoTraslado )
    ::rOrdEntDoc:SetValue( "empresa_transporte_id", ::nEmpresaTransporteId )
-   ::rOrdEntDoc:SetValue( "vehiculo_id", ::nVehiculoId )
-   ::rOrdEntDoc:SetValue( "conductor_id", ::nConductorId )
+    ::rOrdEntDoc:SetValue( "vehiculo_id", ::nVehiculoId )
+    ::rOrdEntDoc:SetValue( "conductor_id", ::nConductorId )
    ::hOrdEnt := ::rOrdEntDoc:Data()
 
    //-- Actualizar detalles de la factura.
