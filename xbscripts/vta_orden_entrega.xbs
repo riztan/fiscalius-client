@@ -152,6 +152,12 @@ procedure vta_orden_entrega( oFormParent )
           OF ::oBoxCondicion
 
    ::cMotivoTraslado := ""
+   ::cEmpresaTransporte := ""
+   ::nEmpresaTransporteId := 0
+   ::cVehiculo := ""
+   ::nVehiculoId := 0
+   ::cConductor := ""
+   ::nConductorId := 0
    ::cNroControl := ""
    DEFINE LABEL ::oLabNroControl TEXT ::cNroControl ;
           ID "lab_nro_control" RESOURCE ::oRes
@@ -193,6 +199,29 @@ procedure vta_orden_entrega( oFormParent )
           ON CHANGE ( __OrdEntChangeEstado( oForm, ::lConfirm ) ) ;
           OF ::oBoxEstado
 
+   //-- Empresa de Transporte
+   ::bEntTransporteAction := { || oTPuy:RunXBS("mae_empresas_transporte", ::oFormParent, ::oWnd, ::oEntTransporte, @::nEmpresaTransporteId, @::cEmpresaTransporte) }
+   DEFINE ENTRY ::oEntTransporte VAR ::cEmpresaTransporte ;
+          ACTION ::bEntTransporteAction ;
+          VALID .T. ;
+          ID "ent_transporte" RESOURCE ::oRes
+   ::oEntTransporte:SetAction( ::bEntTransporteAction )
+
+   //-- Vehículo
+   ::bEntVehiculoAction := { || oTPuy:RunXBS("mae_vehiculos", ::oFormParent, ::oWnd, ::oEntVehiculo, @::nVehiculoId, @::cVehiculo, ::nEmpresaTransporteId) }
+   DEFINE ENTRY ::oEntVehiculo VAR ::cVehiculo ;
+          ACTION ::bEntVehiculoAction ;
+          VALID .T. ;
+          ID "ent_vehiculo" RESOURCE ::oRes
+   ::oEntVehiculo:SetAction( ::bEntVehiculoAction )
+
+   //-- Conductor
+   ::bEntConductorAction := { || oTPuy:RunXBS("mae_conductores", ::oFormParent, ::oWnd, ::oEntConductor, @::nConductorId, @::cConductor, ::nEmpresaTransporteId) }
+   DEFINE ENTRY ::oEntConductor VAR ::cConductor ;
+          ACTION ::bEntConductorAction ;
+          VALID .T. ;
+          ID "ent_conductor" RESOURCE ::oRes
+   ::oEntConductor:SetAction( ::bEntConductorAction )
 
    DEFINE STATUSBAR ::oStatusBar ;
           TEXT "" ;  //oTPuy:cSystem_Name + " | Hora: "+oTPuy:cTime ;
@@ -657,6 +686,12 @@ procedure __vtaOrdEnt( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::oEntFecha:SetValue( DTOC(DATE()) )
       ::oEntVcmto:SetValue( DTOC(DATE()) )
       ::cMotivoTraslado := ""
+      ::cEmpresaTransporte := ""
+      ::nEmpresaTransporteId := 0
+      ::cVehiculo := ""
+      ::nVehiculoId := 0
+      ::cConductor := ""
+      ::nConductorId := 0
       __OrdEntCambiarClasificacion( oForm )
 
       ::oEntOrdCompra:SetValue("")
@@ -713,6 +748,19 @@ procedure __vtaOrdEnt( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::nDestinatarioId     := iif( hb_hHasKey( ::hOrdEnt, "destinatario_id" ), ::hOrdEnt["destinatario_id"], 0 )
       ::cDestinatarioNombre := iif( hb_hHasKey( ::hOrdEnt, "destinatario_nombre" ), ::hOrdEnt["destinatario_nombre"], "" )
       ::cMotivoTraslado     := iif( hb_hHasKey( ::hOrdEnt, "motivo_traslado" ), ::hOrdEnt["motivo_traslado"], "" )
+      ::nEmpresaTransporteId := iif( hb_hHasKey( ::hOrdEnt, "empresa_transporte_id" ), ::hOrdEnt["empresa_transporte_id"], 0 )
+      ::cEmpresaTransporte   := iif( hb_hHasKey( ::hOrdEnt, "empresa_transporte_nombre" ) .and. ;
+                                hb_hHasKey( ::hOrdEnt, "empresa_transporte_codigo" ), ;
+                                ALLTRIM(::hOrdEnt["empresa_transporte_codigo"]) + " - " + ::hOrdEnt["empresa_transporte_nombre"], "" )
+      ::nVehiculoId          := iif( hb_hHasKey( ::hOrdEnt, "vehiculo_id" ), ::hOrdEnt["vehiculo_id"], 0 )
+      ::cVehiculo            := iif( hb_hHasKey( ::hOrdEnt, "vehiculo_placa" ), ;
+                                ALLTRIM(::hOrdEnt["vehiculo_placa"]) + " - " + ;
+                                ALLTRIM(hb_DefaultValue(::hOrdEnt["vehiculo_marca"],"")) + " " + ;
+                                ALLTRIM(hb_DefaultValue(::hOrdEnt["vehiculo_modelo"],"")), "" )
+      ::nConductorId         := iif( hb_hHasKey( ::hOrdEnt, "conductor_id" ), ::hOrdEnt["conductor_id"], 0 )
+      ::cConductor           := iif( hb_hHasKey( ::hOrdEnt, "conductor_nombre" ) .and. ;
+                                hb_hHasKey( ::hOrdEnt, "conductor_cedula" ), ;
+                                ALLTRIM(::hOrdEnt["conductor_nombre"]) + " - " + ::hOrdEnt["conductor_cedula"], "" )
       if !Empty( ::cDestinatarioNombre )
          ::oEntCli:SetValue( ::cDestinatarioNombre )
       elseif !Empty( ::cDestinatarioTipo )
@@ -782,6 +830,20 @@ procedure __vtaOrdEnt( oForm, oFormParent, oBoxPedido, oModel, lNew )
 
       //::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
 
+   endif
+
+   // Settear valores de transporte en los entries
+   if hb_isObject( ::oEntTransporte )
+      ::oEntTransporte:SetValue( ::cEmpresaTransporte )
+      ::oEntTransporte:SetAction( ::bEntTransporteAction )
+   endif
+   if hb_isObject( ::oEntVehiculo )
+      ::oEntVehiculo:SetValue( ::cVehiculo )
+      ::oEntVehiculo:SetAction( ::bEntVehiculoAction )
+   endif
+   if hb_isObject( ::oEntConductor )
+      ::oEntConductor:SetValue( ::cConductor )
+      ::oEntConductor:SetAction( ::bEntConductorAction )
    endif
 
    __OrdEntValFecha( oForm, ::oEntFecha, @::cPFecha )
@@ -1553,6 +1615,9 @@ Procedure __OrdEntSave( oForm, oFormParent )
       ::rOrdEntDoc:SetDestinatario( { "tipo" => ::cDestinatarioTipo, "id" => ::nDestinatarioId } )
    endif
    ::rOrdEntDoc:SetValue( "motivo_traslado", ::cMotivoTraslado )
+   ::rOrdEntDoc:SetValue( "empresa_transporte_id", ::nEmpresaTransporteId )
+   ::rOrdEntDoc:SetValue( "vehiculo_id", ::nVehiculoId )
+   ::rOrdEntDoc:SetValue( "conductor_id", ::nConductorId )
    ::hOrdEnt := ::rOrdEntDoc:Data()
 
    //-- Actualizar detalles de la factura.
@@ -1661,17 +1726,17 @@ PROCEDURE __OrdEntConvertir( oForm, oFormParent )
    local uResp, i, aLine
 
    if ::hOrdEnt["estado"] != "C"
-      MsgInfo( "El pedido debe estar cerrado para convertir a factura." )
+      MsgInfo( "La orden de entrega debe estar cerrada para convertir a factura." )
       RETURN
    endif
 
-   if MsgYesNo( "¿Convertir este pedido a factura?", "Confirmar" )
+   if MsgYesNo( "¿Convertir esta orden de entrega a factura?", "Confirmar" )
 
       uResp := ::rOrdEntDoc:ConvertirFactura()
       
       if hb_isHash( uResp ) .and. hb_hHasKey( uResp, "ok" )
          if uResp["ok"]
-            MsgInfo( "Pedido convertido a factura correctamente.", "Éxito" )
+            MsgInfo( "Orden de entrega convertida a factura correctamente.", "Éxito" )
             // Recargar lista de pedidos
             ::rOrdEnt := ::rVentas:OrdenesEntrega()
             if ::isDef("oModOrdEnts")
@@ -1689,7 +1754,7 @@ PROCEDURE __OrdEntConvertir( oForm, oFormParent )
          endif
       elseif hb_isLogical( uResp )
          if uResp
-            MsgInfo( "Pedido convertido a factura correctamente.", "Éxito" )
+            MsgInfo( "Orden de entrega convertida a factura correctamente.", "Éxito" )
             ::rOrdEnt := ::rVentas:OrdenesEntrega()
             if ::isDef("oModOrdEnts")
                ::oModOrdEnts:oTreeView:ClearModel(.t.)
@@ -1704,10 +1769,10 @@ PROCEDURE __OrdEntConvertir( oForm, oFormParent )
                NEXT
             endif
          else
-            MsgStop( "Error al convertir pedido a factura." )
+            MsgStop( "Error al convertir orden de entrega a factura." )
          endif
       else
-         MsgStop( "Error al convertir pedido a factura." )
+         MsgStop( "Error al convertir orden de entrega a factura." )
       endif
    endif
 RETURN

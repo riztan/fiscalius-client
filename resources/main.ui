@@ -633,22 +633,22 @@
   <object class="GtkImage" id="image76">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="pixbuf">../images/series-fiscales_32.png</property>
+    <property name="pixbuf">../images/series_32.png</property>
   </object>
   <object class="GtkImage" id="image77">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-missing-image</property>
+    <property name="pixbuf">../images/reports_32.png</property>
   </object>
   <object class="GtkImage" id="image78">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="pixbuf">../images/series-fiscales_32.png</property>
+    <property name="pixbuf">../images/series_fiscales_32.png</property>
   </object>
   <object class="GtkImage" id="image79">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="pixbuf">../images/series-fiscales_32.png</property>
+    <property name="pixbuf">../images/series_fis_doc_32.png</property>
   </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
@@ -1098,7 +1098,7 @@
                                 <property name="label" translatable="yes">Orden de _Entrega</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                 <property name="tooltip_text" translatable="yes">Crea o Edita una Orden de Entrega</property>
+                                <property name="tooltip_text" translatable="yes">Crea o Edita una Orden de Entrega</property>
                                 <property name="use_underline">True</property>
                                 <property name="image">image73</property>
                                 <property name="use_stock">False</property>
@@ -1117,7 +1117,7 @@
                             </child>
                             <child>
                               <object class="GtkImageMenuItem" id="itm_factura_old">
-                                <property name="label" translatable="yes">Factura (_anterior)</property>
+                                <property name="label">Factura (_anterior)</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="tooltip_text" translatable="yes">Factura anterior (respaldo)</property>

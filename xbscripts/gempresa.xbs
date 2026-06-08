@@ -104,7 +104,16 @@ CLASS GEMPRESA
 
    METHOD Alicuotas()                INLINE ::rEmpresa:Alicuotas()
    METHOD GetAlicuota(uParam)        INLINE ::rEmpresa:GetAlicuota(uParam)
-   
+
+   METHOD EmpresaTransporte(cCodigo) INLINE ::rEmpresa:EmpresaTransporte(cCodigo)
+   METHOD EmpresasTransporte(hParam) INLINE ::rEmpresa:EmpresasTransporte(hParam)
+   METHOD Vehiculo(cCodigo)          INLINE ::rEmpresa:Vehiculo(cCodigo)
+   METHOD Vehiculos(hParam)          INLINE ::rEmpresa:Vehiculos(hParam)
+   METHOD Conductor(cCodigo)         INLINE ::rEmpresa:Conductor(cCodigo)
+   METHOD Conductores(hParam)        INLINE ::rEmpresa:Conductores(hParam)
+   METHOD EmpresaSeguro(cCodigo)     INLINE ::rEmpresa:EmpresaSeguro(cCodigo)
+   METHOD EmpresasSeguro(hParam)     INLINE ::rEmpresa:EmpresasSeguro(hParam)
+
    METHOD SeriesFiscales(nTipoId)           INLINE ::rEmpresa:SeriesFiscales(nTipoId)
    METHOD SerieFiscal( hParam )      INLINE ::rEmpresa:SerieFiscal( hParam )
    METHOD SeriesTipos(uParam)        INLINE ::rEmpresa:SeriesTipos(uParam)
