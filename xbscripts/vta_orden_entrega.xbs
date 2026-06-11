@@ -1723,8 +1723,8 @@ return
 
 PROCEDURE __OrdEntImprime( oForm )
 
-   oTPuy:RunXBS( "vta_imprimir_pdf_pedido", oForm )
-  
+   oTPuy:RunXBS( "vta_imprimir_pdf_orden_entrega", oForm )
+
 RETURN
 
 
