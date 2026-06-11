@@ -223,6 +223,10 @@ procedure vta_orden_entrega( oFormParent )
           ID "ent_conductor" RESOURCE ::oRes
    ::oEntConductor:SetAction( ::bEntConductorAction )
 
+   //-- Motivo del traslado
+   DEFINE TEXTVIEW ::oTVMotivo VAR ::cMotivoTraslado ;
+          ID "tv_motivo" RESOURCE ::oRes
+
    DEFINE STATUSBAR ::oStatusBar ;
           TEXT "" ;  //oTPuy:cSystem_Name + " | Hora: "+oTPuy:cTime ;
           ID "statusbar" RESOURCE ::oRes
@@ -686,6 +690,7 @@ procedure __vtaOrdEnt( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::oEntFecha:SetValue( DTOC(DATE()) )
       ::oEntVcmto:SetValue( DTOC(DATE()) )
       ::cMotivoTraslado := ""
+      ::oTVMotivo:SetValue("")
       ::cEmpresaTransporte := ""
       ::nEmpresaTransporteId := 0
       ::cVehiculo := ""
@@ -748,6 +753,7 @@ procedure __vtaOrdEnt( oForm, oFormParent, oBoxPedido, oModel, lNew )
       ::nDestinatarioId     := iif( hb_hHasKey( ::hOrdEnt, "destinatario_id" ), ::hOrdEnt["destinatario_id"], 0 )
       ::cDestinatarioNombre := iif( hb_hHasKey( ::hOrdEnt, "destinatario_nombre" ), ::hOrdEnt["destinatario_nombre"], "" )
       ::cMotivoTraslado     := iif( hb_hHasKey( ::hOrdEnt, "motivo_traslado" ), ::hOrdEnt["motivo_traslado"], "" )
+      ::oTVMotivo:SetValue( ::cMotivoTraslado )
       ::nEmpresaTransporteId := iif( hb_hHasKey( ::hOrdEnt, "empresa_transporte_id" ), ::hOrdEnt["empresa_transporte_id"], 0 )
       ::cEmpresaTransporte   := iif( hb_hHasKey( ::hOrdEnt, "empresa_transporte_nombre" ) .and. ;
                                 hb_hHasKey( ::hOrdEnt, "empresa_transporte_codigo" ), ;
@@ -1614,7 +1620,7 @@ Procedure __OrdEntSave( oForm, oFormParent )
    else
       ::rOrdEntDoc:SetDestinatario( { "tipo" => ::cDestinatarioTipo, "id" => ::nDestinatarioId } )
    endif
-   ::rOrdEntDoc:SetValue( "motivo_traslado", ::cMotivoTraslado )
+   ::rOrdEntDoc:SetValue( "motivo_traslado", ::oTVMotivo:GetValue() )
    ::rOrdEntDoc:SetValue( "empresa_transporte_id", ::nEmpresaTransporteId )
     ::rOrdEntDoc:SetValue( "vehiculo_id", ::nVehiculoId )
     ::rOrdEntDoc:SetValue( "conductor_id", ::nConductorId )
