@@ -126,6 +126,7 @@ procedure vta_orden_entrega( oFormParent )
    DEFINE ENTRY ::oEntOrdCompra VAR ::cOrdenCompra ;
           VALID .T. ; 
           ID "ent_orden_compra" RESOURCE ::oRes
+   ::oEntOrdCompra:Hide()
 
    ::cFecha := DTOC( DATE() )
    ::cPFecha := ::cFecha
