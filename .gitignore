@@ -15,6 +15,9 @@
 /install/
 /salida.ppo
 
+# Archivos de configuración local
+connect.ch
+
 # Logs
 *.log
 

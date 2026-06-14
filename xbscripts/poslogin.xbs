@@ -179,7 +179,7 @@ procedure poslogin( oParent )
              ID "itm_notadebito" RESOURCE ::oRes
 
       DEFINE MENUITEM ::oMnuNotaEnt ACTION oTPuy:RunXBS("vta_orden_entrega", oForm, "E" );  
-             ID "itm_ordenentrega" RESOURCE ::oRes
+             ID "itm_orden_entrega" RESOURCE ::oRes
 
       DEFINE MENUITEM ::oMnuVtaLibro ACTION oTPuy:RunXBS("vta_libro", oForm );  
              ID "itm_vta_libro" RESOURCE ::oRes
