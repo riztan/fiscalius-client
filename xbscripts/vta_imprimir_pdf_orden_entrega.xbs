@@ -4,7 +4,7 @@
  *
  * Soporta:
  *   - Venta Diferida: muestra columnas Precio/Total y desglose de IVA
- *   - Traslado: solo Código, Descripción, Cantidad (sin montos)
+ *   - Traslado: solo Codigo, Descripcion, Cantidad (sin montos)
  *   - Datos de transporte y motivo del traslado
  *   - SIN DERECHO A CREDITO FISCAL
  */
@@ -25,8 +25,19 @@ procedure vta_imprimir_pdf_orden_entrega( oForm )
    local nBasEXE:=0
    local nPosDet:=0
    local lEsVenta
+   local nX1:=1.0, nX2:=3.0, nX3, nX4, nX5, nX6, nX7, nTableTop, nTableBottom
+   local nCantDer, nPrecDer, nIVADer, nTotDer
 
    lEsVenta := ( ::cCondicion == "Venta Diferida" .OR. ::cCondicion == "VENTA_DIFERIDA" )
+
+   // Definir posiciones de columnas segun tipo
+   if lEsVenta
+      nX3 := 10.5; nX4 := 12.5; nX5 := 15.5; nX6 := 17.0; nX7 := 21.0
+      nCantDer := 11.7; nPrecDer := 15.3; nIVADer := 16.9; nTotDer := 21.1
+   else
+      nX3 := 20.0; nX4 := 22.0
+      nCantDer := 21.8; nPrecDer := 0; nIVADer := 0; nTotDer := 0
+   endif
 
    // Proteger contra nil en datos
    if !hb_isObject( ::rPedDetal )
@@ -43,7 +54,7 @@ procedure vta_imprimir_pdf_orden_entrega( oForm )
       endif
    endif
 
-   cFilePDF := "tmp/vta_orden_entrega_" + STRTRAN( hb_hGetDef(::hOrdEnt,"numero","0"), "/", "_") + ".pdf"
+   cFilePDF := "tmp/vta_orden_entrega_" + STRTRAN( ::hOrdEnt["numero"], "/", "_") + ".pdf"
 
    FERASE( cFilePDF )
 
@@ -51,7 +62,7 @@ procedure vta_imprimir_pdf_orden_entrega( oForm )
    oPDF:PageSetSize( HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_LANDSCAPE )
 
    // =====================================
-   // TÍTULO
+   // TITULO
    // =====================================
    nY += 3
    oPDF:SetFont( "Helvetica-Bold", 12 )
@@ -63,9 +74,11 @@ procedure vta_imprimir_pdf_orden_entrega( oForm )
    oPDF:CMSAY( nY + 1.0, 17, "Vence: " + ::oEntVcmto:GetValue() )
 
    // Clasificacion y estado
+/*
    oPDF:SetFont( "Helvetica", 9 )
    oPDF:CMSAY( nY + 1.5, 1.4, "Clasificacion: " + ::cCondicion )
-
+*/
+/*
    do case
    case ::hOrdEnt["estado"] == "C"
       oPDF:CMSAY( nY + 1.5, 12, "Estado: Cerrada" )
@@ -76,14 +89,14 @@ procedure vta_imprimir_pdf_orden_entrega( oForm )
    otherwise
       oPDF:CMSAY( nY + 1.5, 12, "Estado: " + ::hOrdEnt["estado"] )
    endcase
-
-   nY += 2.5
+*/
+   nY += 1.5
 
    // =====================================
    // DATOS DESTINATARIO
    // =====================================
    oPDF:SetFont( "Helvetica-Bold", 11 )
-   oPDF:CMSAY( nY, 1.4, "Destinatario:" )
+   oPDF:CMSAY( nY, nX1, "Destinatario:" )
 
    oPDF:SetFont( "Helvetica", 11 )
    oPDF:CMSAY( nY, 4.5, ::cDestinatarioNombre )
@@ -92,14 +105,14 @@ procedure vta_imprimir_pdf_orden_entrega( oForm )
 
    if lClienteOk .and. LEN(aClientes) > 0
       oPDF:SetFont( "Helvetica", 10 )
-      oPDF:CMSAY( nY, 1.4, "RIF: " + aClientes[1,4] )
+      oPDF:CMSAY( nY, nX1, "RIF: " + aClientes[1,4] )
       oPDF:CMSAY( nY, 8, "Telf: " + aClientes[1,6] )
       nY += 0.5
       oPDF:SetFont( "Helvetica", 10 )
-      oPDF:CMSAY( nY, 1.4, "Dir: " + LEFT(aClientes[1,5], 60) )
+      oPDF:CMSAY( nY, nX1, "Dir: " + LEFT(aClientes[1,5], 60) )
    else
       oPDF:SetFont( "Helvetica", 10 )
-      oPDF:CMSAY( nY, 1.4, "Tipo: " + ::cDestinatarioTipo + "  ID: " + hb_ntos(::nDestinatarioId) )
+      oPDF:CMSAY( nY, nX1, "Tipo: " + ::cDestinatarioTipo + "  ID: " + hb_ntos(::nDestinatarioId) )
    endif
 
    nY += 0.5
@@ -110,18 +123,18 @@ procedure vta_imprimir_pdf_orden_entrega( oForm )
    if !Empty(::cEmpresaTransporte) .or. !Empty(::cVehiculo) .or. !Empty(::cConductor)
       nY += 0.3
       oPDF:SetFont( "Helvetica-Bold", 10 )
-      oPDF:CMSAY( nY, 1.4, "Transporte:" )
+      oPDF:CMSAY( nY, nX1, "Transporte:" )
       nY += 0.4
       oPDF:SetFont( "Helvetica", 10 )
       if !Empty(::cEmpresaTransporte)
-         oPDF:CMSAY( nY, 1.4, "Empresa: " + LEFT(::cEmpresaTransporte, 35) )
+         oPDF:CMSAY( nY, nX1, "Empresa: " + LEFT(::cEmpresaTransporte, 35) )
       endif
       if !Empty(::cVehiculo)
          oPDF:CMSAY( nY, 10, "Vehiculo: " + LEFT(::cVehiculo, 30) )
       endif
       nY += 0.4
       if !Empty(::cConductor)
-         oPDF:CMSAY( nY, 1.4, "Conductor: " + LEFT(::cConductor, 35) )
+         oPDF:CMSAY( nY, nX1, "Conductor: " + LEFT(::cConductor, 35) )
       endif
       nY += 0.3
    endif
@@ -133,41 +146,52 @@ procedure vta_imprimir_pdf_orden_entrega( oForm )
    if !Empty(cMotivo)
       nY += 0.3
       oPDF:SetFont( "Helvetica-Bold", 10 )
-      oPDF:CMSAY( nY, 1.4, "Motivo del Traslado:" )
+      oPDF:CMSAY( nY, nX1, "Motivo del Traslado:" )
       nY += 0.4
       oPDF:SetFont( "Helvetica", 10 )
-      oPDF:CMSAY( nY, 1.4, cMotivo )
+      oPDF:CMSAY( nY, nX1, cMotivo )
       nY += 0.5
    endif
 
+   nTableTop := nY
    nY += 0.5
 
    // =====================================
    // TABLA - ENCABEZADO
    // =====================================
    oPDF:SetFont( "Helvetica-Bold", 10 )
-   oPDF:CMSAY( nY, 1.0, "Codigo" )
-   oPDF:CMSAY( nY, 3.2, "Descripcion" )
-   oPDF:CMSAY( nY, 10.5, "Cant" )
-
+   oPDF:CMSAY( nY, nX1, "Codigo" )
+   oPDF:CMSAY( nY, nX2 + 0.2, "Descripcion" )
    if lEsVenta
+      oPDF:CMSAY( nY, nX3 + 0.3, "Cant" )
       IF tonum(::nMontoOtrImp)>0
          nPosDet+=3
-         oPDF:CMSAY( nY, 12.2, "Cap." )
-         oPDF:CMSAY( nY, 13.2, "Grados" )
+         oPDF:CMSAY( nY, nX4 + 0.5, "Cap." )
+         oPDF:CMSAY( nY, nX4 + 2.0, "Grados" )
       ENDIF
-      oPDF:CMSAY( nY, 12.5+nPosDet, "Precio Uni." )
-      oPDF:CMSAY( nY, 15.5+nPosDet, "% IVA" )
-      oPDF:CMSAY( nY, 17.5+nPosDet, "Total" )
+      oPDF:CMSAY( nY, nX4 + 0.5, "Precio Uni." )
+      oPDF:CMSAY( nY, nX5 + 0.2, "% IVA" )
+      oPDF:CMSAY( nY, nX6 + 0.7, "Total" )
       IF tonum(::nMontoOtrImp)>0
-         oPDF:CMSAY( nY, 21.5, "Imp. Pvp" )
+         oPDF:CMSAY( nY, nX6 + 3.0, "Imp. Pvp" )
       ENDIF
       IF tonum(::nMontoImpProd)>0
-         oPDF:CMSAY( nY, 23.5, "Imp. Prod." )
+         oPDF:CMSAY( nY, nX6 + 5.0, "Imp. Prod." )
       ENDIF
+   else
+      oPDF:CMSAY( nY, nX3 - 0.5, "Cant" )
    endif
 
    nY += 0.5
+
+   // Linea separadora del encabezado
+   oPDF:SetLineWidth( 0.3 )
+   oPDF:SetRgbStroke( 0, 0, 0 )
+   if lEsVenta
+      oPDF:Line( nY - 0.4, nX1 - 0.3, nY - 0.4, nX7 + 0.3 )
+   else
+      oPDF:Line( nY - 0.4, nX1 - 0.3, nY - 0.4, nX4 + 0.3 )
+   endif
 
    // =====================================
    // DETALLE
@@ -191,23 +215,28 @@ procedure vta_imprimir_pdf_orden_entrega( oForm )
          nBasSUN+=aLine[8]
       ENDIF
 
-      oPDF:CMSAY( nY, 1.0, LEFT(ALLTRIM(aLine[3]), 12) )
-      oPDF:CMSAY( nY, 3.2, LEFT(ALLTRIM(aLine[4]), IIF(lEsVenta, 35, 55)) )
-      oPDF:CMSAY( nY, 10, hb_ntos(nUni+nCaj) )
+      oPDF:CMSAY( nY, nX1, LEFT(ALLTRIM(aLine[3]), 12) )
+      if lEsVenta
+         oPDF:CMSAY( nY, nX2 + 0.2, LEFT(ALLTRIM(aLine[4]), 35) )
+         oPDF:CMSAYRECT( nY, nX3 + 0.3, hb_ntos(nUni+nCaj), "Courier", 9, 0,0,0,, nY, nCantDer, 1 )
+      else
+         oPDF:CMSAY( nY, nX2 + 0.2, LEFT(ALLTRIM(aLine[4]), 55) )
+         oPDF:CMSAYRECT( nY, nX3 - 0.5, hb_ntos(nUni+nCaj), "Courier", 9, 0,0,0,, nY, nCantDer, 1 )
+      endif
 
       if lEsVenta
          IF tonum(::nMontoOtrImp)>0
-            oPDF:CMSAY( nY, 12.2, TRANSFORM(aLine[22], "@E 999.99") )
-            oPDF:CMSAY( nY, 13.2, TRANSFORM(aLine[23], "@E 999.99") )
+            oPDF:CMSAYRECT( nY, nX4 + 0.5, TRANSFORM(aLine[22], "@E 999.99"), "Courier", 9, 0,0,0,, nY, nPrecDer, 1 )
+            oPDF:CMSAYRECT( nY, nX4 + 2.0, TRANSFORM(aLine[23], "@E 999.99"), "Courier", 9, 0,0,0,, nY, nPrecDer, 1 )
          ENDIF
-         oPDF:CMSAY( nY, 12.5+nPosDet, TRANSFORM(aLine[6], "@E 99,999.99") )
-         oPDF:CMSAY( nY, 15.5+nPosDet, TRANSFORM(aLine[9], "@E 99") )
-         oPDF:CMSAY( nY, 16.5+nPosDet, TRANSFORM(aLine[8], "@E 9,999,999.99") )
+         oPDF:CMSAYRECT( nY, nX4 + 0.5, TRANSFORM(aLine[6], "@E 9,999,999.99"), "Courier", 9, 0,0,0,, nY, nPrecDer, 1 )
+         oPDF:CMSAYRECT( nY, nX5 + 0.5, TRANSFORM(aLine[9], "@E 99"), "Courier", 9, 0,0,0,, nY, nIVADer, 1 )
+         oPDF:CMSAYRECT( nY, nX6 + 0.2, TRANSFORM(aLine[8], "@E 999,999,999.99"), "Courier", 9, 0,0,0,, nY, nTotDer, 1 )
          IF tonum(::nMontoOtrImp)>0
-            oPDF:CMSAY( nY, 21.1, TRANSFORM(aLine[21], "@E 999,999.99") )
+            oPDF:CMSAYRECT( nY, nX6 + 3.0, TRANSFORM(aLine[21], "@E 999,999.99"), "Courier", 9, 0,0,0,, nY, nTotDer, 1 )
          ENDIF
          IF tonum(::nMontoImpProd)>0
-            oPDF:CMSAY( nY, 23.1, TRANSFORM(aLine[22], "@E 999,999.99") )
+            oPDF:CMSAYRECT( nY, nX6 + 5.0, TRANSFORM(aLine[22], "@E 999,999.99"), "Courier", 9, 0,0,0,, nY, nTotDer, 1 )
          ENDIF
       endif
 
@@ -217,84 +246,110 @@ procedure vta_imprimir_pdf_orden_entrega( oForm )
    FOR i:=1 TO 15-LEN(aData)
       nY += 0.35
    NEXT
+   nTableBottom := nY
 
    nY += 1
+
+   // =====================================
+   // Borde exterior de la tabla
+   // =====================================
+   oPDF:SetLineWidth( 0.5 )
+   oPDF:SetRgbStroke( 0, 0, 0 )
+   if lEsVenta
+      oPDF:Rectangle( nTableTop - 0.2, nX1 - 0.3, nTableBottom + 0.2, nX7 + 0.3 )
+   else
+      oPDF:Rectangle( nTableTop - 0.2, nX1 - 0.3, nTableBottom + 0.2, nX4 + 0.3 )
+   endif
+   oPDF:PageStroke()
+
+   // =====================================
+   // Divisores verticales entre columnas
+   // =====================================
+   oPDF:SetLineWidth( 0.3 )
+   oPDF:SetRgbStroke( 0, 0, 0 )
+   if lEsVenta
+      oPDF:Line( nTableTop - 0.2, 3.0, nTableBottom + 0.2, 3.0 )      //Codigo
+      oPDF:Line( nTableTop - 0.2, 10.0, nTableBottom + 0.2, 10.0 )    //Descripcion
+      oPDF:Line( nTableTop - 0.2, 11.9, nTableBottom + 0.2, 11.9 )    //Cantidad
+      oPDF:Line( nTableTop - 0.2, 15.5, nTableBottom + 0.2, 15.5 )    //Precio Unit.
+      oPDF:Line( nTableTop - 0.2, 17.1, nTableBottom + 0.2, 17.1 )    //IVA
+   else
+      oPDF:Line( nTableTop - 0.2, 3.0, nTableBottom + 0.2, 3.0 )
+      oPDF:Line( nTableTop - 0.2, 11.35, nTableBottom + 0.2, 11.35 )
+   endif
 
    // =====================================
    // TOTALES (solo Venta Diferida)
    // =====================================
    if lEsVenta
-      oPDF:SetFont( "Helvetica", 11 )
-
       nBasEXE := tonum(::nMontoIvaE)
 
-      oPDF:CMSAY( nY, 10.4, "SubTotal " + cDivisa + " :" )
-      oPDF:CMSAY( nY, 18.4, "SubTotal " + cMoneda + " :" )
-      oPDF:CMSAY( nY, 15.6, TRANSFORM(tonum(::oEntMonBase:GetValue())/nDivisa, "@E 9,999,999.99") )
-      oPDF:CMSAY( nY, 23.6, TRANSFORM(tonum(::oEntMonBase:GetValue()), "@E 9,999,999.99") )
+      oPDF:CMSAYRECT( nY, 10.2, "SubTotal " + cDivisa + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+      oPDF:CMSAYRECT( nY, 18.2, "SubTotal " + cMoneda + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+      oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(tonum(::oEntMonBase:GetValue())/nDivisa, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
+      oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(tonum(::oEntMonBase:GetValue()), "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
       nY += 0.4
 
       IF nBasEXE>0
-         oPDF:CMSAY( nY, 10.4, "Exento " + cDivisa + " :" )
-         oPDF:CMSAY( nY, 18.4, "Exento " + cMoneda + " :" )
-         oPDF:CMSAY( nY, 15.6, TRANSFORM(nBasEXE/nDivisa, "@E 9,999,999.99") )
-         oPDF:CMSAY( nY, 23.6, TRANSFORM(nBasEXE, "@E 9,999,999.99") )
+         oPDF:CMSAYRECT( nY, 10.2, "Exento " + cDivisa + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 18.2, "Exento " + cMoneda + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(nBasEXE/nDivisa, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
+         oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(nBasEXE, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
          nY += 0.4
       ENDIF
 
       IF nBasGEN>0
-         oPDF:CMSAY( nY, 10.4, "Base Imponible (G) " + cDivisa + " :" )
-         oPDF:CMSAY( nY, 18.4, "Base Imponible (G) " + cMoneda + " :" )
-         oPDF:CMSAY( nY, 15.6, TRANSFORM(nBasGEN/nDivisa, "@E 9,999,999.99") )
-         oPDF:CMSAY( nY, 23.6, TRANSFORM(nBasGEN, "@E 9,999,999.99") )
+         oPDF:CMSAYRECT( nY, 10.2, "Base Imponible (G) " + cDivisa + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 18.2, "Base Imponible (G) " + cMoneda + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(nBasGEN/nDivisa, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
+         oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(nBasGEN, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
          nY += 0.4
       ENDIF
 
       IF nBasRED>0
-         oPDF:CMSAY( nY, 10.4, "Base Imponible (R) " + cDivisa + " :" )
-         oPDF:CMSAY( nY, 18.4, "Base Imponible (R) " + cMoneda + " :" )
-         oPDF:CMSAY( nY, 15.6, TRANSFORM(nBasRED/nDivisa, "@E 9,999,999.99") )
-         oPDF:CMSAY( nY, 23.6, TRANSFORM(nBasRED, "@E 9,999,999.99") )
+         oPDF:CMSAYRECT( nY, 10.2, "Base Imponible (R) " + cDivisa + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 18.2, "Base Imponible (R) " + cMoneda + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(nBasRED/nDivisa, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
+         oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(nBasRED, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
          nY += 0.4
       ENDIF
 
       IF nBasGEN>0
-         oPDF:CMSAY( nY, 10.4, "Alicuota IVA (16%) " + cDivisa + " :" )
-         oPDF:CMSAY( nY, 18.4, "Alicuota IVA (16%) " + cMoneda + " :" )
-         oPDF:CMSAY( nY, 15.6, TRANSFORM(tonum(::nMontoIvaG)/nDivisa, "@E 9,999,999.99") )
-         oPDF:CMSAY( nY, 23.6, TRANSFORM(tonum(::nMontoIvaG), "@E 9,999,999.99") )
+         oPDF:CMSAYRECT( nY, 10.2, "Alicuota IVA (16%) " + cDivisa + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 18.2, "Alicuota IVA (16%) " + cMoneda + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(tonum(::nMontoIvaG)/nDivisa, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
+         oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(tonum(::nMontoIvaG), "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
          nY += 0.4
       ENDIF
 
       IF nBasRED>0
-         oPDF:CMSAY( nY, 10.4, "Alicuota IVA (8%) " + cDivisa + " :" )
-         oPDF:CMSAY( nY, 18.4, "Alicuota IVA (8%) " + cMoneda + " :" )
-         oPDF:CMSAY( nY, 15.6, TRANSFORM(tonum(::nMontoIvaR)/nDivisa, "@E 9,999,999.99") )
-         oPDF:CMSAY( nY, 23.6, TRANSFORM(tonum(::nMontoIvaR), "@E 9,999,999.99") )
+         oPDF:CMSAYRECT( nY, 10.2, "Alicuota IVA (8%) " + cDivisa + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 18.2, "Alicuota IVA (8%) " + cMoneda + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(tonum(::nMontoIvaR)/nDivisa, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
+         oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(tonum(::nMontoIvaR), "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
          nY += 0.4
       ENDIF
 
       IF tonum(::nMontoOtrImp)>0
-         oPDF:CMSAY( nY, 10.4, "Impuesto PVP " + cDivisa + " :" )
-         oPDF:CMSAY( nY, 18.4, "Impuesto PVP " + cMoneda + " :" )
-         oPDF:CMSAY( nY, 15.6, TRANSFORM(tonum(::nMontoOtrImp)/nDivisa, "@E 9,999,999.99") )
-         oPDF:CMSAY( nY, 23.6, TRANSFORM(tonum(::nMontoOtrImp), "@E 9,999,999.99") )
+         oPDF:CMSAYRECT( nY, 10.2, "Impuesto PVP " + cDivisa + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 18.2, "Impuesto PVP " + cMoneda + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(tonum(::nMontoOtrImp)/nDivisa, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
+         oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(tonum(::nMontoOtrImp), "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
          nY += 0.4
       ENDIF
 
       IF tonum(::nMontoImpProd)>0
-         oPDF:CMSAY( nY, 10.4, "Impuesto Prod. " + cDivisa + " :" )
-         oPDF:CMSAY( nY, 18.4, "Impuesto Prod. " + cMoneda + " :" )
-         oPDF:CMSAY( nY, 15.6, TRANSFORM(tonum(::nMontoImpProd)/nDivisa, "@E 9,999,999.99") )
-         oPDF:CMSAY( nY, 23.6, TRANSFORM(tonum(::nMontoImpProd), "@E 9,999,999.99") )
+         oPDF:CMSAYRECT( nY, 10.2, "Impuesto Prod. " + cDivisa + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 18.2, "Impuesto Prod. " + cMoneda + " :", "Helvetica", 11, 0,0,0,, nY, 24.5, 0 )
+         oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(tonum(::nMontoImpProd)/nDivisa, "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 16.5, 1 )
+         oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(tonum(::nMontoImpProd), "@E 9,999,999.99"), "Helvetica", 11, 0,0,0,, nY, 24.5, 1 )
          nY += 0.4
       ENDIF
 
-      oPDF:SetFont( "Helvetica-Bold", 11 )
-      oPDF:CMSAY( nY, 10.2, "TOTAL " + cDivisa + " :" )
-      oPDF:CMSAY( nY, 18.2, "TOTAL " + cMoneda + " :" )
-      oPDF:CMSAY( nY, 15.4, TRANSFORM(tonum(::oEntTotal:GetValue())/nDivisa, "@E 99,999,999.99") )
-      oPDF:CMSAY( nY, 23.5, TRANSFORM(tonum(::oEntTotal:GetValue()), "@E 99,999,999.99") )
+      oPDF:CMSAYRECT( nY, 10.2, "TOTAL " + cDivisa + " :", "Helvetica-Bold", 11, 0,0,0,, nY, 24.5, 0 )
+      oPDF:CMSAYRECT( nY, 18.2, "TOTAL " + cMoneda + " :", "Helvetica-Bold", 11, 0,0,0,, nY, 24.5, 0 )
+      oPDF:CMSAYRECT( nY, 10.2, TRANSFORM(tonum(::oEntTotal:GetValue())/nDivisa, "@E 99,999,999.99"), "Helvetica-Bold", 11, 0,0,0,, nY, 16.5, 1 )
+      oPDF:CMSAYRECT( nY, 18.2, TRANSFORM(tonum(::oEntTotal:GetValue()), "@E 99,999,999.99"), "Helvetica-Bold", 11, 0,0,0,, nY, 24.5, 1 )
 
       nY += 0.8
    endif
