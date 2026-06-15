@@ -24,7 +24,7 @@
 #define __IMP_PVP_CALC   27
 #define __IMP_PRODUCC_CALC 28
 
-procedure vta_orden_entrega( oFormParent )
+procedure vta_orden_entrega( oFormParent, cFiltro )
 
    local oForm, cEntCli
 
@@ -37,15 +37,29 @@ procedure vta_orden_entrega( oFormParent )
    ::lConfirm := .T.
    ::lNew     := .T.
    ::lSilence := .F.
-
    ::oFormParent := oFormParent
+
+   // Inicializar filtro según parámetro
+   ::cFiltroEstado := "Todas"
+   if !hb_isNIL( cFiltro )
+      do case
+      case upper( cFiltro ) == "ACTIVAS"
+         ::cFiltroEstado := "Activas"
+      case upper( cFiltro ) == "FINALIZADAS"
+         ::cFiltroEstado := "Finalizadas"
+      endcase
+   endif
 
    ::aDetal := {}
 
    ::cEmpresa  := oFormParent:cCBEmpresa
    ::rEmpresa  := oFormParent:oGEmpresa
    ::rVentas   := oFormParent:oGEmpresa:SetModulo("Ventas")
-   ::rOrdEnt := ::rVentas:OrdenesEntrega()
+   if upper( ::cFiltroEstado ) == "TODAS"
+      ::rOrdEnt := ::rVentas:OrdenesEntrega()
+   else
+      ::rOrdEnt := ::rVentas:OrdenesEntrega( { "estado" => upper(::cFiltroEstado) } )
+   endif
   
    if hb_isNIL( ::rOrdEnt )
       MsgStop( "no se puede obtener información de guías de despacho" )
@@ -146,6 +160,13 @@ procedure vta_orden_entrega( oFormParent )
    ::cCondicionID := "VENTA_DIFERIDA"
    ::aCondiciones := {"Venta Diferida", "Traslado Interno", "Traslado a Tercero"}
    ::aCondicionesID := {"VENTA_DIFERIDA", "TRASLADO_SEDE", "TRASLADO_OTRO"}
+
+   // Filtro de estados (Todas / Activas / Finalizadas)
+   ::aFiltros := { "Todas", "Activas", "Finalizadas" }
+   DEFINE COMBOBOX ::oFiltroEstados ;
+          VAR ::cFiltroEstado ITEMS ::aFiltros ;
+          ON CHANGE __ModOrdEntRefresh( oForm ) ;
+          ID "cbo_filtro_estado" RESOURCE ::oRes
 
    DEFINE COMBOBOX ::oComboCondicion ;
           VAR ::cCondicion ITEMS ::aCondiciones ;
@@ -346,8 +367,8 @@ procedure vta_orden_entrega( oFormParent )
    ::oLBoxOrdEnts:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
    ::oLBoxOrdEnts:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
    ::oLBoxOrdEnts:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
-   //::oLBoxOrdEnts:SetColVisible( 11, .f. )          //- - Ocultamos el id de serie 
-   //::oLBoxOrdEnts:SetColVisible( 12, .f. )          //- - Ocultamos la serie fiscal
+   ::oLBoxOrdEnts:SetColVisible( 13, .f. )         //- doc_finaliza_tipo_id
+   ::oLBoxOrdEnts:SetColVisible( 14, .f. )         //- doc_finaliza_id
    
 
    ::oLBoxOrdEnts:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
@@ -372,6 +393,8 @@ procedure vta_orden_entrega( oFormParent )
    ::hCol["condicion_nombre"] := 10
    ::hCol["serie_id"]         := 11
    ::hCol["serie_fiscal"]     := 12
+   ::hCol["doc_finaliza_tipo_id"] := 13
+   ::hCol["doc_finaliza_id"]      := 14
 
    //::oLBoxOrdEnts:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 
@@ -389,11 +412,15 @@ return
 
 procedure __ModOrdEntRefresh(oForm)
    local aLine, aIter := ARRAY(4)
-   local bDetalCode
+   local bDetalCode, cFiltro
 
-   ::rOrdEnt := ::rVentas:OrdenesEntrega()
+   cFiltro := upper( ::cFiltroEstado )
+   if cFiltro == "TODAS"
+      ::rOrdEnt := ::rVentas:OrdenesEntrega()
+   else
+      ::rOrdEnt := ::rVentas:OrdenesEntrega( { "estado" => cFiltro } )
+   endif
    if ::isDef("oModOrdEnts")
-//View( ::oModOrdEnts:oTreeView:IsGetSelected( aIter ) )
       ::oModOrdEnts:oTreeView:ClearModel(.t.)
       FOR EACH aLine IN ::rOrdEnt:GetData()
 
@@ -403,7 +430,9 @@ procedure __ModOrdEntRefresh(oForm)
                         DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
                         aLine[ 7], hb_ntos(aLine[ 8]), ;
                         hb_ntos(aLine[ 9]), aLine[ 10], ;
-                        hb_ntos(aLine[ 11]), aLine[ 12]
+                        hb_ntos(aLine[ 11]), aLine[ 12], ;
+                        iif( hb_isNIL(aLine[13]), "", hb_ntos(aLine[13]) ), ;
+                        iif( hb_isNIL(aLine[14]), "", hb_ntos(aLine[14]) )
 
       NEXT
 
@@ -1482,14 +1511,19 @@ procedure __OrdEntRefresh( oForm, lConfirm )
       ::oEntCli:Disable()
       ::oEntFecha:Disable()
       ::oEntVcmto:Disable()
-      if ::hOrdEnt["estado"]="C"
-
-          ::oBtnImprime:Enable() 
-       endif
-       if ::hOrdEnt["estado"]="A"
-
-          ::oBtnImprime:Disable() 
-       endif
+        if ::hOrdEnt["estado"]="C"
+            ::oBtnImprime:Enable()
+            if ::hOrdEnt["clasificacion_id"] == 1 .and. ;
+               ( hb_isNIL(::hOrdEnt["doc_finaliza_id"]) .or. empty(::hOrdEnt["doc_finaliza_id"]) )
+               ::oBtnConvertir:Enable()
+            else
+               ::oBtnConvertir:Disable()
+            endif
+         endif
+        if ::hOrdEnt["estado"]="A"
+           ::oBtnImprime:Disable()
+           ::oBtnConvertir:Disable()
+        endif
       if ::lSave .or. ::lLoad
          ::oComboEstado:Disable()
       //else
@@ -1742,39 +1776,16 @@ PROCEDURE __OrdEntConvertir( oForm, oFormParent )
       uResp := ::rOrdEntDoc:ConvertirFactura()
       
       if hb_isHash( uResp ) .and. hb_hHasKey( uResp, "ok" )
-         if uResp["ok"]
-            MsgInfo( "Orden de entrega convertida a factura correctamente.", "Éxito" )
-            // Recargar lista de pedidos
-            ::rOrdEnt := ::rVentas:OrdenesEntrega()
-            if ::isDef("oModOrdEnts")
-               ::oModOrdEnts:oTreeView:ClearModel(.t.)
-               FOR EACH aLine IN ::rOrdEnt:GetData()
-                  APPEND LIST_STORE ::oModOrdEnts:oLbx ITER aIter ;
-                         VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
-                                ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
-                                DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
-                                aLine[ 7], hb_ntos(aLine[ 8])
-               NEXT
-            endif
-         else
-            MsgStop( uResp["message"] )
-         endif
-      elseif hb_isLogical( uResp )
-         if uResp
-            MsgInfo( "Orden de entrega convertida a factura correctamente.", "Éxito" )
-            ::rOrdEnt := ::rVentas:OrdenesEntrega()
-            if ::isDef("oModOrdEnts")
-               ::oModOrdEnts:oTreeView:ClearModel(.t.)
-               ::aOrdEnts := ::rOrdEnt:GetData()
-               FOR i := 1 TO Len( ::aOrdEnts )
-                  aLine := ::aOrdEnts[ i ]
-                  APPEND LIST_STORE ::oModOrdEnts:oLbx ITER aIter ;
-                         VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
-                                ALLTRIM(aLine[ 3]), DTOC(aLine[ 4]), ;
-                                DTOC(aLine[ 5]), TRANSFORM(aLine[ 6],P_92), ;
-                                aLine[ 7], hb_ntos(aLine[ 8])
-               NEXT
-            endif
+          if uResp["ok"]
+             MsgInfo( "Orden de entrega convertida a factura correctamente.", "Éxito" )
+             __ModOrdEntRefresh( oForm )
+          else
+             MsgStop( uResp["message"] )
+          endif
+       elseif hb_isLogical( uResp )
+          if uResp
+             MsgInfo( "Orden de entrega convertida a factura correctamente.", "Éxito" )
+             __ModOrdEntRefresh( oForm )
          else
             MsgStop( "Error al convertir orden de entrega a factura." )
          endif
