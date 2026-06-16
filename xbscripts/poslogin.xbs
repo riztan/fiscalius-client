@@ -181,8 +181,8 @@ procedure poslogin( oParent )
       DEFINE MENUITEM ::oMnuNotaEnt ACTION oTPuy:RunXBS("vta_orden_entrega", oForm, "E" );  
               ID "itm_orden_entrega" RESOURCE ::oRes
 
-      DEFINE MENUITEM ::oMnuOrdEntActivas ACTION oTPuy:RunXBS("vta_orden_entrega", oForm, "ACTIVAS" );  
-              ID "itm_orden_entrega_activas" RESOURCE ::oRes
+//      DEFINE MENUITEM ::oMnuOrdEntActivas ACTION oTPuy:RunXBS("vta_orden_entrega", oForm, "ACTIVAS" );  
+//              ID "itm_orden_entrega_activas" RESOURCE ::oRes
 
       DEFINE MENUITEM ::oMnuVtaLibro ACTION oTPuy:RunXBS("vta_libro", oForm );  
              ID "itm_vta_libro" RESOURCE ::oRes
@@ -204,6 +204,9 @@ procedure poslogin( oParent )
 			  
       DEFINE MENUITEM ::oMnuVtaRep ACTION oTPuy:RunXBS("vta_rep_docvta", oForm );  
              ID "itm_rep_docvta" RESOURCE ::oRes
+
+      DEFINE MENUITEM ::oMnuRepOrdEntActivas ACTION oTPuy:RunXBS("vta_orden_entrega", oForm, "ACTIVAS" );
+             ID "itm_rep_ord_ent_activas" RESOURCE ::oRes
 
       DEFINE MENUITEM ::oMnuIGTFRep ACTION oTPuy:RunXBS("igtf_recibidos", oForm );  
              ID "itm_igtf" RESOURCE ::oRes
@@ -239,6 +242,7 @@ procedure poslogin( oParent )
           ::oMnuAudTransacciones:Hide()
           ::oMnuCtasCobrar:Hide()
           ::oMnuVtaRep:Hide()
+          ::oMnuRepOrdEntActivas:Hide()
           ::oMnuIGTFRep:Hide()
        endif
       if oTPuy:oUser:IsFacturacion()

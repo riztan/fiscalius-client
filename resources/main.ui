@@ -665,6 +665,16 @@
     <property name="can_focus">False</property>
     <property name="pixbuf">../images/auditor_32.png</property>
   </object>
+  <object class="GtkImage" id="image82">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/reports_32.png</property>
+  </object>
+  <object class="GtkImage" id="image83">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/orden_entrega_rep_32.png</property>
+  </object>
   <object class="GtkImage" id="image9">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -1105,16 +1115,6 @@
                                 <property name="use_stock">False</property>
                               </object>
                             </child>
-                            <child>
-                              <object class="GtkImageMenuItem" id="itm_orden_entrega_activas">
-                                <property name="label" translatable="yes">Órdenes de Entrega _Activas</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Lista solo las Órdenes de Entrega activas pendientes de facturar</property>
-                                <property name="use_underline">True</property>
-                                <property name="use_stock">False</property>
-                              </object>
-                            </child>
                           </object>
                         </child>
                       </object>
@@ -1169,6 +1169,15 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="image">image77</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="itm_rep_ord_ent_activas">
+                                <property name="label" translatable="yes">Órdenes de Entrega Activas</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image83</property>
                                 <property name="use_stock">False</property>
                               </object>
                             </child>

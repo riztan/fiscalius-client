@@ -26,7 +26,7 @@
 
 procedure vta_orden_entrega( oFormParent, cFiltro )
 
-   local oForm, cEntCli
+   local oForm, cEntCli, aRow
 
    SET PUBLIC oForm
 
@@ -349,9 +349,47 @@ procedure vta_orden_entrega( oFormParent, cFiltro )
 */
 
    //-------------------------
+   // Extender struct con columnas calculadas para estatus y doc relacionado
+   ::aOrdEntStruct := ::rOrdEnt:Struct()
+   AADD( ::aOrdEntStruct, {"status_text", "C", 20, 0} )         // col 18
+   AADD( ::aOrdEntStruct, {"doc_relacionado", "C", 50, 0} )     // col 19
+
+   ::aOrdEntData := ::rOrdEnt:GetData()
+   // Extender cada fila con status y doc_relacionado computados
+   FOR EACH aRow IN ::aOrdEntData
+      do case
+      case aRow[7] == "B"
+         AADD( aRow, "Borrador" )
+      case aRow[7] == "A"
+         AADD( aRow, "Anulada" )
+      case aRow[7] == "C"
+         if empty( aRow[14] )
+            AADD( aRow, "Activa" )
+         else
+            AADD( aRow, "Finalizada" )
+         endif
+      otherwise
+         AADD( aRow, "Desconocido" )
+      endcase
+      if empty( aRow[14] )
+         AADD( aRow, "" )
+      else
+         do case
+         case aRow[16] == 4
+            AADD( aRow, "Factura Nro " + ALLTRIM( aRow[15] ) )
+         case aRow[16] == 5
+            AADD( aRow, "N/C Nro " + ALLTRIM( aRow[15] ) )
+         case aRow[16] == 6
+            AADD( aRow, "N/D Nro " + ALLTRIM( aRow[15] ) )
+         otherwise
+            AADD( aRow, "Doc. Nro " + ALLTRIM( aRow[15] ) )
+         endcase
+      endif
+   NEXT
+
    DEFINE MODEL  ::oModOrdEnts ;
-          STRUCT ::rOrdEnt:Struct() ;
-          DATA   ::rOrdEnt:GetData()
+          STRUCT ::aOrdEntStruct ;
+          DATA   ::aOrdEntData
    
    DEFINE LISTBOX ::oLBoxOrdEnts ;
           MODEL   ::oModOrdEnts ;
@@ -365,19 +403,28 @@ procedure vta_orden_entrega( oFormParent, cFiltro )
    //View( oLBoxPedidos:GetCol(1):ClassName() )
    
    ::oLBoxOrdEnts:SetColVisible( 2, .f. )         //- Ocultamos el id del cliente.
+   ::oLBoxOrdEnts:SetColVisible( 5, .f. )         //- Ocultamos Fcha Vencimiento
+   ::oLBoxOrdEnts:SetColVisible( 7, .f. )          //- - Ocultamos raw estado (B/A/C)
    ::oLBoxOrdEnts:SetColVisible( 8, .f. )          //- - Ocultamos el id del vendedor 
    ::oLBoxOrdEnts:SetColVisible( 9, .f. )          //- - Ocultamos el id del condicion 
+   ::oLBoxOrdEnts:SetColVisible( 11, .f. )         //- serie_id
+   ::oLBoxOrdEnts:SetColVisible( 12, .f. )         //- serie fiscal
    ::oLBoxOrdEnts:SetColVisible( 13, .f. )         //- doc_finaliza_tipo_id
    ::oLBoxOrdEnts:SetColVisible( 14, .f. )         //- doc_finaliza_id
+   ::oLBoxOrdEnts:SetColVisible( 15, .f. )         //- doc_finaliza_numero
+   ::oLBoxOrdEnts:SetColVisible( 16, .f. )         //- doc_finaliza_tipo
+   ::oLBoxOrdEnts:SetColVisible( 17, .f. )         //- doc_finaliza_serie_fiscal
    
-
    ::oLBoxOrdEnts:SetColTitle( 1, "Número" )  //- Cambiamos el titulo 
    ::oLBoxOrdEnts:SetColTitle( 3, "Nombre del Cliente" )  //- Cambiamos el titulo 
    ::oLBoxOrdEnts:SetColTitle( 4, "Fecha" )  //- Cambiamos el titulo 
     ::oLBoxOrdEnts:SetColTitle( 5, "Fecha Vcto." )  //- Cambiamos el titulo 
    ::oLBoxOrdEnts:SetColTitle( 6, "Monto" )       //- Cambiamos el titulo 
-   ::oLBoxOrdEnts:SetColTitle( 7, "Estado" )       //- Cambiamos el titulo 
    ::oLBoxOrdEnts:SetColTitle( 10, "Tipo" )       //- Cambiamos el titulo 
+   //::oLBoxOrdEnts:SetColTitle( 11, "11" )       //- Cambiamos el titulo 
+   //::oLBoxOrdEnts:SetColTitle( 12, "12" )       //- Cambiamos el titulo 
+   ::oLBoxOrdEnts:SetColTitle( 18, "Estatus" )    //- Estatus descriptivo
+   ::oLBoxOrdEnts:SetColTitle( 19, "Doc. Relacionado" )  //- Doc destino
    //::oLBoxOrdEnts:SetColTitle( 12, "Serie" )       //- Cambiamos el titulo 
 
    ::hCol := hb_hash()
@@ -395,6 +442,11 @@ procedure vta_orden_entrega( oFormParent, cFiltro )
    ::hCol["serie_fiscal"]     := 12
    ::hCol["doc_finaliza_tipo_id"] := 13
    ::hCol["doc_finaliza_id"]      := 14
+   ::hCol["doc_finaliza_numero"]  := 15
+   ::hCol["doc_finaliza_tipo"]    := 16
+   ::hCol["doc_finaliza_serie"]   := 17
+   ::hCol["status_text"]          := 18
+   ::hCol["doc_relacionado"]      := 19
 
    //::oLBoxOrdEnts:HeadersVisible( .f. )  //- Muestra u Oculta titulos de columnas
 
@@ -413,6 +465,7 @@ return
 procedure __ModOrdEntRefresh(oForm)
    local aLine, aIter := ARRAY(4)
    local bDetalCode, cFiltro
+   local cStatus, cDocRel
 
    cFiltro := upper( ::cFiltroEstado )
    if cFiltro == "TODAS"
@@ -422,7 +475,38 @@ procedure __ModOrdEntRefresh(oForm)
    endif
    if ::isDef("oModOrdEnts")
       ::oModOrdEnts:oTreeView:ClearModel(.t.)
-      FOR EACH aLine IN ::rOrdEnt:GetData()
+
+      ::aOrdEntData := ::rOrdEnt:GetData()
+      AEVAL( ::aOrdEntData, {|aRow| AADD( aRow, "" ), AADD( aRow, "" ) } )
+
+      FOR EACH aLine IN ::aOrdEntData
+
+          cStatus := "Desconocido"
+          cDocRel := ""
+          if !hb_isNIL( aLine[7] )
+             do case
+             case aLine[7] == "B"
+                cStatus := "Borrador"
+             case aLine[7] == "A"
+                cStatus := "Anulada"
+             case aLine[7] == "C"
+                if empty( aLine[14] )
+                   cStatus := "Activa"
+                else
+                   cStatus := "Finalizada"
+                   do case
+                   case aLine[16] == 4
+                      cDocRel := "Factura Nro " + ALLTRIM( aLine[15] )
+                   case aLine[16] == 5
+                      cDocRel := "N/C Nro " + ALLTRIM( aLine[15] )
+                   case aLine[16] == 6
+                      cDocRel := "N/D Nro " + ALLTRIM( aLine[15] )
+                   otherwise
+                      cDocRel := "Doc. Nro " + ALLTRIM( aLine[15] )
+                   endcase
+                endif
+             endcase
+          endif
 
           APPEND LIST_STORE ::oModOrdEnts:oLbx ITER aIter ;
                  VALUES aLine[ 1], hb_ntos(aLine[ 2]), ;
@@ -431,19 +515,24 @@ procedure __ModOrdEntRefresh(oForm)
                         aLine[ 7], hb_ntos(aLine[ 8]), ;
                         hb_ntos(aLine[ 9]), aLine[ 10], ;
                         hb_ntos(aLine[ 11]), aLine[ 12], ;
-                        iif( hb_isNIL(aLine[13]), "", hb_ntos(aLine[13]) ), ;
-                        iif( hb_isNIL(aLine[14]), "", hb_ntos(aLine[14]) )
+                        iif( empty(aLine[13]), "", hb_ntos(aLine[13]) ), ;
+                        iif( empty(aLine[14]), "", hb_ntos(aLine[14]) ), ;
+                        iif( empty(aLine[15]), "", hb_ntos(aLine[15]) ), ;
+                        iif( empty(aLine[16]), "", hb_ntos(aLine[16]) ), ;
+                        iif( empty(aLine[17]), "", aLine[17] ), ;
+                        cStatus, ;
+                        cDocRel
 
       NEXT
 
       bDetalCode := {|oTView, pModel, aIter | ;
-                     iif( oTView:GetAutoValue(1, aIter)==::hOrdEnt["numero"], ;
-                          gtk_tree_view_set_cursor( oTview:pWidget, oTView:getPath(aIter), NIL, .F.  ),;
-                          .t. ) }
+                      iif( oTView:GetAutoValue(1, aIter)==::hOrdEnt["numero"], ;
+                           gtk_tree_view_set_cursor( oTview:pWidget, oTView:getPath(aIter), NIL, .F.  ),;
+                           .t. ) }
       ::oLBoxOrdEnts:ForEach( bDetalCode )
 
    endif
-return 
+return
 
 
 
