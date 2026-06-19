@@ -67,6 +67,12 @@ CLASS GEMPRESA
    METHOD Methods()                  INLINE ::rEmpresa:Methods()
 
    METHOD Clientes( cFiltro )        INLINE ::rEmpresa:Clientes( {"filtro"=>cFiltro} )
+   METHOD Terceros( hParam )         INLINE ::rEmpresa:Terceros( hParam )
+   METHOD Tercero( hParam )          INLINE ::rEmpresa:Tercero( hParam )
+   METHOD TercerosCatalogo( hParam ) INLINE ::rEmpresa:TercerosCatalogo( hParam )
+   METHOD TercerosCatalogoAll( hParam ) INLINE ::rEmpresa:TercerosCatalogoAll( hParam )
+   METHOD TerceroCatalogo( hParam )  INLINE ::rEmpresa:TerceroCatalogo( hParam )
+   METHOD RemoveProductCatalogo( nId ) INLINE ::rEmpresa:RemoveProductCatalogo( nId )
 //   METHOD Proveedores()              INLINE ::rEmpresa:Proveedores()
 
    METHOD Time()   INLINE  hb_DateTime() - ::dLastRemote

@@ -989,6 +989,15 @@
                               </object>
                             </child>
                             <child>
+                              <object class="GtkImageMenuItem" id="itm_terceros">
+                                <property name="label" translatable="yes">Terceros</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">gtk-home</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
                               <object class="GtkImageMenuItem" id="item_productos">
                                 <property name="label" translatable="yes">Productos</property>
                                 <property name="visible">True</property>

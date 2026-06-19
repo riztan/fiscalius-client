@@ -166,6 +166,9 @@ procedure poslogin( oParent )
       DEFINE MENUITEM ::oMnuClientes ACTION oTPuy:RunXBS( "vta_clientes", oForm, oTPuy:oWnd ) ;
              ID "itm_clientes" RESOURCE ::oRes
 
+      DEFINE MENUITEM ::oMnuTerceros ACTION oTPuy:RunXBS( "mae_terceros", oForm, oTPuy:oWnd ) ;
+             ID "itm_terceros" RESOURCE ::oRes
+
       DEFINE MENUITEM ::oMnuPedidos ACTION oTPuy:RunXBS("vta_pedidos", oForm );  
               ID "itm_pedidos" RESOURCE ::oRes
 
@@ -230,6 +233,7 @@ procedure poslogin( oParent )
           ::oMnuInventario:Hide()
           ::oMnuIGTF:Hide()
           ::oMnuClientes:Hide()
+          ::oMnuTerceros:Hide()
           ::oMnuPedidos:Hide()
           ::oMnuFacturas:Hide()
           ::oMnuNotaCre:Hide()

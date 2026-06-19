@@ -1,0 +1,129 @@
+/* mae_terceros_catalogo.xbs
+ *
+ * Catalogo de servicios/productos de terceros
+ * Basado en: mae_inventario.xbs
+ */
+
+#include "tpy_xbs.ch"
+
+procedure mae_terceros_catalogo( oForm, oWndParent, oEntParent, nTerceroId, cFiltro )
+
+   local oWnd, oRes, oImgBanner, oImageLogo, oBoxData
+   local oLabTitulo, cLabTitulo := "Servicios de Terceros"
+   local rCatalogo, oMod, oLBox, hParam
+
+   default nTerceroId to 0
+   default cFiltro    to ""
+
+   if nTerceroId <= 0
+      MsgStop("Debe indicar un tercero para ver su catálogo.")
+      return
+   endif
+
+   hParam := hb_hash()
+   hParam["tercero_id"] := nTerceroId
+   if !Empty( cFiltro )
+      hParam["filtro"] := cFiltro
+   endif
+
+   rCatalogo := ::oGEmpresa:TercerosCatalogo( hParam )
+
+   if hb_isNIL(rCatalogo)
+      MsgStop("Error al consultar el catálogo.")
+      return
+   endif
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+   DEFINE WINDOW oWnd ;
+          TITLE "Fiscalius. Catálogo de Servicios de Terceros" ;
+          SIZE 800,400 ;
+          ID "window1" RESOURCE oRes ;
+          OF oWndParent
+
+   DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png"; 
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+   DEFINE MODEL oMod ;
+          STRUCT rCatalogo:Struct() ;
+          DATA   rCatalogo:GetData()
+    
+   DEFINE LISTBOX oLBox ;
+          MODEL oMod ;
+          OF oBoxData
+
+   if hb_isObject( oEntParent )
+      oLBox:bEdit := {|oModel| (nCatId := oModel:GetCol(1),;
+                                   iif( !hb_isObject(oWndParent), ;
+                                         .T.,                      ;
+                                         oEntParent:setText( ALLTRIM(hb_ntos(nCatId))+" - "+;
+                                                             oModel:GetCol(4) )), ;
+                                   oWnd:End() ) }
+   else
+      oLBox:bNew  := {|oModel| mae_terceros_catalogo_edit( oForm, oWnd, oMod, ::oGEmpresa, .T. ) }
+      oLBox:bEdit := {|oModel| mae_terceros_catalogo_edit( oForm, oWnd, oMod, ::oGEmpresa, .F. ) }
+      oLBox:bDel  := {|| __CatRemoveProduct( oMod, ::oGEmpresa ) }
+   endif
+
+   oLBox:bQuit := { || oWnd:End() }
+
+   oLBox:Active()
+
+   oLBox:SetColVisible( 1, .F. )    // id
+   oLBox:SetColVisible( 2, .F. )    // tercero_id
+   oLBox:SetColVisible( 7, .F. )    // activo
+
+   oLBox:SetColTitle( 3, "Código" )
+   oLBox:SetColTitle( 4, "Servicio" )
+   oLBox:SetColTitle( 5, "Precio" )
+   oLBox:SetColTitle( 6, "IVA" )
+
+   ACTIVATE WINDOW oWnd MODAL
+
+return
+
+
+
+Procedure __CatRemoveProduct( oModel, oEmpresa )
+   local aIter, uResp, nId
+
+   aIter := oModel:aIter
+
+   if !oModel:oTreeView:IsGetSelected( aIter )
+      MsgAlert( "Seleccione un servicio para eliminar", "Atención" )
+      return
+   endif
+
+   if !MsgNoYes( "¿Realmente desea eliminar este servicio?", "Confirmar" )
+      return
+   endif
+
+   nId := VAL( oModel:GetCol( 1 ) )
+   if nId = 0
+      return
+   endif
+
+   uResp := oEmpresa:RemoveProductCatalogo( nId )
+
+   if VALTYPE(uResp) = "L" .and. uResp
+      oModel:oLbx:Remove( aIter )
+   else
+      MsgAlert( "No se pudo eliminar el servicio.", "Error" )
+   endif
+
+return
+
+
+#include "xbscripts/mae_terceros_catalogo_edit.xbs"

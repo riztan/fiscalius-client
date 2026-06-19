@@ -485,9 +485,9 @@ Function __ValidaRIF( oEntRif, oForm )
    // Normalizar: eliminar guiones y convertir a mayúsculas
    cCleanRif := UPPER( STRTRAN( cRif, "-", "" ) )
 
-   // Verificar longitud (9 caracteres: 1 tipo + 8 dígitos)
+   // Verificar longitud (1 letra + 8 digitos + 1 DV = 10)
    if LEN( cCleanRif ) != 10
-      MsgAlert( "Longitud del rif es incorrecta" )
+      MsgAlert( "El RIF debe tener 10 caracteres (ej. J123456789)" )
       oEntRif:SetFocus()
       return .F.
    endif
@@ -504,8 +504,8 @@ Function __ValidaRIF( oEntRif, oForm )
       return .F.
    endif
 
-   // Verificar que los caracteres 2 al 8 sean dígitos
-   cNumero := SUBSTR( cCleanRif, 2, 7 )
+   // Verificar que los caracteres 2 al 9 sean 8 digitos
+   cNumero := SUBSTR( cCleanRif, 2, 8 )
    if ! IsDigit( cNumero )
       MsgAlert( "Los valores en el rif son incorrectos" )
       oEntRif:SetFocus()
@@ -533,11 +533,9 @@ Function __ValidaRIF( oEntRif, oForm )
       endif
       if rEntidad:RecCount = 1
          ::oEntNombre:SetText( rEntidad:nombre )
-         ::oEntNombreC:SetText( rEntidad:nombre_corto )
-         //::oVTDir:setText( rEntidad:direccion ) 
-         ::oEntTlf:SetText( rEntidad:telefono )
-         ::oEntMail:SetText( rEntidad:email )
-         ::oEntCedula:SetText( rEntidad:cedula )
+         ::cDir := hb_DefaultValue( rEntidad:direccion, "" )
+         ::oEntTlf:SetText( hb_DefaultValue( rEntidad:telefono, "" ) )
+         ::oEntMail:SetText( hb_DefaultValue( rEntidad:email, "" ) )
       endif
    else
       if rEntidad:RecCount() = 1 .and. ::cPreRif != ::cRif

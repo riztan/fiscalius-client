@@ -1,0 +1,184 @@
+/* mae_terceros_catalogo_edit.xbs
+ *
+ * Formulario de edicion de Catalogo de Servicios de Terceros
+ * Incluido desde: mae_terceros_catalogo.xbs
+ */
+
+procedure mae_terceros_catalogo_edit( oForm, oWndParent, oModel, oEmpresa, lNew )
+   local oRes, oCatForm, hData, aItems, aIds, oQry, nIdx
+
+   default lNew := .T.
+
+   SET PUBLIC oCatForm
+
+   oCatForm:lForce    := .F.
+   oCatForm:lClose    := .F.
+   oCatForm:oModel    := oModel
+   oCatForm:oEmpresa  := oEmpresa
+   oCatForm:rSession  := ::rSession
+   oCatForm:lNew      := lNew
+   oCatForm:oAliWnd   := oWndParent
+   oCatForm:oParent   := oForm
+
+   oCatForm:aTipoTasa := {"EXE - Exento", "RED - Reducido", "GEN - General", "SUN - Superintendencia"}
+
+   // Cargar lista de terceros para el combobox
+   oCatForm:aTercerosItems := {}
+   oCatForm:aTercerosIds := {}
+   oQry := oEmpresa:Terceros()
+   if hb_isObject( oQry ) .and. oQry:RecCount() > 0
+      oQry:GoTop()
+      while !oQry:Eof()
+         AADD( oCatForm:aTercerosItems, ALLTRIM(hb_ntos(oQry:id)) + " - " + ALLTRIM(oQry:nombre) )
+         AADD( oCatForm:aTercerosIds, oQry:id )
+         oQry:Skip()
+      end
+      oQry:End()
+   endif
+
+   if lNew
+      oCatForm:cTerceroSel := ""
+      oCatForm:cCodigo     := ""
+      oCatForm:cNombre     := ""
+      oCatForm:cPrecio     := "0"
+      oCatForm:cTipoTasa   := "GEN - General"
+      oCatForm:lActivo     := .T.
+   else
+      oCatForm:cCodigo     := hb_DefaultValue( oModel:GetCol( 3 ), "" )
+      oCatForm:cNombre     := oModel:GetCol( 4 )
+      oCatForm:cPrecio     := hb_ntos( hb_DefaultValue( oModel:GetCol( 5 ), 0 ) )
+      oCatForm:cTipoTasa   := hb_DefaultValue( oModel:GetCol( 6 ), "GEN" )
+      AEVAL( oCatForm:aTipoTasa, {|cValue, nPos| if( LEFT(cValue,3)=LEFT(oCatForm:cTipoTasa,3), oCatForm:cTipoTasa := cValue, NIL ) } )
+      nIdx := ASCAN( oCatForm:aTercerosIds, VAL( oModel:GetCol( 2 ) ) )
+      if nIdx > 0
+         oCatForm:cTerceroSel := oCatForm:aTercerosItems[nIdx]
+      endif
+   endif
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_terceros_catalogo_edit.ui"
+
+   DEFINE WINDOW oCatForm:oWnd TITLE "Servicio de Tercero" SIZE 600,400 ;
+          OF oWndParent ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oCatForm:oImgBanner ID "img_banner" RESOURCE oRes
+      oCatForm:oImgBanner:Adjust(900)
+
+      DEFINE IMAGE oCatForm:oImgLogo ID "img_logo" RESOURCE oRes
+      oCatForm:oImgLogo:Adjust(60)
+
+      DEFINE BOX oCatForm:oBoxTercero ID "box_tercero" RESOURCE oRes
+      DEFINE COMBOBOX oCatForm:oComboTercero ;
+             VAR oCatForm:cTerceroSel ITEMS oCatForm:aTercerosItems ;
+             OF oCatForm:oBoxTercero
+
+      DEFINE ENTRY oCatForm:oEntCodigo VAR oCatForm:cCodigo ;
+             ID "ent_codigo" RESOURCE oRes
+
+      DEFINE ENTRY oCatForm:oEntNombre VAR oCatForm:cNombre ;
+             ID "ent_nombre" RESOURCE oRes
+
+      DEFINE ENTRY oCatForm:oEntPrecio VAR oCatForm:cPrecio ;
+             ID "ent_precio" RESOURCE oRes
+
+      DEFINE BOX oCatForm:oBoxTipoTasa ID "box_tipo_tasa" RESOURCE oRes
+      DEFINE COMBOBOX oCatForm:oComboTipoTasa ;
+             VAR oCatForm:cTipoTasa ITEMS oCatForm:aTipoTasa ;
+             OF oCatForm:oBoxTipoTasa
+
+      DEFINE CHECKBOX oCatForm:oChkActivo VAR oCatForm:lActivo ;
+             ID "chk_activo" RESOURCE oRes
+
+      DEFINE BUTTON oCatForm:oBtnSave ACTION __CatSave( oCatForm ) ;
+             ID "btn_save" RESOURCE oRes
+
+      DEFINE BUTTON oCatForm:oBtnCancel ;
+             ACTION ( oCatForm:lClose := .T., oCatForm:oWnd:End() ) ;
+             ID "btn_cancel" RESOURCE oRes
+
+   ACTIVATE WINDOW oCatForm:oWnd MODAL VALID __CatExit( oCatForm )
+
+return
+
+
+
+Procedure __CatSave( oForm )
+   local hData, uResp, aIter, lNew, nTerceroId, nIdx
+
+   if Empty( oForm:cNombre )
+      MsgAlert("El nombre del servicio es obligatorio.", "Error")
+      oForm:oEntNombre:SetFocus()
+      return
+   endif
+
+   if Empty( oForm:cTerceroSel )
+      MsgAlert("Debe seleccionar un tercero.", "Error")
+      return
+   endif
+
+   nIdx := ASCAN( oForm:aTercerosItems, oForm:cTerceroSel )
+   if nIdx = 0
+      MsgAlert("El tercero seleccionado no es válido.", "Error")
+      return
+   endif
+   nTerceroId := oForm:aTercerosIds[nIdx]
+
+   lNew := oForm:rEntity:IsNew()
+
+   oForm:rEntity:SetData( { "tercero_id"  => nTerceroId,   ;
+                             "codigo"      => oForm:cCodigo, ;
+                             "nombre"      => oForm:cNombre, ;
+                             "precio"      => VAL( oForm:cPrecio ), ;
+                             "tipo_tasa"   => LEFT(oForm:cTipoTasa,3), ;
+                             "activo"      => oForm:lActivo } )
+
+   uResp := oForm:rEntity:Save()
+
+   if VALTYPE(uResp) != "L"
+      MsgAlert("No se pudo guardar el servicio.", "Error")
+      return
+   else
+      if !uResp
+         MsgAlert("No se pudo guardar el servicio.", "Error")
+         return
+      endif
+   endif
+
+   hData := oForm:rEntity:Data()
+
+   if lNew
+      aIter := ARRAY(7)
+      APPEND LIST_STORE oForm:oModel:oLbx ITER aIter ;
+             VALUES hb_ntos( hData["id"] ), ;
+                    hb_ntos( hData["tercero_id"] ), ;
+                    hData["codigo"], ;
+                    hData["nombre"], ;
+                    hData["precio"], ;
+                    hData["tipo_tasa"], ;
+                    hData["activo"]
+      gtk_tree_view_set_cursor( oForm:oModel:oTreeView:pWidget, ;
+                                 oForm:oModel:oTreeView:GetPath( aIter ), NIL, .F. )
+   else
+      oForm:oModel:SetValue( 3, hData["codigo"] )
+      oForm:oModel:SetValue( 4, hData["nombre"] )
+      oForm:oModel:SetValue( 5, hData["precio"] )
+      oForm:oModel:SetValue( 6, hData["tipo_tasa"] )
+   endif
+
+   oForm:lForce := .T.
+   oForm:oWnd:End()
+
+return
+
+
+
+Function __CatExit( oForm )
+
+  oForm:lClose := .T.
+  if oForm:lForce; return .T. ; endif
+
+  if MsgNoYes("Desea salir y descartar los cambios?", "Atencion.")
+     return .T.
+  endif
+
+return .F.
