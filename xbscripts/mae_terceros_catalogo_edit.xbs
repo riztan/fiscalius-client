@@ -36,20 +36,24 @@ procedure mae_terceros_catalogo_edit( oForm, oWndParent, oModel, oEmpresa, lNew 
       oQry:End()
    endif
 
+   oCatForm:rEntity := oEmpresa:TerceroCatalogo( iif(lNew, 0, VAL( oModel:GetCol( 1 ) )) )
+   oCatForm:hData := oCatForm:rEntity:Data()
+
    if lNew
       oCatForm:cTerceroSel := ""
       oCatForm:cCodigo     := ""
       oCatForm:cNombre     := ""
-      oCatForm:cPrecio     := "0"
+      oCatForm:cPrecio     := "0.00"
       oCatForm:cTipoTasa   := "GEN - General"
       oCatForm:lActivo     := .T.
    else
-      oCatForm:cCodigo     := hb_DefaultValue( oModel:GetCol( 3 ), "" )
-      oCatForm:cNombre     := oModel:GetCol( 4 )
-      oCatForm:cPrecio     := hb_ntos( hb_DefaultValue( oModel:GetCol( 5 ), 0 ) )
-      oCatForm:cTipoTasa   := hb_DefaultValue( oModel:GetCol( 6 ), "GEN" )
+      oCatForm:cCodigo     := hb_DefaultValue( oCatForm:hData["codigo"], "" )
+      oCatForm:cNombre     := oCatForm:hData["nombre"]
+      oCatForm:cPrecio     := TRANSFORM( oCatForm:hData["precio"], "9999999.99" )
+      oCatForm:cTipoTasa   := hb_DefaultValue( oCatForm:hData["tipo_tasa"], "GEN" )
+      oCatForm:lActivo     := hb_DefaultValue( oCatForm:hData["activo"], .T. )
       AEVAL( oCatForm:aTipoTasa, {|cValue, nPos| if( LEFT(cValue,3)=LEFT(oCatForm:cTipoTasa,3), oCatForm:cTipoTasa := cValue, NIL ) } )
-      nIdx := ASCAN( oCatForm:aTercerosIds, VAL( oModel:GetCol( 2 ) ) )
+      nIdx := ASCAN( oCatForm:aTercerosIds, oCatForm:hData["tercero_id"] )
       if nIdx > 0
          oCatForm:cTerceroSel := oCatForm:aTercerosItems[nIdx]
       endif
@@ -105,32 +109,32 @@ return
 Procedure __CatSave( oForm )
    local hData, uResp, aIter, lNew, nTerceroId, nIdx
 
+   // Inicializar log por si tracelog() se dispara desde el .hrb viejo
+   if !hb_isObject( oTpuy:oLog )
+      oTpuy:oLog := TPublic():New()
+   endif
+
    if Empty( oForm:cNombre )
       MsgAlert("El nombre del servicio es obligatorio.", "Error")
       oForm:oEntNombre:SetFocus()
       return
    endif
 
-   if Empty( oForm:cTerceroSel )
+   nIdx := gtk_combo_box_get_active( oForm:oComboTercero:pWidget ) + 1
+   if nIdx <= 0
       MsgAlert("Debe seleccionar un tercero.", "Error")
-      return
-   endif
-
-   nIdx := ASCAN( oForm:aTercerosItems, oForm:cTerceroSel )
-   if nIdx = 0
-      MsgAlert("El tercero seleccionado no es válido.", "Error")
       return
    endif
    nTerceroId := oForm:aTercerosIds[nIdx]
 
-   lNew := oForm:rEntity:IsNew()
+   lNew := oForm:lNew
 
    oForm:rEntity:SetData( { "tercero_id"  => nTerceroId,   ;
-                             "codigo"      => oForm:cCodigo, ;
-                             "nombre"      => oForm:cNombre, ;
-                             "precio"      => VAL( oForm:cPrecio ), ;
-                             "tipo_tasa"   => LEFT(oForm:cTipoTasa,3), ;
-                             "activo"      => oForm:lActivo } )
+                              "codigo"      => oForm:cCodigo, ;
+                              "nombre"      => oForm:cNombre, ;
+                              "precio"      => VAL( oForm:cPrecio ), ;
+                              "tipo_tasa"   => LEFT(oForm:cTipoTasa,3), ;
+                              "activo"      => oForm:lActivo } )
 
    uResp := oForm:rEntity:Save()
 
@@ -147,22 +151,25 @@ Procedure __CatSave( oForm )
    hData := oForm:rEntity:Data()
 
    if lNew
-      aIter := ARRAY(7)
+      aIter := ARRAY(9)
       APPEND LIST_STORE oForm:oModel:oLbx ITER aIter ;
-             VALUES hb_ntos( hData["id"] ), ;
-                    hb_ntos( hData["tercero_id"] ), ;
-                    hData["codigo"], ;
-                    hData["nombre"], ;
-                    hData["precio"], ;
-                    hData["tipo_tasa"], ;
-                    hData["activo"]
+              VALUES hb_ntos( hData["id"] ), ;
+                     hb_ntos( hData["tercero_id"] ), ;
+                     hb_DefaultValue( hData["codigo"], "" ), ;
+                     hb_DefaultValue( hData["nombre"], "" ), ;
+                     ALLTRIM( STR( hb_DefaultValue( hData["precio"], 0 ), 12, 2 ) ), ;
+                     hb_DefaultValue( hData["tipo_tasa"], "GEN" ), ;
+                     hb_DefaultValue( hData["activo"], .T. ), ;
+                     hb_DefaultValue( hData["tercero_nombre"], "" ), ;
+                     hb_DefaultValue( hData["tercero_rif"], "" )
       gtk_tree_view_set_cursor( oForm:oModel:oTreeView:pWidget, ;
                                  oForm:oModel:oTreeView:GetPath( aIter ), NIL, .F. )
    else
-      oForm:oModel:SetValue( 3, hData["codigo"] )
-      oForm:oModel:SetValue( 4, hData["nombre"] )
-      oForm:oModel:SetValue( 5, hData["precio"] )
-      oForm:oModel:SetValue( 6, hData["tipo_tasa"] )
+      oForm:oModel:SetValue( 3, hb_DefaultValue( hData["codigo"], "" ) )
+      oForm:oModel:SetValue( 4, hb_DefaultValue( hData["nombre"], "" ) )
+      oForm:oModel:SetValue( 5, ALLTRIM( STR( hb_DefaultValue( hData["precio"], 0 ), 12, 2 ) ) )
+      oForm:oModel:SetValue( 6, hb_DefaultValue( hData["tipo_tasa"], "GEN" ) )
+      oForm:oModel:SetValue( 7, hb_DefaultValue( hData["activo"], .T. ) )
    endif
 
    oForm:lForce := .T.

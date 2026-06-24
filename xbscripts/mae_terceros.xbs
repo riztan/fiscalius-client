@@ -171,6 +171,10 @@ procedure mae_terceros_edit( oForm, oWndParent, oModel, oEmpresa, lNew )
       DEFINE BUTTON oTercForm:oBtnSave ACTION __TercSave( oTercForm ) ;
              ID "btn_save" RESOURCE oRes
 
+      DEFINE BUTTON oTercForm:oBtnServicios ;
+             ACTION __TercServicios( oTercForm ) ;
+             ID "btn_servicios" RESOURCE oRes
+
       DEFINE BUTTON oTercForm:oBtnCancel ;
              ACTION ( oTercForm:lClose := .T., oTercForm:oWnd:End() ) ;
              ID "btn_cancel" RESOURCE oRes
@@ -308,3 +312,22 @@ Function __TercBuscarPorRif( oForm )
    endif
 
 return .T.
+
+
+
+/** Abre el catalogo de servicios/productos del tercero actual */
+Procedure __TercServicios( oForm )
+   local nTerceroId, hData
+
+   hData := oForm:rEntity:Data()
+   nTerceroId := hb_DefaultValue( hData["id"], 0 )
+
+   if nTerceroId = 0
+      MsgAlert( "Debe guardar el tercero antes de registrar servicios.", "Atención" )
+      return
+   endif
+
+   //oTPuy:RunXBS( "mae_terceros_catalogo", oForm:oParent, oForm:oWnd, NIL, nTerceroId )
+   oTPuy:RunXBS( "mae_terceros_catalogo", oForm:oParent, oForm:oWnd, NIL, nTerceroId )
+
+return

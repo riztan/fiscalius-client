@@ -1007,6 +1007,13 @@
                               </object>
                             </child>
                             <child>
+                              <object class="GtkImageMenuItem" id="item_terc_catalogo">
+                                <property name="label" translatable="yes">Catálogo del tercero</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                            </child>
+                            <child>
                               <object class="GtkSeparatorMenuItem" id="menuitem3">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>

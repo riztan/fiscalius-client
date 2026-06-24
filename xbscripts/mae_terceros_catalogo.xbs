@@ -2,6 +2,7 @@
  *
  * Catalogo de servicios/productos de terceros
  * Basado en: mae_inventario.xbs
+ * Dual context: desde menú (todos los items) o desde edit de tercero (filtrado)
  */
 
 #include "tpy_xbs.ch"
@@ -9,37 +10,37 @@
 procedure mae_terceros_catalogo( oForm, oWndParent, oEntParent, nTerceroId, cFiltro )
 
    local oWnd, oRes, oImgBanner, oImageLogo, oBoxData
-   local oLabTitulo, cLabTitulo := "Servicios de Terceros"
+   local oLabTitulo, cLabTitulo := "Catalogo de Servicios de Terceros"
    local rCatalogo, oMod, oLBox, hParam
 
    default nTerceroId to 0
    default cFiltro    to ""
 
-   if nTerceroId <= 0
-      MsgStop("Debe indicar un tercero para ver su catálogo.")
-      return
-   endif
-
    hParam := hb_hash()
-   hParam["tercero_id"] := nTerceroId
+   if nTerceroId > 0
+      hParam["tercero_id"] := nTerceroId
+   endif
    if !Empty( cFiltro )
       hParam["filtro"] := cFiltro
    endif
 
-   rCatalogo := ::oGEmpresa:TercerosCatalogo( hParam )
+   if nTerceroId > 0 .or. !Empty( cFiltro )
+      rCatalogo := ::oGEmpresa:TercerosCatalogo( hParam )
+   else
+      rCatalogo := ::oGEmpresa:TercerosCatalogo()
+   endif
 
    if hb_isNIL(rCatalogo)
-      MsgStop("Error al consultar el catálogo.")
+      MsgStop("Error al consultar el catalogo.")
       return
    endif
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
 
    DEFINE WINDOW oWnd ;
-          TITLE "Fiscalius. Catálogo de Servicios de Terceros" ;
+          TITLE "Fiscalius. Catalogo de Servicios de Terceros" ;
           SIZE 800,400 ;
-          ID "window1" RESOURCE oRes ;
-          OF oWndParent
+          ID "window1" RESOURCE oRes
 
    DEFINE LABEL oLabTitulo TEXT cLabTitulo ;
           ID "lab_title" RESOURCE oRes
@@ -84,11 +85,13 @@ procedure mae_terceros_catalogo( oForm, oWndParent, oEntParent, nTerceroId, cFil
    oLBox:SetColVisible( 1, .F. )    // id
    oLBox:SetColVisible( 2, .F. )    // tercero_id
    oLBox:SetColVisible( 7, .F. )    // activo
+   oLBox:SetColVisible( 9, .F. )    // tercero_rif
 
-   oLBox:SetColTitle( 3, "Código" )
+   oLBox:SetColTitle( 3, "Codigo" )
    oLBox:SetColTitle( 4, "Servicio" )
    oLBox:SetColTitle( 5, "Precio" )
    oLBox:SetColTitle( 6, "IVA" )
+   oLBox:SetColTitle( 8, "Tercero" )
 
    ACTIVATE WINDOW oWnd MODAL
 
@@ -102,11 +105,11 @@ Procedure __CatRemoveProduct( oModel, oEmpresa )
    aIter := oModel:aIter
 
    if !oModel:oTreeView:IsGetSelected( aIter )
-      MsgAlert( "Seleccione un servicio para eliminar", "Atención" )
+      MsgAlert( "Seleccione un servicio para eliminar", "Atencion" )
       return
    endif
 
-   if !MsgNoYes( "¿Realmente desea eliminar este servicio?", "Confirmar" )
+   if !MsgNoYes( "Realmente desea eliminar este servicio?", "Confirmar" )
       return
    endif
 

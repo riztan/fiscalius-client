@@ -990,15 +990,15 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
                               hb_ntos(aLine[6]),  hb_ntos(aLine[7]), ;
                               hb_ntos(aLine[8]),  hb_ntos(aLine[9]), ; 
                               hb_ntos(aLine[10]), hb_ntos(aLine[11]),; 
-                              hb_ntos(aLine[12]), aLine[13], ;
-                              aLine[14], aLine[15], ;
-                              aLine[16], ;
-                              hb_ntos(aLine[17]), ;
-                              aLine[18], ;
-                              aLine[19], ;
-                              hb_ntos(aLine[20]),;
-                              hb_ntos(aLine[21]), hb_ntos(aLine[22]),;
-                              aLine[23], aLine[24],;
+                               hb_ntos(aLine[12]), hb_DefaultValue(aLine[13],""), ;
+                               hb_DefaultValue(aLine[14],""), hb_DefaultValue(aLine[15],""), ;
+                               hb_DefaultValue(aLine[16],""), ;
+                               hb_ntos(hb_DefaultValue(aLine[17],0)), ;
+                               hb_DefaultValue(aLine[18],""), ;
+                               hb_DefaultValue(aLine[19],""), ;
+                               hb_ntos(hb_DefaultValue(aLine[20],0)),;
+                               hb_ntos(hb_DefaultValue(aLine[21],0)), hb_ntos(hb_DefaultValue(aLine[22],0)),;
+                               hb_DefaultValue(aLine[23],""), hb_DefaultValue(aLine[24],""),;
                               hb_ntos(aLine[25]), hb_ntos(aLine[26]),;
                               hb_ntos(aLine[21]/aLine[5]), hb_ntos(aLine[22]/aLine[5])
             CATCH oErr
@@ -1969,21 +1969,21 @@ PROCEDURE __TerceroServicios( oForm, oModel, oTreeView, aIter )
    local rServicios
    local nTerceroCatId, cServicioNom, nPrecio, cTipoTasa, cTerceroNom
 
-   rServicios := ::oGEmpresa:TercerosCatalogoAll( {} )
+   rServicios := oForm:rEmpresa:TercerosCatalogoAll( {} )
 
    if hb_isNIL( rServicios ) .or. !hb_isObject( rServicios )
-      ::oLabInfo:SetText( "No hay servicios de terceros disponibles" )
+      oForm:oLabInfo:SetText( "No hay servicios de terceros disponibles" )
       return
    endif
 
    if rServicios:RecCount() = 1
       // Auto-fill desde cursor por nombre de campo
-      nTerceroCatId := rServicios:id
-      cServicioNom  := rServicios:nombre
-      nPrecio       := rServicios:precio
-      cTipoTasa     := rServicios:tipo_tasa
-      cTerceroNom   := rServicios:tercero_nombre
-      __FillRowTercero( oForm, nTerceroCatId, cServicioNom, nPrecio, cTipoTasa, cTerceroNom )
+       nTerceroCatId := rServicios:id
+       cServicioNom  := rServicios:nombre
+       nPrecio       := rServicios:precio
+       cTipoTasa     := rServicios:tipo_tasa
+       cTerceroNom   := rServicios:tercero_nombre
+       __FillRowTercero( oForm, nTerceroCatId, cServicioNom, nPrecio, cTipoTasa, cTerceroNom )
       return
    endif
 
@@ -2065,7 +2065,7 @@ PROCEDURE __FillRowTercero( oForm, nTerceroCatId, cServicioNom, nPrecio, cTipoTa
 
    __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __CODIGO, "S-001" )
    __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __DESCRIPCION, ALLTRIM(cTerceroNom) + " - " + ALLTRIM(cServicioNom) )
-   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __PRECIO, STR( nPrecio ) )
+   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __PRECIO, nPrecio )
    __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __IVAPORCEN, STR( nIvaPorcen ) )
    __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, 13, "S" )
    __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __CANTIDAD, "1" )
