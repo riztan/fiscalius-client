@@ -17,7 +17,7 @@ procedure vta_imprimir_pdf( oForm )
    local aData := ::rFactDetal:GetData()
    local rClientes := ::rVentas:Clientes({"filtro" => ::cEntCli})
    local aClientes := rClientes:Data()
-   local i, nCaj, nUni, nUniCaj, nTotUniLi, aLine
+   local i, nCaj, nUni, nUniCaj, nTotUniLi, aLine, lEsTercero, nTotalLineas
    local nY := 1,nTotPagBs:=0,nTotPagDi:=0
    local cFilePDF := "tmp/vta_factura_" + STRTRAN(::hFactura["numero"], "/", "_") + ".pdf"
    local cMoneda:="Bs",cDivisa:=LEFT(::cDivisa,3),nDivisa:=TONUM(SUBSTR(::cDivisa,5))
@@ -27,6 +27,8 @@ procedure vta_imprimir_pdf( oForm )
    local nBasEXE:=TONUM(::nMontoIvaE)
    local nPosDet:=0,nBasITF:=0,nPorITF:=3,nMtoITF:=0
    local nTotBru:=0,nTotDesc:=0
+   local hTerceros := hb_hash(), lHayTerceros := .F., nTerceroId
+   local nTotTercSub := 0, nTotTercIva := 0, nTotTercTot := 0
 
    // view(aDetCobro)
 
@@ -85,22 +87,22 @@ procedure vta_imprimir_pdf( oForm )
    oPDF:SetFont( "Helvetica-Bold", 10 )
    oPDF:CMSAY( nY, 1.0, "Código" )
    oPDF:CMSAY( nY, 3.2, "Descripcion" )
-   oPDF:CMSAY( nY, 10.0, "Cant" )
+   oPDF:CMSAY( nY, 12.5, "Cant" )
    IF tonum(::nMontoOtrImp)>0
       nPosDet+=3
-      oPDF:CMSAY( nY, 12.2, "Cap." )
-      oPDF:CMSAY( nY, 13.2, "Grados" )
+      oPDF:CMSAY( nY, 14.2, "Cap." )
+      oPDF:CMSAY( nY, 15.2, "Grados" )
    ENDIF
-   oPDF:CMSAY( nY, 12.5+nPosDet, "Precio Uni." )
-   oPDF:CMSAY( nY, 15.0+nPosDet, "Desc Uni." )
-   oPDF:CMSAY( nY, 16.9+nPosDet, "% IVA" )
-   oPDF:CMSAY( nY, 22.0+nPosDet, "Total" )
+   oPDF:CMSAY( nY, 14.5+nPosDet, "Precio Uni." )
+   oPDF:CMSAY( nY, 17.0+nPosDet, "Desc Uni." )
+   oPDF:CMSAY( nY, 19.4+nPosDet, "% IVA" )
+   oPDF:CMSAY( nY, 24.0+nPosDet, "Total" )
 
    IF tonum(::nMontoOtrImp)>0
-      oPDF:CMSAY( nY, 21.2, "Imp. Pvp" )
+      oPDF:CMSAY( nY, 23.2, "Imp. Pvp" )
    ENDIF
    IF tonum(::nMontoImpProd)>0
-      oPDF:CMSAY( nY, 22.8, "Imp. Prod." )
+      oPDF:CMSAY( nY, 24.8, "Imp. Prod." )
 
    ENDIF
 
@@ -112,6 +114,7 @@ procedure vta_imprimir_pdf( oForm )
    oPDF:SetFont( "Courier", 9 )
 
    //view(adata)
+   nTotalLineas := 0
    FOR i := 1 TO LEN( aData )
       aLine := aData[i]
       nUniCaj := IIF( RIGHT(aLine[3], 2) == "01", 0, TONUM(RIGHT(aLine[3],2)) )
@@ -133,34 +136,65 @@ procedure vta_imprimir_pdf( oForm )
       nTotDesc:=nTotDesc+aLine[7]
       nTotBru:=nTotBru+aLine[8]+aLine[7]
 
-      oPDF:CMSAY( nY, 1.0, LEFT(ALLTRIM(aLine[3]), 12) )
-      oPDF:CMSAY( nY, 3.2, LEFT(ALLTRIM(aLine[4]), 35) )
-      //oPDF:CMSAY( nY, 11.2, hb_ntos(nTotUniLi) )
-      oPDF:CMSAY( nY, 10, hb_ntos(nUni+nCaj) )
-      IF tonum(::nMontoOtrImp)>0
-         oPDF:CMSAY( nY, 12.2, TRANSFORM(aLine[24], "@E 999.99") )
-         oPDF:CMSAY( nY, 13.2, TRANSFORM(aLine[23], "@E 999.99") )
+      lEsTercero := hb_isNumeric( aLine[23] ) .AND. aLine[23] > 0
+
+      IF lEsTercero
+         nTerceroId := aLine[26]
+         IF !hb_hHasKey( hTerceros, nTerceroId )
+            hTerceros[ nTerceroId ] := { "nombre" => aLine[27],;
+                                          "rif" => aLine[28],;
+                                          "subtotal" => 0,;
+                                          "iva" => 0,;
+                                          "total" => 0 }
+         ENDIF
+         hTerceros[ nTerceroId ]["subtotal"] += aLine[8]
+         hTerceros[ nTerceroId ]["iva"] += aLine[10]
+         hTerceros[ nTerceroId ]["total"] += aLine[11]
+         nTotTercSub += aLine[8]
+         nTotTercIva += aLine[10]
+         nTotTercTot += aLine[11]
+         lHayTerceros := .T.
       ENDIF
-      oPDF:CMSAY( nY, 12.3+nPosDet, TRANSFORM(aLine[6], "@E 9,999,999.99") )
-      oPDF:CMSAY( nY, 14.1+nPosDet, TRANSFORM(aLine[7], "@E 9,999,999.99") )
-      oPDF:CMSAY( nY, 17.1+nPosDet, TRANSFORM(aLine[9], "@E 99") )
-      oPDF:CMSAY( nY, 20.6+nPosDet, TRANSFORM(aLine[8], "@E 9,999,999.99") )
+
+      IF lEsTercero
+         oPDF:CMSAY( nY, 1.0, LEFT(ALLTRIM(aLine[3]) + "." + ALLTRIM(aLine[33]), 16) )
+         oPDF:CMSAY( nY, 3.2, /*"RIF: " +*/ ALLTRIM(aLine[28]) + " - " + LEFT(ALLTRIM(aLine[27]), 22) + iif( aLine[9] == 0, " (E)", "" ) )
+      ELSE
+         oPDF:CMSAY( nY, 1.0, LEFT(ALLTRIM(aLine[3]), 12) )
+         oPDF:CMSAY( nY, 3.2, LEFT(ALLTRIM(aLine[4]), 32) + iif( aLine[9] == 0, " (E)", "" ) )
+      ENDIF
+      //oPDF:CMSAY( nY, 11.2, hb_ntos(nTotUniLi) )
+      oPDF:CMSAY( nY, 12.5, hb_ntos(nUni+nCaj) )
       IF tonum(::nMontoOtrImp)>0
-         oPDF:CMSAY( nY, 20.9, TRANSFORM(aLine[21], "@E 99,999.99") )
+      oPDF:CMSAY( nY, 14.2, TRANSFORM(aLine[29], "@E 999.99") )
+      oPDF:CMSAY( nY, 15.2, TRANSFORM(aLine[30], "@E 999.99") )
+      ENDIF
+      oPDF:CMSAY( nY, 14.3+nPosDet, TRANSFORM(aLine[6], "@E 9,999,999.99") )
+      oPDF:CMSAY( nY, 16.1+nPosDet, TRANSFORM(aLine[7], "@E 9,999,999.99") )
+      oPDF:CMSAY( nY, 19.6+nPosDet, TRANSFORM(aLine[9], "@E 99") )
+      oPDF:CMSAY( nY, 22.6+nPosDet, TRANSFORM(aLine[8], "@E 9,999,999.99") )
+      IF tonum(::nMontoOtrImp)>0
+         oPDF:CMSAY( nY, 22.9, TRANSFORM(aLine[21], "@E 99,999.99") )
       ENDIF
 
       IF tonum(::nMontoImpProd)>0
-         oPDF:CMSAY( nY, 22.4, TRANSFORM(aLine[22], "@E 99,999.99") )
+         oPDF:CMSAY( nY, 24.4, TRANSFORM(aLine[22], "@E 99,999.99") )
       ENDIF
 
-
-
+      nTotalLineas++
       nY += 0.35
+
+      IF lEsTercero
+         oPDF:CMSAY( nY, 3.2, /*"Servicio: " +*/ LEFT(ALLTRIM(aLine[4]), 30) )
+         nTotalLineas++
+         nY += 0.35
+      ENDIF
+
    NEXT
 
    //VIEW(tonum(::nMontoOtrImp))
 
-   FOR i:=1 TO 10-LEN(aData)
+   FOR i:=1 TO 10-nTotalLineas
       nY += 0.35
    NEXT
 
@@ -205,7 +239,7 @@ procedure vta_imprimir_pdf( oForm )
 
 
    oPDF:SetFont( "Helvetica-Bold", 8 )
-   oPDF:CMSAY( nY, 1.2,"Tipo de Cambio BCV a la fecha de emisión: "+SUBSTR(::cDivisa,5)+"**")
+   oPDF:CMSAY( nY, 1.2, "Tipo de Cambio BCV a la fecha de emisión: " + TRANSFORM(nDivisa, "@E 9,999.99") + "**" )
 
 
    // =====================================
@@ -318,12 +352,53 @@ procedure vta_imprimir_pdf( oForm )
 
    nY += 0.8
 
+   // =====================================
+   // POR CUENTA DE TERCEROS (Art. 10 IVA)
+   // =====================================
+
+   IF lHayTerceros
+      nY += 0.3
+      oPDF:SetFont( "Helvetica-Bold", 10 )
+      oPDF:CMSAY( nY, 1.4, "POR CUENTA DE TERCEROS (Art. 10 Ley del IVA)" )
+      nY += 0.3
+
+      oPDF:SetFont( "Helvetica-Bold", 9 )
+      oPDF:CMSAY( nY, 1.4, "Tercero" )
+      oPDF:CMSAY( nY, 13.0, "Base" )
+      oPDF:CMSAY( nY, 16.5, "IVA" )
+      oPDF:CMSAY( nY, 20.0, "Total" )
+      nY += 0.3
+
+      oPDF:SetFont( "Helvetica", 9 )
+      hb_HEval( hTerceros, {|nKey, aTercero|
+         oPDF:CMSAY( nY, 1.4, "RIF: " + aTercero["rif"] + " - " + LEFT(aTercero["nombre"], 38) )
+         nY += 0.3
+         oPDF:CMSAY( nY, 13.0, TRANSFORM(aTercero["subtotal"], "@E 9,999,999.99") )
+         oPDF:CMSAY( nY, 16.5, TRANSFORM(aTercero["iva"], "@E 9,999,999.99") )
+         oPDF:CMSAY( nY, 20.0, TRANSFORM(aTercero["total"], "@E 9,999,999.99") )
+         nY += 0.4
+      } )
+
+      oPDF:SetFont( "Helvetica-Bold", 9 )
+      oPDF:CMSAY( nY, 1.4, "Total Terceros:" )
+      oPDF:CMSAY( nY, 13.0, TRANSFORM(nTotTercSub, "@E 9,999,999.99") )
+      oPDF:CMSAY( nY, 16.5, TRANSFORM(nTotTercIva, "@E 9,999,999.99") )
+      oPDF:CMSAY( nY, 20.0, TRANSFORM(nTotTercTot, "@E 9,999,999.99") )
+      nY += 0.5
+   ENDIF
 
    // =====================================
    // PIE
    // =====================================
 
    oPDF:SetFont( "Helvetica", 8 )
+
+   IF lHayTerceros
+      oPDF:SetFont( "Helvetica-Bold", 8 )
+      oPDF:CMSAY( nY, 1.4, "Emitida de conformidad con el artículo 10 de la Ley de IVA" )
+      nY += 0.4
+      oPDF:SetFont( "Helvetica", 8 )
+   ENDIF
 
    // =====================================
    // COLETILLA IGTF CREDITO

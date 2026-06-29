@@ -469,58 +469,26 @@ function __FactValFecha( oForm, oEnt, dValPrevio, cTipo )
 
    default cTipo := ''
 
-   if ::isDef( "oComboEstado" )
-      if LEFT(::oComboEstado:GetValue(), 1)="C"
-         return .T.
-      endif 
-      if LEFT(::oComboEstado:GetValue(), 1)="B" 
-         dDateMin := ::rVentas:FechaMin( 4 /*FACTURA*/)
-         if CTOD( ::oEntFecha:getValue() ) < dDateMin
-            ::oLabInfo:SetText("La fecha del documento no puede ser menor a " + DTOC(dDateMin) )
-            ::oEntFecha:SetText( DTOC(dDateMin) )
-            return .F.
-         endif
-      endif
-   endif
-
-   if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
-      //llevamos fecha de vencimiento a la misma fecha del documento.
-      ::oEntVcmto:SetValue( ::oEntFecha:GetValue() )
-      ::oLabInfo:SetText( "Ajustado valor fecha de vencimiento." )
-/*
-      MsgAlert( "La fecha indicada es incorrecta. Por favor revise." )
-      lRes := .F.
-      
-      oEnt:setValue( DTOC(dValPrevio) )
-*/
-   endif
-
-   if hb_isObject( ::rFactura )
-      uRet := ::rFactura:SetFecha( CTOD(::oEntFecha:GetValue()) )
-      if !VALTYPE(uRet)="L" //.and. !empty( cRet )
-         ::oEntFecha:SetText( DTOC(dValPrevio) )
-         ::oEntFecha:SetFocus()
-         return .F.
-      endif
-   endif
-
+   // Validación de vencimiento — no necesita tasa
    if cTipo = "vcmto"
+      if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
+         ::oEntVcmto:SetValue( ::oEntFecha:GetValue() )
+         ::oLabInfo:SetText( "Ajustado valor fecha de vencimiento." )
+      endif
       return lRes
    endif
 
    dValPrevio := CTOD( oEnt:getValue() )
 
-   // Obtener tasa de cambio correspondiente.
-   rQry := ::rEmpresa:GetTasa( CTOD(oEnt:getValue()) ) //dValPrevio ) 
+   // Obtener tasa de cambio correspondiente (SIEMPRE, sin importar estado)
+   rQry := ::rEmpresa:GetTasa( CTOD(oEnt:getValue()) )
 
    ::aDivisas := {}
    ::aMonedas := {}
    While !rQry:Eof()
-      //if rQry:codigo="USD" //-- de momento solo tomamos la tasa USD
-         AADD( ::aDivisas, ALLTRIM(rQry:codigo)+" "+;
-                           hb_ntos( rQry:valor ) )
-         AADD( ::aMonedas, rQry:moneda_id )
-      //endif
+      AADD( ::aDivisas, ALLTRIM(rQry:codigo)+" "+;
+                        hb_ntos( rQry:valor ) )
+      AADD( ::aMonedas, rQry:moneda_id )
       rQry:Skip()
    EndDo
    if hb_isObject( ::oComboDivisa )
@@ -528,12 +496,49 @@ function __FactValFecha( oForm, oEnt, dValPrevio, cTipo )
          ::oComboDivisa:RemoveAll()
       endif
       ::oComboDivisa:SetItems( ::aDivisas )
-      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )  
+      ::cDivisa := ::aDivisas[1]
+      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )
+   endif
+
+   // Si el documento está cerrado, no más validaciones
+   if ::isDef( "oComboEstado" )
+      if LEFT(::oComboEstado:GetValue(), 1)="C"
+         rQry:End()
+         return .T.
+      endif
+   endif
+
+   // Validaciones solo para documentos no cerrados
+   if ::isDef( "oComboEstado" )
+      if LEFT(::oComboEstado:GetValue(), 1)="B"
+         dDateMin := ::rVentas:FechaMin( 4 /*FACTURA*/)
+         if CTOD( ::oEntFecha:getValue() ) < dDateMin
+            ::oLabInfo:SetText("La fecha del documento no puede ser menor a " + DTOC(dDateMin) )
+            ::oEntFecha:SetText( DTOC(dDateMin) )
+            rQry:End()
+            return .F.
+         endif
+      endif
+   endif
+
+   if CTOD( ::oEntVcmto:getValue() ) < CTOD( ::oEntFecha:getValue() )
+      ::oEntVcmto:SetValue( ::oEntFecha:GetValue() )
+      ::oLabInfo:SetText( "Ajustado valor fecha de vencimiento." )
+   endif
+
+   if hb_isObject( ::rFactura )
+      uRet := ::rFactura:SetFecha( CTOD(::oEntFecha:GetValue()) )
+      if !VALTYPE(uRet)="L"
+         ::oEntFecha:SetText( DTOC(dValPrevio) )
+         ::oEntFecha:SetFocus()
+         rQry:End()
+         return .F.
+      endif
    endif
 
    if hb_isObject( ::oModDetal )
       bDetalCode := {| oTView, pModel, aIter, pPath | ;
-                       __VtaItemCalPre( oForm, oTView, pModel, aIter, rQry, ::oModDetal ) } 
+                       __VtaItemCalPre( oForm, oTView, pModel, aIter, rQry, ::oModDetal ) }
       ::oLBoxDetal:ForEach( bDetalCode )
       __Calcula(oForm)
    endif
@@ -761,6 +766,7 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
 
       ::cCodVendedor := oModel:GetCol(::hCol["vendedor_id"])
       ::oEntFecha:SetValue( oModel:GetCol(::hCol["fecha"]) )
+      __FactValFecha( oForm, ::oEntFecha, @::cPFecha )
       ::oEntVcmto:SetValue( oModel:GetCol(::hCol["fecha_vcmto"]) )
       ::oEntOrdCompra:SetValue( ::hFactura["orden_compra"] ) 
 
@@ -804,7 +810,8 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
          nMonRetIVA  += hIva["monto_retencion"]
          nPorRetIVA  := hIva["porcentaje_retencion"]
          nCompRetIVA := hIva["comprobante_retencion"]
-         cFechRetIVA := DTOC(hIva["fecha_retencion"])
+         cFechRetIVA := iif( VALTYPE(hIva["fecha_retencion"])="D", ;
+                             DTOC(hIva["fecha_retencion"]), hIva["fecha_retencion"])
 
       NEXT
 
@@ -840,8 +847,6 @@ procedure __vtaFactura( oForm, oFormParent, oBoxFactura, oModel, lNew )
       //::oEntTotal:SetValue( ::oEntMonBase:GetValue() )
 
    endif
-
-   __FactValFecha( oForm, ::oEntFecha, @::cPFecha )
 
    if !hb_isObject( ::oModDetal )
 
