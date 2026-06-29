@@ -38,7 +38,7 @@ return cRange
 
 
 
-procedure vta_libro_xlsx( oForm, rQry )
+procedure vta_libro_xlsx( oForm, rQry, rQryTerceros )
 
    local i, nLin, nOpera:=1, cFileHeader, error, cFormula := "", cRange := ""
    local hTotal, dDesde := ::oCalDesde:GetDate()
@@ -348,6 +348,162 @@ xlsx_set_string ::worksheet cell: "Y"+hb_ntos(i) value: rQry:tipo_documento     
     worksheet_write_number( ::worksheet, i-1, Column("N"), hTotal:nVtasAliGNSun["base"  ], ::format_numero ) 
     worksheet_write_number( ::worksheet, i-1, Column("O"), hTotal:nVtasAliGNSun["debito"], ::format_numero ) 
     i++
+
+// ============================================
+// HOJA: Ventas por Cuenta de Terceros
+// ============================================
+if hb_isObject( rQryTerceros ) .and. rQryTerceros:RecCount() > 0
+   nTercOpera := 1
+   nTercSub := 0
+   nTercIva := 0
+   nTercTot := 0
+
+   ::worksheet2 := workbook_add_worksheet( ::workbook, "Terceros" )
+   worksheet_gridlines( ::worksheet2, 0 )
+
+   ::ftitle2 := workbook_add_format( ::workbook )
+   format_set_bold( ::ftitle2 )
+   format_set_align( ::ftitle2, LXW_ALIGN_CENTER )
+   format_set_align( ::ftitle2, LXW_ALIGN_VERTICAL_CENTER )
+   format_set_border( ::ftitle2, LXW_BORDER_THIN )
+   format_set_font_size( ::ftitle2, 9 )
+   format_set_text_wrap( ::ftitle2 )
+
+   ::fnum2 := workbook_add_format( ::workbook )
+   format_set_num_format( ::fnum2, "_ * #,##0.00;_ * -#,##0.00" )
+   format_set_align( ::fnum2, LXW_ALIGN_RIGHT )
+
+   ::ftot2 := workbook_add_format( ::workbook )
+   format_set_bold( ::ftot2 )
+   format_set_num_format( ::ftot2, "_ * #,##0.00;_ * -#,##0.00" )
+   format_set_align( ::ftot2, LXW_ALIGN_RIGHT )
+   format_set_border( ::ftot2, LXW_BORDER_THIN )
+
+   // Encabezado igual al de la hoja principal
+   xlsx_set_string ::worksheet2 cell: "A1" value: ::cEmpresa format: ::format_title1
+   xlsx_set_string ::worksheet2 cell: "A2" value: "RIF:  "+::rEmpresa:GetData()["rif"]
+   xlsx_set_string ::worksheet2 cell: "A3" value: "Dirección Fiscal: "+"Dirección del cliente. "
+
+   // Titulo
+   worksheet_merge_range( ::worksheet2, CELL("A5"),CELL("P5"), ;
+      "VENTAS POR CUENTA DE TERCEROS (Art. 10 LIVA)", ::format_report )
+   xlsx_set_string ::worksheet2 cell: "A6" value: "Desde: "+DTOC(::oCalDesde:GetDate())+" Hasta: "+DTOC(::oCalHasta:GetDate())
+
+   // Ancho columnas
+   worksheet_set_column( ::worksheet2, Column("A"), Column("A"), 07 )
+   worksheet_set_column( ::worksheet2, Column("B"), Column("C"), 14 )
+   worksheet_set_column( ::worksheet2, Column("D"), Column("D"), 40 )
+   worksheet_set_column( ::worksheet2, Column("E"), Column("F"), 14 )
+   worksheet_set_column( ::worksheet2, Column("G"), Column("G"), 40 )
+   worksheet_set_column( ::worksheet2, Column("H"), Column("H"), 16 )
+   worksheet_set_column( ::worksheet2, Column("I"), Column("P"), 14 )
+
+   // Headers
+   xlsx_set_string ::worksheet2 cell: "A8" value: "Oper." format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "B8" value: "Fecha" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "C8" value: "RIF Cliente" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "D8" value: "Cliente" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "E8" value: "Nro Factura" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "F8" value: "Nro Control" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "G8" value: "Tercero" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "H8" value: "RIF Tercero" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "I8" value: "Base 16%" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "J8" value: "IVA 16%" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "K8" value: "Base 8%" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "L8" value: "IVA 8%" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "M8" value: "Base 31%" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "N8" value: "IVA 31%" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "O8" value: "Exento" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "P8" value: "Total" format: ::ftitle2
+
+   nTercLin := 9
+   nTercSub := 0; nTercIva := 0; nTercTot := 0
+   nTercBaseGen := 0; nTercIvaGen := 0
+   nTercBaseRed := 0; nTercIvaRed := 0
+   nTercBaseSun := 0; nTercIvaSun := 0
+   nTercExento := 0
+   rQryTerceros:GoTop()
+
+   While !rQryTerceros:Eof()
+      xlsx_set_string ::worksheet2 cell: "A"+hb_ntos(nTercLin) value: STRZERO( nTercOpera++, 3 )
+      if !Empty( rQryTerceros:fecha )
+         xlsx_set_string ::worksheet2 cell: "B"+hb_ntos(nTercLin) value: DTOC(rQryTerceros:fecha)
+      endif
+      xlsx_set_string ::worksheet2 cell: "C"+hb_ntos(nTercLin) value: ALLTRIM(rQryTerceros:cliente_rif)
+      xlsx_set_string ::worksheet2 cell: "D"+hb_ntos(nTercLin) value: UTF_8(ALLTRIM(rQryTerceros:cliente_nombre))
+      xlsx_set_string ::worksheet2 cell: "E"+hb_ntos(nTercLin) value: ALLTRIM(hb_DefaultValue(rQryTerceros:serie_fiscal, "")) + "-" + PADL(ALLTRIM(hb_ntos(ToNum(rQryTerceros:numero))), 8, "0")
+      cNroControl2 := PADL( hb_ntos(rQryTerceros:numero_control), 10, "0" )
+      cNroControl2 := LEFT(cNroControl2,2)+"-"+RIGHT(cNroControl2,8)
+      xlsx_set_string ::worksheet2 cell: "F"+hb_ntos(nTercLin) value: cNroControl2
+      xlsx_set_string ::worksheet2 cell: "G"+hb_ntos(nTercLin) value: UTF_8(ALLTRIM(rQryTerceros:tercero_nombre))
+      xlsx_set_string ::worksheet2 cell: "H"+hb_ntos(nTercLin) value: ALLTRIM(rQryTerceros:tercero_rif)
+
+      worksheet_write_number( ::worksheet2, nTercLin-1, Column("I"), rQryTerceros:base_general, ::fnum2 )
+      worksheet_write_number( ::worksheet2, nTercLin-1, Column("J"), rQryTerceros:iva_general, ::fnum2 )
+      worksheet_write_number( ::worksheet2, nTercLin-1, Column("K"), rQryTerceros:base_reducido, ::fnum2 )
+      worksheet_write_number( ::worksheet2, nTercLin-1, Column("L"), rQryTerceros:iva_reducido, ::fnum2 )
+      worksheet_write_number( ::worksheet2, nTercLin-1, Column("M"), rQryTerceros:base_sun, ::fnum2 )
+      worksheet_write_number( ::worksheet2, nTercLin-1, Column("N"), rQryTerceros:iva_sun, ::fnum2 )
+      worksheet_write_number( ::worksheet2, nTercLin-1, Column("O"), rQryTerceros:base_exento, ::fnum2 )
+      worksheet_write_number( ::worksheet2, nTercLin-1, Column("P"), rQryTerceros:total, ::fnum2 )
+
+      nTercBaseGen += hb_DefaultValue( rQryTerceros:base_general, 0 )
+      nTercIvaGen  += hb_DefaultValue( rQryTerceros:iva_general, 0 )
+      nTercBaseRed += hb_DefaultValue( rQryTerceros:base_reducido, 0 )
+      nTercIvaRed  += hb_DefaultValue( rQryTerceros:iva_reducido, 0 )
+      nTercBaseSun += hb_DefaultValue( rQryTerceros:base_sun, 0 )
+      nTercIvaSun  += hb_DefaultValue( rQryTerceros:iva_sun, 0 )
+      nTercExento  += hb_DefaultValue( rQryTerceros:base_exento, 0 )
+      nTercTot     += hb_DefaultValue( rQryTerceros:total, 0 )
+
+      nTercLin++
+      rQryTerceros:Skip()
+   EndDo
+
+   // Totales
+   xlsx_set_string ::worksheet2 cell: "A"+hb_ntos(nTercLin) value: "TOTALES" format: ::ftitle2
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("I"), nTercBaseGen, ::ftot2 )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("J"), nTercIvaGen, ::ftot2 )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("K"), nTercBaseRed, ::ftot2 )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("L"), nTercIvaRed, ::ftot2 )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("M"), nTercBaseSun, ::ftot2 )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("N"), nTercIvaSun, ::ftot2 )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("O"), nTercExento, ::ftot2 )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("P"), nTercTot, ::ftot2 )
+
+   nTercLin += 3
+
+   xlsx_set_string ::worksheet2 cell: "I"+hb_ntos(nTercLin) value: "Base Imponible" format: ::ftitle2
+   xlsx_set_string ::worksheet2 cell: "J"+hb_ntos(nTercLin) value: "Débito Fiscal" format: ::ftitle2
+   nTercLin++
+
+   worksheet_merge_range( ::worksheet2, CELL("G"+hb_ntos(nTercLin)),CELL("H"+hb_ntos(nTercLin)), ;
+                          "Ventas Alicuota General 16%", ::frmt_resumen )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("I"), nTercBaseGen, ::fnum2 )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("J"), nTercIvaGen, ::fnum2 )
+   nTercLin++
+
+   worksheet_merge_range( ::worksheet2, CELL("G"+hb_ntos(nTercLin)),CELL("H"+hb_ntos(nTercLin)), ;
+                          "Ventas Alicuota Reducida 8%", ::frmt_resumen )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("I"), nTercBaseRed, ::fnum2 )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("J"), nTercIvaRed, ::fnum2 )
+   nTercLin++
+
+   worksheet_merge_range( ::worksheet2, CELL("G"+hb_ntos(nTercLin)),CELL("H"+hb_ntos(nTercLin)), ;
+                          "Ventas Alicuota Suntuaria 31%", ::frmt_resumen )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("I"), nTercBaseSun, ::fnum2 )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("J"), nTercIvaSun, ::fnum2 )
+   nTercLin++
+
+   worksheet_merge_range( ::worksheet2, CELL("G"+hb_ntos(nTercLin)),CELL("H"+hb_ntos(nTercLin)), ;
+                          "Ventas Exentas", ::frmt_resumen )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("I"), nTercExento, ::fnum2 )
+   nTercLin++
+
+   worksheet_merge_range( ::worksheet2, CELL("G"+hb_ntos(nTercLin)),CELL("H"+hb_ntos(nTercLin)), ;
+                          "Total General", ::ftitle2 )
+   worksheet_write_number( ::worksheet2, nTercLin-1, Column("I"), nTercTot, ::ftot2 )
+endif
 
 /* finalizamos */
     error := workbook_close( ::workbook )
