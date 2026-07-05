@@ -39,20 +39,23 @@ procedure mae_terceros_catalogo_edit( oForm, oWndParent, oModel, oEmpresa, lNew 
    oCatForm:rEntity := oEmpresa:TerceroCatalogo( iif(lNew, 0, VAL( oModel:GetCol( 1 ) )) )
    oCatForm:hData := oCatForm:rEntity:Data()
 
-   if lNew
-      oCatForm:cTerceroSel := ""
-      oCatForm:cCodigo     := ""
-      oCatForm:cNombre     := ""
-      oCatForm:cPrecio     := "0.00"
-      oCatForm:cTipoTasa   := "GEN - General"
-      oCatForm:lActivo     := .T.
-   else
-      oCatForm:cCodigo     := hb_DefaultValue( oCatForm:hData["codigo"], "" )
-      oCatForm:cNombre     := oCatForm:hData["nombre"]
-      oCatForm:cPrecio     := TRANSFORM( oCatForm:hData["precio"], "9999999.99" )
-      oCatForm:cTipoTasa   := hb_DefaultValue( oCatForm:hData["tipo_tasa"], "GEN" )
-      oCatForm:lActivo     := hb_DefaultValue( oCatForm:hData["activo"], .T. )
-      AEVAL( oCatForm:aTipoTasa, {|cValue, nPos| if( LEFT(cValue,3)=LEFT(oCatForm:cTipoTasa,3), oCatForm:cTipoTasa := cValue, NIL ) } )
+    if lNew
+       oCatForm:cTerceroSel := ""
+       oCatForm:cCodigo     := ""
+       oCatForm:cNombre     := ""
+       oCatForm:cPrecio     := "0.00"
+       oCatForm:cTipoTasa   := "GEN - General"
+       oCatForm:lActivo     := .T.
+       oCatForm:cComisionPct := ""
+    else
+       oCatForm:cCodigo     := hb_DefaultValue( oCatForm:hData["codigo"], "" )
+       oCatForm:cNombre     := oCatForm:hData["nombre"]
+       oCatForm:cPrecio     := TRANSFORM( oCatForm:hData["precio"], "9999999.99" )
+       oCatForm:cTipoTasa   := hb_DefaultValue( oCatForm:hData["tipo_tasa"], "GEN" )
+       oCatForm:lActivo     := hb_DefaultValue( oCatForm:hData["activo"], .T. )
+       oCatForm:cComisionPct := iif( hb_isNIL( oCatForm:hData["comision_porcentaje"] ), "", ;
+                                      TRANSFORM( oCatForm:hData["comision_porcentaje"], "99.99" ) )
+       AEVAL( oCatForm:aTipoTasa, {|cValue, nPos| if( LEFT(cValue,3)=LEFT(oCatForm:cTipoTasa,3), oCatForm:cTipoTasa := cValue, NIL ) } )
       nIdx := ASCAN( oCatForm:aTercerosIds, oCatForm:hData["tercero_id"] )
       if nIdx > 0
          oCatForm:cTerceroSel := oCatForm:aTercerosItems[nIdx]
@@ -82,10 +85,13 @@ procedure mae_terceros_catalogo_edit( oForm, oWndParent, oModel, oEmpresa, lNew 
       DEFINE ENTRY oCatForm:oEntNombre VAR oCatForm:cNombre ;
              ID "ent_nombre" RESOURCE oRes
 
-      DEFINE ENTRY oCatForm:oEntPrecio VAR oCatForm:cPrecio ;
-             ID "ent_precio" RESOURCE oRes
+       DEFINE ENTRY oCatForm:oEntPrecio VAR oCatForm:cPrecio ;
+              ID "ent_precio" RESOURCE oRes
 
-      DEFINE BOX oCatForm:oBoxTipoTasa ID "box_tipo_tasa" RESOURCE oRes
+       DEFINE ENTRY oCatForm:oEntComision VAR oCatForm:cComisionPct ;
+              ID "ent_comision" RESOURCE oRes
+
+       DEFINE BOX oCatForm:oBoxTipoTasa ID "box_tipo_tasa" RESOURCE oRes
       DEFINE COMBOBOX oCatForm:oComboTipoTasa ;
              VAR oCatForm:cTipoTasa ITEMS oCatForm:aTipoTasa ;
              OF oCatForm:oBoxTipoTasa
@@ -129,12 +135,13 @@ Procedure __CatSave( oForm )
 
    lNew := oForm:lNew
 
-   oForm:rEntity:SetData( { "tercero_id"  => nTerceroId,   ;
-                              "codigo"      => oForm:cCodigo, ;
-                              "nombre"      => oForm:cNombre, ;
-                              "precio"      => VAL( oForm:cPrecio ), ;
-                              "tipo_tasa"   => LEFT(oForm:cTipoTasa,3), ;
-                              "activo"      => oForm:lActivo } )
+    oForm:rEntity:SetData( { "tercero_id"  => nTerceroId,   ;
+                               "codigo"      => oForm:cCodigo, ;
+                               "nombre"      => oForm:cNombre, ;
+                               "precio"      => VAL( oForm:cPrecio ), ;
+                               "tipo_tasa"   => LEFT(oForm:cTipoTasa,3), ;
+                               "activo"      => oForm:lActivo, ;
+                               "comision_porcentaje" => iif( Empty(oForm:cComisionPct), NIL, VAL(oForm:cComisionPct) ) } )
 
    uResp := oForm:rEntity:Save()
 

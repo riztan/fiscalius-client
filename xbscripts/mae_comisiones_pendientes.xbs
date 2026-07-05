@@ -1,0 +1,150 @@
+/* mae_comisiones_pendientes.xbs
+ *
+ * Pantalla de comisiones pendientes de terceros
+ * Permite ver facturas cerradas con terceros pendientes de comision
+ * y generar la factura de comision manualmente
+ */
+
+#include "tpy_xbs.ch"
+
+procedure mae_comisiones_pendientes( oForm, oWndParent, oEntParent, nId, cFiltro )
+
+   local oWnd, oRes, oImgBanner, oImageLogo
+   local oMod, oLBox, oModel, uResp
+   local lForced := .F.
+   local aRows, aData := {}, aRow, hRow, nI, aStruct
+
+   // Obtener modulo de ventas
+   oMod := ::oGEmpresa:SetModulo( "VENTAS" )
+   if hb_isNIL( oMod )
+      MsgStop("No se pudo acceder al modulo de Ventas.")
+      return
+   endif
+
+   uResp := oMod:ComisionesPendientes()
+   if hb_isNIL( uResp )
+      MsgStop("Error al consultar comisiones pendientes.")
+      return
+   endif
+   if !hb_isObject( uResp ) .or. uResp:RecCount() == 0
+      MsgInfo("No hay comisiones pendientes.", "Información")
+      return
+   endif
+
+   // Convertir cursor a array de arrays para el modelo
+   uResp:GoTop()
+   while !uResp:Eof()
+       aRow := { uResp:factura_id, uResp:numero, uResp:serie_fiscal,;
+                 uResp:fecha,;
+                 uResp:cliente_nombre, uResp:cliente_rif,;
+                 uResp:tercero_id, uResp:tercero_nombre, uResp:tercero_rif,;
+                 uResp:monto_base, uResp:comision_porcentaje, uResp:monto_comision,;
+                 uResp:draft_numero }
+      AAdd( aData, aRow )
+      uResp:Skip()
+   end
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_comisiones_pendientes.ui"
+
+   aStruct := { {"factura_id", "N", 10, 0}, {"numero", "C", 20, 0},;
+                {"serie_fiscal", "C", 15, 0}, {"fecha", "D", 10, 0},;
+                {"cliente_nombre", "C", 60, 0}, {"cliente_rif", "C", 10, 0},;
+                {"tercero_id", "N", 10, 0}, {"tercero_nombre", "C", 60, 0},;
+                {"tercero_rif", "C", 10, 0}, {"monto_base", "N", 14, 2},;
+                {"comision_porcentaje", "N", 6, 2}, {"monto_comision", "N", 14, 2},;
+                {"draft_numero", "C", 15, 0} }
+
+   DEFINE WINDOW oWnd ;
+          TITLE "Fiscalius. Comisiones Pendientes de Terceros" ;
+          SIZE 900,500 ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oImgBanner ;
+             FILE oTPuy:cImages+"banner_02.png"; 
+             ID "image1" RESOURCE oRes
+             oImgBanner:Adjust(900)
+
+      DEFINE IMAGE oImageLogo ;
+             FILE oTPuy:cImages+"fiscalius_logo_02.png";
+             ID "image2" RESOURCE oRes
+             oImageLogo:Adjust(60)
+
+      DEFINE MODEL oModel ;
+             STRUCT aStruct ;
+             DATA aData
+
+      DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+      DEFINE LISTBOX oLBox ;
+             MODEL oModel ;
+             OF oBoxData
+
+      oLBox:lBar := .f.
+
+      oLBox:Active()
+
+      oLBox:SetColVisible( 1, .F. )    // factura_id
+      oLBox:SetColVisible( 7, .F. )    // tercero_id
+
+      oLBox:SetColTitle( 2, "Factura" )
+      oLBox:SetColTitle( 3, "Serie" )
+      oLBox:SetColTitle( 4, "Fecha" )
+      oLBox:SetColTitle( 5, "Cliente" )
+      oLBox:SetColTitle( 6, "RIF" )
+      oLBox:SetColTitle( 8, "Tercero" )
+      oLBox:SetColTitle( 9, "RIF Tercero" )
+      oLBox:SetColTitle( 10, "Base" )
+      oLBox:SetColTitle( 11, "% Com." )
+      oLBox:SetColTitle( 12, "Comisión" )
+      oLBox:SetColTitle( 13, "Borrador" )
+
+
+      DEFINE BUTTON oBtnGenerar ACTION __ComPendGenerar( oWnd, oModel, oLBox, oMod, @lForced, aData, aStruct ) ;
+             ID "btn_generar" RESOURCE oRes
+
+      DEFINE BUTTON oBtnCerrar ;
+             ACTION ( lForced := .T., oWnd:End() ) ;
+             ID "btn_cerrar" RESOURCE oRes
+
+   ACTIVATE WINDOW oWnd MODAL VALID ( lForced )
+
+return
+
+
+Procedure __ComPendGenerar( oWnd, oModel, oLBox, oMod, lForced, aData, aStruct )
+   local nFacturaId, cNumero, uResp
+   local nRow, nI, aNewData, aIter := Array(4)
+
+   if !oModel:oTreeView:IsGetSelected( aIter )
+      MsgAlert("Seleccione una fila de la lista.", "Atención")
+      return
+   endif
+
+   nFacturaId := Val( oModel:oTreeView:GetAutoValue( 1, aIter ) )
+   cNumero := oModel:oTreeView:GetAutoValue( 2, aIter )
+
+   if !MsgYesNo("Generar factura de comision para Factura " + ALLTRIM(cNumero) + "?", "Confirmar")
+      return
+   endif
+
+   uResp := oMod:GenerarComisionFactura( nFacturaId )
+   if !hb_isNIL( uResp ) .and. uResp
+      MsgInfo("Factura de comision generada correctamente.", "Éxito")
+      // Remover fila y refrescar modelo
+      aNewData := {}
+      for nI := 1 to Len( aData )
+         if aData[nI][1] != nFacturaId
+            AAdd( aNewData, aData[nI] )
+         endif
+      next
+      if Len( aNewData ) > 0
+         oModel:oLbx:Remove( oModel:aIter )
+      else
+         lForced := .T.
+         oWnd:End()
+      endif
+   else
+      MsgAlert("No se pudo generar la factura de comision.", "Error")
+   endif
+
+return

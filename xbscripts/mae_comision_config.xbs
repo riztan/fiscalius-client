@@ -1,0 +1,75 @@
+/* mae_comision_config.xbs
+ *
+ * Configuracion de comision por cuenta de terceros
+ */
+
+#include "tpy_xbs.ch"
+
+procedure mae_comision_config( oForm, oWndParent, oEntParent, nId, cFiltro )
+
+   local oWnd, oRes, oImgBanner, oImageLogo
+   local lComisionAuto := .F.
+   local lForced := .F.
+   local oChkComisionAuto, uResp
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_comision_config.ui"
+
+   // Cargar config actual
+   uResp := ::oGEmpresa:ComisionAutomatica()
+   if hb_isHash( uResp ) .and. hb_hHasKey( uResp, "content" )
+      lComisionAuto := uResp["content"]
+   endif
+
+   DEFINE WINDOW oWnd ;
+          TITLE "Fiscalius. Comisión por cuenta de terceros" ;
+          SIZE 480,300 ;
+          ID "window1" RESOURCE oRes
+
+      DEFINE IMAGE oImgBanner ;
+             FILE oTPuy:cImages+"banner_02.png"; 
+             ID "image1" RESOURCE oRes
+             oImgBanner:Adjust(900)
+
+      DEFINE IMAGE oImageLogo ;
+             FILE oTPuy:cImages+"fiscalius_logo_02.png";
+             ID "image2" RESOURCE oRes
+             oImageLogo:Adjust(60)
+
+      DEFINE CHECKBOX oChkComisionAuto VAR lComisionAuto ;
+             ID "chk_comision_automatica" RESOURCE oRes
+
+      DEFINE BUTTON oBtnSave ACTION __ComConfigSave( oWnd, lComisionAuto, @lForced ) ;
+             ID "btn_save" RESOURCE oRes
+
+      DEFINE BUTTON oBtnCancel ;
+             ACTION ( lForced := .T., oWnd:End() ) ;
+             ID "btn_cancel" RESOURCE oRes
+
+   ACTIVATE WINDOW oWnd MODAL VALID __ComConfigExit( @lForced )
+
+return
+
+
+Procedure __ComConfigSave( oWnd, lComisionAuto, lForced )
+   local uResp
+
+   uResp := ::oGEmpresa:ComisionAutomatica( { "valor" => lComisionAuto } )
+   if hb_isHash( uResp ) .and. hb_hHasKey( uResp, "return" ) .and. uResp["return"]
+      lForced := .T.
+      oWnd:End()
+   else
+      MsgAlert( "No se pudo guardar la configuración.", "Error" )
+   endif
+
+return
+
+
+Function __ComConfigExit( lForced )
+
+  if lForced; return .T. ; endif
+
+  if MsgNoYes("Desea salir sin guardar los cambios?", "Atencion.")
+     return .T.
+  endif
+
+return .F.

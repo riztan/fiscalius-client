@@ -675,10 +675,50 @@
     <property name="can_focus">False</property>
     <property name="pixbuf">../images/orden_entrega_rep_32.png</property>
   </object>
+  <object class="GtkImage" id="image84">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/documentos_32.png</property>
+  </object>
+  <object class="GtkImage" id="image85">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/series_fiscales_32.png</property>
+  </object>
+  <object class="GtkImage" id="image86">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/series_32.png</property>
+  </object>
+  <object class="GtkImage" id="image87">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/series_fis_doc_32.png</property>
+  </object>
+  <object class="GtkImage" id="image88">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/clients_32.png</property>
+  </object>
+  <object class="GtkImage" id="image89">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/products_32.png</property>
+  </object>
   <object class="GtkImage" id="image9">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="pixbuf">../images/theme03_32.png</property>
+  </object>
+  <object class="GtkImage" id="image90">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/comision_32.png</property>
+  </object>
+  <object class="GtkImage" id="image91">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-missing-image</property>
   </object>
   <object class="GtkAction" id="salir"/>
   <object class="GtkWindow" id="wnd_main">
@@ -919,30 +959,45 @@
                               </object>
                             </child>
                             <child>
-                              <object class="GtkImageMenuItem" id="item_serie_fiscal">
-                                <property name="label" translatable="yes">Series Fiscales</property>
+                              <object class="GtkImageMenuItem" id="item_documentos">
+                                <property name="label" translatable="yes">Documentos</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="image">image78</property>
+                                <property name="image">image84</property>
                                 <property name="use_stock">False</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkImageMenuItem" id="item_series_consecutivos">
-                                <property name="label" translatable="yes">Correlativos por Serie</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="image">image76</property>
-                                <property name="use_stock">False</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkImageMenuItem" id="item_serie_tipos">
-                                <property name="label" translatable="yes">Documentos por Serie</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="image">image79</property>
-                                <property name="use_stock">False</property>
+                                <child type="submenu">
+                                  <object class="GtkMenu" id="menu6">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <child>
+                                      <object class="GtkImageMenuItem" id="item_serie_fiscal">
+                                        <property name="label" translatable="yes">Series Fiscales</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="image">image85</property>
+                                        <property name="use_stock">False</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkImageMenuItem" id="item_series_consecutivos">
+                                        <property name="label" translatable="yes">Correlativos por Serie</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="image">image86</property>
+                                        <property name="use_stock">False</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkImageMenuItem" id="item_serie_tipos">
+                                        <property name="label" translatable="yes">Documentos por Serie</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="image">image87</property>
+                                        <property name="use_stock">False</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
                               </object>
                             </child>
                             <child>
@@ -989,12 +1044,45 @@
                               </object>
                             </child>
                             <child>
-                              <object class="GtkImageMenuItem" id="itm_terceros">
+                              <object class="GtkImageMenuItem" id="itm_terceros_main">
                                 <property name="label" translatable="yes">Terceros</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="image">gtk-home</property>
                                 <property name="use_stock">False</property>
+                                <child type="submenu">
+                                  <object class="GtkMenu" id="menu7">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <child>
+                                      <object class="GtkImageMenuItem" id="itm_terceros">
+                                        <property name="label" translatable="yes">Terceros</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="image">image88</property>
+                                        <property name="use_stock">False</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkImageMenuItem" id="item_terc_catalogo">
+                                        <property name="label" translatable="yes">Catálogo del tercero</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="image">image89</property>
+                                        <property name="use_stock">False</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkImageMenuItem" id="item_comision_terceros">
+                                        <property name="label" translatable="yes">Comisión de terceros</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="image">image91</property>
+                                        <property name="use_stock">False</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
                               </object>
                             </child>
                             <child>
@@ -1007,20 +1095,7 @@
                               </object>
                             </child>
                             <child>
-                              <object class="GtkImageMenuItem" id="item_terc_catalogo">
-                                <property name="label" translatable="yes">Catálogo del tercero</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkSeparatorMenuItem" id="menuitem3">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkSeparatorMenuItem" id="separatormenuitem1">
+                              <object class="GtkSeparatorMenuItem" id="sep_comisiones">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                               </object>
@@ -1185,6 +1260,15 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="image">image77</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_comisiones_pendientes">
+                                <property name="label" translatable="yes">Comisiones Pendientes (Terceros)</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image90</property>
                                 <property name="use_stock">False</property>
                               </object>
                             </child>

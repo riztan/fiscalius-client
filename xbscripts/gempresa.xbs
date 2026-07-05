@@ -104,9 +104,11 @@ CLASS GEMPRESA
    METHOD GetMoneda(uParam)          INLINE ::rEmpresa:GetMoneda(uParam)
    METHOD ITF()                      INLINE ::rEmpresa:ITF()
    METHOD GetITF(uParam)             INLINE ::rEmpresa:GetITF(uParam)
-   METHOD GetTasa(cMoneda, dFecha)   INLINE ::rEmpresa:GetTasa( cMoneda, dFecha )
-   METHOD GetTasaCambio( hParam )    INLINE ::rEmpresa:GetTasaCambio( hParam )
-   METHOD TasasDeCambio()            INLINE ::rEmpresa:TasasDeCambio()
+    METHOD GetTasa(cMoneda, dFecha)   INLINE ::rEmpresa:GetTasa( cMoneda, dFecha )
+    METHOD GetTasaCambio( hParam )    INLINE ::rEmpresa:GetTasaCambio( hParam )
+    METHOD TasasDeCambio()            INLINE ::rEmpresa:TasasDeCambio()
+
+    METHOD ComisionAutomatica(lValue) INLINE ::rEmpresa:ComisionAutomatica(lValue)
 
    METHOD Alicuotas()                INLINE ::rEmpresa:Alicuotas()
    METHOD GetAlicuota(uParam)        INLINE ::rEmpresa:GetAlicuota(uParam)

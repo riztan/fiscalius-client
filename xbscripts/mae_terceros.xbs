@@ -110,27 +110,29 @@ procedure mae_terceros_edit( oForm, oWndParent, oModel, oEmpresa, lNew )
                         "C - Comunal"}
                        
 
-   if lNew
-      oTercForm:cNombre      := ""
-      oTercForm:cTipo        := ""
-      oTercForm:cRif         := ""
-      oTercForm:cTelefono    := ""
-      oTercForm:cEmail       := ""
-      oTercForm:cDireccion   := ""
-      oTercForm:lActivo      := .T.
-   else
-      oTercForm:cNombre      := oModel:GetCol( 4 )
-      oTercForm:cRif         := hb_DefaultValue( oModel:GetCol( 5 ), "" )
-      oTercForm:cTipo        := hb_DefaultValue( oModel:GetCol( 6 ), "V" )
-      AEVAL( oTercForm:aTipo, {|cValue, nPos| if( LEFT(cValue,1)=oTercForm:cTipo, oTercForm:cTipo := cValue, NIL ) } )
-   endif
+    if lNew
+       oTercForm:cNombre      := ""
+       oTercForm:cTipo        := ""
+       oTercForm:cRif         := ""
+       oTercForm:cTelefono    := ""
+       oTercForm:cEmail       := ""
+       oTercForm:cDireccion   := ""
+       oTercForm:lActivo      := .T.
+       oTercForm:cComisionPct := "0.00"
+    else
+       oTercForm:cNombre      := oModel:GetCol( 4 )
+       oTercForm:cRif         := hb_DefaultValue( oModel:GetCol( 5 ), "" )
+       oTercForm:cTipo        := hb_DefaultValue( oModel:GetCol( 6 ), "V" )
+       AEVAL( oTercForm:aTipo, {|cValue, nPos| if( LEFT(cValue,1)=oTercForm:cTipo, oTercForm:cTipo := cValue, NIL ) } )
+    endif
 
    oTercForm:rEntity := oEmpresa:Tercero( {"id" => VAL( oModel:GetCol( 1 ) ) } )
    hData := oTercForm:rEntity:Data()
-   oTercForm:cTelefono  := hb_DefaultValue( hData["telefono"], "" )
-   oTercForm:cEmail     := hb_DefaultValue( hData["email"], "" )
-   oTercForm:cDireccion := hb_DefaultValue( hData["direccion"], "" )
-   oTercForm:lActivo    := hb_DefaultValue( hData["activo"], .T. )
+    oTercForm:cTelefono  := hb_DefaultValue( hData["telefono"], "" )
+    oTercForm:cEmail     := hb_DefaultValue( hData["email"], "" )
+    oTercForm:cDireccion := hb_DefaultValue( hData["direccion"], "" )
+    oTercForm:lActivo    := hb_DefaultValue( hData["activo"], .T. )
+    oTercForm:cComisionPct := TRANSFORM( hb_DefaultValue( hData["comision_porcentaje"], 0 ), "99.99" )
 
    SET RESOURCES oRes FROM FILE oTPuy:cResources+"mae_terceros_edit.ui"
 
@@ -162,10 +164,13 @@ procedure mae_terceros_edit( oForm, oWndParent, oModel, oEmpresa, lNew )
       DEFINE ENTRY oTercForm:oEntEmail VAR oTercForm:cEmail ;
              ID "ent_email" RESOURCE oRes
 
-      DEFINE ENTRY oTercForm:oEntDireccion VAR oTercForm:cDireccion ;
-             ID "ent_direccion" RESOURCE oRes
+       DEFINE ENTRY oTercForm:oEntDireccion VAR oTercForm:cDireccion ;
+              ID "ent_direccion" RESOURCE oRes
 
-      DEFINE CHECKBOX oTercForm:oChkActivo VAR oTercForm:lActivo ;
+       DEFINE ENTRY oTercForm:oEntComision VAR oTercForm:cComisionPct ;
+              ID "ent_comision" RESOURCE oRes
+
+       DEFINE CHECKBOX oTercForm:oChkActivo VAR oTercForm:lActivo ;
              ID "chk_activo" RESOURCE oRes
 
       DEFINE BUTTON oTercForm:oBtnSave ACTION __TercSave( oTercForm ) ;
@@ -196,13 +201,14 @@ Procedure __TercSave( oForm )
 
    lNew := oForm:rEntity:IsNew()
 
-   oForm:rEntity:SetData( { "nombre"      => oForm:cNombre,   ;
-                             "rif"         => oForm:cRif,      ;
-                             "tipo_entidad" => LEFT(oForm:cTipo,1), ;
-                             "telefono"    => oForm:cTelefono, ;
-                             "email"       => oForm:cEmail,    ;
-                             "direccion"   => oForm:cDireccion,;
-                             "activo"      => oForm:lActivo } )
+    oForm:rEntity:SetData( { "nombre"      => oForm:cNombre,   ;
+                              "rif"         => oForm:cRif,      ;
+                              "tipo_entidad" => LEFT(oForm:cTipo,1), ;
+                              "telefono"    => oForm:cTelefono, ;
+                              "email"       => oForm:cEmail,    ;
+                              "direccion"   => oForm:cDireccion,;
+                              "activo"      => oForm:lActivo,  ;
+                              "comision_porcentaje" => VAL( oForm:cComisionPct ) } )
 
    uResp := oForm:rEntity:Save()
 

@@ -160,10 +160,16 @@ procedure poslogin( oParent )
       DEFINE MENUITEM ::oMnuInventario ACTION oTPuy:RunXBS( "mae_inventario", oForm, oTPuy:oWnd ) ;
              ID "item_productos" RESOURCE ::oRes
 			 
-      DEFINE MENUITEM ::oMnuTercCat ACTION oTPuy:RunXBS( "mae_terceros_catalogo", oForm, oTPuy:oWnd ) ;
-             ID "item_terc_catalogo" RESOURCE ::oRes
+       DEFINE MENUITEM ::oMnuTercCat ACTION oTPuy:RunXBS( "mae_terceros_catalogo", oForm, oTPuy:oWnd ) ;
+              ID "item_terc_catalogo" RESOURCE ::oRes
 
-      DEFINE MENUITEM ::oMnuIGTF ACTION oTPuy:RunXBS( "mae_itf", oForm, oTPuy:oWnd ) ;
+       DEFINE MENUITEM ::oMnuComTerc ACTION oTPuy:RunXBS( "mae_comision_config", oForm, oTPuy:oWnd ) ;
+              ID "item_comision_terceros" RESOURCE ::oRes
+
+       DEFINE MENUITEM ::oMnuComPend ACTION oTPuy:RunXBS( "mae_comisiones_pendientes", oForm, oTPuy:oWnd ) ;
+              ID "item_comisiones_pendientes" RESOURCE ::oRes
+
+       DEFINE MENUITEM ::oMnuIGTF ACTION oTPuy:RunXBS( "mae_itf", oForm, oTPuy:oWnd ) ;
              ID "item_ITF" RESOURCE ::oRes
 
       DEFINE MENUITEM ::oMnuClientes ACTION oTPuy:RunXBS( "vta_clientes", oForm, oTPuy:oWnd ) ;
