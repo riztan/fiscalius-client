@@ -14,7 +14,11 @@
 #define SMTP_HOST   "smtp.gmail.com"
 #define SMTP_PORT   465
 #define SMTP_USER   "riztan@gmail.com"
-#define SMTP_PASS   "sndp gyhu vnso tkbx"
+
+// Leer password desde email.ch (NO versionado — crear localmente)
+if FILE( "email.ch" )
+   #include "email.ch"
+endif
 
 procedure email_send( hParams )
 

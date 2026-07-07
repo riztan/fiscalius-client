@@ -17,6 +17,7 @@
 
 # Archivos de configuración local
 connect.ch
+email.ch
 
 # Logs
 *.log
