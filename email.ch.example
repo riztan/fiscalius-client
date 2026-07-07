@@ -1,0 +1,5 @@
+/*
+ * email.ch.example — Copiar a email.ch y reemplazar con credenciales reales
+ * NO versionar email.ch (ya está en .gitignore)
+ */
+#define SMTP_PASS   "tu_clave_aqui"

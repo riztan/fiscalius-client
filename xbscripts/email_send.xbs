@@ -15,7 +15,7 @@
 #define SMTP_PORT   465
 #define SMTP_USER   "riztan@gmail.com"
 
-// Leer password desde email.ch (NO versionado — crear localmente)
+// Leer password desde email.ch (NO versionado — ver email.ch.example)
 if FILE( "email.ch" )
    #include "email.ch"
 endif
