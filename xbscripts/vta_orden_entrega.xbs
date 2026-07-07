@@ -4,6 +4,7 @@
  */
 
 #include "tpy_xbs.ch"
+#include "xbscripts/email_send.xbs"
 #define SEPARATOR  " "+CHR(199)+CHR(129)+" "
 
 #define __CODIGO          3
@@ -116,6 +117,9 @@ procedure vta_orden_entrega( oFormParent, cFiltro )
    DEFINE BUTTON ::oBtn ACTION __vtaOrdEnt( oForm, oFormParent, ::oBoxOrdEnt, ::oModOrdEnts, .T.  ) ;
            ID "btn_add" RESOURCE ::oRes
 
+   DEFINE BUTTON ::oBtnSeniat ;
+           ACTION __OrdEntEnviarSeniat( oForm ) ;
+           ID "btn_seniat" RESOURCE ::oRes
 
    //-------------------------
    DEFINE LABEL ::oLabNumero ID "lab_numero" RESOURCE ::oRes
@@ -473,6 +477,7 @@ procedure __ModOrdEntRefresh(oForm)
    else
       ::rOrdEnt := ::rVentas:OrdenesEntrega( { "estado" => cFiltro } )
    endif
+
    if ::isDef("oModOrdEnts")
       ::oModOrdEnts:oTreeView:ClearModel(.t.)
 
@@ -2108,5 +2113,73 @@ PROCEDURE __OrdEntProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
    ACTIVATE WINDOW ::oInvWnd MODAL
 
 RETURN 
+
+
+PROCEDURE __OrdEntEnviarSeniat( oForm )
+
+   local rPendientes, aData
+   local cFilePDF, aAttach, hMail, hEmpresa
+   local cBody
+
+   if !MsgYesNo( "¿Enviar listado de ordenes pendientes por facturar al SENIAT?", "Confirmar envío" )
+      RETURN
+   endif
+
+   // Datos de la empresa
+   hEmpresa := ::rEmpresa:GetData()
+
+   // Consultar activas (pendientes por facturar)
+   rPendientes := ::rVentas:OrdenesEntrega( { "estado" => "ACTIVAS" } )
+   if !hb_isObject( rPendientes ) .or. rPendientes:RecCount() == 0
+      MsgStop( "No hay ordenes pendientes por facturar." )
+      RETURN
+   endif
+
+   aData := rPendientes:GetData()
+
+   // Generar PDF
+   cFilePDF := "tmp/vta_oe_pendientes_seniat_" + STRTRAN( DTOC(DATE()), "/", "" ) + ".pdf"
+
+   oTPuy:RunXBS( "vta_imprimir_pdf_oe_pendientes", aData, cFilePDF, hEmpresa )
+
+   if !FILE( cFilePDF )
+      MsgStop( "No se pudo generar el PDF." )
+      RETURN
+   endif
+
+   aAttach := { cFilePDF }
+
+   // Cuerpo del correo institucional
+   cBody := ""
+   cBody += "REPUBLICA BOLIVARIANA DE VENEZUELA" + CRLF
+   cBody += CRLF
+   cBody += "EMPRESA: " + hEmpresa["nombre"] + CRLF
+   cBody += "RIF: " + hEmpresa["rif"] + CRLF
+   cBody += CRLF
+   cBody += "------------------------------------------------" + CRLF
+   cBody += "ORDENES DE ENTREGA PENDIENTES POR FACTURAR" + CRLF
+   cBody += "------------------------------------------------" + CRLF
+   cBody += CRLF
+   cBody += "Fecha de emision: " + DTOC(DATE()) + CRLF
+   cBody += "Total de ordenes: " + hb_ntos( LEN( aData ) ) + CRLF
+   cBody += CRLF
+   cBody += "Se adjunta listado detallado de las ordenes de entrega" + CRLF
+   cBody += "pendientes por facturar para su conocimiento y fines" + CRLF
+   cBody += "legales consiguientes." + CRLF
+   cBody += CRLF
+   cBody += "Atentamente," + CRLF
+   cBody += hEmpresa["nombre"] + CRLF
+
+   hMail := { "to"      => "riztan@gmail.com",;
+              "subject" => "OEs Pendientes por Facturar - " + ALLTRIM( hEmpresa["nombre"] ) + " (" + hEmpresa["rif"] + ") - " + DTOC(DATE()),;
+              "body"    => cBody,;
+              "attach"  => aAttach }
+
+   email_send( hMail )
+
+   MsgInfo( "Listado enviado a SENIAT. Verifique su bandeja de entrada." )
+
+RETURN
+
 
 //eof

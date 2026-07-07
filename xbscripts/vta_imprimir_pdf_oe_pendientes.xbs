@@ -1,0 +1,179 @@
+/*
+ * vta_imprimir_pdf_oe_pendientes.xbs
+ * Genera PDF con listado de Órdenes de Entrega pendientes por facturar
+ * para envío al SENIAT — Versión profesional con diseño institucional
+ *
+ * Recibe: aData (array de arrays con datos de OEs activas)
+ *         cFilePDF (ruta de salida)
+ *         hEmpresa (hash con datos de la empresa)
+ */
+
+#include "tpy_xbs.ch"
+#include "harupdf.ch"
+#include "tutilpdf.ch"
+
+#define MARGIN      0.7
+#define PAGE_W      27.94
+#define PAGE_H      21.59
+
+procedure vta_imprimir_pdf_oe_pendientes( aData, cFilePDF, hEmpresa )
+
+   local oPDF
+   local nY := MARGIN, i
+   local nTotal := 0
+   local nX1, nX2, nX3, nX4, nX5
+
+
+   if !hb_isArray( aData ) .or. Empty( aData )
+      RETURN
+   endif
+
+   FERASE( cFilePDF )
+
+   oPDF := TIMPRIMEPDF():New( cFilePDF )
+   oPDF:PageSetSize( HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_LANDSCAPE )
+
+   // =============================================
+   // Borde de página
+   // =============================================
+   oPDF:SetLineWidth( 0.5 )
+   oPDF:SetRgbStroke( 0.3, 0.3, 0.3 )
+   oPDF:Rectangle( MARGIN - 0.2, MARGIN - 0.2, PAGE_H - MARGIN + 0.2, PAGE_W - MARGIN + 0.2 )
+   oPDF:PageStroke()
+
+   // =============================================
+   // Barra de título azul oscuro
+   // =============================================
+   oPDF:SetRgbFill( 0.12, 0.24, 0.36 )
+   oPDF:Rectangle( MARGIN, MARGIN, MARGIN + 2.8, PAGE_W - MARGIN )
+   oPDF:PageFill()
+
+   nY += 0.6
+   oPDF:SetFont( "Helvetica-Bold", 12 )
+   oPDF:CMSAY( nY, MARGIN + 0.5, "REPUBLICA BOLIVARIANA DE VENEZUELA", "Helvetica-Bold", 12, 1, 1, 1 )
+
+   nY += 0.8
+   oPDF:SetFont( "Helvetica-Bold", 14 )
+   oPDF:CMSAY( nY, MARGIN + 0.5, "ORDENES DE ENTREGA PENDIENTES POR FACTURAR", "Helvetica-Bold", 14, 1, 1, 1 )
+
+   nY += 0.8
+   oPDF:SetFont( "Helvetica", 8 )
+   oPDF:CMSAY( nY, MARGIN + 0.5, "Documento remitido al SENIAT para efectos de fiscalizacion", "Helvetica", 8, 0.8, 0.9, 1 )
+
+   // =============================================
+   // Datos de la empresa
+   // =============================================
+   nY := MARGIN + 3.5
+
+   if hb_isHash( hEmpresa )
+      oPDF:SetFont( "Helvetica-Bold", 10 )
+      oPDF:CMSAY( nY, MARGIN + 0.5, ALLTRIM( hEmpresa["nombre"] ), "Helvetica-Bold", 10 )
+
+      oPDF:SetFont( "Helvetica", 10 )
+      oPDF:CMSAY( nY, MARGIN + 11, "RIF: " + hEmpresa["rif"], "Helvetica", 10 )
+   endif
+
+   nY += 0.6
+   oPDF:SetFont( "Helvetica", 9 )
+   oPDF:CMSAY( nY, MARGIN + 0.5, "Fecha de emision: " + DTOC( DATE() ) )
+
+   oPDF:CMSAY( nY, MARGIN + 11, "Hora: " + TIME() )
+
+   // =============================================
+   // Línea separadora
+   // =============================================
+   nY += 0.6
+   oPDF:SetLineWidth( 0.3 )
+   oPDF:SetRgbStroke( 0.5, 0.5, 0.5 )
+   oPDF:Line( nY, MARGIN, nY, PAGE_W - MARGIN )
+
+   // =============================================
+   // Columnas
+   // =============================================
+   nX1 := MARGIN + 0.5
+   nX2 := MARGIN + 5.0
+   nX3 := MARGIN + 12.5
+   nX4 := MARGIN + 16.0
+   nX5 := MARGIN + 20.0
+
+   // Encabezado de tabla
+   nY += 0.4
+   oPDF:SetFont( "Helvetica-Bold", 9 )
+   oPDF:CMSAY( nY, nX1, "N° OE" )
+   oPDF:CMSAY( nY, nX2, "Cliente" )
+   oPDF:CMSAY( nY, nX3, "Fecha" )
+   oPDF:CMSAY( nY, nX4, "Monto" )
+
+   nY += 0.5
+   oPDF:SetLineWidth( 0.5 )
+   oPDF:SetRgbStroke( 0.12, 0.24, 0.36 )
+    oPDF:Line( nY, nX1 - 0.3, nY, nX5 + 0.3 )
+
+    // =============================================
+    // Datos
+    // =============================================
+    nY += 0.3
+    oPDF:SetFont( "Helvetica", 9 )
+    FOR i := 1 TO LEN( aData )
+      if nY > PAGE_H - MARGIN - 1.5
+         oPDF:PageNew()
+         nY := MARGIN + 1
+         oPDF:SetFont( "Helvetica-Bold", 9 )
+         oPDF:CMSAY( nY, nX1, "N° OE" )
+         oPDF:CMSAY( nY, nX2, "Cliente" )
+         oPDF:CMSAY( nY, nX3, "Fecha" )
+         oPDF:CMSAY( nY, nX4, "Monto" )
+         nY += 0.4
+         oPDF:SetLineWidth( 0.5 )
+         oPDF:SetRgbStroke( 0.12, 0.24, 0.36 )
+         oPDF:Line( nY, nX1 - 0.3, nY, nX5 + 0.3 )
+         nY += 0.3
+         oPDF:SetFont( "Helvetica", 9 )
+      endif
+
+      oPDF:CMSAY( nY, nX1, ALLTRIM( aData[i][1] ) )
+      oPDF:CMSAY( nY, nX2, LEFT( ALLTRIM( aData[i][3] ), 40 ) )
+      oPDF:CMSAY( nY, nX3, DTOC( aData[i][4] ) )
+      oPDF:CMSAYRECT( nY, nX4, TRANSFORM( aData[i][6], "999,999,999.99" ), "Helvetica", 9, 0, 0, 0,, nY, nX5 - 0.3, HPDF_TALIGN_RIGHT )
+      nTotal += aData[i][6]
+
+      nY += 0.45
+   NEXT
+
+   // =============================================
+   // Línea final de la tabla
+   oPDF:SetLineWidth( 0.5 )
+   oPDF:SetRgbStroke( 0.12, 0.24, 0.36 )
+   oPDF:Line( nY, nX1 - 0.3, nY, nX5 + 0.3 )
+
+   // =============================================
+   // TOTAL GENERAL
+   // =============================================
+   nY += 0.4
+   oPDF:SetFont( "Helvetica-Bold", 11 )
+   oPDF:CMSAY( nY, nX1, "TOTAL GENERAL:" )
+   oPDF:CMSAYRECT( nY, nX4, TRANSFORM( nTotal, "999,999,999.99" ), "Helvetica-Bold", 11, 0, 0, 0,, nY, nX5 - 0.3, HPDF_TALIGN_RIGHT )
+
+   nY += 0.6
+   oPDF:SetFont( "Helvetica", 9 )
+   oPDF:CMSAY( nY, nX1, "Total de ordenes: " + hb_ntos( LEN( aData ) ) )
+
+   // =============================================
+   // Pie de página
+   // =============================================
+   nY := PAGE_H - MARGIN - 0.5
+   oPDF:SetLineWidth( 0.2 )
+   oPDF:SetRgbStroke( 0.6, 0.6, 0.6 )
+   oPDF:Line( nY, MARGIN, nY, PAGE_W - MARGIN )
+
+   nY += 0.3
+   oPDF:SetFont( "Helvetica", 7 )
+   if hb_isHash( hEmpresa )
+      oPDF:CMSAY( nY, MARGIN + 0.5, ALLTRIM( hEmpresa["nombre"] ) + " - RIF " + hEmpresa["rif"] )
+   endif
+   oPDF:CMSAY( nY, MARGIN + 15, "Pagina " + hb_ntos( oPDF:PageCount() ) )
+   oPDF:CMSAY( nY, MARGIN + 18, DTOC( DATE() ) + " " + TIME() )
+
+   oPDF:End( .F. )
+
+return

@@ -1,0 +1,127 @@
+/** email_send.xbs — Envío de correo desde el cliente TPuy
+ *
+ *  USO:
+ *     #include "xbscripts/email_send.xbs"
+ *     email_send( { "to"      => "cliente@example.com",;
+ *                   "cc"      => "",                     ;
+ *                   "subject" => "Orden de Entrega #001",;
+ *                   "body"    => "Mensaje opcional",      ;
+ *                   "attach"  => { "C:\ruta\doc.pdf" }   } )
+ */
+
+#include "tpy_xbs.ch"
+
+#define SMTP_HOST   "smtp.gmail.com"
+#define SMTP_PORT   465
+#define SMTP_USER   "riztan@gmail.com"
+#define SMTP_PASS   "sndp gyhu vnso tkbx"
+
+procedure email_send( hParams )
+
+   local cTo, cSubject, cBody, cAttach, aAttach, hMsg
+   local cSend, cParams, cCmd, cLog
+
+   if !hb_isHash( hParams )
+      MsgStop( "email_send: se requiere un hash" )
+      return
+   endif
+
+   cTo      := iif( hb_hHasKey( hParams, "to" ), hParams["to"], "" )
+   cSubject := iif( hb_hHasKey( hParams, "subject" ), hParams["subject"], "" )
+   cBody    := iif( hb_hHasKey( hParams, "body" ), hParams["body"], "" )
+
+   if EMPTY( cTo ) .or. EMPTY( cSubject )
+      MsgStop( "email_send: 'to' y 'subject' requeridos" )
+      return
+   endif
+
+   cLog := hb_GetEnv("TEMP") + "\fiscalius_email.log"
+
+   // Buscar mailsend1.19.exe
+   cSend := ""
+   do case
+   case FILE( hb_DirBase() + "bin\mailsend1.19.exe" )
+      cSend := hb_DirBase() + "bin\mailsend1.19.exe"
+   case FILE( CurDrive() + ":\" + CurDir() + "\bin\mailsend1.19.exe" )
+      cSend := CurDrive() + ":\" + CurDir() + "\bin\mailsend1.19.exe"
+   endcase
+
+   if EMPTY( cSend )
+      // Fallback a curl sin attachments
+      email_send_curl( cTo, cSubject, cBody, hParams )
+      return
+   endif
+
+   // Construir params para mailsend1.19.exe
+   cParams := ' -to ' + cTo
+   cParams += ' -from ' + SMTP_USER
+   cParams += ' -ssl -port ' + hb_ntos(SMTP_PORT) + ' -auth'
+   cParams += ' -smtp ' + SMTP_HOST
+   cParams += ' -sub "' + cSubject + '"'
+   if hb_hHasKey( hParams, "cc" ) .and. !EMPTY( hParams["cc"] )
+      cParams += ' -cc ' + hParams["cc"]
+   endif
+   cParams += ' +bc -v'
+   cParams += ' -user ' + hb_aTokens( SMTP_USER, "@" )[1]
+   cParams += ' -pass "' + SMTP_PASS + '"'
+
+   // Body como archivo temporal si no está vacío
+   if !EMPTY( cBody )
+      if hb_MemoWrit( hb_GetEnv("TEMP") + "\fiscalius_body.txt", cBody )
+         cParams += ' mime-type "text/plain" -disposition "inline"'
+         cParams += ' -attach "' + hb_GetEnv("TEMP") + "\fiscalius_body.txt" + '"'
+      endif
+   endif
+
+   // Attachments
+   aAttach := iif( hb_hHasKey( hParams, "attach" ), hParams["attach"], {} )
+   if hb_isArray( aAttach )
+      FOR EACH cAttach IN aAttach
+         if FILE( cAttach )
+            cParams += ' -attach "' + cAttach + '"'
+         endif
+      NEXT
+   endif
+
+   hb_MemoWrit( cLog, "=== Fiscalius Email ===" + CRLF + ;
+                      "Send: " + cSend + CRLF + ;
+                      "Params: " + cParams + CRLF )
+
+   WAPI_ShellExecute( 0, "open", cSend, cParams, '', 0 )
+
+return
+
+
+/** Fallback a curl cuando no hay mailsend1.19.exe
+ */
+static procedure email_send_curl( cTo, cSubject, cBody, hParams )
+
+   local cFileEml := hb_GetEnv("TEMP") + "\fiscalius_curl_body.txt"
+   local cLog     := hb_GetEnv("TEMP") + "\fiscalius_curl.log"
+   local cCmd, cEmlBody
+
+   cEmlBody := ""
+   cEmlBody += "From: " + SMTP_USER + CRLF
+   cEmlBody += "To: " + cTo + CRLF
+   cEmlBody += "Subject: " + cSubject + CRLF
+   cEmlBody += "MIME-Version: 1.0" + CRLF
+   cEmlBody += "Content-Type: text/plain; charset=utf-8" + CRLF
+   cEmlBody += CRLF
+   cEmlBody += cBody + CRLF
+
+   hb_MemoWrit( cFileEml, cEmlBody )
+
+   cCmd := '/c curl.exe --insecure --ssl-reqd --silent --show-error'
+   cCmd += ' --url "smtps://' + SMTP_HOST + ':' + hb_ntos(SMTP_PORT) + '"'
+   cCmd += ' --user "' + SMTP_USER + ':' + SMTP_PASS + '"'
+   cCmd += ' --mail-from "' + SMTP_USER + '"'
+   cCmd += ' --mail-rcpt "' + cTo + '"'
+   cCmd += ' --upload-file "' + cFileEml + '"'
+   cCmd += ' > "' + cLog + '" 2>&1'
+
+   hb_MemoWrit( cLog, "=== Fiscalius Email (curl fallback) ===" + CRLF + ;
+                      "Cmd: " + cCmd + CRLF )
+
+   WAPI_ShellExecute( 0, "open", "cmd.exe", cCmd, '', 0 )
+
+return

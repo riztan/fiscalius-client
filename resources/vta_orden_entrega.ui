@@ -190,6 +190,27 @@
                           </packing>
                         </child>
                         <child>
+                          <object class="GtkButton" id="btn_seniat">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="receives_default">True</property>
+                            <property name="tooltip_text" translatable="yes">Enviar listado al SENIAT</property>
+                            <property name="relief">none</property>
+                            <child>
+                              <object class="GtkImage" id="image_seniat">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="pixbuf">../images/financial_document_16.png</property>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">3</property>
+                          </packing>
+                        </child>
+                        <child>
                           <object class="GtkHBox" id="box_filtro_estados">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
@@ -220,7 +241,7 @@
                           <packing>
                             <property name="expand">False</property>
                             <property name="fill">False</property>
-                            <property name="position">3</property>
+                            <property name="position">4</property>
                           </packing>
                         </child>
                       </object>
