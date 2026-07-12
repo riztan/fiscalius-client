@@ -2175,7 +2175,7 @@ PROCEDURE __OrdEntEnviarSeniat( oForm )
               "body"    => cBody,;
               "attach"  => aAttach }
 
-   email_send( hMail )
+   email_send( hMail, ::rEmpresa )
 
    MsgInfo( "Listado enviado a SENIAT. Verifique su bandeja de entrada." )
 

@@ -109,6 +109,14 @@ CLASS GEMPRESA
     METHOD TasasDeCambio()            INLINE ::rEmpresa:TasasDeCambio()
 
     METHOD ComisionAutomatica(lValue) INLINE ::rEmpresa:ComisionAutomatica(lValue)
+    METHOD EmailConfigs(hParam)       INLINE ::rEmpresa:EmailConfigs(hParam)
+    METHOD DetectarEmailConfig(hParam) INLINE ::rEmpresa:DetectarEmailConfig(hParam)
+    METHOD SetConfig(hParam)          INLINE ::rEmpresa:SetConfig(hParam)
+    METHOD GetSmtpConfig()             INLINE ::rEmpresa:GetSmtpConfig()
+    METHOD SendMail(hParams)           INLINE ::rEmpresa:SendMail(hParams)
+    METHOD SetDatosBasicos(hParam)     INLINE ::rEmpresa:SetDatosBasicos(hParam)
+    METHOD SetLogo(cLogoBase64)        INLINE ::rEmpresa:SetLogo(cLogoBase64)
+    METHOD LogoFile()                  INLINE ::rEmpresa:LogoFile()
 
    METHOD Alicuotas()                INLINE ::rEmpresa:Alicuotas()
    METHOD GetAlicuota(uParam)        INLINE ::rEmpresa:GetAlicuota(uParam)

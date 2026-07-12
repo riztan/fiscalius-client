@@ -172,6 +172,9 @@ procedure poslogin( oParent )
        DEFINE MENUITEM ::oMnuIGTF ACTION oTPuy:RunXBS( "mae_itf", oForm, oTPuy:oWnd ) ;
              ID "item_ITF" RESOURCE ::oRes
 
+       DEFINE MENUITEM ::oMnuEmpConfig ACTION oTPuy:RunXBS( "mae_empresa_config", oForm, oTPuy:oWnd ) ;
+             ID "item_empresa_config" RESOURCE ::oRes
+
       DEFINE MENUITEM ::oMnuClientes ACTION oTPuy:RunXBS( "vta_clientes", oForm, oTPuy:oWnd ) ;
              ID "itm_clientes" RESOURCE ::oRes
 
