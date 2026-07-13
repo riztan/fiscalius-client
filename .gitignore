@@ -45,3 +45,4 @@ xbscripts/.*.sw?
 xbscripts/riztan.*
 xbscripts/test_*
 xbscripts/netio_check_antes.*
+*.c

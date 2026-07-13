@@ -118,6 +118,13 @@ CLASS GEMPRESA
     METHOD SetLogo(cLogoBase64)        INLINE ::rEmpresa:SetLogo(cLogoBase64)
     METHOD LogoFile()                  INLINE ::rEmpresa:LogoFile()
 
+    // Métodos para gestión de empresas (listado, crear, editar)
+    METHOD EmpresaList(hParam)         INLINE ::rEmpresa:EmpresaList(hParam)
+    METHOD EmpresaGetData(cCodigo)    INLINE ::rEmpresa:EmpresaGetData(cCodigo)
+    METHOD EmpresaSave(cCodigo, hParam) INLINE ::rEmpresa:EmpresaSave(cCodigo, hParam)
+    METHOD EmpresaSetLogo(cCodigo, cLogoBase64) INLINE ::rEmpresa:EmpresaSetLogo(cCodigo, cLogoBase64)
+    METHOD EmpresaCreate(hParam)       INLINE ::rEmpresa:EmpresaCreate(hParam)
+
    METHOD Alicuotas()                INLINE ::rEmpresa:Alicuotas()
    METHOD GetAlicuota(uParam)        INLINE ::rEmpresa:GetAlicuota(uParam)
 

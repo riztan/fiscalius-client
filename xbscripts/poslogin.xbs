@@ -65,6 +65,7 @@ procedure poslogin( oParent )
    DEFINE EMPRESA   ::oGEmpresa ;  //oGEmpresa => Objeto Empresa con Componentes Gráficos.  Clase gEmpresa
           RSESSION  ::rSession  ;
           REMPRESA  ::rEmpresa
+   oTPuy:Add("oGEmpresa", ::oGEmpresa)
 
 
    //tDBDateTime := hb_SToT( STRTRAN(STRTRAN( STRTRAN(::rEmpresa:DBDateTime(),"-",""), " ", ""), ":", "") )
@@ -163,17 +164,14 @@ procedure poslogin( oParent )
        DEFINE MENUITEM ::oMnuTercCat ACTION oTPuy:RunXBS( "mae_terceros_catalogo", oForm, oTPuy:oWnd ) ;
               ID "item_terc_catalogo" RESOURCE ::oRes
 
-       DEFINE MENUITEM ::oMnuComTerc ACTION oTPuy:RunXBS( "mae_comision_config", oForm, oTPuy:oWnd ) ;
-              ID "item_comision_terceros" RESOURCE ::oRes
-
        DEFINE MENUITEM ::oMnuComPend ACTION oTPuy:RunXBS( "mae_comisiones_pendientes", oForm, oTPuy:oWnd ) ;
               ID "item_comisiones_pendientes" RESOURCE ::oRes
 
        DEFINE MENUITEM ::oMnuIGTF ACTION oTPuy:RunXBS( "mae_itf", oForm, oTPuy:oWnd ) ;
              ID "item_ITF" RESOURCE ::oRes
 
-       DEFINE MENUITEM ::oMnuEmpConfig ACTION oTPuy:RunXBS( "mae_empresa_config", oForm, oTPuy:oWnd ) ;
-             ID "item_empresa_config" RESOURCE ::oRes
+       DEFINE MENUITEM ::oMnuEmpList ACTION oTPuy:RunXBS( "mae_empresas_list", oForm, oTPuy:oWnd ) ;
+             ID "item_empresas_list" RESOURCE ::oRes
 
       DEFINE MENUITEM ::oMnuClientes ACTION oTPuy:RunXBS( "vta_clientes", oForm, oTPuy:oWnd ) ;
              ID "itm_clientes" RESOURCE ::oRes
@@ -233,17 +231,18 @@ procedure poslogin( oParent )
               ID "itm_usabilidad" RESOURCE ::oRes
 */
        
-       if !(oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:IsDevel() .or. oTPuy:oUser:IsAuditoria() )
-          ::oMnuUser:Hide() 
-          ::oMnuPagos:Hide()
-          ::oMnuMonedas:Hide()
-          ::oMnuTasas:Hide()
-          ::oMnuAlicuotas:Hide()
-          ::oMnuSeriesFis:Hide()
+        if !(oTPuy:oUser:IsAdmin() .or. oTPuy:oUser:IsDevel() .or. oTPuy:oUser:IsAuditoria() )
+           ::oMnuUser:Hide() 
+           ::oMnuPagos:Hide()
+           ::oMnuMonedas:Hide()
+           ::oMnuTasas:Hide()
+           ::oMnuAlicuotas:Hide()
+           ::oMnuSeriesFis:Hide()
 	  ::oMnuSeriesCon:Hide()
 	  ::oMnuSeriesTip:Hide()
-          ::oMnuInventario:Hide()
-          ::oMnuIGTF:Hide()
+           ::oMnuInventario:Hide()
+           ::oMnuIGTF:Hide()
+           ::oMnuEmpList:Hide()
           ::oMnuClientes:Hide()
           ::oMnuTerceros:Hide()
           ::oMnuPedidos:Hide()
@@ -274,6 +273,10 @@ procedure poslogin( oParent )
       DEFINE TOOLBUTTON ::oTBQuit ;
              ACTION tpy_exit()    ;
              ID "tb_quit" RESOURCE ::oRes
+
+      DEFINE BUTTON ::oBtnEmpresa ;
+             ACTION oTPuy:RunXBS( "mae_empresas_list", NIL, oTPuy:oWnd, NIL, NIL, "EDITAR_ACTUAL" ) ;
+             ID "btn_empresa" RESOURCE ::oRes
 
       empresa_Navegacion( oForm, ::oEmpresas )
 

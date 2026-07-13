@@ -337,8 +337,8 @@
   <object class="GtkImage" id="image23">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="tooltip_text" translatable="yes">Abre en el navegador la página web de la tienda virtual seleccionada</property>
-    <property name="pixbuf">../images/www_32.png</property>
+    <property name="tooltip_text" translatable="yes">Edita parámetros de la empresa.</property>
+    <property name="pixbuf">../images/gear_32.png</property>
   </object>
   <object class="GtkImage" id="image24">
     <property name="visible">True</property>
@@ -720,6 +720,11 @@
     <property name="can_focus">False</property>
     <property name="stock">gtk-missing-image</property>
   </object>
+  <object class="GtkImage" id="image93">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">../images/business_32.png</property>
+  </object>
   <object class="GtkAction" id="salir"/>
   <object class="GtkWindow" id="wnd_main">
     <property name="can_focus">False</property>
@@ -795,14 +800,45 @@
                             <property name="border_width">4</property>
                             <property name="spacing">4</property>
                             <child>
-                              <object class="GtkLabel" id="lab_empresa">
+                              <object class="GtkButton" id="btn_empresa">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">Empresa: </property>
+                                <property name="receives_default">False</property>
+                                <property name="relief">none</property>
+                                <property name="focus_on_click">False</property>
+                                <child>
+                                  <object class="GtkHBox" id="hbox6">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <child>
+                                      <object class="GtkImage" id="image92">
+                                        <property name="can_focus">False</property>
+                                        <property name="pixbuf">../images/empresa_32.png</property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">True</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="lab_empresa">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="label" translatable="yes">Empresa: </property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">True</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                </child>
                               </object>
                               <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
                                 <property name="position">0</property>
                               </packing>
                             </child>
@@ -818,19 +854,6 @@
                                 <property name="expand">True</property>
                                 <property name="fill">True</property>
                                 <property name="position">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkToolButton" id="tb_url">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="use_underline">True</property>
-                                <property name="icon_widget">image23</property>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">2</property>
                               </packing>
                             </child>
                           </object>
@@ -921,6 +944,16 @@
                           <object class="GtkMenu" id="menu1">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkImageMenuItem" id="item_empresas_list">
+                                <property name="label" translatable="yes">_Empresas</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="use_underline">True</property>
+                                <property name="image">image93</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
                             <child>
                               <object class="GtkImageMenuItem" id="item_usuarios">
                                 <property name="label" translatable="yes">_Usuarios</property>
@@ -1019,15 +1052,6 @@
                               </object>
                             </child>
                             <child>
-                              <object class="GtkImageMenuItem" id="item_empresa_config">
-                                <property name="label" translatable="yes">Empresa</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="image">gtk-preferences</property>
-                                <property name="use_stock">False</property>
-                              </object>
-                            </child>
-                            <child>
                               <object class="GtkImageMenuItem" id="itm_theme">
                                 <property name="label" translatable="yes">_Temas</property>
                                 <property name="can_focus">False</property>
@@ -1078,15 +1102,6 @@
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="image">image89</property>
-                                        <property name="use_stock">False</property>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="GtkImageMenuItem" id="item_comision_terceros">
-                                        <property name="label" translatable="yes">Comisión de terceros</property>
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">False</property>
-                                        <property name="image">image91</property>
                                         <property name="use_stock">False</property>
                                       </object>
                                     </child>
