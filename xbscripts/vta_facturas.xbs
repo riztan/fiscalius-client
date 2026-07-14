@@ -1292,7 +1292,7 @@ RETURN
 
 
 procedure __Calcula( oForm )
-   local nOtrosImp := 0, aTasa
+   local nOtrosImp := 0, aTasa, cOpTasa, nTotalBs
 
    ::oEntTotal:SetValue("0")
    //::oEntTotBs:SetValue("0")
@@ -1319,9 +1319,15 @@ procedure __Calcula( oForm )
    endif
 //View( hb_valtoexp(aTasa) )
    ::nTasa := ToNum( aTasa[2] )
+   cOpTasa := hb_DefaultValue( ::rEmpresa:GetData()["tasa_operacion"], "D" )
+   if cOpTasa == "M"
+      nTotalBs := ROUND( ToNum(::oEntTotal:GetValue()) * ::nTasa, 2 )
+   else
+      nTotalBs := ROUND( ToNum(::oEntTotal:GetValue()) / ::nTasa, 2 )
+   endif
    ::oTTEntTotal:SetTip( ::oEntTotal, ;
                          aTasa[1]+" "+;
-                         ALLTRIM( TRANSFORM( ROUND(ToNum(::oEntTotal:GetValue())/::nTasa, 2), P_92  ) ) )
+                         ALLTRIM( TRANSFORM( nTotalBs, P_92  ) ) )
 return
 
 

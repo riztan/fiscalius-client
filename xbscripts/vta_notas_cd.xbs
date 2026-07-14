@@ -1309,7 +1309,7 @@ RETURN
 
 
 procedure __NCCalcula( oForm )
-   local aTasa
+   local aTasa, cOpTasa, nTotalBs
 
    ::oEntTotal:SetValue("0")
    ::oEntMonBase:SetValue("0")
@@ -1415,9 +1415,15 @@ procedure __NCCalMontos( oTView, pModel, aIter, oForm )
    if !Empty( ::cDivisa )
       aTasa := hb_aTokens( ::cDivisa, " ")
       if !Empty( aTasa ) .and. !Empty(aTasa[1]) .and. !Empty(aTasa[2])
+         cOpTasa := hb_DefaultValue( ::rEmpresa:GetData()["tasa_operacion"], "D" )
+         if cOpTasa == "M"
+            nTotalBs := ROUND( ToNum(::oEntTotal:GetValue()) * ToNum(aTasa[2]), 2 )
+         else
+            nTotalBs := ROUND( ToNum(::oEntTotal:GetValue()) / ToNum(aTasa[2]), 2 )
+         endif
          ::oTTEntTotal:SetTip( ::oEntTotal, ;
                                aTasa[1]+" "+;
-                               ALLTRIM( TRANSFORM( ROUND(ToNum(::oEntTotal:GetValue())/ToNum(aTasa[2]), 2), P_92 ) ) )
+                               ALLTRIM( TRANSFORM( nTotalBs, P_92 ) ) )
       endif
    endif
 
