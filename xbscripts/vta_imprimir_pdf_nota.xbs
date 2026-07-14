@@ -29,6 +29,7 @@ procedure vta_imprimir_pdf_nota( oForm )
    local nPosDet:=0,nBasITF:=0,nPorITF:=3,nMtoITF:=0
    local nTotBru:=0,nTotDesc:=0
    local oRefData,aRef,dFchFac:=CTOD("0"),nMontoFac :=0,nProrrat:=1
+   local lDocNoValido := .F.
    
    
    // Obtener datos de la factura afectada
@@ -49,6 +50,13 @@ procedure vta_imprimir_pdf_nota( oForm )
    ELSE	
     nProrrat:=1  
    ENDIF
+
+   // Verificar si es documento de contado sin cobro asociado
+   if ::hDocumento["condicion_id"] == 1 .or. ::hDocumento["condicion_id"] == "1"  // Contado
+      if Empty(rDetCobro) .or. rDetCobro:RecCount() == 0
+         lDocNoValido := .T.
+      endif
+   endif
    
   // msginfo(nProrrat)
 
@@ -83,6 +91,15 @@ procedure vta_imprimir_pdf_nota( oForm )
    oPDF:CMSAY( nY + 3.7, 20, "Monto: " +  TRANSFORM(nMontoFac, P_92))
    
    nY += 2.5
+
+   // Marca de documento no válido (contado sin cobro)
+   if lDocNoValido
+      oPDF:SetFont( "Helvetica-Bold", 14 )
+      oPDF:SetColor( 255, 0, 0 )
+      oPDF:CMSAY( nY, 8, "*** DOCUMENTO NO VÁLIDO PARA EFECTOS FISCALES ***" )
+      oPDF:SetColor( 0, 0, 0 )
+      nY += 1.0
+   endif
 
    // =====================================
    // DATOS CLIENTE
@@ -378,6 +395,15 @@ procedure vta_imprimir_pdf_nota( oForm )
                         "Impuesto al Valor Agregado (IVA) y 38 del Reglamento General de la Ley que establece el ")
    nY += 0.4
    oPDF:CMSAY( nY, 1.4," Impuesto al Valor Agregado (RLIVA).")
+
+   // Pie de documento no válido (contado sin cobro)
+   if lDocNoValido
+      nY += 1.0
+      oPDF:SetFont( "Helvetica-Bold", 10 )
+      oPDF:SetColor( 255, 0, 0 )
+      oPDF:CMSAY( nY, 8, "Este documento no tiene validez fiscal sin recibo de cobro asociado." )
+      oPDF:SetColor( 0, 0, 0 )
+   endif
 
    // Guardar
    oPDF:End( .T. )

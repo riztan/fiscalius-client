@@ -10,6 +10,7 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
    local oForm 
    local aMedio 
+   local nMonedaRef := 1, nPosMoneda := 0
 
    SET PUBLIC oForm
 
@@ -101,7 +102,18 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
    ::aMonedas := {}
    ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
    __fr_ValFecha( oForm, ::oEntFecha, @::cPFecha )
-   ::cDivisa := ""
+   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
+   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
+   if nPosMoneda == 0
+      nPosMoneda := 1
+   endif
+   if nPosMoneda <= LEN( ::aDivisas )
+      ::cDivisa := ::aDivisas[nPosMoneda]
+      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )
+   else
+      ::cDivisa := ""
+      ::nTasa   := 0
+   endif
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
           ON CHANGE __fr_CalcDivisa( oForm, oFormParent ) ;  //("divisa!") ;
@@ -833,9 +845,9 @@ function __fr_ValFecha( oForm, oEnt, dValPrevio )
    if hb_isObject( ::oComboDivisa )
       ::oComboDivisa:RemoveAll()
       ::oComboDivisa:SetItems( ::aDivisas )
+      __frSelMonedaRef( oForm )
    endif
 
-//View( hb_valtoexp( ::aMonedas ) )
 return lRes
 
 
@@ -948,5 +960,25 @@ procedure __fr_CalcDivisa( oForm, oFormParent)
 //View( ::oModDocuments:aItems )
 
 return
+
+
+function __frSelMonedaRef( oForm )
+   local nMonedaRef, nPosMoneda
+
+   if !hb_isObject( ::oComboDivisa )
+      return .F.
+   endif
+
+   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
+   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
+   if nPosMoneda == 0
+      nPosMoneda := 1
+   endif
+   if nPosMoneda <= LEN( ::aDivisas )
+      ::cDivisa := ::aDivisas[nPosMoneda]
+      ::oComboDivisa:SetValue( ::cDivisa )
+   endif
+
+return .T.
 
 //eof

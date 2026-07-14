@@ -26,6 +26,7 @@
 procedure vta_pedidos( oFormParent )
 
    local oForm, cEntCli
+   local nMonedaRef := 1, nPosMoneda := 0
 
    SET PUBLIC oForm
 
@@ -172,8 +173,18 @@ procedure vta_pedidos( oFormParent )
    ::aMonedas := {}
    ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
    __PedValFecha( oForm, ::oEntFecha, @::cPFecha )
-   ::cDivisa := ""
-   ::nTasa   := 0
+   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
+   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
+   if nPosMoneda == 0
+      nPosMoneda := 1
+   endif
+   if nPosMoneda <= LEN( ::aDivisas )
+      ::cDivisa := ::aDivisas[nPosMoneda]
+      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )
+   else
+      ::cDivisa := ""
+      ::nTasa   := 0
+   endif
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
           ON CHANGE __PedCalcula( oForm )   ;
@@ -429,7 +440,7 @@ function __PedValFecha( oForm, oEnt, dValPrevio, cTipo )
          ::oComboDivisa:RemoveAll()
       endif
       ::oComboDivisa:SetItems( ::aDivisas )
-      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )  
+      __PedSelMonedaRef( oForm )
    endif
 
    if hb_isObject( ::oModDetal )
@@ -1856,6 +1867,27 @@ PROCEDURE __PedProductos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 
    ACTIVATE WINDOW ::oInvWnd MODAL
 
-RETURN 
+RETURN
+
+
+function __PedSelMonedaRef( oForm )
+   local nMonedaRef, nPosMoneda
+
+   if !hb_isObject( ::oComboDivisa )
+      return .F.
+   endif
+
+   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
+   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
+   if nPosMoneda == 0
+      nPosMoneda := 1
+   endif
+   if nPosMoneda <= LEN( ::aDivisas )
+      ::cDivisa := ::aDivisas[nPosMoneda]
+      ::oComboDivisa:SetValue( ::cDivisa )
+      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )
+   endif
+
+return .T.
 
 //eof

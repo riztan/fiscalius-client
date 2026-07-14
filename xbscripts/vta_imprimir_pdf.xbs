@@ -29,6 +29,14 @@ procedure vta_imprimir_pdf( oForm )
    local nTotBru:=0,nTotDesc:=0
    local hTerceros := hb_hash(), lHayTerceros := .F., nTerceroId
    local nTotTercSub := 0, nTotTercIva := 0, nTotTercTot := 0
+   local lDocNoValido := .F.
+
+   // Verificar si es documento de contado sin cobro asociado
+   if ::hFactura["condicion_id"] == 1 .or. ::hFactura["condicion_id"] == "1"  // Contado
+      if Empty(rDetCobro) .or. rDetCobro:RecCount() == 0
+         lDocNoValido := .T.
+      endif
+   endif
 
    // view(aDetCobro)
 
@@ -56,6 +64,15 @@ procedure vta_imprimir_pdf( oForm )
    oPDF:CMSAY( nY + 1.0, 20, "Vence: " + DTOC( ::hFactura["fecha_vencimiento"] ) )
 
    nY += 2.5
+
+   // Marca de documento no válido (contado sin cobro)
+   if lDocNoValido
+      oPDF:SetFont( "Helvetica-Bold", 14 )
+      oPDF:SetColor( 255, 0, 0 )
+      oPDF:CMSAY( nY, 8, "*** DOCUMENTO NO VÁLIDO PARA EFECTOS FISCALES ***" )
+      oPDF:SetColor( 0, 0, 0 )
+      nY += 1.0
+   endif
 
    // =====================================
    // DATOS CLIENTE
@@ -420,6 +437,14 @@ procedure vta_imprimir_pdf( oForm )
    nY += 0.4
    oPDF:CMSAY( nY, 1.4," Impuesto al Valor Agregado (RLIVA).")
 
+   // Pie de documento no válido (contado sin cobro)
+   if lDocNoValido
+      nY += 1.0
+      oPDF:SetFont( "Helvetica-Bold", 10 )
+      oPDF:SetColor( 255, 0, 0 )
+      oPDF:CMSAY( nY, 8, "Este documento no tiene validez fiscal sin recibo de cobro asociado." )
+      oPDF:SetColor( 0, 0, 0 )
+   endif
 
    // Guardar
    oPDF:End( .T. )

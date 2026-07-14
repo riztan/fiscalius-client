@@ -8,6 +8,7 @@
 procedure vta_notas_cd( oFormParent, cTipoDocumento )
 
    local oForm, cEntCli
+   local nMonedaRef := 1, nPosMoneda := 0
 
    default cTipoDocumento := "C"
 
@@ -178,7 +179,18 @@ DEFINE BUTTON ::oBtnGuardar ;
    ::aMonedas := {}
    ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
    __DocValFecha( oForm, ::oEntFecha, @::cPFecha )
-   ::cDivisa := ""
+   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
+   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
+   if nPosMoneda == 0
+      nPosMoneda := 1
+   endif
+   if nPosMoneda <= LEN( ::aDivisas )
+      ::cDivisa := ::aDivisas[nPosMoneda]
+      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )
+   else
+      ::cDivisa := ""
+      ::nTasa   := 0
+   endif
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
           ON CHANGE .t.; //MsgInfo("divisa!") ;
@@ -396,7 +408,28 @@ procedure __NC_Docs( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() )
    if rFacturas:RecCount() = 1
       if hb_isNIL( rFacturas:factura_numero )
          MsgAlert( "No hay facturas disponibles para este cliente" )
-         RETURN
+RETURN
+
+
+function __NCSelMonedaRef( oForm )
+   local nMonedaRef, nPosMoneda
+
+   if !hb_isObject( ::oComboDivisa )
+      return .F.
+   endif
+
+   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
+   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
+   if nPosMoneda == 0
+      nPosMoneda := 1
+   endif
+   if nPosMoneda <= LEN( ::aDivisas )
+      ::cDivisa := ::aDivisas[nPosMoneda]
+      ::oComboDivisa:SetValue( ::cDivisa )
+   endif
+
+return .T.
+
       endif
       ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:factura_numero) )
       if ::cTipoDocumento = "C"
@@ -622,11 +655,11 @@ function __DocValFecha( oForm, oEnt, dValPrevio )
          ::oComboDivisa:RemoveAll()
       endif
       ::oComboDivisa:SetItems( ::aDivisas )
+      __NCSelMonedaRef( oForm )
    endif
 
-//View( hb_valtoexp( ::aMonedas ) )
-
 return lRes
+
 
 function __NCCargarCondiciones( oForm )
 
@@ -1721,6 +1754,26 @@ RETURN
 
 
 PROCEDURE __NCImprime( oForm )
+   local rDetCobro, rFactura
+
+   // Validar: notas de crédito/débito de contado requieren cobro asociado para imprimir
+   if ::hDocumento["condicion_id"] == 1 .or. ::hDocumento["condicion_id"] == "1"  // Contado
+      // Verificar si la factura de referencia tiene cobro
+      if !Empty(::cFacturaNro)
+         rFactura := ::rVentas:Transacciones('F', ::cFacturaNro)
+         if !Empty(rFactura) .and. rFactura:RecCount() > 0
+             if rFactura:condicion_id == 1 .or. rFactura:condicion_id == "1"  // La factura de referencia también es contado
+               rDetCobro := ::rVentas:DetCobroFact( {"sucursal"=>"1", ;
+                             "tipo_id"=> "4", ;  // 4 = Factura
+                             "numero"=> ::cFacturaNro} )
+               if Empty(rDetCobro) .or. rDetCobro:RecCount() == 0
+                  ::oLabInfo:SetText( "Factura de contado sin recibo de cobro. No puede imprimirse." )
+                  return
+               endif
+            endif
+         endif
+      endif
+   endif
 
    oTPuy:RunXBS( "vta_imprimir_pdf_nota", oForm )
  

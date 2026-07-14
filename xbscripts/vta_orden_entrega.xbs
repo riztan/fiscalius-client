@@ -28,6 +28,7 @@
 procedure vta_orden_entrega( oFormParent, cFiltro )
 
    local oForm, cEntCli, aRow
+   local nMonedaRef := 1, nPosMoneda := 0
 
    SET PUBLIC oForm
 
@@ -209,8 +210,18 @@ procedure vta_orden_entrega( oFormParent, cFiltro )
    ::aMonedas := {}
    ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
    __OrdEntValFecha( oForm, ::oEntFecha, @::cPFecha )
-   ::cDivisa := ""
-   ::nTasa   := 0
+   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
+   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
+   if nPosMoneda == 0
+      nPosMoneda := 1
+   endif
+   if nPosMoneda <= LEN( ::aDivisas )
+      ::cDivisa := ::aDivisas[nPosMoneda]
+      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )
+   else
+      ::cDivisa := ""
+      ::nTasa   := 0
+   endif
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
           ON CHANGE __OrdEntCalcula( oForm )   ;
@@ -593,7 +604,7 @@ function __OrdEntValFecha( oForm, oEnt, dValPrevio, cTipo )
          ::oComboDivisa:RemoveAll()
       endif
       ::oComboDivisa:SetItems( ::aDivisas )
-      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )  
+      __OrdEntSelMonedaRef( oForm )
    endif
 
    if hb_isObject( ::oModDetal )
@@ -2180,6 +2191,27 @@ PROCEDURE __OrdEntEnviarSeniat( oForm )
    MsgInfo( "Listado enviado a SENIAT. Verifique su bandeja de entrada." )
 
 RETURN
+
+
+function __OrdEntSelMonedaRef( oForm )
+   local nMonedaRef, nPosMoneda
+
+   if !hb_isObject( ::oComboDivisa )
+      return .F.
+   endif
+
+   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
+   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
+   if nPosMoneda == 0
+      nPosMoneda := 1
+   endif
+   if nPosMoneda <= LEN( ::aDivisas )
+      ::cDivisa := ::aDivisas[nPosMoneda]
+      ::oComboDivisa:SetValue( ::cDivisa )
+      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )
+   endif
+
+return .T.
 
 
 //eof

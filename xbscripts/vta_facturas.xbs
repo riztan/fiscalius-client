@@ -27,6 +27,7 @@
 procedure vta_facturas( oFormParent )
 
    local oForm, cEntCli
+   local nMonedaRef := 1, nPosMoneda := 0
 
    SET PUBLIC oForm
 
@@ -168,8 +169,18 @@ procedure vta_facturas( oFormParent )
    ::aMonedas := {}
    ::aDivisas := {} //{"USD 723,1123", "EU 811,9908"}
    __FactValFecha( oForm, ::oEntFecha, @::cPFecha )
-   ::cDivisa := ""
-   ::nTasa   := 0
+   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
+   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
+   if nPosMoneda == 0
+      nPosMoneda := 1
+   endif
+   if nPosMoneda <= LEN( ::aDivisas )
+      ::cDivisa := ::aDivisas[nPosMoneda]
+      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )
+   else
+      ::cDivisa := ""
+      ::nTasa   := 0
+   endif
    DEFINE COMBOBOX ::oComboDivisa ;
           VAR ::cDivisa ITEMS ::aDivisas ;
           ON CHANGE __Calcula( oForm )   ;
@@ -466,6 +477,7 @@ return .F.
 function __FactValFecha( oForm, oEnt, dValPrevio, cTipo )
    local lRes := .t.
    local nValor, rQry, uRet, bDetalCode, dDateMin
+   local cEstado := ""
 
    default cTipo := ''
 
@@ -478,9 +490,40 @@ function __FactValFecha( oForm, oEnt, dValPrevio, cTipo )
       return lRes
    endif
 
+   // Determinar estado real del documento
+   // Durante carga: usar hFactura (dato del servidor, confiable)
+   // Durante edición manual: usar oComboEstado
+   if hb_DefaultValue( ::lLoad, .F. ) .and. hb_isHash( ::hFactura ) .and. hb_hHasKey( ::hFactura, "estado" )
+      cEstado := ::hFactura["estado"]
+   elseif ::isDef( "oComboEstado" )
+      cEstado := LEFT( ::oComboEstado:GetValue(), 1 )
+   endif
+
+   // Si el documento está cerrado o anulado, solo recargar divisas y salir
+   if cEstado $ "CA"
+      rQry := ::rEmpresa:GetTasa( CTOD(oEnt:getValue()) )
+      ::aDivisas := {}
+      ::aMonedas := {}
+      While !rQry:Eof()
+         AADD( ::aDivisas, ALLTRIM(rQry:codigo)+" "+;
+                           hb_ntos( rQry:valor ) )
+         AADD( ::aMonedas, rQry:moneda_id )
+         rQry:Skip()
+      EndDo
+      if hb_isObject( ::oComboDivisa )
+         if VALTYPE(::oComboDivisa:aItems)="A"
+            ::oComboDivisa:RemoveAll()
+         endif
+         ::oComboDivisa:SetItems( ::aDivisas )
+         __FactSelMonedaRef( oForm )
+      endif
+      rQry:End()
+      return .T.
+   endif
+
    dValPrevio := CTOD( oEnt:getValue() )
 
-   // Obtener tasa de cambio correspondiente (SIEMPRE, sin importar estado)
+   // Obtener tasa de cambio correspondiente
    rQry := ::rEmpresa:GetTasa( CTOD(oEnt:getValue()) )
 
    ::aDivisas := {}
@@ -496,28 +539,17 @@ function __FactValFecha( oForm, oEnt, dValPrevio, cTipo )
          ::oComboDivisa:RemoveAll()
       endif
       ::oComboDivisa:SetItems( ::aDivisas )
-      ::cDivisa := ::aDivisas[1]
-      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )
+      __FactSelMonedaRef( oForm )
    endif
 
-   // Si el documento está cerrado, no más validaciones
-   if ::isDef( "oComboEstado" )
-      if LEFT(::oComboEstado:GetValue(), 1)="C"
+   // Validaciones solo para documentos borrador
+   if cEstado = "B"
+      dDateMin := ::rVentas:FechaMin( 4 /*FACTURA*/)
+      if CTOD( ::oEntFecha:getValue() ) < dDateMin
+         ::oLabInfo:SetText("La fecha del documento no puede ser menor a " + DTOC(dDateMin) )
+         ::oEntFecha:SetText( DTOC(dDateMin) )
          rQry:End()
-         return .T.
-      endif
-   endif
-
-   // Validaciones solo para documentos no cerrados
-   if ::isDef( "oComboEstado" )
-      if LEFT(::oComboEstado:GetValue(), 1)="B"
-         dDateMin := ::rVentas:FechaMin( 4 /*FACTURA*/)
-         if CTOD( ::oEntFecha:getValue() ) < dDateMin
-            ::oLabInfo:SetText("La fecha del documento no puede ser menor a " + DTOC(dDateMin) )
-            ::oEntFecha:SetText( DTOC(dDateMin) )
-            rQry:End()
-            return .F.
-         endif
+         return .F.
       endif
    endif
 
@@ -1735,6 +1767,19 @@ RETURN
 
 
 PROCEDURE __VtaImprime( oForm )
+   local rDetCobro
+
+   // Validar: facturas de contado requieren cobro asociado para imprimir
+   if ::hFactura["condicion_id"] == 1 .or. ::hFactura["condicion_id"] == "1"  // Contado
+      rDetCobro := ::rVentas:DetCobroFact( {"sucursal"=>"1", ;
+                    "tipo_id"=> ::hFactura["tipo_id"], ;
+                    "numero"=> ::hFactura["numero"]} )
+      if Empty(rDetCobro) .or. rDetCobro:RecCount() == 0
+         ::oLabInfo:SetText( "Factura de contado sin recibo de cobro. No puede imprimirse." )
+         return
+      endif
+   endif
+
    oTPuy:RunXBS( "vta_imprimir_pdf", oForm )
 RETURN
 
@@ -2082,3 +2127,24 @@ PROCEDURE __FillRowTercero( oForm, nTerceroCatId, cServicioNom, nPrecio, cTipoTa
    __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, 19, hb_jsonEncode( hJson ) )
 
 RETURN
+
+
+function __FactSelMonedaRef( oForm )
+   local nMonedaRef, nPosMoneda
+
+   if !hb_isObject( ::oComboDivisa )
+      return .F.
+   endif
+
+   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
+   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
+   if nPosMoneda == 0
+      nPosMoneda := 1
+   endif
+   if nPosMoneda <= LEN( ::aDivisas )
+      ::cDivisa := ::aDivisas[nPosMoneda]
+      ::oComboDivisa:SetValue( ::cDivisa )
+      ::nTasa := ToNum( hb_aTokens( ::cDivisa, " ")[2] )
+   endif
+
+return .T.
