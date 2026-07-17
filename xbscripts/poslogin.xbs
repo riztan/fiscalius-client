@@ -223,6 +223,9 @@ procedure poslogin( oParent )
 
       DEFINE MENUITEM ::oMnuIGTFRep ACTION oTPuy:RunXBS("igtf_recibidos", oForm );  
              ID "itm_igtf" RESOURCE ::oRes
+
+      DEFINE MENUITEM ::oMnuCobros ACTION oTPuy:RunXBS("fin_cobros", oForm );
+             ID "itm_cobros" RESOURCE ::oRes
 /*
        DEFINE MENUITEM ACTION oTPuy:RunXBS("auditoria", oForm );  
               ID "itm_auditoria" RESOURCE ::oRes
@@ -259,6 +262,7 @@ procedure poslogin( oParent )
           ::oMnuVtaRep:Hide()
           ::oMnuRepOrdEntActivas:Hide()
           ::oMnuIGTFRep:Hide()
+          ::oMnuCobros:Hide()
        endif
       if oTPuy:oUser:IsFacturacion()
          ::oMnuPedidos:Show()

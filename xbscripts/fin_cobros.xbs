@@ -1,0 +1,347 @@
+/* fin_cobros.xbs
+ *
+ * Formulario para consultar Recibos de Cobro en Fiscalius
+ * Lista de recibos con filtros + vista detalle en modo lectura
+ * Patron: GtkHPaned (vta_facturas)
+ * Archivo de recursos: fin_cobros.ui
+ *
+ */
+
+#include "tpy_xbs.ch"
+
+procedure fin_cobros( oFormParent )
+   local oForm
+   local rFinanzas, oCobranzas
+   local cTvApps := "", cTvInst := ""
+   local nRegistros := 0
+
+   SET PUBLIC oForm
+
+   if !oTpuy:RunXBS("netio_check")
+      MsgStop("Problemas para continuar...")
+      return
+   endif
+
+   rFinanzas := oFormParent:oGEmpresa:SetModulo("Finanzas")
+
+   if hb_isNIL(rFinanzas)
+      MsgStop("No se pudo acceder al modulo Finanzas")
+      return
+   endif
+
+   ::rFinanzas := rFinanzas
+
+   SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"fin_cobros.ui"
+
+   DEFINE WINDOW ::oWnd ;
+          TITLE "Fiscalius. Recibos de Cobro" ;
+          SIZE 1000,500 ;
+          ID "window1" RESOURCE ::oRes
+
+   DEFINE IMAGE ::oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png" ;
+          ID "image1" RESOURCE ::oRes
+          ::oImgBanner:Adjust(900)
+
+   DEFINE IMAGE ::oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png" ;
+          ID "image2" RESOURCE ::oRes
+          ::oImgLogo:Adjust(60)
+
+   DEFINE LABEL ::oLabInfo TEXT "" MARKUP ID "lab_info" RESOURCE ::oRes
+
+   // --- Lado izquierdo del HPaned: filtros + lista de recibos ---
+   DEFINE BOX ::oBoxData ID "boxdata" RESOURCE ::oRes
+
+   // --- Lado derecho del HPaned: detalle del recibo ---
+   DEFINE BOX ::oBoxDetalle ID "vbox_detalle" RESOURCE ::oRes
+          ::oBoxDetalle:Hide()
+
+   // Filtros (dentro del expander del frame izquierdo)
+   ::cEntCliente := ""
+   DEFINE ENTRY ::oEntCliente VAR ::cEntCliente ;
+          ID "ent_cliente" RESOURCE ::oRes
+
+   ::cEntFchDesde := ""
+   DEFINE ENTRY TYPE DATE ::oEntFchDesde VAR ::cEntFchDesde CALENDAR ;
+          ID "ent_fecha_desde" RESOURCE ::oRes
+
+   ::cEntFchHasta := ""
+   DEFINE ENTRY TYPE DATE ::oEntFchHasta VAR ::cEntFchHasta CALENDAR ;
+          ID "ent_fecha_hasta" RESOURCE ::oRes
+
+   DEFINE BUTTON ACTION __CobBuscar( oForm ) ;
+          ID "btn_buscar" RESOURCE ::oRes
+
+   DEFINE BUTTON ACTION __CobSalir( oForm ) ;
+          ID "btn_salir" RESOURCE ::oRes
+
+   // Labels del detalle (lado derecho)
+   DEFINE LABEL ::oLabDetNum     ID "lab_det_num"     RESOURCE ::oRes
+   DEFINE LABEL ::oLabDetFecha   ID "lab_det_fecha"   RESOURCE ::oRes
+   DEFINE LABEL ::oLabDetEstado  ID "lab_det_estado"  RESOURCE ::oRes
+   DEFINE LABEL ::oLabDetCliente ID "lab_det_cliente" RESOURCE ::oRes
+   DEFINE LABEL ::oLabDetMonto   ID "lab_det_monto"   RESOURCE ::oRes
+   DEFINE LABEL ::oLabDetIgtf    ID "lab_det_igtf"    RESOURCE ::oRes
+   DEFINE LABEL ::oLabDetMoneda  ID "lab_det_moneda"  RESOURCE ::oRes
+   DEFINE LABEL ::oLabDetTasa    ID "lab_det_tasa"    RESOURCE ::oRes
+
+   // Textviews para aplicaciones e instrumentos de pago
+   DEFINE TEXTVIEW ::oTvApps VAR ::cTvApps READONLY ;
+          ID "tv_apps" RESOURCE ::oRes
+
+   DEFINE TEXTVIEW ::oTvInst VAR ::cTvInst READONLY ;
+          ID "tv_inst" RESOURCE ::oRes
+
+   // Boton volver al listado
+   DEFINE BUTTON ACTION __CobVolver( oForm ) ;
+          ID "btn_volver" RESOURCE ::oRes
+
+   // --- Cargar datos iniciales ---
+   oCobranzas := ::rFinanzas:Cobranzas( {} )
+
+   if !hb_isObject( oCobranzas )
+      MsgStop("No hay datos de recibos disponibles")
+      return
+   endif
+
+   // Usar :: para que se guarde como propiedad del form y sea accesible en __CobVerRecibo
+   DEFINE MODEL ::oModCob ;
+          STRUCT oCobranzas:Struct() ;
+          DATA   oCobranzas:GetData()
+
+   DEFINE LISTBOX ::oLBoxCob ;
+          MODEL ::oModCob ;
+          OF ::oBoxData
+
+   ::oLBoxCob:lBar := .F.
+
+   ::oLBoxCob:bEdit := {|oModel| __CobVerRecibo( oForm, oModel ) }
+
+   // Ocultar columnas tecnicas
+   ::oLBoxCob:SetColVisible( 2, .F. )    // cliente_id
+   ::oLBoxCob:SetColVisible( 8, .F. )    // moneda_id
+   ::oLBoxCob:SetColVisible( 10, .F. )   // tasa_cambio
+
+   // Titulos de columnas
+   ::oLBoxCob:SetColTitle( 1, "Numero" )
+   ::oLBoxCob:SetColTitle( 3, "Cliente" )
+   ::oLBoxCob:SetColTitle( 4, "Fecha" )
+   ::oLBoxCob:SetColTitle( 5, "Monto" )
+   ::oLBoxCob:SetColTitle( 6, "IGTF" )
+   ::oLBoxCob:SetColTitle( 7, "Estado" )
+   ::oLBoxCob:SetColTitle( 9, "Moneda" )
+
+   nRegistros := oCobranzas:RecCount()
+   ::oLabInfo:SetText( hb_ntos(nRegistros) + " recibo(s) encontrado(s)" )
+
+   ::oLBoxCob:Active()
+
+   ACTIVATE WINDOW ::oWnd MODAL
+
+return
+
+
+// -----------------------------------------------------------
+// Buscar recibos con filtros
+// -----------------------------------------------------------
+procedure __CobBuscar( oForm )
+   local hParam := hb_hash()
+   local oCobranzas
+   local cCliente, cFchDesde, cFchHasta
+   local aData, aLine, aIter := ARRAY( 10 )
+   local nRegistros := 0
+
+   cCliente  := ALLTRIM( ::oEntCliente:GetText() )
+   cFchDesde := ALLTRIM( ::oEntFchDesde:GetText() )
+   cFchHasta := ALLTRIM( ::oEntFchHasta:GetText() )
+
+   if !empty( cCliente )
+      hParam[ "filtro" ] := cCliente
+   endif
+
+   if !empty( cFchDesde )
+      hParam[ "desde" ] := CTOD( cFchDesde )
+   endif
+
+   if !empty( cFchHasta )
+      hParam[ "hasta" ] := CTOD( cFchHasta )
+   endif
+
+   oCobranzas := ::rFinanzas:Cobranzas( hParam )
+
+   if !hb_isObject( oCobranzas )
+      MsgStop( "No se encontraron recibos con esos criterios", "Busqueda" )
+      return
+   endif
+
+   // Ocultar detalle si estaba visible
+   ::oBoxDetalle:Hide()
+
+   // Reconstruir modelo via la propiedad del form
+   ::oModCob:oTreeView:ClearModel(.t.)
+
+   aData := oCobranzas:GetData()
+   FOR EACH aLine IN aData
+      APPEND LIST_STORE ::oModCob:oLbx ITER aIter ;
+             VALUES hb_ntos(aLine[1]), ;       // id
+                    hb_ntos(aLine[2]), ;       // cliente_id
+                    aLine[3], ;                // cliente_nombre
+                    DTOC(aLine[4]), ;          // fecha
+                    TRANSFORM(aLine[5], P_92), ; // monto_total
+                    TRANSFORM(aLine[6], P_92), ; // igtf
+                    aLine[7], ;                // estado
+                    hb_ntos(aLine[8]), ;       // moneda_id
+                    aLine[9]                   // moneda
+   NEXT
+
+   nRegistros := oCobranzas:RecCount()
+   ::oLabInfo:SetText( hb_ntos(nRegistros) + " recibo(s) encontrado(s)" )
+
+return
+
+
+// -----------------------------------------------------------
+// Ver recibo existente (modo lectura en la misma ventana)
+// -----------------------------------------------------------
+procedure __CobVerRecibo( oForm, oModel )
+   local nCobId
+   local oRecibo, hData
+   local oApps, aApps := {}, aLine
+   local oInst, aInst := {}
+   local cEstado, cFecha
+   local cClienteNombre, cMoneda, cTipo
+   local cTexto := ""
+
+   // Obtener ID del recibo seleccionado
+   nCobId := oModel:GetCol( 1 )
+   if hb_isString( nCobId )
+      nCobId := ToNum( nCobId )
+   endif
+
+   if empty( nCobId ) .or. nCobId == 0
+      MsgStop("No se pudo obtener el numero de recibo")
+      return
+   endif
+
+   // Datos del modelo (ya disponibles del listado)
+   cClienteNombre := ALLTRIM( hb_DefaultValue( oModel:GetCol(3), "N/D" ) )
+   cMoneda := ALLTRIM( hb_DefaultValue( oModel:GetCol(9), "-" ) )
+
+   // Cargar recibo desde el servidor
+   oRecibo := ::rFinanzas:Cobranza( hb_ntos(nCobId) )
+
+   if !hb_isObject( oRecibo )
+      MsgStop("No se pudo cargar el recibo #" + hb_ntos(nCobId))
+      return
+   endif
+
+   hData := oRecibo:Data()
+
+   if !hb_isHash( hData )
+      MsgStop("Error al cargar datos del recibo")
+      return
+   endif
+
+   // Determinar texto del estado
+   cEstado := hData["estado"]
+   do case
+      case cEstado == "C"; cEstado := "Cerrado"
+      case cEstado == "P"; cEstado := "Pendiente"
+      case cEstado == "A"; cEstado := "Anulado"
+   endcase
+
+   // Fecha segura (puede venir como string "YYYYMMDD" o como Date)
+   if hb_isString(hData["fecha"]) .and. LEN(hData["fecha"]) == 8
+      cFecha := LEFT(hData["fecha"],4) + "-" + ;
+                SUBSTR(hData["fecha"],5,2) + "-" + ;
+                RIGHT(hData["fecha"],2)
+   elseif hb_isDate(hData["fecha"])
+      cFecha := DTOC(hData["fecha"])
+   else
+      cFecha := "-"
+   endif
+
+   // Llenar labels del detalle
+   ::oLabDetNum:SetText( hb_ntos( hData["id"] ) )
+   ::oLabDetFecha:SetText( cFecha )
+   ::oLabDetEstado:SetText( cEstado )
+   ::oLabDetCliente:SetText( cClienteNombre )
+   ::oLabDetMonto:SetText( TRANSFORM(hData["monto_total"], "@E 999,999,999.99") )
+   ::oLabDetIgtf:SetText( TRANSFORM(hData["igtf"], "@E 999,999,999.99") )
+   ::oLabDetMoneda:SetText( cMoneda )
+   ::oLabDetTasa:SetText( TRANSFORM(hData["tasa_cambio"], "@E 999,999.99") )
+
+   // Cargar aplicaciones del recibo
+   oApps := ::rFinanzas:Aplicaciones( hb_ntos(nCobId) )
+   if hb_isObject(oApps)
+      aApps := oApps:GetData()
+      oApps:End()
+   endif
+
+   // Cargar instrumentos de pago
+   oInst := ::rFinanzas:DetallesPago( hb_ntos(nCobId) )
+   if hb_isObject(oInst)
+      aInst := oInst:GetData()
+      oInst:End()
+   endif
+
+   // Construir texto de aplicaciones
+   cTexto := ""
+   if LEN(aApps) > 0
+      FOR EACH aLine IN aApps
+         // tipo_id: 4=Factura, 5=N/C, 6=N/D
+         do case
+            case aLine[7] == 4; cTipo := "Factura"
+            case aLine[7] == 5; cTipo := "N/C"
+            case aLine[7] == 6; cTipo := "N/D"
+            otherwise;          cTipo := "Doc."
+         endcase
+         cTexto += cTipo + " #" + hb_ntos(aLine[2]) + "  -  Bs " + ;
+                    TRANSFORM(aLine[3], "@E 999,999,999.99")
+         if !hb_isNil(aLine[5]) .and. aLine[5] > 0
+            cTexto += "  (IGTF: Bs " + TRANSFORM(aLine[5], "@E 999,999,999.99") + ")"
+         endif
+         cTexto += CRLF
+      NEXT
+   else
+      cTexto := "No hay documentos aplicados"
+   endif
+   ::oTvApps:SetText( cTexto )
+
+   // Construir texto de instrumentos
+   cTexto := ""
+   if LEN(aInst) > 0
+      FOR EACH aLine IN aInst
+         cTexto += ALLTRIM(aLine[4]) + "  -  Bs " + ;
+                    TRANSFORM(aLine[3], "@E 999,999,999.99")
+         if !empty(aLine[5])
+            cTexto += "  (Ref: " + ALLTRIM(aLine[5]) + ")"
+         endif
+         cTexto += CRLF
+      NEXT
+   else
+      cTexto := "No hay instrumentos de pago registrados"
+   endif
+   ::oTvInst:SetText( cTexto )
+
+   // Mostrar detalle del recibo en el lado derecho
+   ::oBoxDetalle:Show()
+
+return
+
+
+// -----------------------------------------------------------
+// Volver a la lista desde la vista detalle
+// -----------------------------------------------------------
+procedure __CobVolver( oForm )
+   ::oBoxDetalle:Hide()
+return
+
+
+// -----------------------------------------------------------
+// Salir del formulario
+// -----------------------------------------------------------
+procedure __CobSalir( oForm )
+   ::oWnd:End()
+return

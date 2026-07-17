@@ -1316,6 +1316,15 @@
                               </object>
                             </child>
                             <child>
+                              <object class="GtkImageMenuItem" id="itm_cobros">
+                                <property name="label" translatable="yes">Cobros</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Consulta de recibos de cobro</property>
+                                <property name="use_stock">False</property>
+                              </object>
+                            </child>
+                            <child>
                               <object class="GtkImageMenuItem" id="itm_auditoria_mnu">
                                 <property name="label" translatable="yes">_Auditoria</property>
                                 <property name="visible">True</property>
