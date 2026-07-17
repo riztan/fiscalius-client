@@ -408,28 +408,7 @@ procedure __NC_Docs( oForm ) //, ::rDocumento:Facturas(::cCodCli):Data() )
    if rFacturas:RecCount() = 1
       if hb_isNIL( rFacturas:factura_numero )
          MsgAlert( "No hay facturas disponibles para este cliente" )
-RETURN
-
-
-function __NCSelMonedaRef( oForm )
-   local nMonedaRef, nPosMoneda
-
-   if !hb_isObject( ::oComboDivisa )
-      return .F.
-   endif
-
-   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
-   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
-   if nPosMoneda == 0
-      nPosMoneda := 1
-   endif
-   if nPosMoneda <= LEN( ::aDivisas )
-      ::cDivisa := ::aDivisas[nPosMoneda]
-      ::oComboDivisa:SetValue( ::cDivisa )
-   endif
-
-return .T.
-
+         RETURN
       endif
       ::oEntFacturaNro:SetText( ALLTRIM(rFacturas:factura_numero) )
       if ::cTipoDocumento = "C"
@@ -515,6 +494,25 @@ return .T.
 */
 RETURN
 
+
+function __NCSelMonedaRef( oForm )
+   local nMonedaRef, nPosMoneda
+
+   if !hb_isObject( ::oComboDivisa )
+      return .F.
+   endif
+
+   nMonedaRef := hb_DefaultValue( ::rEmpresa:GetData()["moneda_referencia_id"], 1 )
+   nPosMoneda := ASCAN( ::aMonedas, {|x| x == nMonedaRef } )
+   if nPosMoneda == 0
+      nPosMoneda := 1
+   endif
+   if nPosMoneda <= LEN( ::aDivisas )
+      ::cDivisa := ::aDivisas[nPosMoneda]
+      ::oComboDivisa:SetValue( ::cDivisa )
+   endif
+
+return .T.
 
 
 function __NC_ValRetIvaPorcen( oForm )
@@ -614,13 +612,16 @@ function __DocValFecha( oForm, oEnt, dValPrevio )
     cFactura := ::oEntFacturaNro:GetValue()
 
     if !hb_isNIL( cFactura ) .and. !Empty(cFactura)
-       dFchFactura := ::rVentas:Transacciones('F', cFactura ):fecha
-       //-- No permitir fecha menor a la factura relacionada
-       if CTOD( oEnt:getValue() ) < dFchFactura
-          ::oEntFecha:SetValue( DTOC(dFchFactura) )
-          ::oLabInfo:SetText( "La nota no puede tener fecha anterior a la factura." )
-          oEnt:SetValue( DTOC(dFchFactura) )
-          return .F.
+       rQry := ::rVentas:Transacciones('F', cFactura )
+       if hb_isObject(rQry) .and. rQry:RecCount() > 0
+          dFchFactura := rQry:fecha
+          //-- No permitir fecha menor a la factura relacionada
+          if CTOD( oEnt:getValue() ) < dFchFactura
+             ::oEntFecha:SetValue( DTOC(dFchFactura) )
+             ::oLabInfo:SetText( "La nota no puede tener fecha anterior a la factura." )
+             oEnt:SetValue( DTOC(dFchFactura) )
+             return .F.
+          endif
        endif
     endif
 

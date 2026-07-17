@@ -668,12 +668,14 @@ return
 
 
  Function __fr_Save( oForm )
-    local aDoc := {}
-    local aApps := {}, aInsts := {}, aLine
-    local hData := {}, hResp
-    local nMontoDocs := 0, nMontoSuma := 0, nMontoInst := 0
-    local nFactor, nMontoBase, nIGTF, nMontoSumaIGTF
-    local aDivisaTokens, nTasa, cMoneda, cCajaCod
+     local aDoc := {}
+     local aApps := {}, aInsts := {}, aLine
+     local hData := {}, hResp
+     local nMontoDocs := 0, nMontoSuma := 0, nMontoInst := 0
+     local nFactor, nMontoBase, nIGTF, nMontoSumaIGTF
+     local aDivisaTokens, nTasa, cMoneda, cCajaCod
+     local nCuantasND := 0
+     local hDataServer, aND, hND, cMsgND
 
     // Validar saldo
     if round(::nSaldo,2) > 0
@@ -706,11 +708,12 @@ return
           if nFactor = 1
              nMontoSuma += nMontoBase
           endif
-          AADD( aApps, { "transaccion_id" => aLine[6], ;
-                         "monto_aplicado" => nMontoBase * nFactor, ;
-                         "monto_igtf"     => 0, ;
-                         "monto_base"     => nMontoBase, ;
-                         "factor"         => nFactor } )
+           AADD( aApps, { "transaccion_id" => aLine[6], ;
+                          "monto_aplicado" => nMontoBase * nFactor, ;
+                          "monto_igtf"     => 0, ;
+                          "monto_base"     => nMontoBase, ;
+                          "factor"         => nFactor, ;
+                          "condicion_id"   => ToNum(aLine[30]) } )
        endif
     NEXT
 
@@ -787,6 +790,27 @@ return
        "estado"       => "B" ;
     }
 
+    // ============================================================
+    // CONFIRMACION: N/D de IGTF que se generarán
+    // ============================================================
+    if nIGTF > 0
+       nCuantasND := 0
+       FOR EACH aLine IN aApps
+           if aLine["factor"] = 1 .and. aLine["monto_base"] > 0 .and. aLine["condicion_id"] > 1
+             nCuantasND++
+          endif
+       NEXT
+       if nCuantasND > 0
+          if !MsgYesNo( ;
+             "Se generarán " + hb_ntos(nCuantasND) + " nota(s) de débito" + CRLF + ;
+             "por IGTF por un total de Bs " + hb_ntos(nIGTF) + "." + CRLF + CRLF + ;
+             "¿Confirma el guardado?", ;
+             "Notas de Débito IGTF" )
+             return .F.
+          endif
+       endif
+    endif
+
     // Enviar datos al servidor
     hResp := ::rCobranza:SetData( hData )
     if hb_isHash(hResp) .and. hb_hHasKey(hResp, "return") .and. !hResp["return"]
@@ -797,19 +821,27 @@ return
     // Guardar en servidor
     hResp := ::rCobranza:Save()
 
-    // Verificar respuesta
-    if hb_isLogical(hResp) .and. hResp
-       ::oLabInfo:SetText("Recibo guardado exitosamente")
-       ::lNew := .F.
-       ::oLabReciboNum:SetText( ::rCobranza:Data()["numero"] )
-       return .T.
-/*
-    elseif hb_isHash(hResp) .and. hb_hHasKey(hResp, "ok") .and. hResp["ok"]
-       ::oLabInfo:SetText("Recibo guardado exitosamente")
-       ::lNew := .F.
-       ::oLabReciboNum:SetText( hResp["numero"] )
-       return .T.
-*/
+     // Verificar respuesta
+     if hb_isLogical(hResp) .and. hResp
+        ::oLabInfo:SetText("Recibo guardado exitosamente")
+        ::lNew := .F.
+        ::oLabReciboNum:SetText( ::rCobranza:Data()["numero"] )
+
+        // Alertar N/D de IGTF generadas
+        hDataServer := ::rCobranza:Data()
+        if hb_isHash(hDataServer) .and. hb_hHasKey(hDataServer, "notas_debito")
+           aND := hDataServer["notas_debito"]
+           if hb_isArray(aND) .and. len(aND) > 0
+              cMsgND := "Se generaron " + hb_ntos(len(aND)) + " nota(s) de débito:" + CRLF
+              for each hND in aND
+                 cMsgND += "  N/D " + hND["numero"] + " - Bs " + hb_ntos(hND["monto"]) + CRLF
+              next
+              cMsgND += CRLF + "Debe imprimir las notas de débito generadas."
+              MsgInfo( cMsgND, "Notas de Débito IGTF" )
+           endif
+        endif
+
+         return .T.
     endif
 
     // Error
