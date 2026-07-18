@@ -1,0 +1,175 @@
+/* vta_tercero_servicios.xbs
+ *
+ * Popup de seleccion de servicios de terceros para facturacion
+ * Incluido desde: vta_facturas.xbs, vta_pedidos.xbs
+ */
+
+/** Agrega fila vacia y abre seleccion de servicio de tercero
+ */
+PROCEDURE __AddDetalTercero( oForm )
+   if ::cComboEstado = "Anulada" .or. ::cComboEstado = "Cerrada"
+      return
+   endif
+   __TerceroServicios( oForm, ::oModDetal, ::oModDetal:oTreeView, ::oModDetal:aIter )
+RETURN
+
+
+/** Seleccion de servicio de tercero para facturacion por cuenta de terceros
+ */
+PROCEDURE __TerceroServicios( oForm, oModel, oTreeView, aIter )
+   local oRes, oImgBanner, oImgLogo
+   local oBoxData, oBoxFiltro, oLabFiltro
+   local rServicios
+   local nTerceroCatId, cServicioNom, nPrecio, cTipoTasa, cTerceroNom
+
+   rServicios := oForm:rEmpresa:TercerosCatalogoAll( {} )
+
+   if hb_isNIL( rServicios ) .or. !hb_isObject( rServicios )
+      oForm:oLabInfo:SetText( "No hay servicios de terceros disponibles" )
+      return
+   endif
+
+   if rServicios:RecCount() = 1
+      nTerceroCatId := rServicios:id
+      cServicioNom  := rServicios:nombre
+      nPrecio       := rServicios:precio
+      cTipoTasa     := rServicios:tipo_tasa
+      cTerceroNom   := rServicios:tercero_nombre
+      __FillRowTercero( oForm, nTerceroCatId, cServicioNom, nPrecio, cTipoTasa, cTerceroNom )
+      return
+   endif
+
+   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
+
+   DEFINE WINDOW ::oTerWnd ;
+          TITLE "Fiscalius. Servicios de Terceros" ;
+          SIZE 700,400 ;
+          ID "window1" RESOURCE oRes ;
+          OF ::oFacWnd
+
+   DEFINE LABEL oLabTitulo TEXT "Seleccione un servicio de tercero" ;
+          ID "lab_title" RESOURCE oRes
+
+   DEFINE IMAGE oImgBanner ;
+          FILE oTPuy:cImages+"banner_02.png";
+          ID "image1" RESOURCE oRes
+          oImgBanner:Adjust(900)
+
+   DEFINE IMAGE oImgLogo ;
+          FILE oTPuy:cImages+"fiscalius_logo_02.png";
+          ID "image2" RESOURCE oRes
+          oImgLogo:Adjust(60)
+
+   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
+
+      ::cFiltro := ""
+      DEFINE BOX oBoxFiltro SPACING 5 BORDER 3 OF oBoxData 
+      DEFINE LABEL oLabFiltro TEXT "Filtro de Tercero: " OF oBoxFiltro
+      DEFINE ENTRY ::oEntFiltro VAR ::cFiltro ;
+             OF oBoxFiltro
+      DEFINE BUTTON oBtnFiltro TEXT "Buscar" ;
+             ACTION __FiltrarTerceros( oForm, rServicios ) ;
+             OF oBoxFiltro
+
+   DEFINE MODEL ::oModTerceros ;
+          STRUCT rServicios:Struct() ;
+          DATA   rServicios:GetData()
+
+   DEFINE LISTBOX ::oLBoxTer ;
+          MODEL ::oModTerceros ;
+          OF oBoxData
+
+   ::oLBoxTer:lBar  := .f.
+
+   ::oLBoxTer:bEdit := {|oModTerceros|;
+      __FillRowTercero( oForm,;
+         oModTerceros:oTreeView:GetAutoValue( 1 ),;
+         oModTerceros:oTreeView:GetAutoValue( 4 ),;
+         oModTerceros:oTreeView:GetAutoValue( 5 ),;
+         oModTerceros:oTreeView:GetAutoValue( 6 ),;
+         oModTerceros:oTreeView:GetAutoValue( 8 ) ),;
+      ::oTerWnd:End() }
+
+   ::oLBoxTer:Active()
+   ::oModTerceros:oTreeView:SetRules( .t. )
+   ::oModTerceros:oTreeView:SetGridLines( GTK_TREE_VIEW_GRID_LINES_BOTH )
+
+   ::oLBoxTer:SetColVisible( 1, .F. )    //- id
+   ::oLBoxTer:SetColVisible( 2, .F. )    //- tercero_id
+   ::oLBoxTer:SetColVisible( 6, .F. )    //- tipo_tasa
+   ::oLBoxTer:SetColVisible( 7, .F. )    //- activo
+   ::oLBoxTer:SetColVisible( 9, .F. )    //- rif
+
+   ::oLBoxTer:SetColTitle( 3, "Codigo" )
+   ::oLBoxTer:SetColTitle( 4, "Servicio" )
+   ::oLBoxTer:SetColTitle( 5, "Precio" )
+   ::oLBoxTer:SetColTitle( 8, "Tercero" )
+
+   ACTIVATE WINDOW ::oTerWnd MODAL
+
+RETURN
+
+
+/** Filtra la lista de servicios de terceros por texto de busqueda
+ */
+PROCEDURE __FiltrarTerceros( oForm, rServicios )
+   local oNuevo, aData, aLine, aIter := ARRAY(4)
+   local cFiltro
+
+   cFiltro := ::oEntFiltro:GetText()
+
+   if !empty( cFiltro )
+      oNuevo := oForm:rEmpresa:TercerosCatalogoAll( cFiltro )
+   else
+      oNuevo := oForm:rEmpresa:TercerosCatalogoAll( {} )
+   endif
+
+   if !hb_isObject( oNuevo )
+      return
+   endif
+
+   ::oModTerceros:oTreeView:ClearModel(.t.)
+
+   aData := oNuevo:GetData()
+   FOR EACH aLine IN aData
+      APPEND LIST_STORE ::oModTerceros:oLbx ITER aIter ;
+             VALUES hb_ntos(aLine[1]), ;
+                    hb_ntos(aLine[2]), ;
+                    aLine[3], ;
+                    aLine[4], ;
+                    hb_ntos(aLine[5]), ;
+                    aLine[6], ;
+                     iif(aLine[7], ".T.", ".F."), ;
+                    aLine[8], ;
+                    aLine[9]
+   NEXT
+RETURN
+
+
+/** Rellena la linea de detalle con datos del servicio de tercero
+ */
+PROCEDURE __FillRowTercero( oForm, nTerceroCatId, cServicioNom, nPrecio, cTipoTasa, cTerceroNom )
+   local nIvaPorcen := 0
+   local hJson
+
+   do case
+   case cTipoTasa == "EXE" ; nIvaPorcen := 0
+   case cTipoTasa == "RED" ; nIvaPorcen := 8
+   case cTipoTasa == "GEN" ; nIvaPorcen := 16
+   case cTipoTasa == "SUN" ; nIvaPorcen := 31
+   endcase
+
+   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __CODIGO, "S-001" )
+   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __DESCRIPCION, ALLTRIM(cTerceroNom) + " - " + ALLTRIM(cServicioNom) )
+   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __PRECIO, nPrecio )
+   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __IVAPORCEN, STR( nIvaPorcen ) )
+   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, 13, "S" )
+   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __CANTIDAD, "1" )
+
+   hJson := hb_hash()
+   hb_hSet( hJson, "tercero_catalogo_id", nTerceroCatId )
+   hb_hSet( hJson, "tercero_servicio", ALLTRIM( cServicioNom ) )
+   hb_hSet( hJson, "tercero_nombre", ALLTRIM( cTerceroNom ) )
+   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, 19, hb_jsonEncode( hJson ) )
+
+RETURN

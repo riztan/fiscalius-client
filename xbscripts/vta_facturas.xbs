@@ -228,6 +228,10 @@ procedure vta_facturas( oFormParent )
           ACTION EVAL( ::oLBoxDetal:bDel ) ;
           ID "btn_detal_cancelar" RESOURCE ::oRes
 
+   DEFINE BUTTON ::oBtnDetalTerServ ;
+          ACTION EVAL( {|| __AddDetalTercero( oForm ) } ) ;
+          ID "btn_detal_tercero" RESOURCE ::oRes
+
           
    // -- Caja de Montos
    DEFINE BOX ::oBoxMontos ID "box_montos" RESOURCE ::oRes
@@ -2013,126 +2017,9 @@ PROCEDURE __Productos( oForm, cStr, oModel, nCol, oTreeView, aIter )
 
    ACTIVATE WINDOW ::oInvWnd MODAL
 
-RETURN 
-
-
-
-/** Seleccion de servicio de tercero para facturacion por cuenta de terceros
- */
-PROCEDURE __TerceroServicios( oForm, oModel, oTreeView, aIter )
-   local oRes, oImgBanner, oImgLogo
-   local oBoxData, oModTerceros, oLBoxTer
-   local rServicios
-   local nTerceroCatId, cServicioNom, nPrecio, cTipoTasa, cTerceroNom
-
-   rServicios := oForm:rEmpresa:TercerosCatalogoAll( {} )
-
-   if hb_isNIL( rServicios ) .or. !hb_isObject( rServicios )
-      oForm:oLabInfo:SetText( "No hay servicios de terceros disponibles" )
-      return
-   endif
-
-   if rServicios:RecCount() = 1
-      // Auto-fill desde cursor por nombre de campo
-       nTerceroCatId := rServicios:id
-       cServicioNom  := rServicios:nombre
-       nPrecio       := rServicios:precio
-       cTipoTasa     := rServicios:tipo_tasa
-       cTerceroNom   := rServicios:tercero_nombre
-       __FillRowTercero( oForm, nTerceroCatId, cServicioNom, nPrecio, cTipoTasa, cTerceroNom )
-      return
-   endif
-
-   SET RESOURCES oRes FROM FILE oTPuy:cResources+"vta_listbox.ui"
-
-   DEFINE WINDOW ::oTerWnd ;
-          TITLE "Fiscalius. Servicios de Terceros" ;
-          SIZE 700,400 ;
-          ID "window1" RESOURCE oRes ;
-          OF ::oFacWnd
-
-   DEFINE LABEL oLabTitulo TEXT "Seleccione un servicio de tercero" ;
-          ID "lab_title" RESOURCE oRes
-
-   DEFINE IMAGE oImgBanner ;
-          FILE oTPuy:cImages+"banner_02.png";
-          ID "image1" RESOURCE oRes
-          oImgBanner:Adjust(900)
-
-   DEFINE IMAGE oImgLogo ;
-          FILE oTPuy:cImages+"fiscalius_logo_02.png";
-          ID "image2" RESOURCE oRes
-          oImgLogo:Adjust(60)
-
-   DEFINE BOX oBoxData ID "boxdata" RESOURCE oRes
-
-   DEFINE MODEL oModTerceros ;
-          STRUCT rServicios:Struct() ;
-          DATA   rServicios:GetData()
-   
-   DEFINE LISTBOX oLBoxTer ;
-          MODEL oModTerceros ;
-          OF oBoxData
-
-   oLBoxTer:lBar  := .f.
-
-   oLBoxTer:bEdit := {|oModTerceros|;
-      __FillRowTercero( oForm,;
-         oModTerceros:oTreeView:GetAutoValue( 1 ),;
-         oModTerceros:oTreeView:GetAutoValue( 4 ),;
-         oModTerceros:oTreeView:GetAutoValue( 5 ),;
-         oModTerceros:oTreeView:GetAutoValue( 6 ),;
-         oModTerceros:oTreeView:GetAutoValue( 8 ) ),;
-      ::oTerWnd:End() }
-
-   oLBoxTer:Active()
-   oModTerceros:oTreeView:SetRules( .t. )
-   oModTerceros:oTreeView:SetGridLines( GTK_TREE_VIEW_GRID_LINES_BOTH )
-
-   oLBoxTer:SetColVisible( 1, .F. )    //- id
-   oLBoxTer:SetColVisible( 2, .F. )    //- tercero_id
-   oLBoxTer:SetColVisible( 6, .F. )    //- tipo_tasa
-   oLBoxTer:SetColVisible( 7, .F. )    //- activo
-   oLBoxTer:SetColVisible( 9, .F. )    //- rif
-
-   oLBoxTer:SetColTitle( 3, "Codigo" )
-   oLBoxTer:SetColTitle( 4, "Servicio" )
-   oLBoxTer:SetColTitle( 5, "Precio" )
-   oLBoxTer:SetColTitle( 8, "Tercero" )
-
-   ACTIVATE WINDOW ::oTerWnd MODAL
-
 RETURN
 
-
-
-/** Rellena la linea de detalle con datos del servicio de tercero
- */
-PROCEDURE __FillRowTercero( oForm, nTerceroCatId, cServicioNom, nPrecio, cTipoTasa, cTerceroNom )
-   local nIvaPorcen := 0
-   local hJson
-
-   do case
-   case cTipoTasa == "EXE" ; nIvaPorcen := 0
-   case cTipoTasa == "RED" ; nIvaPorcen := 8
-   case cTipoTasa == "GEN" ; nIvaPorcen := 16
-   case cTipoTasa == "SUN" ; nIvaPorcen := 31
-   endcase
-
-   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __CODIGO, "S-001" )
-   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __DESCRIPCION, ALLTRIM(cTerceroNom) + " - " + ALLTRIM(cServicioNom) )
-   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __PRECIO, nPrecio )
-   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __IVAPORCEN, STR( nIvaPorcen ) )
-   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, 13, "S" )
-   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, __CANTIDAD, "1" )
-
-   hJson := hb_hash()
-   hb_hSet( hJson, "tercero_catalogo_id", nTerceroCatId )
-   hb_hSet( hJson, "tercero_servicio", ALLTRIM( cServicioNom ) )
-   hb_hSet( hJson, "tercero_nombre", ALLTRIM( cTerceroNom ) )
-   __SetValue( ::oModDetal:oTreeView, ::oModDetal:oLbx, ::oModDetal:aIter, 19, hb_jsonEncode( hJson ) )
-
-RETURN
+#include "xbscripts/vta_tercero_servicios.xbs"
 
 
 function __FactSelMonedaRef( oForm )
