@@ -122,6 +122,10 @@ procedure vta_orden_entrega( oFormParent, cFiltro )
            ACTION __OrdEntEnviarSeniat( oForm ) ;
            ID "btn_seniat" RESOURCE ::oRes
 
+   if upper( cFiltro ) != "ACTIVAS"
+      ::oBtnSeniat:Hide()
+   endif
+
    //-------------------------
    DEFINE LABEL ::oLabNumero ID "lab_numero" RESOURCE ::oRes
 

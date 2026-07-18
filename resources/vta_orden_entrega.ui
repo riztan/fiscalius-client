@@ -200,7 +200,7 @@
                               <object class="GtkImage" id="image_seniat">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="pixbuf">../images/financial_document_16.png</property>
+                                <property name="pixbuf">../images/mail_send_16.png</property>
                               </object>
                             </child>
                           </object>
