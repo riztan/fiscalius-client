@@ -359,7 +359,6 @@ procedure __CobVerReciboDirecto( oForm, nCobId )
    local cEstado, cFecha
    local cClienteNombre := "N/D", cMoneda := "-"
    local cTexto := ""
-   local oQry
 
    if empty( nCobId ) .or. nCobId == 0
       MsgStop("Numero de recibo invalido")
@@ -381,17 +380,9 @@ procedure __CobVerReciboDirecto( oForm, nCobId )
       return
    endif
 
-   // Obtener nombre del cliente desde la BD
+   // Obtener nombre del cliente desde el servidor
    if hb_hHasKey(hData, "cliente_id") .and. !hb_isNIL(hData["cliente_id"])
-      oQry := ::rFinanzas:oConn:Query( ;
-         "SELECT nombre FROM orseit.vta_clientes WHERE id = " + ;
-         hb_ntos(hData["cliente_id"]) )
-      if hb_isObject(oQry) .and. oQry:RecCount() > 0
-         cClienteNombre := ALLTRIM( oQry:nombre )
-      endif
-      if hb_isObject(oQry)
-         oQry:End()
-      endif
+      cClienteNombre := ALLTRIM( ::rFinanzas:ClienteNombre( hData["cliente_id"] ) )
    endif
 
    // Obtener codigo de moneda
