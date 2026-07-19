@@ -1,0 +1,360 @@
+/* fin_imprimir_pdf_recibo.xbs
+ *
+ * Genera archivo PDF de Recibo de Cobro usando TIMPRIMEPDF
+ * Portrait, LETRA
+ *
+ * Parametros esperados en oForm (via ::):
+ *   ::rCobranza  - Objeto TFRECIBO con Data()
+ *   ::rEmpresa   - Objeto EMPRESA con GetData()
+ *   ::rFinanzas  - Objeto FINANZAS (para Aplicaciones/DetallesPago)
+ *   ::cEntCli    - Nombre del cliente
+ *   ::cCodCli    - Codigo del cliente
+ */
+
+#include "tpy_xbs.ch"
+#include "harupdf.ch"
+#include "tutilpdf.ch"
+
+procedure fin_imprimir_pdf_recibo( oForm )
+
+   local oPDF, cFilePDF
+   local hData := {}, hEmp := {}
+   local nY := 1
+   local aApps := {}, aInst := {}, aLine, cTipo
+   local cCliente := "-", cFecha := ""
+   local nSubtotal := 0, nTotIgtf := 0, nTotal := 0
+   local nPageW := 21.59  // Portrait LETTER en cms
+   local nMidX := 10.8
+   local oTmpApps, oTmpInst
+   local cEstado := "P"
+   local nTotInst := 0
+   local nTipo := 0, cFactNum := "-", nMonto := 0, nIgtfLine := 0
+   local cMedio := "-", nMontoInst := 0, cRef := ""
+   local cText := ""
+
+   // Seguridad
+   if !hb_isObject( ::rCobranza )
+      MsgStop("No hay recibo seleccionado para imprimir")
+      return
+   endif
+
+   hData := ::rCobranza:Data()
+   if !hb_isHash( hData )
+      MsgStop("No hay datos del recibo para generar PDF")
+      return
+   endif
+
+   if hb_isObject( ::rEmpresa )
+      hEmp := ::rEmpresa:GetData()
+   endif
+
+   // Nombre del cliente
+   if hb_isString( ::cEntCli ) .and. !empty( ::cEntCli )
+      cCliente := ALLTRIM( ::cEntCli )
+   endif
+
+   // Nombre del archivo
+   cFilePDF := "tmp/cobro_recibo_" + ;
+               STRTRAN( hb_ntos(hData["id"]), " ", "_" ) + ".pdf"
+   FERASE( cFilePDF )
+
+   // Obtener aplicaciones e instrumentos
+   aApps := {}
+   aInst := {}
+
+   if hb_isArray( hData["aplicaciones"] )
+      aApps := hData["aplicaciones"]
+   endif
+   if hb_isArray( hData["instrumentos"] )
+      aInst := hData["instrumentos"]
+   endif
+
+   // Si los arrays estan vacios, intentar desde el servidor
+   if LEN(aApps) == 0 .and. hb_isObject( ::rFinanzas )
+      oTmpApps := ::rFinanzas:Aplicaciones( hb_ntos(hData["id"]) )
+      if hb_isObject( oTmpApps )
+         aApps := oTmpApps:GetData()
+         oTmpApps:End()
+      endif
+   endif
+   if LEN(aInst) == 0 .and. hb_isObject( ::rFinanzas )
+      oTmpInst := ::rFinanzas:DetallesPago( hb_ntos(hData["id"]) )
+      if hb_isObject( oTmpInst )
+         aInst := oTmpInst:GetData()
+         oTmpInst:End()
+      endif
+   endif
+
+   // Fecha formateada
+   if hb_isString( hData["fecha"] ) .and. LEN(hData["fecha"]) == 8
+      cFecha := LEFT(hData["fecha"],4) + "-" + ;
+                SUBSTR(hData["fecha"],5,2) + "-" + ;
+                RIGHT(hData["fecha"],2)
+   elseif hb_isDate( hData["fecha"] )
+      cFecha := DTOC( hData["fecha"] )
+   else
+      cFecha := "-"
+   endif
+
+   // Crear PDF
+   oPDF := TIMPRIMEPDF():New( cFilePDF )
+   oPDF:PageSetSize( HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_PORTRAIT )
+
+   // =====================================
+   // ENCABEZADO EMPRESA
+   // =====================================
+   nY += 1.5
+   oPDF:SetFont( "Helvetica-Bold", 14 )
+   if hb_hHasKey( hEmp, "nombre" ) .and. !empty( hEmp["nombre"] )
+      oPDF:CMSAY( nY, nMidX - 3, ALLTRIM( hEmp["nombre"] ) )
+   else
+      oPDF:CMSAY( nY, nMidX - 3, "EMPRESA" )
+   endif
+
+   nY += 0.7
+   oPDF:SetFont( "Helvetica", 9 )
+   if hb_hHasKey( hEmp, "rif" ) .and. !empty( hEmp["rif"] )
+      oPDF:CMSAY( nY, nMidX - 3, "RIF: " + ALLTRIM( hEmp["rif"] ) )
+   endif
+   if hb_hHasKey( hEmp, "direccion" ) .and. !empty( hEmp["direccion"] )
+      nY += 0.5
+      oPDF:CMSAY( nY, nMidX - 3, ALLTRIM( hEmp["direccion"] ) )
+   endif
+   if hb_hHasKey( hEmp, "telefono" ) .and. !empty( hEmp["telefono"] )
+      oPDF:CMSAY( nY, nMidX + 4, "Telf: " + ALLTRIM( hEmp["telefono"] ) )
+   endif
+
+   // Linea separadora
+   nY += 0.8
+   oPDF:SetRgbStroke( 0, 0, 0 )
+   oPDF:Line( nY, 1.5, nY, nPageW - 1.5 )
+
+   // =====================================
+   // TITULO RECIBO
+   // =====================================
+   nY += 0.8
+   oPDF:SetFont( "Helvetica-Bold", 16 )
+   oPDF:CMSAY( nY, nMidX - 3, "R E C I B O   D E   C O B R O" )
+
+   // Numero y fecha
+   nY += 0.8
+   oPDF:SetFont( "Helvetica-Bold", 11 )
+   oPDF:CMSAY( nY, 1.5, "Nro: " + hb_ntos(hData["id"]) )
+
+   oPDF:SetFont( "Helvetica", 11 )
+   oPDF:CMSAY( nY, 8, "Fecha: " + cFecha )
+
+   // Estado
+   cEstado := hb_DefaultValue( hData["estado"], "P" )
+   do case
+      case cEstado == "C"; cEstado := "CERRADO"
+      case cEstado == "P"; cEstado := "PENDIENTE"
+      case cEstado == "A"; cEstado := "ANULADO"
+   endcase
+   oPDF:CMSAY( nY, 15, "Estado: " + cEstado )
+
+   // Linea separadora
+   nY += 0.6
+   oPDF:Line( nY, 1.5, nY, nPageW - 1.5 )
+
+   // =====================================
+   // DATOS CLIENTE
+   // =====================================
+   nY += 0.7
+   oPDF:SetFont( "Helvetica-Bold", 11 )
+   oPDF:CMSAY( nY, 1.5, "Cliente: " )
+
+   oPDF:SetFont( "Helvetica", 11 )
+   oPDF:CMSAY( nY, 4.2, cCliente )
+
+   // Tasa de cambio
+   if !empty(hData["tasa_cambio"]) .and. hData["tasa_cambio"] > 0
+      oPDF:SetFont( "Helvetica", 10 )
+      oPDF:CMSAY( nY, 14, "Tasa: " + ;
+                  TRANSFORM( hData["tasa_cambio"], "@E 999,999.99" ) )
+   endif
+
+   // Linea separadora
+   nY += 0.8
+   oPDF:Line( nY, 1.5, nY, nPageW - 1.5 )
+
+   // =====================================
+   // DOCUMENTOS APLICADOS
+   // =====================================
+   nY += 0.6
+   oPDF:SetFont( "Helvetica-Bold", 12 )
+   oPDF:CMSAY( nY, 1.5, "D O C U M E N T O S   A P L I C A D O S" )
+
+   // Encabezado tabla
+   nY += 0.7
+   oPDF:SetFont( "Helvetica-Bold", 10 )
+   oPDF:CMSAY( nY, 1.5,  "Nro Doc" )
+   oPDF:CMSAY( nY, 5.5,  "Tipo" )
+    oPDF:CMSAY( nY, 8.8,  "Monto Base" )
+    oPDF:CMSAY( nY, 13.0, "IGTF" )
+    oPDF:CMSAY( nY, 17.5, "Monto Aplicado" )
+
+   // Linea del encabezado
+   nY += 0.5
+   oPDF:Line( nY, 1.5, nY, nPageW - 1.5 )
+
+   // Detalle
+   nY += 0.5
+   oPDF:SetFont( "Helvetica", 10 )
+
+   if LEN(aApps) > 0
+      FOR EACH aLine IN aApps
+         // Posiciones: 1=id, 2=transaccion_id, 3=monto_aplicado, 4=monto_igtf,
+         //             5=factura_numero, 6=tipo_id, 7=fecha
+         // Puede llegar como Hash (claves string) o Array (posicional)
+         if hb_isHash( aLine )
+            nTipo  := iif( hb_hHasKey(aLine, "tipo_id"), aLine["tipo_id"], 0 )
+            cFactNum := iif( hb_hHasKey(aLine, "factura_numero"), ALLTRIM(aLine["factura_numero"]), "-" )
+            nMonto   := iif( hb_hHasKey(aLine, "monto_aplicado"), aLine["monto_aplicado"], 0 )
+            nIgtfLine := iif( hb_hHasKey(aLine, "monto_igtf"), aLine["monto_igtf"], 0 )
+         else
+            nTipo  := iif( LEN(aLine) >= 6, aLine[6], 0 )
+            cFactNum := iif( LEN(aLine) >= 5, ALLTRIM(aLine[5]), "-" )
+            nMonto   := iif( LEN(aLine) >= 3, aLine[3], 0 )
+            nIgtfLine := iif( LEN(aLine) >= 4, aLine[4], 0 )
+         endif
+
+         do case
+            case nTipo == 4;  cTipo := "Factura"
+            case nTipo == 5;  cTipo := "N/C"
+            case nTipo == 6;  cTipo := "N/D"
+            otherwise;           cTipo := "Doc."
+         endcase
+
+         oPDF:CMSAY( nY, 1.5,  cFactNum )
+         oPDF:CMSAY( nY, 5.5,  cTipo )
+         cText := TRANSFORM( nMonto, "@E 999,999,999.99" )
+         oPDF:CMSAY( nY, 12.8 - LEN(cText) * 0.19, cText )
+
+         if !hb_isNil(nIgtfLine) .and. nIgtfLine > 0
+            cText := TRANSFORM( nIgtfLine, "@E 999,999.99" )
+            oPDF:CMSAY( nY, 16.2 - LEN(cText) * 0.19, cText )
+         else
+            oPDF:CMSAY( nY, 13, "-" )
+         endif
+
+         nSubtotal += nMonto
+
+         cText := TRANSFORM( nMonto, "@E 999,999,999.99" )
+         oPDF:CMSAY( nY, 20.0 - LEN(cText) * 0.19, cText )
+
+         nY += 0.55
+      NEXT
+   else
+      oPDF:CMSAY( nY, 1.5, "No hay documentos aplicados" )
+      nY += 0.55
+   endif
+
+   // Subtotal documentos
+   nY += 0.3
+   oPDF:SetFont( "Helvetica-Bold", 10 )
+   oPDF:CMSAY( nY, 12, "Subtotal Documentos:" )
+   cText := TRANSFORM( nSubtotal, "@E 999,999,999.99" )
+   oPDF:CMSAY( nY, 20.0 - LEN(cText) * 0.19, cText )
+
+   // IGTF
+   nTotIgtf := hb_DefaultValue( hData["igtf"], 0 )
+   if nTotIgtf > 0
+      nY += 0.55
+      oPDF:SetFont( "Helvetica", 10 )
+      oPDF:CMSAY( nY, 12, "IGTF:" )
+      cText := TRANSFORM( nTotIgtf, "@E 999,999,999.99" )
+      oPDF:CMSAY( nY, 20.0 - LEN(cText) * 0.19, cText )
+   endif
+
+   // Total
+   nTotal := hb_DefaultValue( hData["monto_total"], 0 )
+   nY += 0.7
+   oPDF:SetRgbStroke( 0, 0, 0 )
+   oPDF:Line( nY, 12, nY, nPageW - 1.5 )
+   nY += 0.5
+   oPDF:SetFont( "Helvetica-Bold", 12 )
+   oPDF:CMSAY( nY, 12, "TOTAL RECIBO:" )
+   cText := TRANSFORM( nTotal, "@E 999,999,999.99" )
+   oPDF:CMSAY( nY, 20.0 - LEN(cText) * 0.19, cText )
+
+   // =====================================
+   // INSTRUMENTOS DE PAGO
+   // =====================================
+   nY += 1.2
+   oPDF:Line( nY, 1.5, nY, nPageW - 1.5 )
+   nY += 0.6
+   oPDF:SetFont( "Helvetica-Bold", 12 )
+   oPDF:CMSAY( nY, 1.5, "I N S T R U M E N T O S   D E   P A G O" )
+
+   // Encabezado tabla
+   nY += 0.7
+   oPDF:SetFont( "Helvetica-Bold", 10 )
+    oPDF:CMSAY( nY, 1.5, "Medio de Pago" )
+    oPDF:CMSAY( nY, 12.3, "Monto" )
+    oPDF:CMSAY( nY, 18.6, "Referencia" )
+
+   // Linea del encabezado
+   nY += 0.5
+   oPDF:Line( nY, 1.5, nY, nPageW - 1.5 )
+
+   // Detalle instrumentos
+   nY += 0.5
+   oPDF:SetFont( "Helvetica", 10 )
+   nTotInst := 0
+
+    if LEN(aInst) > 0
+       FOR EACH aLine IN aInst
+          // Posiciones: 1=id, 2=medio_pago_id, 3=monto, 4=soporte_nro, 5=medio_pago
+          // Puede llegar como Hash (claves string) o Array (posicional)
+          if hb_isHash( aLine )
+             cMedio     := iif( hb_hHasKey(aLine, "medio_pago"), aLine["medio_pago"], "-" )
+             nMontoInst := iif( hb_hHasKey(aLine, "monto"), aLine["monto"], 0 )
+             cRef       := iif( hb_hHasKey(aLine, "soporte_nro"), aLine["soporte_nro"], "" )
+          else
+             cMedio     := iif( LEN(aLine) >= 5, aLine[5], "-" )
+             nMontoInst := iif( LEN(aLine) >= 3, aLine[3], 0 )
+             cRef       := iif( LEN(aLine) >= 4, aLine[4], "" )
+          endif
+
+          oPDF:CMSAY( nY, 1.5,  iif( !empty(cMedio), ALLTRIM(cMedio), "-" ) )
+          cText := TRANSFORM( nMontoInst, "@E 999,999,999.99" )
+          oPDF:CMSAY( nY, 13.7 - LEN(cText) * 0.19, cText )
+          oPDF:CMSAY( nY, 14,   iif( !empty(cRef), ALLTRIM(cRef), "-" ) )
+          nTotInst += nMontoInst
+          nY += 0.55
+       NEXT
+   else
+      oPDF:CMSAY( nY, 1.5, "No hay instrumentos de pago registrados" )
+      nY += 0.55
+   endif
+
+   // Total instrumentos
+   nY += 0.3
+   oPDF:SetFont( "Helvetica-Bold", 10 )
+   oPDF:CMSAY( nY, 8, "Total Instrumentos:" )
+   cText := TRANSFORM( nTotInst, "@E 999,999,999.99" )
+   oPDF:CMSAY( nY, 20.0 - LEN(cText) * 0.19, cText )
+
+   // Linea final
+   nY += 0.8
+   oPDF:Line( nY, 1.5, nY, nPageW - 1.5 )
+
+   // Observaciones
+   nY += 0.6
+   oPDF:SetFont( "Helvetica-Oblique", 9 )
+   oPDF:CMSAY( nY, 1.5, "Este documento es un comprobante de cobro generado por el sistema Fiscalius." )
+
+   // =====================================
+   // CERRAR PDF
+   // =====================================
+   oPDF:End( .T. )
+
+    // Abrir el PDF (multiplataforma)
+    #ifdef __PLATFORM__WINDOWS
+       WAPI_ShellExecute(0,"open",CurDrive()+":\"+CurDir()+"\"+cFilePDF,0)
+    #else
+       hb_run( "xdg-open " + cFilePDF + " &" )
+    #endif
+
+return

@@ -210,9 +210,13 @@ procedure fin_recibo( oFormParent, oFormGParent, cTipoDoc )
 
    __fr_HacerModeloEditable( oForm )
 
-   DEFINE BUTTON ::oBtnSave ;
-      ACTION __fr_Save( oForm ) ;
-      ID "btn_save" RESOURCE ::oRes
+    DEFINE BUTTON ::oBtnSave ;
+       ACTION __fr_Save( oForm ) ;
+       ID "btn_save" RESOURCE ::oRes
+
+    DEFINE BUTTON ::oBtnPrint ;
+       ACTION oTPuy:RunXBS( "fin_imprimir_pdf_recibo", oForm ) ;
+       ID "btn_print" RESOURCE ::oRes
 
    DEFINE STATUSBAR ::oStatusBar ;
           TEXT "" ;  //oTPuy:cSystem_Name + " | Hora: "+oTPuy:cTime ;

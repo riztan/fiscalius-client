@@ -760,6 +760,26 @@
                               </packing>
                             </child>
                             <child>
+                              <object class="GtkButton" id="btn_print">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="receives_default">True</property>
+                                <property name="tooltip_text" translatable="yes">Imprimir recibo de cobro en PDF</property>
+                                <child>
+                                  <object class="GtkImage" id="image_print">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="pixbuf">../images/print_16.png</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
                               <object class="GtkButton" id="btn_cancel">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
@@ -776,7 +796,7 @@
                               <packing>
                                 <property name="expand">True</property>
                                 <property name="fill">True</property>
-                                <property name="position">1</property>
+                                <property name="position">2</property>
                               </packing>
                             </child>
                           </object>

@@ -31,6 +31,11 @@ procedure fin_cobros( oFormParent )
 
    ::rFinanzas := rFinanzas
 
+   // Inicializar propiedades para impresion
+   ::rCobranza := NIL
+   ::cEntCli   := ""
+   ::rEmpresa  := oFormParent:rEmpresa
+
    SET RESOURCES ::oRes FROM FILE oTPuy:cResources+"fin_cobros.ui"
 
    DEFINE WINDOW ::oWnd ;
@@ -93,9 +98,13 @@ procedure fin_cobros( oFormParent )
    DEFINE TEXTVIEW ::oTvInst VAR ::cTvInst READONLY ;
           ID "tv_inst" RESOURCE ::oRes
 
-   // Boton volver al listado
-   DEFINE BUTTON ACTION __CobVolver( oForm ) ;
-          ID "btn_volver" RESOURCE ::oRes
+    // Boton volver al listado
+    DEFINE BUTTON ACTION __CobVolver( oForm ) ;
+           ID "btn_volver" RESOURCE ::oRes
+
+    // Boton imprimir recibo
+    DEFINE BUTTON ACTION __CobImprimir( oForm ) ;
+           ID "btn_print" RESOURCE ::oRes
 
    // --- Cargar datos iniciales ---
    oCobranzas := ::rFinanzas:Cobranzas( {} )
@@ -243,6 +252,10 @@ procedure __CobVerRecibo( oForm, oModel )
       return
    endif
 
+   // Guardar referencia para impresion
+   ::rCobranza := oRecibo
+   ::cEntCli   := cClienteNombre
+
    // Determinar texto del estado
    cEstado := hData["estado"]
    do case
@@ -328,6 +341,18 @@ procedure __CobVerRecibo( oForm, oModel )
    // Mostrar detalle del recibo en el lado derecho
    ::oBoxDetalle:Show()
 
+return
+
+
+// -----------------------------------------------------------
+// Imprimir recibo en PDF
+// -----------------------------------------------------------
+procedure __CobImprimir( oForm )
+   if !hb_isObject( ::rCobranza )
+      MsgStop("Debe seleccionar un recibo primero", "Imprimir")
+      return
+   endif
+   oTPuy:RunXBS( "fin_imprimir_pdf_recibo", oForm )
 return
 
 
