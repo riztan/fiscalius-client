@@ -312,12 +312,12 @@ procedure __CobVerRecibo( oForm, oModel )
       FOR EACH aLine IN aApps
          if hb_isHash( aLine )
             nTipo    := iif( hb_hHasKey(aLine, "tipo_id"), aLine["tipo_id"], 0 )
-            cFactNum := iif( hb_hHasKey(aLine, "factura_numero"), ALLTRIM(aLine["factura_numero"]), "-" )
+            cFactNum := iif( hb_hHasKey(aLine, "factura_numero"), hb_ntos(aLine["factura_numero"]), "-" )
             nMonto   := iif( hb_hHasKey(aLine, "monto_aplicado"), aLine["monto_aplicado"], 0 )
             nIgtf    := iif( hb_hHasKey(aLine, "monto_igtf"), aLine["monto_igtf"], 0 )
          else
             nTipo    := iif( LEN(aLine) >= 6, aLine[6], 0 )
-            cFactNum := iif( LEN(aLine) >= 5, ALLTRIM(aLine[5]), "-" )
+            cFactNum := iif( LEN(aLine) >= 5, hb_ntos(aLine[5]), "-" )
             nMonto   := iif( LEN(aLine) >= 3, aLine[3], 0 )
             nIgtf    := iif( LEN(aLine) >= 4, aLine[4], 0 )
          endif
@@ -466,12 +466,12 @@ procedure __CobVerReciboDirecto( oForm, nCobId )
       FOR EACH aLine IN aApps
          if hb_isHash( aLine )
             nTipo    := iif( hb_hHasKey(aLine, "tipo_id"), aLine["tipo_id"], 0 )
-            cFactNum := iif( hb_hHasKey(aLine, "factura_numero"), ALLTRIM(aLine["factura_numero"]), "-" )
+            cFactNum := iif( hb_hHasKey(aLine, "factura_numero"), hb_ntos(aLine["factura_numero"]), "-" )
             nMonto   := iif( hb_hHasKey(aLine, "monto_aplicado"), aLine["monto_aplicado"], 0 )
             nIgtf    := iif( hb_hHasKey(aLine, "monto_igtf"), aLine["monto_igtf"], 0 )
          else
             nTipo    := iif( LEN(aLine) >= 6, aLine[6], 0 )
-            cFactNum := iif( LEN(aLine) >= 5, ALLTRIM(aLine[5]), "-" )
+            cFactNum := iif( LEN(aLine) >= 5, hb_ntos(aLine[5]), "-" )
             nMonto   := iif( LEN(aLine) >= 3, aLine[3], 0 )
             nIgtf    := iif( LEN(aLine) >= 4, aLine[4], 0 )
          endif
