@@ -1761,7 +1761,7 @@ PROCEDURE __NCCobrar( oForm, oFormParent)
    if hb_isObject( rFinanzas )
       nCobId := rFinanzas:CobroDeDocumento( ::hDocumento["id"] )
       if !hb_isNIL( nCobId ) .and. nCobId > 0
-         oTPuy:RunXBS( "fin_cobros", oForm, nCobId )
+         oTPuy:RunXBS( "fin_cobros", oFormParent, nCobId )
          RETURN
       endif
    endif

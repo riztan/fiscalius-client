@@ -1777,7 +1777,7 @@ PROCEDURE __VtaCobrar( oForm, oFormParent)
    if hb_isObject( rFinanzas )
       nCobId := rFinanzas:CobroDeDocumento( ::hFactura["id"] )
       if !hb_isNIL( nCobId ) .and. nCobId > 0
-         oTPuy:RunXBS( "fin_cobros", oForm, nCobId )
+         oTPuy:RunXBS( "fin_cobros", oFormParent, nCobId )
          RETURN
       endif
    endif
