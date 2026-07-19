@@ -315,7 +315,7 @@ procedure __CobVerRecibo( oForm, oModel )
             case aLine[7] == 6; cTipo := "N/D"
             otherwise;          cTipo := "Doc."
          endcase
-         cTexto += cTipo + " #" + hb_ntos(aLine[2]) + "  -  Bs " + ;
+         cTexto += cTipo + " #" + hb_ntos(aLine[5]) + "  -  Bs " + ;
                     TRANSFORM(aLine[3], "@E 999,999,999.99")
          if !hb_isNil(aLine[5]) .and. aLine[5] > 0
             cTexto += "  (IGTF: Bs " + TRANSFORM(aLine[5], "@E 999,999,999.99") + ")"
@@ -447,7 +447,7 @@ procedure __CobVerReciboDirecto( oForm, nCobId )
             case aLine[7] == 6; cTipo := "N/D"
             otherwise;          cTipo := "Doc."
          endcase
-         cTexto += cTipo + " #" + hb_ntos(aLine[2]) + "  -  Bs " + ;
+         cTexto += cTipo + " #" + hb_ntos(aLine[5]) + "  -  Bs " + ;
                     TRANSFORM(aLine[3], "@E 999,999,999.99")
          if !hb_isNil(aLine[5]) .and. aLine[5] > 0
             cTexto += "  (IGTF: Bs " + TRANSFORM(aLine[5], "@E 999,999,999.99") + ")"
