@@ -9,7 +9,7 @@
 
 #include "tpy_xbs.ch"
 
-procedure fin_cobros( oFormParent )
+procedure fin_cobros( oFormParent, nCobIdDirecto )
    local oForm
    local rFinanzas, oCobranzas
    local cTvApps := "", cTvInst := ""
@@ -145,6 +145,11 @@ procedure fin_cobros( oFormParent )
    ::oLabInfo:SetText( hb_ntos(nRegistros) + " recibo(s) encontrado(s)" )
 
    ::oLBoxCob:Active()
+
+   // Si se paso un ID de cobro directo, ir al detalle sin mostrar la lista
+   if !hb_isNIL( nCobIdDirecto ) .and. nCobIdDirecto > 0
+      __CobVerReciboDirecto( oForm, nCobIdDirecto )
+   endif
 
    ACTIVATE WINDOW ::oWnd MODAL
 
@@ -304,6 +309,147 @@ procedure __CobVerRecibo( oForm, oModel )
    if LEN(aApps) > 0
       FOR EACH aLine IN aApps
          // tipo_id: 4=Factura, 5=N/C, 6=N/D
+         do case
+            case aLine[7] == 4; cTipo := "Factura"
+            case aLine[7] == 5; cTipo := "N/C"
+            case aLine[7] == 6; cTipo := "N/D"
+            otherwise;          cTipo := "Doc."
+         endcase
+         cTexto += cTipo + " #" + hb_ntos(aLine[2]) + "  -  Bs " + ;
+                    TRANSFORM(aLine[3], "@E 999,999,999.99")
+         if !hb_isNil(aLine[5]) .and. aLine[5] > 0
+            cTexto += "  (IGTF: Bs " + TRANSFORM(aLine[5], "@E 999,999,999.99") + ")"
+         endif
+         cTexto += CRLF
+      NEXT
+   else
+      cTexto := "No hay documentos aplicados"
+   endif
+   ::oTvApps:SetText( cTexto )
+
+   // Construir texto de instrumentos
+   cTexto := ""
+   if LEN(aInst) > 0
+      FOR EACH aLine IN aInst
+         cTexto += ALLTRIM(aLine[4]) + "  -  Bs " + ;
+                    TRANSFORM(aLine[3], "@E 999,999,999.99")
+         if !empty(aLine[5])
+            cTexto += "  (Ref: " + ALLTRIM(aLine[5]) + ")"
+         endif
+         cTexto += CRLF
+      NEXT
+   else
+      cTexto := "No hay instrumentos de pago registrados"
+   endif
+   ::oTvInst:SetText( cTexto )
+
+   // Mostrar detalle del recibo en el lado derecho
+   ::oBoxDetalle:Show()
+
+return
+
+
+// -----------------------------------------------------------
+// Ver recibo por ID directo (desde boton cobro en facturas/NC/ND)
+// -----------------------------------------------------------
+procedure __CobVerReciboDirecto( oForm, nCobId )
+   local oRecibo, hData
+   local oApps, aApps := {}, aLine
+   local oInst, aInst := {}
+   local cEstado, cFecha
+   local cClienteNombre := "N/D", cMoneda := "-"
+   local cTexto := ""
+   local oQry
+
+   if empty( nCobId ) .or. nCobId == 0
+      MsgStop("Numero de recibo invalido")
+      return
+   endif
+
+   // Cargar recibo desde el servidor
+   oRecibo := ::rFinanzas:Cobranza( hb_ntos(nCobId) )
+
+   if !hb_isObject( oRecibo )
+      MsgStop("No se pudo cargar el recibo #" + hb_ntos(nCobId))
+      return
+   endif
+
+   hData := oRecibo:Data()
+
+   if !hb_isHash( hData )
+      MsgStop("Error al cargar datos del recibo")
+      return
+   endif
+
+   // Obtener nombre del cliente desde la BD
+   if hb_hHasKey(hData, "cliente_id") .and. !hb_isNIL(hData["cliente_id"])
+      oQry := ::rFinanzas:oConn:Query( ;
+         "SELECT nombre FROM orseit.vta_clientes WHERE id = " + ;
+         hb_ntos(hData["cliente_id"]) )
+      if hb_isObject(oQry) .and. oQry:RecCount() > 0
+         cClienteNombre := ALLTRIM( oQry:nombre )
+      endif
+      if hb_isObject(oQry)
+         oQry:End()
+      endif
+   endif
+
+   // Obtener codigo de moneda
+   if hb_hHasKey(hData, "moneda") .and. !empty(hData["moneda"])
+      cMoneda := ALLTRIM( hData["moneda"] )
+   endif
+
+   // Guardar referencia para impresion
+   ::rCobranza := oRecibo
+   ::cEntCli   := cClienteNombre
+
+   // Determinar texto del estado
+   cEstado := hData["estado"]
+   do case
+      case cEstado == "C"; cEstado := "Cerrado"
+      case cEstado == "P"; cEstado := "Pendiente"
+      case cEstado == "A"; cEstado := "Anulado"
+   endcase
+
+   // Fecha segura
+   if hb_isString(hData["fecha"]) .and. LEN(hData["fecha"]) == 8
+      cFecha := LEFT(hData["fecha"],4) + "-" + ;
+                SUBSTR(hData["fecha"],5,2) + "-" + ;
+                RIGHT(hData["fecha"],2)
+   elseif hb_isDate(hData["fecha"])
+      cFecha := DTOC( hData["fecha"] )
+   else
+      cFecha := "-"
+   endif
+
+   // Llenar labels del detalle
+   ::oLabDetNum:SetText( hb_ntos( hData["id"] ) )
+   ::oLabDetFecha:SetText( cFecha )
+   ::oLabDetEstado:SetText( cEstado )
+   ::oLabDetCliente:SetText( cClienteNombre )
+   ::oLabDetMonto:SetText( TRANSFORM(hData["monto_total"], "@E 999,999,999.99") )
+   ::oLabDetIgtf:SetText( TRANSFORM(hData["igtf"], "@E 999,999,999.99") )
+   ::oLabDetMoneda:SetText( cMoneda )
+   ::oLabDetTasa:SetText( TRANSFORM(hData["tasa_cambio"], "@E 999,999.99") )
+
+   // Cargar aplicaciones del recibo
+   oApps := ::rFinanzas:Aplicaciones( hb_ntos(nCobId) )
+   if hb_isObject(oApps)
+      aApps := oApps:GetData()
+      oApps:End()
+   endif
+
+   // Cargar instrumentos de pago
+   oInst := ::rFinanzas:DetallesPago( hb_ntos(nCobId) )
+   if hb_isObject(oInst)
+      aInst := oInst:GetData()
+      oInst:End()
+   endif
+
+   // Construir texto de aplicaciones
+   cTexto := ""
+   if LEN(aApps) > 0
+      FOR EACH aLine IN aApps
          do case
             case aLine[7] == 4; cTipo := "Factura"
             case aLine[7] == 5; cTipo := "N/C"

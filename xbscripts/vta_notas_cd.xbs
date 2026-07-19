@@ -1751,11 +1751,20 @@ return
 
 
 PROCEDURE __NCCobrar( oForm, oFormParent)
+   local rFinanzas, nCobId
    if ::hDocumento["estado"] != "C"
       ::oLabInfo:SetText( "Solo puede generar recibo en documento cerrado." )
       RETURN
    endif
-   
+   // Verificar si el documento ya tiene un cobro asociado
+   rFinanzas := oFormParent:oGEmpresa:SetModulo("Finanzas")
+   if hb_isObject( rFinanzas )
+      nCobId := rFinanzas:CobroDeDocumento( ::hDocumento["id"] )
+      if !hb_isNIL( nCobId ) .and. nCobId > 0
+         oTPuy:RunXBS( "fin_cobros", oForm, nCobId )
+         RETURN
+      endif
+   endif
    oTPuy:RunXBS( "fin_recibo", oForm, oFormParent, iif( ::cTipoDocumento="C", "5", "6") /*Documento*/ )
 RETURN
 

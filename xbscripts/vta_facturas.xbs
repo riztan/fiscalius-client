@@ -1767,9 +1767,19 @@ return
 
 
 PROCEDURE __VtaCobrar( oForm, oFormParent)
+   local rFinanzas, nCobId
    if ::hFactura["estado"] != "C"
       ::oLabInfo:SetText( "Solo puede generar recibo en documento cerrado." )
       RETURN
+   endif
+   // Verificar si el documento ya tiene un cobro asociado
+   rFinanzas := oFormParent:oGEmpresa:SetModulo("Finanzas")
+   if hb_isObject( rFinanzas )
+      nCobId := rFinanzas:CobroDeDocumento( ::hFactura["id"] )
+      if !hb_isNIL( nCobId ) .and. nCobId > 0
+         oTPuy:RunXBS( "fin_cobros", oForm, nCobId )
+         RETURN
+      endif
    endif
    oTPuy:RunXBS( "fin_recibo", oForm, oFormParent, "4" /*Factura*/ )
 RETURN
