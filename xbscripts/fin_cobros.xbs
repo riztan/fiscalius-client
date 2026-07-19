@@ -226,6 +226,8 @@ procedure __CobVerRecibo( oForm, oModel )
    local cEstado, cFecha
    local cClienteNombre, cMoneda, cTipo
    local cTexto := ""
+   local nTipo, cFactNum, nMonto, nIgtf
+   local cMedio, nMontoInst, cRef
 
    // Obtener ID del recibo seleccionado
    nCobId := oModel:GetCol( 1 )
@@ -308,17 +310,27 @@ procedure __CobVerRecibo( oForm, oModel )
    cTexto := ""
    if LEN(aApps) > 0
       FOR EACH aLine IN aApps
-         // tipo_id: 4=Factura, 5=N/C, 6=N/D
+         if hb_isHash( aLine )
+            nTipo    := iif( hb_hHasKey(aLine, "tipo_id"), aLine["tipo_id"], 0 )
+            cFactNum := iif( hb_hHasKey(aLine, "factura_numero"), ALLTRIM(aLine["factura_numero"]), "-" )
+            nMonto   := iif( hb_hHasKey(aLine, "monto_aplicado"), aLine["monto_aplicado"], 0 )
+            nIgtf    := iif( hb_hHasKey(aLine, "monto_igtf"), aLine["monto_igtf"], 0 )
+         else
+            nTipo    := iif( LEN(aLine) >= 6, aLine[6], 0 )
+            cFactNum := iif( LEN(aLine) >= 5, ALLTRIM(aLine[5]), "-" )
+            nMonto   := iif( LEN(aLine) >= 3, aLine[3], 0 )
+            nIgtf    := iif( LEN(aLine) >= 4, aLine[4], 0 )
+         endif
          do case
-            case aLine[7] == 4; cTipo := "Factura"
-            case aLine[7] == 5; cTipo := "N/C"
-            case aLine[7] == 6; cTipo := "N/D"
+            case nTipo == 4; cTipo := "Factura"
+            case nTipo == 5; cTipo := "N/C"
+            case nTipo == 6; cTipo := "N/D"
             otherwise;          cTipo := "Doc."
          endcase
-         cTexto += cTipo + " #" + hb_ntos(aLine[5]) + "  -  Bs " + ;
-                    TRANSFORM(aLine[3], "@E 999,999,999.99")
-         if !hb_isNil(aLine[5]) .and. aLine[5] > 0
-            cTexto += "  (IGTF: Bs " + TRANSFORM(aLine[5], "@E 999,999,999.99") + ")"
+         cTexto += cTipo + " #" + cFactNum + "  -  Bs " + ;
+                    TRANSFORM(nMonto, "@E 999,999,999.99")
+         if !hb_isNil(nIgtf) .and. nIgtf > 0
+            cTexto += "  (IGTF: Bs " + TRANSFORM(nIgtf, "@E 999,999,999.99") + ")"
          endif
          cTexto += CRLF
       NEXT
@@ -331,10 +343,19 @@ procedure __CobVerRecibo( oForm, oModel )
    cTexto := ""
    if LEN(aInst) > 0
       FOR EACH aLine IN aInst
-         cTexto += ALLTRIM(aLine[4]) + "  -  Bs " + ;
-                    TRANSFORM(aLine[3], "@E 999,999,999.99")
-         if !empty(aLine[5])
-            cTexto += "  (Ref: " + ALLTRIM(aLine[5]) + ")"
+         if hb_isHash( aLine )
+            cMedio     := iif( hb_hHasKey(aLine, "medio_pago"), ALLTRIM(aLine["medio_pago"]), "-" )
+            nMontoInst := iif( hb_hHasKey(aLine, "monto"), aLine["monto"], 0 )
+            cRef       := iif( hb_hHasKey(aLine, "soporte_nro"), ALLTRIM(aLine["soporte_nro"]), "" )
+         else
+            cMedio     := iif( LEN(aLine) >= 5, ALLTRIM(aLine[5]), "-" )
+            nMontoInst := iif( LEN(aLine) >= 3, aLine[3], 0 )
+            cRef       := iif( LEN(aLine) >= 4, ALLTRIM(aLine[4]), "" )
+         endif
+         cTexto += cMedio + "  -  Bs " + ;
+                    TRANSFORM(nMontoInst, "@E 999,999,999.99")
+         if !empty(cRef)
+            cTexto += "  (Ref: " + cRef + ")"
          endif
          cTexto += CRLF
       NEXT
@@ -359,6 +380,8 @@ procedure __CobVerReciboDirecto( oForm, nCobId )
    local cEstado, cFecha
    local cClienteNombre := "N/D", cMoneda := "-"
    local cTexto := ""
+   local nTipo, cFactNum, nMonto, nIgtf
+   local cMedio, nMontoInst, cRef
 
    if empty( nCobId ) .or. nCobId == 0
       MsgStop("Numero de recibo invalido")
@@ -441,16 +464,27 @@ procedure __CobVerReciboDirecto( oForm, nCobId )
    cTexto := ""
    if LEN(aApps) > 0
       FOR EACH aLine IN aApps
+         if hb_isHash( aLine )
+            nTipo    := iif( hb_hHasKey(aLine, "tipo_id"), aLine["tipo_id"], 0 )
+            cFactNum := iif( hb_hHasKey(aLine, "factura_numero"), ALLTRIM(aLine["factura_numero"]), "-" )
+            nMonto   := iif( hb_hHasKey(aLine, "monto_aplicado"), aLine["monto_aplicado"], 0 )
+            nIgtf    := iif( hb_hHasKey(aLine, "monto_igtf"), aLine["monto_igtf"], 0 )
+         else
+            nTipo    := iif( LEN(aLine) >= 6, aLine[6], 0 )
+            cFactNum := iif( LEN(aLine) >= 5, ALLTRIM(aLine[5]), "-" )
+            nMonto   := iif( LEN(aLine) >= 3, aLine[3], 0 )
+            nIgtf    := iif( LEN(aLine) >= 4, aLine[4], 0 )
+         endif
          do case
-            case aLine[7] == 4; cTipo := "Factura"
-            case aLine[7] == 5; cTipo := "N/C"
-            case aLine[7] == 6; cTipo := "N/D"
+            case nTipo == 4; cTipo := "Factura"
+            case nTipo == 5; cTipo := "N/C"
+            case nTipo == 6; cTipo := "N/D"
             otherwise;          cTipo := "Doc."
          endcase
-         cTexto += cTipo + " #" + hb_ntos(aLine[5]) + "  -  Bs " + ;
-                    TRANSFORM(aLine[3], "@E 999,999,999.99")
-         if !hb_isNil(aLine[5]) .and. aLine[5] > 0
-            cTexto += "  (IGTF: Bs " + TRANSFORM(aLine[5], "@E 999,999,999.99") + ")"
+         cTexto += cTipo + " #" + cFactNum + "  -  Bs " + ;
+                    TRANSFORM(nMonto, "@E 999,999,999.99")
+         if !hb_isNil(nIgtf) .and. nIgtf > 0
+            cTexto += "  (IGTF: Bs " + TRANSFORM(nIgtf, "@E 999,999,999.99") + ")"
          endif
          cTexto += CRLF
       NEXT
@@ -463,10 +497,19 @@ procedure __CobVerReciboDirecto( oForm, nCobId )
    cTexto := ""
    if LEN(aInst) > 0
       FOR EACH aLine IN aInst
-         cTexto += ALLTRIM(aLine[4]) + "  -  Bs " + ;
-                    TRANSFORM(aLine[3], "@E 999,999,999.99")
-         if !empty(aLine[5])
-            cTexto += "  (Ref: " + ALLTRIM(aLine[5]) + ")"
+         if hb_isHash( aLine )
+            cMedio     := iif( hb_hHasKey(aLine, "medio_pago"), ALLTRIM(aLine["medio_pago"]), "-" )
+            nMontoInst := iif( hb_hHasKey(aLine, "monto"), aLine["monto"], 0 )
+            cRef       := iif( hb_hHasKey(aLine, "soporte_nro"), ALLTRIM(aLine["soporte_nro"]), "" )
+         else
+            cMedio     := iif( LEN(aLine) >= 5, ALLTRIM(aLine[5]), "-" )
+            nMontoInst := iif( LEN(aLine) >= 3, aLine[3], 0 )
+            cRef       := iif( LEN(aLine) >= 4, ALLTRIM(aLine[4]), "" )
+         endif
+         cTexto += cMedio + "  -  Bs " + ;
+                    TRANSFORM(nMontoInst, "@E 999,999,999.99")
+         if !empty(cRef)
+            cTexto += "  (Ref: " + cRef + ")"
          endif
          cTexto += CRLF
       NEXT
