@@ -54,5 +54,5 @@ bin/
 
 # Archivos de.cursor y .github
 .cursor/
-.github/
+.github/copilot-instructions.md
 .opencode/
