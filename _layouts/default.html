@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page.title }} | {{ site.title }}</title>
+  <meta name="description" content="{{ page.description | default: site.description }}">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{{ '/assets/images/logo_200.png' | relative_url }}">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+  
+  <!-- SEO -->
+  {% seo %}
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container">
+      <a href="{{ '/' | relative_url }}" class="logo">
+        <img src="{{ '/assets/images/logo_200.png' | relative_url }}" alt="{{ site.title }}" class="logo-img">
+        <span class="logo-text">{{ site.title }}</span>
+      </a>
+      
+      <nav class="main-nav">
+        <a href="{{ '/' | relative_url }}" class="nav-link {% if page.url == '/' %}active{% endif %}">Inicio</a>
+        <a href="{{ '/usuarios/' | relative_url }}" class="nav-link {% if page.url contains 'usuarios' %}active{% endif %}">Usuarios</a>
+        <a href="{{ '/distribuidores/' | relative_url }}" class="nav-link {% if page.url contains 'distribuidores' %}active{% endif %}">Distribuidores</a>
+        <a href="{{ '/desarrolladores/' | relative_url }}" class="nav-link {% if page.url contains 'desarrolladores' %}active{% endif %}">Desarrolladores</a>
+        <a href="{{ '/docs/' | relative_url }}" class="nav-link {% if page.url contains 'docs' %}active{% endif %}">Documentación</a>
+      </nav>
+      
+      <button class="mobile-menu-btn" aria-label="Menú">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="site-main">
+    {{ content }}
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="{{ '/assets/images/logo_200.png' | relative_url }}" alt="{{ site.title }}" class="footer-logo">
+          <p>{{ site.description }}</p>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Producto</h4>
+          <ul>
+            <li><a href="{{ '/usuarios/' | relative_url }}">Para Usuarios</a></li>
+            <li><a href="{{ '/distribuidores/' | relative_url }}">Distribuidores</a></li>
+            <li><a href="{{ '/desarrolladores/' | relative_url }}">Desarrolladores</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Recursos</h4>
+          <ul>
+            <li><a href="{{ '/docs/' | relative_url }}">Documentación</a></li>
+            <li><a href="https://github.com/riztan/fiscalius-client" target="_blank">GitHub</a></li>
+            <li><a href="{{ '/docs/faq/' | relative_url }}">FAQ</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Contacto</h4>
+          <ul>
+            <li><a href="https://github.com/riztan/fiscalius-client/issues" target="_blank">Soporte</a></li>
+            <li><a href="mailto:soporte@fiscalius.com">Email</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; {{ 'now' | date: "%Y" }} {{ site.title }}. Licencia MIT.</p>
+        <p>Desarrollado con ❤️ para Venezuela</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // Mobile menu toggle
+    document.querySelector('.mobile-menu-btn').addEventListener('click', function() {
+      document.querySelector('.main-nav').classList.toggle('active');
+      this.classList.toggle('active');
+    });
+  </script>
+</body>
+</html>

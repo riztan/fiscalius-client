@@ -1,0 +1,54 @@
+# Fiscalius - Sistema de Facturación Electrónica
+# Configuración Jekyll para GitHub Pages
+
+title: "Fiscalius"
+description: "Sistema de Facturación Electrónica para Venezuela - Cumplimiento SENIAT"
+url: "https://riztan.github.io"
+baseurl: "/fiscalius-client"
+
+# Colores de marca (extraídos del logo)
+colors:
+  primary: "#5B7553"      # Verde oliva principal
+  secondary: "#8CB369"    # Verde claro
+  accent: "#F4A261"       # Naranja/acento
+  dark: "#2D3A2D"         # Verde oscuro
+  light: "#F7F7F7"        # Gris claro
+  white: "#FFFFFF"
+
+# Redes sociales
+github_username: riztan
+
+# Build settings
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+
+# Plugins
+plugins:
+  - jekyll-seo-tag
+
+# Collections para documentación
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:name/
+
+# Exclude
+exclude:
+  - README.md
+  - LICENSE
+  - CHANGELOG.md
+  - docs/
+  - images/
+  - xbscripts/
+  - resources/
+  - bin/
+  - tmp/
+  - .cursor/
+  - .github/
+  - .opencode/
+  - .gitignore
+  - AGENTS.md
+  - email.ch.example
+  - init.conf

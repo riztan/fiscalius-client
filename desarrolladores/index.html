@@ -1,0 +1,177 @@
+---
+layout: default
+title: Desarrolladores
+description: Guía para desarrolladores de Fiscalius - Contribuye al proyecto
+---
+
+<div class="page-header">
+  <div class="container">
+    <h1>Para Desarrolladores</h1>
+    <p>Contribuye a Fiscalius, crea extensiones o integra el sistema con otras aplicaciones.</p>
+  </div>
+</div>
+
+<div class="content-section">
+  <div class="container">
+    <h2>Únete a la Comunidad</h2>
+    <p>Fiscalius es un proyecto open source que necesita tu ayuda para crecer. Puedes contribuir de muchas maneras:</p>
+    <ul>
+      <li><strong>Reportar bugs</strong> - Encuentra y documenta errores</li>
+      <li><strong>Mejorar documentación</strong> - Ayuda a otros a entender el sistema</li>
+      <li><strong>Crear extensiones</strong> - Desarrolla módulos adicionales</li>
+      <li><strong>Integrar sistemas</strong> - Conecta Fiscalius con otras aplicaciones</li>
+      <li><strong>Mejorar el código</strong> - Optimiza y refactoriza existente</li>
+      <li><strong>Diseñar interfaces</strong> - Mejora la experiencia de usuario</li>
+    </ul>
+
+    <h2>Arquitectura del Sistema</h2>
+    <p>Fiscalius utiliza una arquitectura cliente-servidor de 3 capas:</p>
+    
+    <pre><code>┌─────────────────────────┐   hb_netio TCP/IP   ┌───────────────────────┐   SQL   ┌────────────┐
+│  Fiscalius Client       │ ←─────────────────→  │ Fiscalius Server      │ ←─────→ │ PostgreSQL │
+│  (TPuy/xHarbour + GTK)  │                       │ (Harbour/TPuy)        │         │ 16         │
+│  UI + Validaciones prev.│                       │ API + Lógica negocio  │         └────────────┘
+└─────────────────────────┘                       └───────────────────────┘</code></pre>
+
+    <h3>Componentes Principales</h3>
+    <ul>
+      <li><strong>Cliente:</strong> Interfaz gráfica GTK+ desarrollada en TPuy (xHarbour + T-GTK)</li>
+      <li><strong>Servidor:</strong> API RESTful desarrollada en Harbour/TPuy</li>
+      <li><strong>Base de datos:</strong> PostgreSQL 16</li>
+      <li><strong>Comunicación:</strong> Protocolo NetIO (hb_netio)</li>
+    </ul>
+
+    <h2>Tecnologías Utilizadas</h2>
+    
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔧</div>
+        <h3>TPuy Framework</h3>
+        <p>Framework propio basado en Harbour + T-GTK para desarrollo de aplicaciones de escritorio con interfaces GTK+.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">🐘</div>
+        <h3>Harbour</h3>
+        <p>Compilador de xBase compatible con Clipper. Lenguaje de programación robusto y probado.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">🗄️</div>
+        <h3>PostgreSQL</h3>
+        <p>Sistema de base de datos relacional robusto, escalable y de código abierto.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">🌐</div>
+        <h3>NetIO</h3>
+        <p>Protocolo de comunicación cliente-servidor basado en TCP/IP para transfers seguras.</p>
+      </div>
+    </div>
+
+    <h2>Estructura del Proyecto</h2>
+    <pre><code>fiscalius-client/
+├── xbscripts/          # Lógica del negocio (.xbs)
+│   ├── begin.xbs       # Punto de entrada principal
+│   ├── netio_check.xbs # Verificación de conexión al servidor
+│   ├── netio_login.xbs # Autenticación
+│   ├── menu.xbs        # Menú principal
+│   ├── vta_*.xbs       # Módulo Ventas
+│   ├── mae_*.xbs       # Maestros (inventario, monedas, usuarios…)
+│   └── fin_*.xbs       # Módulo Finanzas
+├── resources/          # Interfaces GTK+ (.ui)
+├── docs/               # Documentación
+└── init.conf           # Configuración inicial</code></pre>
+
+    <h2>Guías de Desarrollo</h2>
+    
+    <h3>Primeros Pasos</h3>
+    <ol>
+      <li><strong>Clona el repositorio:</strong>
+        <pre><code>git clone https://github.com/riztan/fiscalius-client.git
+cd fiscalius-client</code></pre>
+      </li>
+      <li><strong>Instala las dependencias:</strong>
+        <pre><code># En Linux
+sudo apt-get install harbour tgtk
+
+# En Windows
+# Descarga TPuy desde https://github.com/riztan/tpuy</code></pre>
+      </li>
+      <li><strong>Compila el proyecto:</strong>
+        <pre><code>tpuy</code></pre>
+      </li>
+      <li><strong>Ejecuta:</strong>
+        <pre><code>./fiscalius-client</code></pre>
+      </li>
+    </ol>
+
+    <h3>Patrones de Código</h3>
+    <p>Al desarrollar para Fiscalius, sigue estos patrones:</p>
+    
+    <h4>Llamada a servidor (NetIO):</h4>
+    <pre><code>// Verificar conexión primero
+IF !oTPuy:RunXBS("netio_check")
+   MsgStop("Sin conexión al servidor")
+   RETURN
+ENDIF
+
+// Obtener objeto remoto
+::rFinanzas := oFormParent:oGEmpresa:SetModulo("Finanzas")
+::rCobranza := ::rFinanzas:Cobranza('')
+
+// Verificar respuesta
+IF hb_isObject( ::rCobranza )
+   hData := ::rCobranza:Data()
+ENDIF</code></pre>
+
+    <h4>Cargar datos a ListBox:</h4>
+    <pre><code>oDatos := rEmpresa:Metodo( hParams )
+oModel:oTreeView:ClearModel(.T.)
+FOR EACH aLine IN oDatos:GetData()
+   APPEND LIST_STORE oModel:oLbx ITER aIter VALUES aLine[1], aLine[2], aLine[3]
+NEXT</code></pre>
+
+    <h3>Reglas Importantes</h3>
+    <ul>
+      <li><strong>NO usar VAL()</strong> - Usar siempre <code>ToNum()</code> para números con decimales</li>
+      <li><strong>Verificar objetos</strong> - Usar <code>hb_isObject()</code> antes de acceder</li>
+      <li><strong>LOCAL al inicio</strong> - Declarar variables locales al inicio del procedimiento</li>
+      <li><strong>No modificar archivos funcionales</strong> - Preguntar antes de cambiar algo que funciona</li>
+    </ul>
+
+    <h2>Contribuir al Proyecto</h2>
+    
+    <h3>Flujo de Trabajo</h3>
+    <ol>
+      <li><strong>Forkear</strong> el repositorio</li>
+      <li><strong>Crear una rama</strong> para tu feature o fix</li>
+      <li><strong>Desarrollar</strong> y probar tus cambios</li>
+      <li><strong>Crear un Pull Request</strong> con descripción clara</li>
+      <li><strong>Esperar review</strong> y merge</li>
+    </ol>
+
+    <h3>Normas de Código</h3>
+    <ul>
+      <li>Sigue el estilo de código existente</li>
+      <li>Agrega comentarios solo cuando sea necesario</li>
+      <li>Prueba tus cambios antes de enviar</li>
+      <li>Documenta las funciones nuevas</li>
+    </ul>
+
+    <h2>Recursos</h2>
+    <ul>
+      <li><a href="{{ '/docs/manual-programador/' | relative_url }}">Manual del Programador</a></li>
+      <li><a href="{{ '/docs/respuestas-tecnicas/' | relative_url }}">Preguntas y Respuestas Técnicas</a></li>
+      <li><a href="https://github.com/riztan/fiscalius-client" target="_blank">Repositorio en GitHub</a></li>
+      <li><a href="https://github.com/riztan/fiscalius-client/issues" target="_blank">Issues abiertos</a></li>
+    </ul>
+
+    <h2>Contacto</h2>
+    <p>¿Tienes preguntas? Únete a la comunidad:</p>
+    <ul>
+      <li><a href="https://github.com/riztan/fiscalius-client/issues" target="_blank">GitHub Issues</a></li>
+      <li><a href="mailto:dev@fiscalius.com">Email de desarrollo</a></li>
+    </ul>
+  </div>
+</div>

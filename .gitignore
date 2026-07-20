@@ -1,48 +1,58 @@
-# Temporales y backups
-*~
-*.bak
-*.backup_*
-*.swp
-*.swo
-*.swn
-*.un~
-*.orig
+# Fiscalius Client - .gitignore para gh-pages
 
-# Archivos de desarrollo
-/devel
-/work
-/tmp/
-/install/
-/salida.ppo
-
-# Archivos de configuración local
-connect.ch
-email.ch
-
-# Logs
-*.log
-
-# Sistema
+# Archivos de sistema
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Directorios de IA/agentes
-.agent/
+# Archivos de editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Archivos varios no relacionados
-*.txt
-*.bat
-*.mp4
-video.*
-images/
+# Archivos temporales
+tmp/
+temp/
+*.tmp
+*.bak
 
-# Respaldos específicos de scripts
-xbscripts/*.bak.*
-xbscripts/*_backup.*
-xbscripts/*_original.*
-xbscripts/*_antes.*
-xbscripts/.*.sw?
-xbscripts/riztan.*
-xbscripts/test_*
-xbscripts/netio_check_antes.*
-*.c
+# Gemfile.lock (opcional para GitHub Pages)
+Gemfile.lock
+
+# Archivos de build
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.sass-cache/
+
+# Archivos de docs (se incluyen selectivamente)
+docs/*.md
+!docs/index.html
+
+# Archivos de imágenes que no necesitamos en el sitio
+images/*.png
+images/*.jpg
+images/*.gif
+# Excepción: copiamos los logos que necesitamos
+!assets/images/*.png
+
+# Archivos de configuración
+*.conf
+init.conf
+email.ch.example
+
+# Archivos de scripts
+xbscripts/
+resources/
+bin/
+
+# Archivos de.cursor y .github
+.cursor/
+.github/
+.opencode/

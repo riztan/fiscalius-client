@@ -1,0 +1,240 @@
+---
+layout: default
+title: Preguntas y Respuestas Técnicas
+description: Respuestas a preguntas técnicas frecuentes sobre Fiscalius
+---
+
+<div class="page-header">
+  <div class="container">
+    <h1>Preguntas y Respuestas Técnicas</h1>
+    <p>Respuestas a las preguntas técnicas más frecuentes sobre Fiscalius.</p>
+  </div>
+</div>
+
+<div class="content-section">
+  <div class="container">
+    <h2>1. Arquitectura y Diseño</h2>
+    
+    <h3>¿Por qué se usa una arquitectura cliente-servidor?</h3>
+    <p>La arquitectura cliente-servidor ofrece varias ventajas:</p>
+    <ul>
+      <li><strong>Seguridad:</strong> Los datos se almacenan centralmente</li>
+      <li><strong>Concurrencia:</strong> Múltiples usuarios pueden trabajar simultáneamente</li>
+      <li><strong>Mantenimiento:</strong> Actualizaciones centralizadas</li>
+      <li><strong>Escalabilidad:</strong> Se pueden agregar más clientes sin cambios</li>
+    </ul>
+
+    <h3>¿Por qué se usa Harbour en lugar de otros lenguajes?</h3>
+    <p>Harbour es un lenguaje robusto y probado que:</p>
+    <ul>
+      <li>Tiene excelente soporte para bases de datos</li>
+      <li>Es compatible con Clipper (legado de sistemas anteriores)</li>
+      <li>Tiene buena integración con GTK+ a través de T-GTK</li>
+      <li>Es de código abierto y gratuito</li>
+    </ul>
+
+    <h3>¿Por qué no se usa una arquitectura web?</h3>
+    <p>Aunque una arquitectura web tendría ventajas, se eligió cliente-servidor porque:</p>
+    <ul>
+      <li>Mejor rendimiento en operaciones de facturación</li>
+      <li>Funciona sin conexión a Internet (una vez autenticado)</li>
+      <li>Mejor integración con hardware (impresoras, lectores)</li>
+      <li>Experiencia de usuario más fluida</li>
+    </ul>
+
+    <h2>2. Comunicación Cliente-Servidor</h2>
+    
+    <h3>¿Cómo funciona la comunicación NetIO?</h3>
+    <p>NetIO es un protocolo de comunicación basado en TCP/IP que:</p>
+    <ul>
+      <li>Utiliza el puerto 2942 por defecto</li>
+      <li>Transmite datos en formato JSON</li>
+      <li>Es seguro y confiable</li>
+      <li>Permite comunicación bidireccional</li>
+    </ul>
+
+    <h3>¿Qué objetos se comunican con el servidor?</h3>
+    <p>Los objetos principales son:</p>
+    <ul>
+      <li><strong>oGEmpresa:</strong> Objeto principal de conexión</li>
+      <li><strong>rVentas:</strong> Módulo de ventas</li>
+      <li><strong>rFinanzas:</strong> Módulo de finanzas</li>
+      <li><strong>rInventario:</strong> Módulo de inventario</li>
+    </ul>
+
+    <h3>¿Cómo se manejan los errores de conexión?</h3>
+    <pre><code>IF !oTPuy:RunXBS("netio_check")
+   MsgStop("Sin conexión al servidor")
+   RETURN
+ENDIF</code></pre>
+
+    <h2>3. Base de Datos</h2>
+    
+    <h3>¿Por qué se usa PostgreSQL?</h3>
+    <p>PostgreSQL ofrece:</p>
+    <ul>
+      <li>Alta performance y confiabilidad</li>
+      <li>Soporte para transacciones ACID</li>
+      <li>Escalabilidad y flexibilidad</li>
+      <li>Es de código abierto y gratuito</li>
+      <li>Excelente soporte para consultas complejas</li>
+    </ul>
+
+    <h3>¿Cómo se conecta el cliente a la base de datos?</h3>
+    <p>El cliente NO se conecta directamente a la base de datos. La comunicación es:</p>
+    <pre><code>Cliente → Servidor → PostgreSQL</code></pre>
+    <p>El servidor maneja todas las operaciones de base de datos.</p>
+
+    <h3>¿Cómo se manejan las transacciones?</h3>
+    <p>Las transacciones se manejan en el servidor utilizando el motor de PostgreSQL. El cliente envía operaciones y el servidor las ejecuta de manera transaccional.</p>
+
+    <h2>4. Interfaz de Usuario</h2>
+    
+    <h3>¿Cómo se crean las interfaces?</h3>
+    <p>Las interfaces se crean con:</p>
+    <ul>
+      <li><strong>Glade:</strong> Diseñador visual de interfaces GTK+</li>
+      <li><strong>Archivos .ui:</strong> Definición XML de las interfaces</li>
+      <li><strong>T-GTK:</strong> Binding de Harbour para GTK+</li>
+    </ul>
+
+    <h3>¿Cómo se cargan los datos en los ListBox?</h3>
+    <pre><code>oModel:oTreeView:ClearModel(.T.)
+FOR EACH aLine IN oDatos:GetData()
+   APPEND LIST_STORE oModel:oLbx ITER aIter VALUES aLine[1], aLine[2], aLine[3]
+NEXT</code></pre>
+
+    <h3>¿Cómo se manejan los eventos?</h3>
+    <p>Los eventos se manejan con:</p>
+    <ul>
+      <li><strong>CONNECT:</strong> Conectar eventos a funciones</li>
+      <li><strong>ON CLICK:</strong> Eventos de clic</li>
+      <li><strong>ON CHANGE:</strong> Eventos de cambio</li>
+    </ul>
+
+    <h2>5. Seguridad</h2>
+    
+    <h3>¿Cómo se autentican los usuarios?</h3>
+    <p>La autenticación se realiza en el servidor:</p>
+    <ol>
+      <li>El cliente envía usuario y contraseña</li>
+      <li>El servidor verifica las credenciales</li>
+      <li>Si son correctas, devuelve un token de sesión</li>
+      <li>El cliente almacena el token para futuras peticiones</li>
+    </ol>
+
+    <h3>¿Cómo se protegen los datos sensibles?</h3>
+    <ul>
+      <li>Las contraseñas se almacenan hasheadas</li>
+      <li>La comunicación puede usar SSL/TLS</li>
+      <li>Los datos sensibles se almacenan en el servidor</li>
+      <li>Se realizan auditorías de acceso</li>
+    </ul>
+
+    <h3>¿Cómo se manejan los permisos?</h3>
+    <p>Los permisos se controlan por:</p>
+    <ul>
+      <li><strong>Roles:</strong> Admin, Contador, Vendedor, etc.</li>
+      <li><strong>Módulos:</strong> Acceso a módulos específicos</li>
+      <li><strong>Acciones:</strong> Crear, editar, eliminar, imprimir</li>
+    </ul>
+
+    <h2>6. Rendimiento</h2>
+    
+    <h3>¿Cómo se optimiza el rendimiento?</h3>
+    <ul>
+      <li><strong>Consultas optimizadas:</strong> Índices en PostgreSQL</li>
+      <li><strong>Caching:</strong> Datos estáticos en caché del cliente</li>
+      <li><strong>Compresión:</strong> Datos comprimidos en red</li>
+      <li><strong>Conexión persistente:</strong> Evita overhead de conexión</li>
+    </ul>
+
+    <h3>¿Cómo se maneja el volumen de datos?</h3>
+    <ul>
+      <li>Paginación de resultados</li>
+      <li>Consultas con filtros</li>
+      <li>Exportación a archivos</li>
+      <li>Archivado de datos antiguos</li>
+    </ul>
+
+    <h2>7. Desarrollo</h2>
+    
+    <h3>¿Cómo agregar una nueva función?</h3>
+    <ol>
+      <li>Crear el archivo .xbs en xbscripts/</li>
+      <li>Definir la interfaz en resources/</li>
+      <li>Conectar la interfaz con la lógica</li>
+      <li>Probar la función</li>
+      <li>Documentar la función</li>
+    </ol>
+
+    <h3>¿Cómo modificar una función existente?</h3>
+    <ol>
+      <li>Entender la función actual</li>
+      <li>Identificar los puntos de modificación</li>
+      <li>Realizar los cambios</li>
+      <li>Probar exhaustivamente</li>
+      <li>Documentar los cambios</li>
+    </ol>
+
+    <h3>¿Cómo depurar el código?</h3>
+    <ul>
+      <li><strong>MsgStop:</strong> Mostrar mensajes de depuración</li>
+      <li><strong>Log:</strong> Escribir en archivo de log</li>
+      <li><strong>Console:</strong> Salida a consola</li>
+      <li><strong>Debugger:</strong> Usar debugger de Harbour</li>
+    </ul>
+
+    <h2>8. Despliegue</h2>
+    
+    <h3>¿Cómo se distribuye el cliente?</h3>
+    <p>El cliente se distribuye como:</p>
+    <ul>
+      <li><strong>Windows:</strong> Instalador .exe</li>
+      <li><strong>Linux:</strong> Paquete .deb o .rpm</li>
+      <li><strong>Portable:</strong> Archivo comprimido</li>
+    </ul>
+
+    <h3>¿Cómo se actualiza el cliente?</h3>
+    <p>Las actualizaciones se realizan:</p>
+    <ul>
+      <li><strong>Automáticamente:</strong> Descarga de actualizaciones</li>
+      <li><strong>Manualmente:</strong> Descarga desde GitHub</li>
+      <li><strong>Por distribuidor:</strong> Paquetes de actualización</li>
+    </ul>
+
+    <h2>9. Solución de Problemas</h2>
+    
+    <h3>¿Qué hacer si el cliente no se conecta al servidor?</h3>
+    <ol>
+      <li>Verificar que el servidor esté activo</li>
+      <li>Verificar la configuración de red</li>
+      <li>Verificar firewall</li>
+      <li>Verificar credenciales</li>
+      <li>Revisar logs del servidor</li>
+    </ol>
+
+    <h3>¿Qué hacer si hay errores de base de datos?</h3>
+    <ol>
+      <li>Verificar conexión a PostgreSQL</li>
+      <li>Verificar permisos de usuario de BD</li>
+      <li>Verificar espacio en disco</li>
+      <li>Revisar logs de PostgreSQL</li>
+    </ol>
+
+    <h3>¿Qué hacer si la interfaz no responde?</h3>
+    <ol>
+      <li>Reiniciar la aplicación</li>
+      <li>Verificar memoria disponible</li>
+      <li>Verificar procesos bloqueados</li>
+      <li>Revisar logs de la aplicación</li>
+    </ul>
+
+    <h2>10. Recursos</h2>
+    <ul>
+      <li><a href="{{ '/docs/manual-programador/' | relative_url }}">Manual del Programador</a></li>
+      <li><a href="https://github.com/riztan/fiscalius-client" target="_blank">Repositorio en GitHub</a></li>
+      <li><a href="https://github.com/riztan/fiscalius-client/issues" target="_blank">Issues abiertos</a></li>
+    </ul>
+  </div>
+</div>

@@ -1,0 +1,187 @@
+---
+layout: default
+title: Manual del Programador
+description: Manual técnico para desarrolladores de Fiscalius
+---
+
+<div class="page-header">
+  <div class="container">
+    <h1>Manual del Programador</h1>
+    <p>Guía técnica completa para desarrolladores que trabajan con Fiscalius.</p>
+  </div>
+</div>
+
+<div class="content-section">
+  <div class="container">
+    <h2>Introducción</h2>
+    <p>Este manual está dirigido a desarrolladores que desean entender, modificar o extender Fiscalius. El sistema está desarrollado en <strong>TPuy</strong> (framework basado en Harbour + T-GTK) y utiliza una arquitectura cliente-servidor.</p>
+
+    <h2>1. Arquitectura del Sistema</h2>
+    
+    <h3>1.1 Diagrama de Arquitectura</h3>
+    <pre><code>┌─────────────────────────┐   hb_netio TCP/IP   ┌───────────────────────┐   SQL   ┌────────────┐
+│  Fiscalius Client       │ ←─────────────────→  │ Fiscalius Server      │ ←─────→ │ PostgreSQL │
+│  (TPuy/xHarbour + GTK)  │                       │ (Harbour/TPuy)        │         │ 16         │
+│  UI + Validaciones prev.│                       │ API + Lógica negocio  │         └────────────┘
+└─────────────────────────┘                       └───────────────────────┘</code></pre>
+
+    <h3>1.2 Componentes</h3>
+    <ul>
+      <li><strong>Cliente:</strong> Interfaz gráfica GTK+ desarrollada en TPuy</li>
+      <li><strong>Servidor:</strong> API RESTful desarrollada en Harbour/TPuy</li>
+      <li><strong>Base de datos:</strong> PostgreSQL 16</li>
+      <li><strong>Comunicación:</strong> Protocolo NetIO (hb_netio)</li>
+    </ul>
+
+    <h2>2. Estructura del Proyecto</h2>
+    
+    <h3>2.1 Directorios Principales</h3>
+    <pre><code>fiscalius-client/
+├── xbscripts/          # Lógica del negocio (.xbs)
+│   ├── begin.xbs       # Punto de entrada principal
+│   ├── netio_check.xbs # Verificación de conexión
+│   ├── netio_login.xbs # Autenticación
+│   ├── menu.xbs        # Menú principal
+│   ├── vta_*.xbs       # Módulo Ventas
+│   ├── mae_*.xbs       # Maestros
+│   └── fin_*.xbs       # Módulo Finanzas
+├── resources/          # Interfaces GTK+ (.ui)
+├── docs/               # Documentación
+└── init.conf           # Configuración</code></pre>
+
+    <h3>2.2 Archivos Importantes</h3>
+    <ul>
+      <li><strong>begin.xbs:</strong> Punto de entrada de la aplicación</li>
+      <li><strong>netio_check.xbs:</strong> Verifica conexión con el servidor</li>
+      <li><strong>menu.xbs:</strong> Menú principal de la aplicación</li>
+      <li><strong>init.conf:</strong> Configuración inicial del sistema</li>
+    </ul>
+
+    <h2>3. Tecnologías Utilizadas</h2>
+    
+    <h3>3.1 TPuy Framework</h3>
+    <p>TPuy es un framework para desarrollo de aplicaciones de escritorio con interfaces GTK+. Está basado en:</p>
+    <ul>
+      <li><strong>Harbour:</strong> Compilador de xBase compatible con Clipper</li>
+      <li><strong>T-GTK:</strong> Binding de Harbour para GTK+</li>
+      <li><strong>hb_netio:</strong> Biblioteca de comunicación cliente-servidor</li>
+    </ul>
+
+    <h3>3.2 PostgreSQL</h3>
+    <p>Sistema de base de datos relacional utilizado para almacenar:</p>
+    <ul>
+      <li>Datos de la empresa</li>
+      <li>Catálogo de productos</li>
+      <li>Clientes y proveedores</li>
+      <li>Facturas y documentos fiscales</li>
+      <li>Movimientos de caja</li>
+      <li>Inventario</li>
+    </ul>
+
+    <h2>4. Patrones de Código</h2>
+    
+    <h3>4.1 Comunicación con el Servidor (NetIO)</h3>
+    <pre><code>// Verificar conexión primero
+IF !oTPuy:RunXBS("netio_check")
+   MsgStop("Sin conexión al servidor")
+   RETURN
+ENDIF
+
+// Obtener objeto remoto
+::rFinanzas := oFormParent:oGEmpresa:SetModulo("Finanzas")
+::rCobranza := ::rFinanzas:Cobranza('')
+
+// Verificar respuesta
+IF hb_isObject( ::rCobranza )
+   hData := ::rCobranza:Data()
+ENDIF</code></pre>
+
+    <h3>4.2 Cargar Datos a ListBox</h3>
+    <pre><code>oDatos := rEmpresa:Metodo( hParams )
+oModel:oTreeView:ClearModel(.T.)
+FOR EACH aLine IN oDatos:GetData()
+   APPEND LIST_STORE oModel:oLbx ITER aIter VALUES aLine[1], aLine[2], aLine[3]
+NEXT</code></pre>
+
+    <h3>4.3 Obtener Valor de Celda</h3>
+    <pre><code>nId    := oTView:GetAutoValue( 1, aIter )   // Columna 1
+cNombre:= oTView:GetAutoValue( 2, aIter )   // Columna 2</code></pre>
+
+    <h3>4.4 Conversión Numérica</h3>
+    <pre><code>// ✅ CORRECTO - mantiene decimales
+nValor := ToNum( cValorCampo )
+
+// ❌ INCORRECTO - VAL() puede perder decimales
+nValor := VAL( cValorCampo )</code></pre>
+
+    <h3>4.5 Variables Locales</h3>
+    <pre><code>// LOCAL debe declararse AL INICIO del procedimiento
+PROCEDURE MiProc()
+   LOCAL aLine, nLen, aVal
+   FOR EACH aLine IN aData
+      nLen := LEN( aLine )
+      ...
+   NEXT
+RETURN</code></pre>
+
+    <h2>5. Objetos Remotos</h2>
+    
+    <h3>5.1 Objeto Empresa</h3>
+    <pre><code>::rEmpresa := oFormParent:oGEmpresa
+::rVentas := ::rEmpresa:SetModulo("Ventas")
+::rFinanzas := ::rEmpresa:SetModulo("Finanzas")
+::rInventario := ::rEmpresa:SetModulo("Inventario")</code></pre>
+
+    <h3>5.2 Métodos Comunes</h3>
+    <ul>
+      <li><strong>SetModulo(cModulo):</strong> Obtiene un módulo remoto</li>
+      <li><strong>Clientes(hParams):</strong> Lista de clientes</li>
+      <li><strong>Facturas(cId):</strong> Instancia de factura</li>
+      <li><strong>Documento(cTipo, cNumero):</strong> Crea documento</li>
+      <li><strong>CxCxFlujo(hParams):</strong> Cuentas por cobrar</li>
+      <li><strong>Cobranza(cId):</strong> Instancia de recibo</li>
+    </ul>
+
+    <h2>6. Reglas Importantes</h2>
+    
+    <h3>6.1 Reglas Absolutas</h3>
+    <ul>
+      <li><strong>NUNCA</strong> usar VAL() - usar siempre ToNum()</li>
+      <li><strong>NUNCA</strong> modificar archivos .xbs o .ui sin permiso</li>
+      <li><strong>NUNCA</strong> hacer commits sin autorización</li>
+      <li><strong>NUNCA</strong> usar valores hardcoded</li>
+      <li><strong>SIEMPRE</strong> verificar coherencia: BD = API = Cliente</li>
+      <li><strong>SIEMPRE</strong> verificar objetos antes de acceder</li>
+      <li><strong>SIEMPRE</strong> cerrar queries y limpiar recursos</li>
+    </ul>
+
+    <h3>6.2 Regla de Tiempo</h3>
+    <p>Si en ~1 minuto no encuentras la información que necesitas, DETENTE y pregunta al usuario.</p>
+
+    <h2>7. Contribuir al Proyecto</h2>
+    
+    <h3>7.1 Flujo de Trabajo</h3>
+    <ol>
+      <li><strong>Forkear</strong> el repositorio</li>
+      <li><strong>Crear una rama</strong> para tu feature o fix</li>
+      <li><strong>Desarrollar</strong> y probar tus cambios</li>
+      <li><strong>Crear un Pull Request</strong> con descripción clara</li>
+      <li><strong>Esperar review</strong> y merge</li>
+    </ol>
+
+    <h3>7.2 Normas de Código</h3>
+    <ul>
+      <li>Sigue el estilo de código existente</li>
+      <li>Agrega comentarios solo cuando sea necesario</li>
+      <li>Prueba tus cambios antes de enviar</li>
+      <li>Documenta las funciones nuevas</li>
+    </ul>
+
+    <h2>8. Recursos</h2>
+    <ul>
+      <li><a href="https://github.com/riztan/fiscalius-client" target="_blank">Repositorio en GitHub</a></li>
+      <li><a href="{{ '/docs/respuestas-tecnicas/' | relative_url }}">Preguntas y Respuestas Técnicas</a></li>
+      <li><a href="https://github.com/riztan/fiscalius-client/issues" target="_blank="#">Issues abiertos</a></li>
+    </ul>
+  </div>
+</div>

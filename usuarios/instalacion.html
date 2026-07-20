@@ -1,0 +1,74 @@
+---
+layout: default
+title: Instalación
+description: Guía de instalación de Fiscalius - Sistema de Facturación Electrónica
+---
+
+<div class="page-header">
+  <div class="container">
+    <h1>Guía de Instalación</h1>
+    <p>Sigue estos pasos para instalar Fiscalius en tu computadora y comenzar a facturar.</p>
+  </div>
+</div>
+
+<div class="content-section">
+  <div class="container">
+    <h2>Requisitos del Sistema</h2>
+    <p>Antes de instalar, asegúrate de tener:</p>
+    <ul>
+      <li><strong>Sistema Operativo:</strong> Windows 7/8/10/11 o Linux (Ubuntu 18.04+, Debian 9+)</li>
+      <li><strong>Conexión a Internet:</strong> Necesaria para la activación inicial y actualizaciones</li>
+      <li><strong>Servidor:</strong> Acceso al servidor Fiscalius (proporcionado por tu distribuidor o administrador)</li>
+      <li><strong>Espacio en disco:</strong> Mínimo 500 MB disponibles</li>
+      <li><strong>Memoria RAM:</strong> Mínimo 2 GB recomendados</li>
+    </ul>
+
+    <h2>Pasos de Instalación</h2>
+    
+    <h3>Paso 1: Descargar el Instalador</h3>
+    <p>Descarga la última versión de Fiscalius desde:</p>
+    <ul>
+      <li><a href="https://github.com/riztan/fiscalius-client/releases" target="_blank">Releases en GitHub</a></li>
+      <li>O solicítalo a tu distribuidor autorizado</li>
+    </ul>
+
+    <h3>Paso 2: Ejecutar el Instalador</h3>
+    <p>Windows:</p>
+    <pre><code>Haz doble clic en el archivo .exe descargado
+Sigue las instrucciones del asistente
+Selecciona la carpeta de instalación (recomendado: C:\Fiscalius)</code></pre>
+    
+    <p>Linux:</p>
+    <pre><code>chmod +x fiscalius-instalador
+sudo ./fiscalius-instalador</code></pre>
+
+    <h3>Paso 3: Configuración Inicial</h3>
+    <p>Al abrir Fiscalius por primera vez:</p>
+    <ol>
+      <li>Ingresa los datos del servidor (IP o dominio y puerto)</li>
+      <li>Ingresa tus credenciales de acceso (usuario y contraseña)</li>
+      <li>Selecciona la empresa con la que trabajarás</li>
+      <li>Configura tus datos fiscales (RIF, dirección, teléfono)</li>
+    </ol>
+
+    <h3>Paso 4: Verificar Conexión</h3>
+    <p>El sistema verificará automáticamente la conexión con el servidor. Si todo está correcto, verás el mensaje "Conexión exitosa".</p>
+
+    <h2>Primeros Pasos</h2>
+    <p>Una vez instalado, te recomendamos:</p>
+    <ol>
+      <li><a href="{{ '/docs/inventario/' | relative_url }}">Configurar tu catálogo de productos</a></li>
+      <li><a href="{{ '/docs/clientes/' | relative_url }}">Registrar tus clientes</a></li>
+      <li><a href="{{ '/docs/cajas/' | relative_url }}">Configurar tus cajas registradoras</a></li>
+      <li><a href="{{ '/docs/facturacion/' | relative_url }}">Emitir tu primera factura</a></li>
+    </ol>
+
+    <h2>Soporte</h2>
+    <p>Si tienes problemas durante la instalación:</p>
+    <ul>
+      <li>Consulta nuestra <a href="{{ '/usuarios/faq/' | relative_url }}">sección de preguntas frecuentes</a></li>
+      <li>Abre un ticket en <a href="https://github.com/riztan/fiscalius-client/issues" target="_blank">GitHub Issues</a></li>
+      <li>Contacta a tu distribuidor autorizado</li>
+    </ul>
+  </div>
+</div>
