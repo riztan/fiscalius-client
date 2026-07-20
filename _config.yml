@@ -24,22 +24,13 @@ kramdown:
   input: GFM
   hard_wrap: false
 
-# Plugins
-plugins:
-  - jekyll-seo-tag
-
-# Collections para documentación
-collections:
-  docs:
-    output: true
-    permalink: /:collection/:name/
-
 # Exclude
 exclude:
+  - Gemfile
+  - Gemfile.lock
   - README.md
   - LICENSE
   - CHANGELOG.md
-  - docs/
   - images/
   - xbscripts/
   - resources/
